@@ -1,0 +1,80 @@
+[
+  {
+    "Id": 1,
+    "Title": "فروشگاه آنلاین پوشاک (اختصاصی)",
+    "ShortDescription": "فروشگاه واقعی چندمستأجری: سبد خرید، پنل ادمین، منوی درختی، گالری و درگاه پرداخت",
+    "Description": "یک فروشگاه آنلاین واقعی برای پوشاک با پنل مدیریت کامل، سبد خرید مشتریان، گروه‌بندی درختی، خصوصیات محصول، صفحات سفارشی، گالری تصاویر (thumb/large)، تنظیم درگاه پرداخت و دامنه/کد شرکت اختصاصی. مناسب فروش به کسب‌وکارهای مد.",
+    "Price": 15000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-1.jpg",
+    "Category": "فروشگاه آنلاین",
+    "DemoSlug": "fashion",
+    "IsActive": true,
+    "IsFeatured": true,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  },
+  {
+    "Id": 2,
+    "Title": "فروشگاه آنلاین مواد غذایی (اختصاصی)",
+    "ShortDescription": "سوپرمارکت آنلاین واقعی با پنل مدیریت، سفارش و پرداخت",
+    "Description": "فروشگاه سوپرمارکت کامل روی پلتفرم نیکو: مدیریت محصول و گروه، سبد خرید، پنل مشتری، صفحات و منوی درختی، گالری و تنظیم درگاه. هر مشتری با کد شرکت و دامنه خودش سایت جدا دارد.",
+    "Price": 18000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-2.jpg",
+    "Category": "فروشگاه آنلاین",
+    "DemoSlug": "grocery",
+    "IsActive": true,
+    "IsFeatured": true,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  },
+  {
+    "Id": 3,
+    "Title": "فروشگاه محصولات دیجیتال (اختصاصی)",
+    "ShortDescription": "فروشگاه واقعی دوره، لایسنس و فایل با پنل کامل",
+    "Description": "فروشگاه دیجیتال واقعی با کاتالوگ داینامیک، خصوصیات محصول، سبد خرید، پنل ادمین/مشتری، صفحات، منوی درختی، گالری و درگاه پرداخت. داده هر فروشگاه جدا و قابل فروش مجدد است.",
+    "Price": 12000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-3.jpg",
+    "Category": "فروشگاه آنلاین",
+    "DemoSlug": "digital",
+    "IsActive": true,
+    "IsFeatured": true,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  },
+  {
+    "Id": 4,
+    "Title": "سیستم مدیریت محتوا (CMS)",
+    "ShortDescription": "مدیریت صفحات، بلاگ و محتوای سازمانی",
+    "Description": "نرم‌افزار مدیریت محتوا برای ساخت و ویرایش صفحات سایت، بلاگ، گالری و منوها بدون دانش برنامه‌نویسی.",
+    "Price": 20000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+    "Category": "نرم‌افزار سازمانی",
+    "DemoSlug": null,
+    "IsActive": true,
+    "IsFeatured": false,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  },
+  {
+    "Id": 5,
+    "Title": "پنل رزرو آنلاین نوبت",
+    "ShortDescription": "رزرو نوبت کلینیک، سالن و خدمات",
+    "Description": "سامانه رزرو آنلاین نوبت با تقویم، یادآوری پیامکی و مدیریت ظرفیت. مناسب کلینیک‌ها، سالن‌های زیبایی و مراکز خدماتی.",
+    "Price": 10000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+    "Category": "نرم‌افزار خدماتی",
+    "DemoSlug": null,
+    "IsActive": true,
+    "IsFeatured": false,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  },
+  {
+    "Id": 6,
+    "Title": "سیستم حسابداری سبک",
+    "ShortDescription": "ثبت فاکتور، موجودی و گزارش مالی پایه",
+    "Description": "نرم‌افزار حسابداری سبک برای کسب‌وکارهای کوچک شامل فاکتور فروش، انبار ساده و گزارش‌های درآمد و هزینه.",
+    "Price": 25000,
+    "ImageUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+    "Category": "نرم‌افزار سازمانی",
+    "DemoSlug": null,
+    "IsActive": true,
+    "IsFeatured": false,
+    "CreatedAt": "2026-09-07T17:49:10.8413479+03:30"
+  }
+]

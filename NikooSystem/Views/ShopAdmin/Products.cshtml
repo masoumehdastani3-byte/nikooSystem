@@ -1,0 +1,39 @@
+@model IEnumerable<NikooSystem.Models.Store.StoreProduct>
+@using NikooSystem.Helpers
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "محصولات";
+    var company = (string)ViewBag.CompanyCode;
+    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+}
+<div class="d-flex justify-content-between mb-3">
+    <h2>محصولات</h2>
+    <a class="btn-store" href="@Url.Action("EditProduct","ShopAdmin", new { company })">محصول جدید</a>
+</div>
+<div class="panel-card">
+<table class="table align-middle">
+    <thead><tr><th>تصویر</th><th>عنوان</th><th>گروه</th><th>قیمت</th><th>موجودی</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var p in Model)
+    {
+        var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
+        <tr>
+            <td><img src="@(img?.ThumbUrl ?? img?.LargeUrl)" style="width:48px;height:48px;object-fit:cover;border-radius:8px;" /></td>
+            <td>@p.Title</td>
+            <td>@(cats.ContainsKey(p.CategoryId) ? cats[p.CategoryId] : "-")</td>
+            <td>@p.Price.ToToman()</td>
+            <td>@p.Stock</td>
+            <td class="text-nowrap">
+                <a href="@Url.Action("EditProduct","ShopAdmin", new { company, id = p.Id })">ویرایش</a>
+                @using (Html.BeginForm("DeleteProduct", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@p.Id" />
+                    <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
+                }
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>

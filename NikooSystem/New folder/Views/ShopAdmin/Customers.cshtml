@@ -1,0 +1,22 @@
+@model IEnumerable<NikooSystem.Models.Store.StoreCustomer>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "مشتریان";
+}
+<h2 class="mb-3">مشتریان فروشگاه</h2>
+<div class="panel-card">
+<table class="table">
+    <thead><tr><th>نام</th><th>موبایل</th><th>ایمیل</th><th>تاریخ عضویت</th></tr></thead>
+    <tbody>
+    @foreach (var c in Model)
+    {
+        <tr>
+            <td>@c.FullName</td>
+            <td>@c.Mobile</td>
+            <td>@c.Email</td>
+            <td>@c.CreatedAt.ToString("yyyy/MM/dd")</td>
+        </tr>
+    }
+    </tbody>
+</table>
+</div>

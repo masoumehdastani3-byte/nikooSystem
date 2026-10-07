@@ -1,0 +1,20 @@
+@model NikooSystem.Models.Order
+@{
+    ViewBag.Title = "پرداخت ناموفق";
+    ViewBag.Nav = "products";
+}
+<main id="main">
+    <div class="page-hero">
+        <div class="container text-center">
+            <div class="fail-icon"><i class="bi bi-x-circle"></i></div>
+            <h1>پرداخت انجام نشد</h1>
+            <p class="text-muted">@(Model?.PaymentMessage ?? "پرداخت لغو شد یا با خطا مواجه شد.")</p>
+            @if (Model != null)
+            {
+                <p>شماره سفارش: <strong>@Model.OrderNumber</strong></p>
+                <a href="@Url.Action("Buy","Checkout", new { productId = Model.ProductId })" class="btn-primary-shop">تلاش مجدد</a>
+            }
+            <a href="@Url.Action("Index","Products")" class="btn-outline-shop ms-2">بازگشت به محصولات</a>
+        </div>
+    </div>
+</main>

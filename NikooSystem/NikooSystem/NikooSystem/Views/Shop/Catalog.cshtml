@@ -1,0 +1,118 @@
+@model IEnumerable<NikooSystem.Models.Store.StoreProduct>
+@using NikooSystem.Helpers
+@using NikooSystem.Models.Store
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "محصولات";
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
+    int? categoryId = ViewBag.CategoryId as int?;
+    var q = ViewBag.Q as string;
+    var sort = (ViewBag.Sort as string) ?? "newest";
+    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+}
+<div class="page-hero-lite">
+    <div class="container">
+        <h1 class="section-title mb-1">محصولات فروشگاه</h1>
+        <p class="text-muted mb-0">جستجو، فیلتر و مرتب‌سازی</p>
+    </div>
+</div>
+<section class="pb-5">
+    <div class="container">
+        @if (layoutId == "marketplace")
+        {
+            <div class="mp-catalog-layout">
+                <aside class="mp-sidebar">
+                    <h3>دسته‌بندی</h3>
+                    <a class="@(categoryId==null?"active":"")" href="@Url.Action("Catalog","Shop", new { company, sort, q })">همه</a>
+                    @foreach (var c in cats.Where(x => x.ParentId == null))
+                    {
+                        <a class="@(categoryId==c.Id?"active":"")" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id, sort, q })">@c.Title</a>
+                    }
+                </aside>
+                <div>
+                    <form method="get" class="row g-2 mb-4 align-items-end panel-card">
+                        <div class="col-md-5">
+                            <label class="form-label">جستجو</label>
+                            <input class="form-control" name="q" value="@q" placeholder="جستجو در محصولات..." />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">مرتب‌سازی</label>
+                            <select class="form-select" name="sort">
+                                <option value="newest" @(sort=="newest"?"selected":"")>جدیدترین</option>
+                                <option value="price_asc" @(sort=="price_asc"?"selected":"")>ارزان‌ترین</option>
+                                <option value="price_desc" @(sort=="price_desc"?"selected":"")>گران‌ترین</option>
+                                <option value="popular" @(sort=="popular"?"selected":"")>محبوب‌ترین</option>
+                                <option value="bestseller" @(sort=="bestseller"?"selected":"")>پرفروش‌ترین</option>
+                                <option value="rating" @(sort=="rating"?"selected":"")>بالاترین امتیاز</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3"><button class="btn-wm w-100" type="submit">اعمال</button></div>
+                        @if (categoryId.HasValue)
+                        {
+                            <input type="hidden" name="categoryId" value="@categoryId" />
+                        }
+                    </form>
+                    <div class="product-grid grid-marketplace">
+                        @foreach (var p in Model)
+                        {
+                            @Html.Partial("_StoreProductCard", p)
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <form method="get" class="row g-2 mb-4 align-items-end panel-card">
+                <div class="col-md-4">
+                    <label class="form-label">جستجو</label>
+                    <input class="form-control" name="q" value="@q" placeholder="جستجو در محصولات..." />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">گروه</label>
+                    <select class="form-select" name="categoryId">
+                        <option value="">همه گروه‌ها</option>
+                        @foreach (var c in cats)
+                        {
+                            <option value="@c.Id" @(categoryId == c.Id ? "selected" : "")>@(c.ParentId.HasValue ? "— " : "")@c.Title</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">مرتب‌سازی</label>
+                    <select class="form-select" name="sort">
+                        <option value="newest" @(sort=="newest"?"selected":"")>جدیدترین</option>
+                        <option value="price_asc" @(sort=="price_asc"?"selected":"")>ارزان‌ترین</option>
+                        <option value="price_desc" @(sort=="price_desc"?"selected":"")>گران‌ترین</option>
+                        <option value="popular" @(sort=="popular"?"selected":"")>محبوب‌ترین</option>
+                        <option value="bestseller" @(sort=="bestseller"?"selected":"")>پرفروش‌ترین</option>
+                        <option value="rating" @(sort=="rating"?"selected":"")>بالاترین امتیاز</option>
+                    </select>
+                </div>
+                <div class="col-md-2"><button class="btn-wm w-100" type="submit">اعمال</button></div>
+            </form>
+
+            <div class="wm-tabs mb-4">
+                <a class="@(categoryId==null?"active":"")" href="@Url.Action("Catalog","Shop", new { company, sort, q })">همه</a>
+                @foreach (var c in cats.Where(x => x.ParentId == null).Take(8))
+                {
+                    <a class="@(categoryId==c.Id?"active":"")" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id, sort, q })">@c.Title</a>
+                }
+            </div>
+
+            <div class="product-grid grid-@layoutId">
+                @foreach (var p in Model)
+                {
+                    @Html.Partial("_StoreProductCard", p)
+                }
+            </div>
+        }
+
+        @if (!Model.Any())
+        {
+            <div class="panel-card mt-3">محصولی یافت نشد.</div>
+        }
+    </div>
+</section>

@@ -1,0 +1,18 @@
+[
+  {
+    "Id": 1,
+    "Name": "نوع تحویل",
+    "InputType": "select",
+    "Options": "دانلود,لایسنس,هر دو",
+    "IsFilterable": true,
+    "SortOrder": 1
+  },
+  {
+    "Id": 2,
+    "Name": "سطح",
+    "InputType": "select",
+    "Options": "مقدماتی,متوسط,پیشرفته",
+    "IsFilterable": false,
+    "SortOrder": 2
+  }
+]

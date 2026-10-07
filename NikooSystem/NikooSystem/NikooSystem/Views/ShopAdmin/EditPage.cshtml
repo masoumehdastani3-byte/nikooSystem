@@ -1,0 +1,79 @@
+@model NikooSystem.Models.Store.StorePage
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش صفحه" : "صفحه جدید";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">@ViewBag.Title</h2>
+        <p class="text-muted mb-0 small">محتوا را با ادیتور HTML به‌صورت دیداری طراحی کنید.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Pages","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+
+@using (Html.BeginForm("EditPage", "ShopAdmin", new { company }, FormMethod.Post, new { id = "pageForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3">
+        <div class="col-md-6">
+            <label class="form-label">عنوان صفحه</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "مثلاً درباره ما", required = "required" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">اسلاگ (آدرس)</label>
+            @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", placeholder = "about", dir = "ltr" })
+        </div>
+        <div class="col-12">
+            <label class="form-label">محتوای صفحه</label>
+            @Html.TextAreaFor(m => m.BodyHtml, new { @class = "form-control", id = "BodyHtml", rows = "18" })
+            <div class="form-text">می‌توانید متن، تیتر، لیست، لینک، تصویر و جدول اضافه کنید.</div>
+        </div>
+        <div class="col-md-6 form-check mt-2">
+            <label class="form-check-label">
+                <input class="form-check-input" type="checkbox" name="IsPublished" value="true" @(Model.IsPublished ? "checked" : null) />
+                منتشر شود
+            </label>
+            <input type="hidden" name="IsPublished" value="false" />
+        </div>
+        <div class="col-12 d-flex gap-2">
+            <button class="btn-store" type="submit">ذخیره صفحه</button>
+            @if (Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Slug))
+            {
+                <a class="btn-outline-store" href="@Url.Action("Page","Shop", new { company, slug = Model.Slug })" target="_blank">پیش‌نمایش</a>
+            }
+        </div>
+    </div>
+}
+
+@section scripts {
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#BodyHtml',
+        height: 480,
+        menubar: true,
+        directionality: 'rtl',
+        language: 'fa',
+        language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@23.10.9/langs6/fa.js',
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount directionality',
+        toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignright aligncenter alignleft alignjustify | bullist numlist outdent indent | link image table media | ltr rtl | removeformat | code preview fullscreen',
+        content_style: 'body { font-family: Far_Yekan, Tahoma, sans-serif; font-size: 15px; direction: rtl; }',
+        branding: false,
+        promotion: false,
+        convert_urls: false,
+        relative_urls: false,
+        entity_encoding: 'raw',
+        setup: function (editor) {
+            editor.on('change keyup', function () {
+                editor.save();
+            });
+        }
+    });
+
+    document.getElementById('pageForm').addEventListener('submit', function () {
+        if (window.tinymce) tinymce.triggerSave();
+    });
+</script>
+}

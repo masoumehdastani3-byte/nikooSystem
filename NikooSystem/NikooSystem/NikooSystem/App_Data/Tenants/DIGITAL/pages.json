@@ -1,0 +1,32 @@
+[
+  {
+    "Id": 1,
+    "Title": "درباره ما",
+    "Slug": "about",
+    "BodyHtml": "<p>نیکو دیجیتال یک فروشگاه آنلاین واقعی روی پلتفرم نیکو سیستم آفرین است. مالک فروشگاه می‌تواند محصولات، منوها، صفحات و درگاه پرداخت را مدیریت کند.</p><p>این فروشگاه روی پلتفرم نیکو سیستم آفرین اجرا می‌شود و قابل سفارشی‌سازی کامل است.</p>",
+    "LayoutBlocksJson": null,
+    "ShowInMenu": false,
+    "IsPublished": true,
+    "UpdatedAt": "2026-09-08T15:43:44.4059457+03:30"
+  },
+  {
+    "Id": 2,
+    "Title": "تماس با ما",
+    "Slug": "contact",
+    "BodyHtml": "<p>تلفن: 021-77000000</p><p>ایمیل: info@digital.nikoooo.ir</p><p>تهران، نارمک</p>",
+    "LayoutBlocksJson": null,
+    "ShowInMenu": false,
+    "IsPublished": true,
+    "UpdatedAt": "2026-09-08T15:43:44.4059457+03:30"
+  },
+  {
+    "Id": 3,
+    "Title": "شرایط فروش",
+    "Slug": "terms",
+    "BodyHtml": "<p>پس از ثبت سفارش و پرداخت موفق، پیگیری از پنل کاربری امکان‌پذیر است.</p>",
+    "LayoutBlocksJson": null,
+    "ShowInMenu": false,
+    "IsPublished": true,
+    "UpdatedAt": "2026-09-08T15:43:44.4059457+03:30"
+  }
+]

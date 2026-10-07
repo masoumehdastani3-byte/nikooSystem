@@ -1,0 +1,13 @@
+@model NikooSystem.Models.Store.StorePage
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = Model.Title;
+}
+<section class="py-4">
+    <div class="container" style="max-width:860px;">
+        <h1 class="section-title">@Model.Title</h1>
+        <div class="panel-card">
+            @Html.Raw(Model.BodyHtml)
+        </div>
+    </div>
+</section>

@@ -1,0 +1,42 @@
+@model NikooSystem.Models.AdminDashboardViewModel
+@using NikooSystem.Helpers
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "داشبورد";
+}
+<h2 class="mb-4">داشبورد</h2>
+<div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="stat-card"><span>محصولات</span><h3>@Model.ProductCount</h3></div></div>
+    <div class="col-md-3"><div class="stat-card"><span>کل سفارشات</span><h3>@Model.OrderCount</h3></div></div>
+    <div class="col-md-3"><div class="stat-card"><span>پرداخت‌شده</span><h3>@Model.PaidOrderCount</h3></div></div>
+    <div class="col-md-3"><div class="stat-card"><span>درآمد</span><h3 style="font-size:1.1rem;">@Model.TotalRevenue.ToToman()</h3></div></div>
+</div>
+<div class="d-flex gap-2 mb-4">
+    <a class="btn btn-primary" href="@Url.Action("CreateProduct","Admin")">افزودن محصول</a>
+    <a class="btn btn-outline-primary" href="@Url.Action("Orders","Admin")">مشاهده سفارشات</a>
+</div>
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white"><strong>آخرین سفارشات</strong></div>
+    <div class="table-responsive">
+        <table class="table mb-0 align-middle">
+            <thead><tr><th>شماره</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var o in Model.RecentOrders)
+            {
+                <tr>
+                    <td>@o.OrderNumber</td>
+                    <td>@o.CustomerName</td>
+                    <td>@o.ProductTitle</td>
+                    <td>@o.Amount.ToToman()</td>
+                    <td><span class="badge @o.Status.StatusBadgeClass()">@o.Status.StatusText()</span></td>
+                    <td><a href="@Url.Action("OrderDetails","Admin", new { id = o.Id })">جزئیات</a></td>
+                </tr>
+            }
+            @if (!Model.RecentOrders.Any())
+            {
+                <tr><td colspan="6" class="text-center text-muted">سفارشی ثبت نشده است</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

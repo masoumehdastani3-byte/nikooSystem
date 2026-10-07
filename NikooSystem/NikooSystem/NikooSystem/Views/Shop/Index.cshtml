@@ -1,0 +1,477 @@
+@using NikooSystem.Helpers
+@using NikooSystem.Models.Store
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var categories = ((IEnumerable<StoreCategory>)ViewBag.Categories)?.ToList() ?? new List<StoreCategory>();
+    var featured = ((IEnumerable<StoreProduct>)ViewBag.Featured)?.ToList() ?? new List<StoreProduct>();
+    var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
+    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+    ViewBag.Title = "خانه";
+    var heroTitle = string.IsNullOrWhiteSpace(settings.HeroTitle) ? "تخفیف ویژه محصولات تازه و منتخب فروشگاه" : settings.HeroTitle;
+    var heroSub = string.IsNullOrWhiteSpace(settings.HeroSubtitle) ? "به جمع مشتریان بپیوندید و از پیشنهادهای روزانه بهره‌مند شوید." : settings.HeroSubtitle;
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+
+    var fashionRootCats = categories.Where(c => c.ParentId == null && c.IsActive).OrderBy(c => c.SortOrder).Take(4).ToList();
+    var fashionShowCats = fashionRootCats.Any()
+        ? fashionRootCats
+        : categories.Where(c => c.IsActive).OrderBy(c => c.SortOrder).Take(4).ToList();
+    var fashionCatCovers = featured.Concat(featured).Take(Math.Max(4, fashionShowCats.Count)).ToList();
+    var fashionLookA = gallery.ElementAtOrDefault(0)?.LargeUrl
+        ?? featured.ElementAtOrDefault(0)?.Images?.OrderBy(i => i.SortOrder).FirstOrDefault()?.LargeUrl
+        ?? heroImg;
+    var fashionLookB = gallery.ElementAtOrDefault(1)?.LargeUrl
+        ?? featured.ElementAtOrDefault(1)?.Images?.OrderBy(i => i.SortOrder).FirstOrDefault()?.LargeUrl
+        ?? heroImg;
+}
+
+@if (layoutId == "fashion")
+{
+    <section class="bf-hero">
+        <div class="bf-hero-media" style="background-image:url('@heroImg')"></div>
+        <div class="bf-hero-shade"></div>
+        <div class="container bf-hero-content">
+            <div class="bf-hero-copy">
+                <p class="bf-brand">@settings.StoreName</p>
+                <h1>@heroTitle</h1>
+                <p class="bf-lead">@heroSub</p>
+                <div class="bf-hero-actions">
+                    <a class="btn-wm bf-btn" href="@Url.Action("Catalog","Shop", new { company })">مشاهده کالکشن</a>
+                    <a class="bf-link" href="@Url.Action("Gallery","Shop", new { company })">نگاه به گالری</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="bf-strip">
+        <div class="container">
+            <div class="bf-strip-grid">
+                <div><i class="bi bi-truck"></i><span>ارسال سریع سراسر کشور</span></div>
+                <div><i class="bi bi-arrow-repeat"></i><span>امکان مرجوعی آسان</span></div>
+                <div><i class="bi bi-shield-check"></i><span>خرید امن و مطمئن</span></div>
+                <div><i class="bi bi-headset"></i><span>پشتیبانی واقعی</span></div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (layoutId == "fashion" && fashionShowCats.Any())
+{
+    <section class="bf-section">
+        <div class="container">
+            <div class="bf-head">
+                <div>
+                    <h2>دسته‌بندی‌ها</h2>
+                    <p>انتخاب سریع از کالکشن‌های اصلی فروشگاه</p>
+                </div>
+                <a class="bf-link" href="@Url.Action("Catalog","Shop", new { company })">همه محصولات</a>
+            </div>
+            <div class="bf-cats">
+                @for (var i = 0; i < fashionShowCats.Count; i++)
+                {
+                    var c = fashionShowCats[i];
+                    var cover = fashionCatCovers.ElementAtOrDefault(i)?.Images?.OrderBy(x => x.SortOrder).FirstOrDefault();
+                    var coverUrl = cover?.LargeUrl ?? cover?.ThumbUrl ?? heroImg;
+                    <a class="bf-cat" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })" style="--bf-cat:url('@coverUrl')">
+                        <span>@c.Title</span>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (layoutId == "fashion")
+{
+    <section class="bf-section bf-section-alt">
+        <div class="container">
+            <div class="bf-head">
+                <div>
+                    <h2>منتخب فصل</h2>
+                    <p>محصولات ویژه‌ای که همین حالا پیشنهاد می‌کنیم</p>
+                </div>
+                <a class="bf-link" href="@Url.Action("Catalog","Shop", new { company })">مشاهده همه</a>
+            </div>
+            <div class="product-grid grid-fashion">
+                @foreach (var p in featured)
+                {
+                    Html.RenderPartial("_StoreProductCard", p);
+                }
+            </div>
+            @(featured.Any() ? null : Html.Raw("<div class=\"panel-card text-center\">هنوز محصول ویژه‌ای ثبت نشده است.</div>"))
+        </div>
+    </section>
+
+    <section class="bf-look">
+        <div class="bf-look-panel" style="--bf-look:url('@fashionLookA')">
+            <div class="bf-look-copy">
+                <h2>استایل روزمره</h2>
+                <p>لباس‌هایی برای راحتی و زیبایی در هر روز</p>
+                <a class="btn-wm bf-btn" href="@Url.Action("Catalog","Shop", new { company })">خرید کنید</a>
+            </div>
+        </div>
+        <div class="bf-look-panel bf-look-dark" style="--bf-look:url('@fashionLookB')">
+            <div class="bf-look-copy">
+                <h2>اکسسوری و جزئیات</h2>
+                <p>جزئیات کوچک که استایل شما را کامل می‌کند</p>
+                <a class="btn-wm bf-btn bf-btn-outline" href="@Url.Action("Catalog","Shop", new { company })">کاوش بیشتر</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="bf-about">
+        <div class="container">
+            <div class="bf-about-inner">
+                <p class="bf-brand">@settings.StoreName</p>
+                <h2>داستان برند ما</h2>
+                <p>@(string.IsNullOrWhiteSpace(settings.About) ? "پوشاک و اکسسوری با کیفیت، ارسال سریع و تجربه‌ای ساده برای خرید آنلاین." : settings.About)</p>
+                <a class="bf-link" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر بدانید</a>
+            </div>
+        </div>
+    </section>
+}
+else if (layoutId == "minimal")
+{
+    <section class="hero-minimal">
+        <div class="container">
+            <h1>@heroTitle</h1>
+            <p>@heroSub</p>
+            <a class="btn-wm btn-minimal" href="@Url.Action("Catalog","Shop", new { company })">مشاهده محصولات</a>
+            <div class="hero-minimal-img">
+                <img src="@heroImg" alt="@settings.StoreName" />
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section">
+        <div class="container narrow">
+            <h2 class="wm-section-title text-center">محصولات</h2>
+            <div class="product-grid grid-minimal">
+                @foreach (var p in featured)
+                {
+                    @Html.Partial("_StoreProductCard", p)
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container narrow">
+            <div class="minimal-about text-center">
+                <h2>درباره @settings.StoreName</h2>
+                <p>@settings.About</p>
+            </div>
+        </div>
+    </section>
+
+    if (gallery.Any())
+    {
+        <section class="wm-section pt-0">
+            <div class="container narrow">
+                <h2 class="wm-section-title text-center">گالری</h2>
+                <div class="gallery-grid gallery-minimal">
+                    @foreach (var g in gallery.Take(4))
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+}
+else if (layoutId == "marketplace")
+{
+    <section class="hero-marketplace">
+        <div class="container">
+            <div class="sp-bento">
+                <a class="sp-bento-main" href="@Url.Action("Catalog","Shop", new { company })">
+                    <div class="sp-eyebrow"><i class="bi bi-lightning-charge-fill"></i> پیشنهاد تکنولوژی</div>
+                    <h1>@heroTitle</h1>
+                    <p>@heroSub</p>
+                    <span class="btn-wm" style="width:fit-content;">مشاهده فروشگاه</span>
+                </a>
+                @{
+                    var bento = featured.Take(4).ToList();
+                    var bentoStyles = new[] { "sp-card-purple", "sp-card-orange", "sp-card-green", "sp-card-black" };
+                    var bentoIcons = new[] { "bi-smartwatch", "bi-phone", "bi-headphones", "bi-camera" };
+                    var bentoFallback = new[] {
+                        new { t = "ساعت هوشمند", s = "پوشیدنی‌ها" },
+                        new { t = "موبایل و لوازم", s = "جانبی‌ها" },
+                        new { t = "صوتی و هدفون", s = "صدای حرفه‌ای" },
+                        new { t = "دوربین و تصویر", s = "عکاسی" }
+                    };
+                }
+                @for (var i = 0; i < 4; i++)
+                {
+                    var p = bento.ElementAtOrDefault(i);
+                    if (p != null)
+                    {
+                        <a class="sp-bento-card @bentoStyles[i]" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
+                            <i class="bi @bentoIcons[i]"></i>
+                            <div>
+                                <span>@p.ShortDescription</span>
+                                <strong>@p.Title</strong>
+                            </div>
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="sp-bento-card @bentoStyles[i]" href="@Url.Action("Catalog","Shop", new { company })">
+                            <i class="bi @bentoIcons[i]"></i>
+                            <div>
+                                <span>@bentoFallback[i].s</span>
+                                <strong>@bentoFallback[i].t</strong>
+                            </div>
+                        </a>
+                    }
+                }
+            </div>
+            <div class="sp-chip-row">
+                @foreach (var c in categories.Take(6))
+                {
+                    <a class="sp-chip" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">@c.Title</a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <div class="sp-feature-strip">
+                <div class="sp-feature"><i class="bi bi-truck"></i><div><strong>ارسال سریع</strong><span>۱ تا ۳ روز کاری</span></div></div>
+                <div class="sp-feature"><i class="bi bi-shield-check"></i><div><strong>گارانتی اصالت</strong><span>ضمانت کالا</span></div></div>
+                <div class="sp-feature"><i class="bi bi-credit-card"></i><div><strong>پرداخت امن</strong><span>زرین‌پال</span></div></div>
+                <div class="sp-feature"><i class="bi bi-headset"></i><div><strong>پشتیبانی</strong><span>۹ تا ۲۱</span></div></div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <div class="mp-home-layout">
+                <aside class="mp-sidebar">
+                    <h3>دسته‌بندی</h3>
+                    <a href="@Url.Action("Catalog","Shop", new { company })">همه محصولات</a>
+                    @foreach (var c in categories.Where(x => x.ParentId == null).Take(12))
+                    {
+                        <a href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">@c.Title</a>
+                    }
+                </aside>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <h2 class="wm-section-title mb-0">پرفروش‌ترین‌ها</h2>
+                        <a href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })">مشاهده همه</a>
+                    </div>
+                    <div class="product-grid grid-marketplace">
+                        @foreach (var p in featured)
+                        {
+                            @Html.Partial("_StoreProductCard", p)
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <h2 class="wm-section-title">پیشنهادهای ویژه</h2>
+            <div class="wm-offers mp-offers-row">
+                <a class="wm-offer" href="@Url.Action("Catalog","Shop", new { company, sort = "price_asc" })" style="background:linear-gradient(135deg,#4F46E5,#7C3AED)">
+                    <small>حراج گجت</small>
+                    <h3>تا ۴۰٪ تخفیف</h3>
+                </a>
+                <a class="wm-offer" href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })" style="background:linear-gradient(135deg,#0F172A,#334155)">
+                    <small>پرفروش هفته</small>
+                    <h3>منتخب کاربران</h3>
+                </a>
+                <a class="wm-offer" href="@Url.Action("Catalog","Shop", new { company })" style="background:linear-gradient(135deg,#EA580C,#F97316)">
+                    <small>تازه‌ها</small>
+                    <h3>ورود کالکشن جدید</h3>
+                </a>
+            </div>
+        </div>
+    </section>
+}
+else if (layoutId == "boutique")
+{
+    <section class="hero-boutique">
+        <div class="container">
+            <div class="boutique-hero-grid">
+                <div class="boutique-hero-visual">
+                    <img src="@heroImg" alt="@settings.StoreName" />
+                </div>
+                <div class="boutique-hero-text">
+                    <div class="wm-hero-kicker">بوتیک منتخب</div>
+                    <h1>@heroTitle</h1>
+                    <p>@heroSub</p>
+                    <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">کاوش مجموعه</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section">
+        <div class="container">
+            <h2 class="wm-section-title text-center">فضاهای خرید</h2>
+            <div class="boutique-life">
+                @for (var i = 0; i < Math.Min(4, Math.Max(categories.Count, 1)); i++)
+                {
+                    var c = categories.ElementAtOrDefault(i);
+                    var bg = gallery.ElementAtOrDefault(i)?.LargeUrl ?? "/Assets/img/portfolio/portfolio-" + ((i % 3) + 1) + ".jpg";
+                    if (c != null)
+                    {
+                        <a class="boutique-life-card" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })" style="background-image:url('@bg')">
+                            <span>@c.Title</span>
+                        </a>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <h2 class="wm-section-title text-center">انتخاب سردبیر</h2>
+            <div class="product-grid grid-boutique">
+                @foreach (var p in featured)
+                {
+                    @Html.Partial("_StoreProductCard", p)
+                }
+            </div>
+        </div>
+    </section>
+
+    if (gallery.Any())
+    {
+        <section class="wm-section pt-0">
+            <div class="container">
+                <h2 class="wm-section-title text-center">گالری</h2>
+                <div class="gallery-grid gallery-boutique">
+                    @foreach (var g in gallery.Take(6))
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+}
+else
+{
+    @* organic / Fernwick-inspired layout *@
+    <section class="wm-hero">
+        <div class="container">
+            <div class="wm-hero-card">
+                <div>
+                    <span class="fw-hero-badge">تا ۳۰٪ تخفیف هفته</span>
+                    <div class="wm-hero-kicker"><i class="bi bi-leaf-fill"></i> محصولات ارگانیک تازه</div>
+                    <h1>@heroTitle</h1>
+                    <p>@heroSub</p>
+                    <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">
+                        خرید از فروشگاه <i class="bi bi-arrow-up-left"></i>
+                    </a>
+                </div>
+                <div class="wm-hero-visual">
+                    <img src="@heroImg" alt="@settings.StoreName" />
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section">
+        <div class="container">
+            <h2 class="wm-section-title text-center">خرید بر اساس دسته</h2>
+            <div class="fw-cats">
+                @{
+                    var fwIcons = new[] { "bi-apple", "bi-cup-straw", "bi-egg-fried", "bi-droplet", "bi-basket2" };
+                }
+                @foreach (var c in categories.Take(5).Select((c, i) => new { Cat = c, i }))
+                {
+                    <a class="fw-cat" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Cat.Id })">
+                        <div class="fw-cat-icon"><i class="bi @fwIcons[c.i % fwIcons.Length]"></i></div>
+                        <h4>@c.Cat.Title</h4>
+                        <p>@(string.IsNullOrWhiteSpace(c.Cat.Description) ? "مشاهده محصولات" : c.Cat.Description)</p>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <h2 class="wm-section-title">پرفروش‌ترین‌ها</h2>
+            <div class="wm-tabs">
+                <a class="active" href="@Url.Action("Catalog","Shop", new { company })">همه</a>
+                @foreach (var c in categories.Take(5))
+                {
+                    <a href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">@c.Title</a>
+                }
+            </div>
+            <div class="product-grid grid-organic">
+                @foreach (var p in featured)
+                {
+                    @Html.Partial("_StoreProductCard", p)
+                }
+            </div>
+            @if (!featured.Any())
+            {
+                <div class="panel-card text-center">هنوز محصول ویژه‌ای ثبت نشده است.</div>
+            }
+        </div>
+    </section>
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <h2 class="wm-section-title">پیشنهادهای ویژه</h2>
+            <div class="fw-deals">
+                <a class="fw-deal fw-deal-soft" href="@Url.Action("Catalog","Shop", new { company, sort = "price_asc" })">
+                    <small>حراج آخر هفته</small>
+                    <h3>تا ۵۰٪ تخفیف روی محصولات تازه</h3>
+                </a>
+                <a class="fw-deal" href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })" style="background-image:url('@(gallery.ElementAtOrDefault(0)?.LargeUrl ?? "/Assets/img/portfolio/portfolio-2.jpg")')">
+                    <small>پرفروش‌ها</small>
+                    <h3>انتخاب مشتریان</h3>
+                </a>
+                <a class="fw-deal" href="@Url.Action("Catalog","Shop", new { company })" style="background-image:url('@(gallery.ElementAtOrDefault(1)?.LargeUrl ?? "/Assets/img/portfolio/portfolio-4.jpg")')">
+                    <small>تازه‌رسیده‌ها</small>
+                    <h3>موجودی امروز</h3>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    if (gallery.Any())
+    {
+        <section class="wm-section pt-0">
+            <div class="container">
+                <h2 class="wm-section-title">گالری فروشگاه</h2>
+                <div class="gallery-grid">
+                    @foreach (var g in gallery.Take(6))
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <section class="wm-section pt-0">
+        <div class="container">
+            <div class="fw-newsletter">
+                <div>
+                    <h3>درباره @settings.StoreName</h3>
+                    <p>@settings.About</p>
+                </div>
+                <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">شروع خرید</a>
+            </div>
+        </div>
+    </section>
+}

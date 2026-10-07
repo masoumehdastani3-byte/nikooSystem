@@ -1,0 +1,149 @@
+[
+  {
+    "Id": 1,
+    "CategoryId": 2,
+    "Title": "مانتو کتان بهاره",
+    "Slug": "manteau-spring",
+    "ShortDescription": "مانتو سبک مناسب فصل بهار",
+    "Description": "مانتو سبک مناسب فصل بهار — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 890000,
+    "CompareAtPrice": null,
+    "Stock": 50,
+    "Sku": null,
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 2,
+    "Images": [
+      {
+        "Id": "e6480acc2cda4dc98e8fd0e02a3bd916",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-1.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-1.jpg",
+        "Alt": "مانتو کتان بهاره",
+        "SortOrder": 1
+      },
+      {
+        "Id": "6149737422ef47838f496cc9b3af964a",
+        "ThumbUrl": "/Uploads/FASHION/thumbs/f0d66f0429d047409f57c0ea06b57d10.jpg",
+        "LargeUrl": "/Uploads/FASHION/large/f0d66f0429d047409f57c0ea06b57d10.jpg",
+        "Alt": "مانتو کتان بهاره",
+        "SortOrder": 2
+      },
+      {
+        "Id": "ffbe4401958342d880ef40c747f25358",
+        "ThumbUrl": "/Uploads/FASHION/thumbs/2094791cd8674971885a80dac2282588.jpg",
+        "LargeUrl": "/Uploads/FASHION/large/2094791cd8674971885a80dac2282588.jpg",
+        "Alt": "مانتو کتان بهاره",
+        "SortOrder": 3
+      },
+      {
+        "Id": "6a300efc5a3f47109fb4253b1b4fb0a8",
+        "ThumbUrl": "/Uploads/FASHION/thumbs/57b7fba8d4344902b62636f74a74bd42.jpg",
+        "LargeUrl": "/Uploads/FASHION/large/57b7fba8d4344902b62636f74a74bd42.jpg",
+        "Alt": "مانتو کتان بهاره",
+        "SortOrder": 4
+      },
+      {
+        "Id": "5c0ee6ab4eeb4d7ba03ab6ac9c2f5b37",
+        "ThumbUrl": "/Uploads/FASHION/thumbs/468b911cb45c4454917ff9986a61517e.jpg",
+        "LargeUrl": "/Uploads/FASHION/large/468b911cb45c4454917ff9986a61517e.jpg",
+        "Alt": "مانتو کتان بهاره",
+        "SortOrder": 5
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "سایز",
+        "Value": "M"
+      },
+      {
+        "AttributeId": 2,
+        "Name": "رنگ",
+        "Value": "کرم"
+      },
+      {
+        "AttributeId": 3,
+        "Name": "جنس",
+        "Value": "کتان"
+      }
+    ],
+    "CreatedAt": "2026-09-08T15:43:44.3652865+03:30"
+  },
+  {
+    "Id": 2,
+    "CategoryId": 3,
+    "Title": "کفش اسپرت زنانه",
+    "Slug": "shoes-sport",
+    "ShortDescription": "کفش راحت برای استفاده روزانه",
+    "Description": "کفش راحت برای استفاده روزانه — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 1250000,
+    "CompareAtPrice": null,
+    "Stock": 50,
+    "Sku": "SKU-2",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 3,
+    "Images": [
+      {
+        "Id": "46f8d4625eb94518b6840dc0fe58948b",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-2.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-2.jpg",
+        "Alt": "کفش اسپرت زنانه",
+        "SortOrder": 1
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "سایز",
+        "Value": "38"
+      },
+      {
+        "AttributeId": 2,
+        "Name": "رنگ",
+        "Value": "سفید"
+      }
+    ],
+    "CreatedAt": "2026-09-08T15:43:44.3652865+03:30"
+  },
+  {
+    "Id": 3,
+    "CategoryId": 5,
+    "Title": "پیراهن مردانه رسمی",
+    "Slug": "shirt-formal",
+    "ShortDescription": "پیراهن اداری با دوخت تمیز",
+    "Description": "پیراهن اداری با دوخت تمیز — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 780000,
+    "CompareAtPrice": null,
+    "Stock": 50,
+    "Sku": "SKU-3",
+    "IsActive": true,
+    "IsFeatured": false,
+    "SoldCount": 0,
+    "ViewCount": 1,
+    "Images": [
+      {
+        "Id": "7e059850ea904e11998012aea68fe24a",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-3.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-3.jpg",
+        "Alt": "پیراهن مردانه رسمی",
+        "SortOrder": 1
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "سایز",
+        "Value": "L"
+      },
+      {
+        "AttributeId": 2,
+        "Name": "رنگ",
+        "Value": "آبی"
+      }
+    ],
+    "CreatedAt": "2026-09-08T15:43:44.3652865+03:30"
+  }
+]

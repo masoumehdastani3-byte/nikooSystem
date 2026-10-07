@@ -1,0 +1,18 @@
+[
+  {
+    "Id": 1,
+    "Name": "وزن",
+    "InputType": "text",
+    "Options": null,
+    "IsFilterable": false,
+    "SortOrder": 1
+  },
+  {
+    "Id": 2,
+    "Name": "برند",
+    "InputType": "text",
+    "Options": null,
+    "IsFilterable": true,
+    "SortOrder": 2
+  }
+]

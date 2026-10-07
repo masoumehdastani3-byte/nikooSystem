@@ -1,0 +1,8 @@
+[
+  {
+    "AppId": "demo-app",
+    "ApiKey": "demo-secret-change-me",
+    "Name": "اپلیکیشن نمونه",
+    "AllowedReturnHosts": [ "localhost", "127.0.0.1", "nikoooo.ir" ]
+  }
+]

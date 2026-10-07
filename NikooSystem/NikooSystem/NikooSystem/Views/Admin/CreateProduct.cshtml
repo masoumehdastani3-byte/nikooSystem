@@ -1,0 +1,15 @@
+@model NikooSystem.Models.Product
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "افزودن محصول";
+}
+<h2 class="mb-3">افزودن محصول</h2>
+<div class="card border-0 shadow-sm p-4">
+    @using (Html.BeginForm("CreateProduct", "Admin", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.Partial("_ProductForm", Model)
+        <button type="submit" class="btn btn-primary">ذخیره</button>
+        <a href="@Url.Action("Products","Admin")" class="btn btn-link">انصراف</a>
+    }
+</div>

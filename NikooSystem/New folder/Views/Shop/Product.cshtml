@@ -1,0 +1,138 @@
+@model NikooSystem.Models.Store.StoreProduct
+@using NikooSystem.Helpers
+@using NikooSystem.Models.Store
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = Model.Title;
+    var company = (string)ViewBag.CompanyCode;
+    var related = (IEnumerable<StoreProduct>)ViewBag.Related ?? Enumerable.Empty<StoreProduct>();
+    var reviews = (IEnumerable<StoreProductReview>)ViewBag.Reviews ?? Enumerable.Empty<StoreProductReview>();
+    var avg = ViewBag.AvgRating as double? ?? 0;
+    var images = (Model.Images ?? new List<StoreProductImage>()).OrderBy(i => i.SortOrder).ToList();
+    var main = images.FirstOrDefault();
+}
+<section class="py-4">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-6">
+                <div class="panel-card p-0 overflow-hidden">
+                    <img id="mainImage" class="w-100" src="@(main?.LargeUrl ?? main?.ThumbUrl)" alt="@Model.Title" />
+                </div>
+                @if (images.Count > 0)
+                {
+                    <div class="d-flex gap-2 mt-2 flex-wrap">
+                        @foreach (var img in images)
+                        {
+                            <button type="button" class="border-0 bg-transparent p-0" onclick="document.getElementById('mainImage').src='@(img.LargeUrl ?? img.ThumbUrl)'">
+                                <img src="@(img.ThumbUrl ?? img.LargeUrl)" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid #e7e5e4;" loading="lazy" />
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="col-lg-6">
+                <h1 class="section-title">@Model.Title</h1>
+                @if (avg > 0)
+                {
+                    <div class="mb-2 text-warning">★ @avg.ToString("0.0") <span class="text-muted">(@reviews.Count() نظر)</span></div>
+                }
+                <p>@Model.ShortDescription</p>
+                <div class="price fs-3 mb-3 wm-price">
+                    @if (Model.CompareAtPrice.HasValue && Model.CompareAtPrice > Model.Price)
+                    {
+                        <del>@Model.CompareAtPrice.Value.ToToman()</del>
+                    }
+                    @Model.Price.ToToman()
+                </div>
+                @if (Model.Attributes != null && Model.Attributes.Any())
+                {
+                    <div class="panel-card mb-3">
+                        <h5>خصوصیات</h5>
+                        <ul class="mb-0">
+                            @foreach (var a in Model.Attributes)
+                            {
+                                <li><strong>@a.Name:</strong> @a.Value</li>
+                            }
+                        </ul>
+                    </div>
+                }
+                <p>@Model.Description</p>
+                @using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <div class="d-flex gap-2 align-items-center">
+                        <input class="form-control" style="max-width:100px" type="number" name="quantity" value="1" min="1" />
+                        <button class="btn-wm" type="submit"><i class="bi bi-bag-plus"></i> افزودن به سبد</button>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="row g-4 mt-4">
+            <div class="col-lg-7">
+                <div class="panel-card">
+                    <h3 class="section-title">نظرات کاربران</h3>
+                    @foreach (var r in reviews)
+                    {
+                        <div class="border-bottom py-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>@r.AuthorName</strong>
+                                <span class="text-warning">@r.Rating از ۵</span>
+                            </div>
+                            <div class="small text-muted">@r.CreatedAt.ToString("yyyy/MM/dd")</div>
+                            <p class="mb-0 mt-1">@r.Comment</p>
+                        </div>
+                    }
+                    @if (!reviews.Any())
+                    {
+                        <p class="text-muted mb-0">هنوز نظری ثبت نشده است.</p>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="panel-card">
+                    <h5>ثبت نظر</h5>
+                    @using (Html.BeginForm("AddReview", "Shop", new { company }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="productId" value="@Model.Id" />
+                        <div class="mb-2"><label class="form-label">نام</label><input class="form-control" name="authorName" required /></div>
+                        <div class="mb-2">
+                            <label class="form-label">امتیاز</label>
+                            <select class="form-select" name="rating">
+                                <option value="5">۵ عالی</option>
+                                <option value="4">۴</option>
+                                <option value="3">۳</option>
+                                <option value="2">۲</option>
+                                <option value="1">۱ ضعیف</option>
+                            </select>
+                        </div>
+                        <div class="mb-2"><label class="form-label">نظر شما</label><textarea class="form-control" name="comment" rows="4" required></textarea></div>
+                        <button class="btn-wm" type="submit">ارسال نظر</button>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @if (related.Any())
+        {
+            <h2 class="section-title mt-5">محصولات مرتبط</h2>
+            <div class="product-grid">
+                @foreach (var p in related)
+                {
+                    var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
+                    <article class="product-card">
+                        <a class="thumb" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
+                            <img src="@(img?.ThumbUrl ?? img?.LargeUrl)" alt="@p.Title" loading="lazy" />
+                        </a>
+                        <div class="body">
+                            <h3><a href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">@p.Title</a></h3>
+                            <div class="price">@p.Price.ToToman()</div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

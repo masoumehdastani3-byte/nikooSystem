@@ -1,0 +1,26 @@
+@model NikooSystem.Models.LoginViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "ورود به پنل";
+}
+<div class="login-wrap">
+    <h3 class="mb-1 text-center">ورود مدیر</h3>
+    <p class="text-muted text-center mb-4">پنل مدیریت نیکو سیستم آفرین</p>
+    @using (Html.BeginForm("Login", "Admin", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+        <div class="mb-3">
+            @Html.LabelFor(m => m.Username)
+            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", autofocus = "autofocus" })
+            @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(m => m.Password)
+            @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+        </div>
+        <button type="submit" class="btn btn-primary w-100">ورود</button>
+    }
+    <p class="small text-muted mt-3 mb-0 text-center">پیش‌فرض: admin / Admin@123</p>
+</div>

@@ -1,0 +1,224 @@
+﻿@model List<NikooSystem.Models.Product>
+@using NikooSystem.Helpers
+@{
+    ViewBag.Title = "خانه";
+    ViewBag.Nav = "home";
+}
+
+<section id="hero" class="hero d-flex align-items-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-6 d-flex flex-column justify-content-center">
+                <h1 data-aos="fade-up">نیکو سیستم آفرین؛ محصولات نرم‌افزاری آماده فروش</h1>
+                <h2 data-aos="fade-up" data-aos-delay="400">فروشگاه‌های آنلاین دمو را ببینید، سفارش دهید و آنلاین پرداخت کنید</h2>
+                <div data-aos="fade-up" data-aos-delay="600" class="mt-3">
+                    <a href="@Url.Action("Index","Products")" class="btn-get-started scrollto d-inline-flex align-items-center justify-content-center align-self-center">
+                        <span>مشاهده محصولات</span>
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 hero-img" data-aos="zoom-out" data-aos-delay="200">
+                <img src="~/Assets/img/hero-img.png" class="img-fluid" alt="نیکو سیستم آفرین">
+            </div>
+        </div>
+    </div>
+</section>
+
+<main id="main">
+    <section id="about" class="about">
+        <div class="container" data-aos="fade-up">
+            <div class="row gx-0">
+                <div class="col-lg-6 d-flex flex-column justify-content-center" data-aos="fade-up" data-aos-delay="200">
+                    <div class="content">
+                        <h3>ما کی هستیم</h3>
+                        <h2>بهترین محصولات نرم‌افزاری را با نیکو سیستم آفرین تجربه کنید</h2>
+                        <p>
+                            ما تیم مهندسی نرم‌افزار هستیم که فروشگاه‌های آنلاین آماده، سامانه‌های سازمانی و محصولات دانلودی را برای کسب‌وکارها طراحی و عرضه می‌کنیم.
+                            دمو ببینید، درخواست دمو ثبت کنید و پرداخت امن داشته باشید.
+                        </p>
+                        <div class="text-center text-lg-start">
+                            <a href="@Url.Action("About","Home")" class="btn-read-more d-inline-flex align-items-center justify-content-center align-self-center">
+                                <span>بیشتر بدانید</span>
+                                <i class="bi bi-arrow-left"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6 d-flex align-items-center" data-aos="zoom-out" data-aos-delay="200">
+                    <img src="~/Assets/img/about.jpg" class="img-fluid" alt="">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="products" class="values">
+        <div class="container" data-aos="fade-up">
+            <header class="section-header">
+                <h2>محصولات</h2>
+                <p>فروشگاه‌های آنلاین و نرم‌افزارهای آماده</p>
+            </header>
+            <div class="row g-4">
+                @foreach (var p in Model.Take(6))
+                {
+                    <div class="col-lg-4 col-md-6" data-aos="fade-up">
+                        <div class="product-card">
+                            <div class="product-img-wrap">
+                                @if (p.IsFeatured)
+                                {
+                                    <span class="badge-feat">ویژه</span>
+                                }
+                                <img src="@p.ImageUrl" alt="@p.Title">
+                            </div>
+                            <div class="body">
+                                <small class="text-muted">@p.Category</small>
+                                <h4 class="mt-1">@p.Title</h4>
+                                <p class="text-muted small">@p.ShortDescription</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <span class="price">@p.Price.ToToman()</span>
+                                    <div>
+                                        @if (!string.IsNullOrEmpty(p.DemoSlug))
+                                        {
+                                            <a class="btn btn-sm btn-outline-shop me-1" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">دمو</a>
+                                        }
+                                        <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="text-center mt-4">
+                <a href="@Url.Action("Index","Products")" class="btn-outline-shop">همه محصولات</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="values" class="values">
+        <div class="container" data-aos="fade-up">
+            <header class="section-header">
+                <h2>چرا نیکو سیستم آفرین؟</h2>
+                <p>خرید امن و تحویل شفاف</p>
+            </header>
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="box" data-aos="fade-up" data-aos-delay="200">
+                        <img src="~/Assets/img/values-1.png" class="img-fluid" alt="">
+                        <h3>دموی واقعی فروشگاه</h3>
+                        <p>قبل از خرید، نمونه فروشگاه آنلاین را ببینید و بعد درخواست دمو ثبت کنید.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="box" data-aos="fade-up" data-aos-delay="400">
+                        <img src="~/Assets/img/values-2.png" class="img-fluid" alt="">
+                        <h3>پرداخت آنلاین امن</h3>
+                        <p>پرداخت آنلاین امن با ثبت سفارش و پیگیری وضعیت.</p>
+                    </div>
+                </div>
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                    <div class="box" data-aos="fade-up" data-aos-delay="600">
+                        <img src="~/Assets/img/values-3.png" class="img-fluid" alt="">
+                        <h3>پشتیبانی پس از فروش</h3>
+                        <p>پس از پرداخت موفق، تیم ما برای راه‌اندازی و تحویل محصول با شما هماهنگ می‌کند.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="counts" class="counts">
+        <div class="container" data-aos="fade-up">
+            <div class="row gy-4">
+                <div class="col-lg-3 col-md-6">
+                    <div class="count-box">
+                        <i class="bi bi-emoji-smile"></i>
+                        <div>
+                            <span data-purecounter-start="0" data-purecounter-end="230" data-purecounter-duration="1" class="purecounter"></span>
+                            <p>مشتریان راضی</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="count-box">
+                        <i class="bi bi-journal-richtext" style="color:#ee6c20;"></i>
+                        <div>
+                            <span data-purecounter-start="0" data-purecounter-end="@Model.Count" data-purecounter-duration="1" class="purecounter"></span>
+                            <p>محصول نرم‌افزاری</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="count-box">
+                        <i class="bi bi-headset" style="color:#15be56;"></i>
+                        <div>
+                            <span data-purecounter-start="0" data-purecounter-end="1500" data-purecounter-duration="1" class="purecounter"></span>
+                            <p>ساعت پشتیبانی</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="count-box">
+                        <i class="bi bi-people" style="color:#bb0852;"></i>
+                        <div>
+                            <span data-purecounter-start="0" data-purecounter-end="18" data-purecounter-duration="1" class="purecounter"></span>
+                            <p>متخصص تیم</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="features">
+        <div class="container" data-aos="fade-up">
+            <header class="section-header">
+                <h2>فرآیند خرید</h2>
+                <p>از دمو تا پرداخت در چند قدم</p>
+            </header>
+            <div class="row">
+                <div class="col-lg-6">
+                    <img src="~/Assets/img/features.png" class="img-fluid" alt="">
+                </div>
+                <div class="col-lg-6 mt-5 mt-lg-0 d-flex">
+                    <div class="row align-self-center gy-4">
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>انتخاب محصول</h3></div></div>
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>مشاهده دمو</h3></div></div>
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>ثبت اطلاعات مشتری</h3></div></div>
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>پرداخت آنلاین</h3></div></div>
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>تأیید سفارش</h3></div></div>
+                        <div class="col-md-6"><div class="feature-box d-flex align-items-center"><i class="bi bi-check"></i><h3>تحویل و پشتیبانی</h3></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="contact">
+        <div class="container" data-aos="fade-up">
+            <header class="section-header">
+                <h2>تماس</h2>
+                <p>آماده پاسخگویی هستیم</p>
+            </header>
+            <div class="row gy-4">
+                <div class="col-md-6">
+                    <div class="info-box">
+                        <i class="bi bi-telephone"></i>
+                        <h3>تلفن</h3>
+                        <p>۰۲۱-۷۷۰۰۰۰۰۰</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-box">
+                        <i class="bi bi-envelope"></i>
+                        <h3>ایمیل</h3>
+                        <p>info@nikoooo.ir</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <a href="@Url.Action("Contact","Home")" class="btn-primary-shop">فرم تماس</a>
+            </div>
+        </div>
+    </section>
+</main>

@@ -1,0 +1,110 @@
+using System;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web.Mvc;
+using Newtonsoft.Json.Linq;
+
+namespace YourApp.Controllers
+{
+    /// <summary>
+    /// نمونه استفاده از هاب پرداخت nikoooo.ir در پروژه دیگر.
+    /// مقادیر AppId / ApiKey را از payment-clients.json بگیرید.
+    /// </summary>
+    public class SampleNikooooPaymentController : Controller
+    {
+        private const string HubBase = "https://nikoooo.ir";
+        private const string AppId = "demo-app";
+        private const string ApiKey = "demo-secret-change-me";
+
+        [HttpPost]
+        public async Task<ActionResult> StartPay(long amount, string orderCode)
+        {
+            using (var client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("X-App-Id", AppId);
+                client.DefaultRequestHeaders.Add("X-Api-Key", ApiKey);
+
+                var payload = new
+                {
+                    amount,
+                    description = "پرداخت سفارش " + orderCode,
+                    returnUrl = Url.Action("PaymentReturn", "SampleNikooooPayment", null, Request.Url.Scheme),
+                    notifyUrl = Url.Action("PaymentNotify", "SampleNikooooPayment", null, Request.Url.Scheme),
+                    externalRef = orderCode
+                };
+
+                var content = new StringContent(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(payload),
+                    Encoding.UTF8,
+                    "application/json");
+
+                var response = await client.PostAsync(HubBase + "/api/payments/create", content);
+                var body = await response.Content.ReadAsStringAsync();
+                var json = JObject.Parse(body);
+
+                if (json["success"]?.Value<bool>() != true)
+                    return Content(json["message"]?.ToString() ?? "خطا در ایجاد پرداخت");
+
+                return Redirect(json["paymentUrl"].ToString());
+            }
+        }
+
+        [HttpGet]
+        public ActionResult PaymentReturn(string token, string status, string amount, string externalRef, string refId, string timestamp, string signature)
+        {
+            var payload = string.Join("|", new[] { token, status, amount, externalRef ?? "", refId ?? "", timestamp });
+            if (!SecureEquals(signature, Hmac(ApiKey, payload)))
+                return Content("امضای بازگشت نامعتبر است");
+
+            // اینجا سفارش خودتان را بر اساس status / externalRef به‌روز کنید
+            return Content(status == "paid" ? "پرداخت موفق — RefId: " + refId : "پرداخت ناموفق");
+        }
+
+        [HttpPost]
+        public ActionResult PaymentNotify()
+        {
+            Request.InputStream.Position = 0;
+            using (var reader = new System.IO.StreamReader(Request.InputStream))
+            {
+                var body = reader.ReadToEnd();
+                var json = JObject.Parse(body);
+                var payload = string.Join("|", new[]
+                {
+                    json["token"]?.ToString(),
+                    json["status"]?.ToString(),
+                    json["amount"]?.ToString(),
+                    json["externalRef"]?.ToString() ?? "",
+                    json["refId"]?.ToString() ?? "",
+                    json["timestamp"]?.ToString()
+                });
+
+                if (!SecureEquals(json["signature"]?.ToString(), Hmac(ApiKey, payload)))
+                    return new HttpStatusCodeResult(401);
+
+                // به‌روزرسانی سفارش در دیتابیس خودتان
+                return new HttpStatusCodeResult(200);
+            }
+        }
+
+        private static string Hmac(string secret, string payload)
+        {
+            using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret)))
+            {
+                var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload ?? ""));
+                var sb = new StringBuilder(hash.Length * 2);
+                foreach (var b in hash) sb.Append(b.ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
+        private static bool SecureEquals(string a, string b)
+        {
+            if (a == null || b == null || a.Length != b.Length) return false;
+            var diff = 0;
+            for (var i = 0; i < a.Length; i++) diff |= a[i] ^ b[i];
+            return diff == 0;
+        }
+    }
+}

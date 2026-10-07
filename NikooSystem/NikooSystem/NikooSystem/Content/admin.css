@@ -1,0 +1,38 @@
+.admin-body {
+  background: #f4f6fb;
+  font-family: 'Far_Yekan', Tahoma, sans-serif;
+  min-height: 100vh;
+}
+.admin-nav {
+  background: #012970 !important;
+}
+.stat-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 4px 18px rgba(1, 41, 112, 0.06);
+  border: 1px solid #e8ecf5;
+}
+.stat-card h3 {
+  font-size: 1.75rem;
+  margin: 0;
+  color: #012970;
+}
+.stat-card span {
+  color: #6c757d;
+  font-size: .9rem;
+}
+.login-wrap {
+  max-width: 420px;
+  margin: 8vh auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 10px 40px rgba(1, 41, 112, 0.1);
+}
+.table img.thumb {
+  width: 56px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+}

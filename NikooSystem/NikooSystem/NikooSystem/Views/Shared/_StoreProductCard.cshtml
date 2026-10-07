@@ -1,0 +1,37 @@
+@model NikooSystem.Models.Store.StoreProduct
+@using NikooSystem.Helpers
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var p = Model;
+    var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
+    var rating = NikooSystem.Services.TenantStore.GetAverageRating(company, p.Id);
+}
+<article class="wm-product">
+    @if (p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+    {
+        var off = (int)Math.Round(100.0 * (p.CompareAtPrice.Value - p.Price) / p.CompareAtPrice.Value);
+        <span class="wm-badge">-@off%</span>
+    }
+    <a class="thumb" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
+        <img src="@(img?.ThumbUrl ?? img?.LargeUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@p.Title" loading="lazy" />
+    </a>
+    <div class="body">
+        <h3><a href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">@p.Title</a></h3>
+        <div class="wm-meta">@p.ShortDescription</div>
+        <div class="wm-rating">★ @((rating > 0 ? rating : 4.5).ToString("0.0"))</div>
+        <div class="wm-price">
+            @if (p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+            {
+                <del>@p.CompareAtPrice.Value.ToToman()</del>
+            }
+            @p.Price.ToToman()
+        </div>
+        @using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { @class = "mt-2 product-cart-form" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="productId" value="@p.Id" />
+            <input type="hidden" name="quantity" value="1" />
+            <button class="btn-wm-cart" type="submit"><i class="bi bi-bag"></i> <span>افزودن به سبد</span></button>
+        }
+    </div>
+</article>

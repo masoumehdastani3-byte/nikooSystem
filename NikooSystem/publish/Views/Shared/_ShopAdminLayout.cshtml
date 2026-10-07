@@ -1,0 +1,49 @@
+@{
+    var settings = (NikooSystem.Models.Store.StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewBag.Title - مدیریت @settings.StoreName</title>
+    <link href="~/Assets/css/style.css" rel="stylesheet" />
+    <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
+    <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="~/Content/storefront.css" rel="stylesheet" />
+    <link href="~/Content/admin-table.css" rel="stylesheet" />
+    <style>body{font-family:'Far_Yekan',Tahoma,sans-serif!important}</style>
+</head>
+<body>
+<div class="admin-shell">
+    <aside class="admin-side">
+        <div class="mb-4 px-2">
+            <strong>@settings.StoreName</strong>
+            <div class="small opacity-75">کد شرکت: @company</div>
+        </div>
+        <a href="@Url.Action("Index","ShopAdmin", new { company })"><i class="bi bi-speedometer2"></i> داشبورد</a>
+        <a href="@Url.Action("Settings","ShopAdmin", new { company })"><i class="bi bi-shop"></i> اطلاعات فروشگاه</a>
+        <a href="@Url.Action("Products","ShopAdmin", new { company })"><i class="bi bi-box"></i> محصولات</a>
+        <a href="@Url.Action("Categories","ShopAdmin", new { company })"><i class="bi bi-diagram-3"></i> گروه‌ها</a>
+        <a href="@Url.Action("Attributes","ShopAdmin", new { company })"><i class="bi bi-list-check"></i> خصوصیات</a>
+        <a href="@Url.Action("Menus","ShopAdmin", new { company })"><i class="bi bi-menu-button-wide"></i> منوها</a>
+        <a href="@Url.Action("Pages","ShopAdmin", new { company })"><i class="bi bi-file-earmark-text"></i> صفحات</a>
+        <a href="@Url.Action("Gallery","ShopAdmin", new { company })"><i class="bi bi-images"></i> گالری</a>
+        <a href="@Url.Action("Reviews","ShopAdmin", new { company })"><i class="bi bi-chat-dots"></i> نظرات</a>
+        <a href="@Url.Action("Orders","ShopAdmin", new { company })"><i class="bi bi-receipt"></i> سفارش‌ها</a>
+        <a href="@Url.Action("Customers","ShopAdmin", new { company })"><i class="bi bi-people"></i> مشتریان</a>
+        <hr class="border-secondary" />
+        <a href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده سایت</a>
+        <a href="@Url.Action("Logout","ShopAdmin", new { company })"><i class="bi bi-box-arrow-right"></i> خروج</a>
+    </aside>
+    <main class="admin-main">
+        @if (TempData["Ok"] != null) { <div class="alert alert-success">@TempData["Ok"]</div> }
+        @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+        @RenderBody()
+    </main>
+</div>
+<script src="~/Content/admin-table.js"></script>
+@RenderSection("scripts", required: false)
+</body>
+</html>

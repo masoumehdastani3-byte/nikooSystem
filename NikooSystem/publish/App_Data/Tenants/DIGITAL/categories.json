@@ -1,0 +1,7 @@
+[
+  { "Id": 1, "ParentId": null, "Title": "صوتی و هدفون", "Slug": "audio", "Description": "اسپیکر و هدفون", "ImageUrl": null, "SortOrder": 1, "IsActive": true },
+  { "Id": 2, "ParentId": null, "Title": "پوشیدنی", "Slug": "wearables", "Description": "ساعت هوشمند", "ImageUrl": null, "SortOrder": 2, "IsActive": true },
+  { "Id": 3, "ParentId": null, "Title": "موبایل و لوازم", "Slug": "mobile", "Description": "جانبی موبایل", "ImageUrl": null, "SortOrder": 3, "IsActive": true },
+  { "Id": 4, "ParentId": null, "Title": "دوره و نرم‌افزار", "Slug": "software", "Description": "دانلودی", "ImageUrl": null, "SortOrder": 4, "IsActive": true },
+  { "Id": 5, "ParentId": null, "Title": "دوربین و تصویر", "Slug": "camera", "Description": "عکاسی", "ImageUrl": null, "SortOrder": 5, "IsActive": true }
+]

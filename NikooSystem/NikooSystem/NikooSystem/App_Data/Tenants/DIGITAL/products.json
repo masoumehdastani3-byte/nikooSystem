@@ -1,0 +1,205 @@
+[
+  {
+    "Id": 1,
+    "CategoryId": 1,
+    "Title": "هدفون بی‌سیم Pro",
+    "Slug": "wireless-headphones",
+    "ShortDescription": "صدای فضایی و نویزکنسلینگ",
+    "Description": "هدفون بی‌سیم حرفه‌ای با نویزکنسلینگ.",
+    "Price": 2890000,
+    "CompareAtPrice": 3490000,
+    "Stock": 40,
+    "Sku": "D-001",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 1,
+    "Images": [
+      {
+        "Id": "255fd15e9c064495a09c6d47e66b4b94",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-1.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-1.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "فیزیکی"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  },
+  {
+    "Id": 2,
+    "CategoryId": 2,
+    "Title": "ساعت هوشمند Pulse",
+    "Slug": "smartwatch-pulse",
+    "ShortDescription": "مانیتورینگ سلامت ۲۴ ساعته",
+    "Description": "ساعت هوشمند با مانیتورینگ سلامت.",
+    "Price": 4590000,
+    "CompareAtPrice": 5290000,
+    "Stock": 25,
+    "Sku": "D-002",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 1,
+    "Images": [
+      {
+        "Id": "45c575650c53490a8190b906db9ab186",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-2.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-2.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "فیزیکی"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  },
+  {
+    "Id": 3,
+    "CategoryId": 3,
+    "Title": "قاب مگنتیک آیفون",
+    "Slug": "magsafe-case",
+    "ShortDescription": "محافظ سبک با شارژ مگسیف",
+    "Description": "قاب مگنتیک سبک.",
+    "Price": 690000,
+    "CompareAtPrice": null,
+    "Stock": 80,
+    "Sku": "D-003",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 0,
+    "Images": [
+      {
+        "Id": "bac66456b1bc4223ab28c1fff670dcc8",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-3.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-3.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "فیزیکی"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  },
+  {
+    "Id": 4,
+    "CategoryId": 4,
+    "Title": "دوره طراحی UI با Figma",
+    "Slug": "figma-course",
+    "ShortDescription": "آموزش پروژه محور رابط کاربری",
+    "Description": "دوره آموزشی Figma.",
+    "Price": 490000,
+    "CompareAtPrice": 690000,
+    "Stock": 999,
+    "Sku": "D-004",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 0,
+    "Images": [
+      {
+        "Id": "6323248348e34de888ccfb9238c31336",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "دانلود"
+      },
+      {
+        "AttributeId": 2,
+        "Name": "سطح",
+        "Value": "مقدماتی"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  },
+  {
+    "Id": 5,
+    "CategoryId": 5,
+    "Title": "گیمبال موبایل Mini",
+    "Slug": "gimbal-mini",
+    "ShortDescription": "ثبات تصویر حرفه‌ای",
+    "Description": "گیمبال موبایل.",
+    "Price": 2190000,
+    "CompareAtPrice": null,
+    "Stock": 30,
+    "Sku": "D-005",
+    "IsActive": true,
+    "IsFeatured": false,
+    "SoldCount": 0,
+    "ViewCount": 0,
+    "Images": [
+      {
+        "Id": "7b5c8a50f9ad4f9fb74206a583b34639",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "فیزیکی"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  },
+  {
+    "Id": 6,
+    "CategoryId": 4,
+    "Title": "لایسنس نرم‌افزار حسابداری",
+    "Slug": "acc-license",
+    "ShortDescription": "لایسنس یک‌ساله",
+    "Description": "لایسنس نرم‌افزار حسابداری.",
+    "Price": 890000,
+    "CompareAtPrice": 1200000,
+    "Stock": 200,
+    "Sku": "D-006",
+    "IsActive": true,
+    "IsFeatured": true,
+    "SoldCount": 0,
+    "ViewCount": 0,
+    "Images": [
+      {
+        "Id": "9874b9f3a28f476099b652751e6006f0",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "Alt": null,
+        "SortOrder": 0
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "نوع تحویل",
+        "Value": "لایسنس"
+      }
+    ],
+    "CreatedAt": "2026-09-13T16:12:34.0523502+03:30"
+  }
+]

@@ -1,0 +1,29 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "داشبورد";
+    var company = (string)ViewBag.CompanyCode;
+}
+<h2 class="mb-4">داشبورد</h2>
+<div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="panel-card"><div class="text-muted">محصولات</div><div class="fs-3 fw-bold">@ViewBag.ProductCount</div></div></div>
+    <div class="col-md-4"><div class="panel-card"><div class="text-muted">سفارش‌ها</div><div class="fs-3 fw-bold">@ViewBag.OrderCount</div></div></div>
+    <div class="col-md-4"><div class="panel-card"><div class="text-muted">مشتریان</div><div class="fs-3 fw-bold">@ViewBag.CustomerCount</div></div></div>
+</div>
+<div class="panel-card">
+    <h5>آخرین سفارش‌ها</h5>
+    <table class="table">
+        <thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
+        <tbody>
+        @foreach (var o in (IEnumerable<NikooSystem.Models.Store.StoreOrder>)ViewBag.RecentOrders)
+        {
+            <tr>
+                <td>@o.OrderNumber</td>
+                <td>@o.CustomerName</td>
+                <td>@o.Amount.ToString("N0")</td>
+                <td>@o.Status</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+    <a class="btn-store-sm" href="@Url.Action("Index","Shop", new { company })" target="_blank">مشاهده فروشگاه عمومی</a>
+</div>

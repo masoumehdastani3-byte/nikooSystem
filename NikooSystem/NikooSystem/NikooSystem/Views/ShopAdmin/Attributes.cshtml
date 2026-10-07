@@ -1,0 +1,39 @@
+@model IEnumerable<NikooSystem.Models.Store.StoreAttributeDef>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "خصوصیات محصول";
+    var company = (string)ViewBag.CompanyCode;
+    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+}
+<div class="d-flex justify-content-between mb-3">
+    <h2>خصوصیات محصول</h2>
+    <a class="btn-store" href="@Url.Action("EditAttribute","ShopAdmin", new { company })">خصوصیت جدید</a>
+</div>
+<div class="panel-card">
+    <table class="table">
+        <thead><tr><th>نام</th><th>نوع</th><th>گروه‌های مرتبط</th><th>فیلتر</th><th></th></tr></thead>
+        <tbody>
+        @foreach (var a in Model)
+        {
+            var linked = (a.CategoryIds == null || !a.CategoryIds.Any())
+                ? "همه گروه‌ها"
+                : string.Join("، ", a.CategoryIds.Where(id => cats.ContainsKey(id)).Select(id => cats[id]));
+            <tr>
+                <td>@a.Name</td>
+                <td>@a.InputType</td>
+                <td>@linked</td>
+                <td>@(a.IsFilterable ? "بله" : "خیر")</td>
+                <td class="text-nowrap">
+                    <a href="@Url.Action("EditAttribute","ShopAdmin", new { company, id = a.Id })">ویرایش</a>
+                    @using (Html.BeginForm("DeleteAttribute", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@a.Id" />
+                        <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
+                    }
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

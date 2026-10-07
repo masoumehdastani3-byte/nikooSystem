@@ -1,0 +1,89 @@
+﻿@model NikooSystem.Models.CheckoutViewModel
+@using NikooSystem.Helpers
+@{
+    ViewBag.Title = "درخواست دمو";
+    ViewBag.Nav = "products";
+}
+<main id="main">
+    <div class="page-hero">
+        <div class="container">
+            <h1>درخواست دمو</h1>
+            <p class="text-muted">اطلاعات خود را وارد کنید؛ سپس به درگاه پرداخت منتقل می‌شوید</p>
+        </div>
+    </div>
+    <section class="pb-5">
+        <div class="container">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["Error"]</div>
+            }
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="checkout-box">
+                        <h5>خلاصه سفارش</h5>
+                        <img src="@Model.Product.ImageUrl" class="img-fluid rounded mb-3" alt="">
+                        <h4>@Model.Product.Title</h4>
+                        <p class="text-muted small">@Model.Product.ShortDescription</p>
+                        <hr />
+                        <div class="d-flex justify-content-between">
+                            <span>مبلغ قابل پرداخت</span>
+                            <strong class="price">@Model.Product.Price.ToToman()</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-8">
+                    <div class="checkout-box">
+                        <h5 class="mb-3">اطلاعات مشتری</h5>
+                        @using (Html.BeginForm("Buy", "Checkout", new { productId = Model.Product.Id }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="row gy-3">
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.CustomerName)
+                                    @Html.TextBoxFor(m => m.CustomerName, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.CustomerName, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.CustomerMobile)
+                                    @Html.TextBoxFor(m => m.CustomerMobile, new { @class = "form-control", placeholder = "09121234567" })
+                                    @Html.ValidationMessageFor(m => m.CustomerMobile, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.CustomerEmail)
+                                    @Html.TextBoxFor(m => m.CustomerEmail, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.CustomerEmail, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.CustomerAddress)
+                                    @Html.TextBoxFor(m => m.CustomerAddress, new { @class = "form-control" })
+                                </div>
+                                <div class="col-12">
+                                    @Html.LabelFor(m => m.Notes)
+                                    @Html.TextAreaFor(m => m.Notes, 3, 1, new { @class = "form-control", placeholder = "نیازمندی‌های خاص یا توضیحات سفارش" })
+                                </div>
+                                <div class="col-12 form-check">
+                                    @Html.CheckBoxFor(m => m.AcceptTerms, new { @class = "form-check-input" })
+                                    <label class="form-check-label" for="AcceptTerms">
+                                        <a href="@Url.Action("Terms","Home")" target="_blank">شرایط استفاده</a> را می‌پذیرم
+                                    </label>
+                                    @Html.ValidationMessageFor(m => m.AcceptTerms, "", new { @class = "text-danger d-block" })
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn-primary-shop">
+                                        <i class="bi bi-credit-card"></i> پرداخت آنلاین
+                                    </button>
+                                    <a href="@Url.Action("Details","Products", new { id = Model.Product.Id })" class="btn-outline-shop ms-2">بازگشت</a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+@section scripts {
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}

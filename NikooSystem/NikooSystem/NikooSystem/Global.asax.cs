@@ -1,0 +1,51 @@
+using System;
+using System.Net;
+using System.Web;
+using System.Web.Mvc;
+using System.Web.Optimization;
+using System.Web.Routing;
+using NikooSystem.Services;
+
+namespace NikooSystem
+{
+    public class MvcApplication : System.Web.HttpApplication
+    {
+        protected void Application_Start()
+        {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+            AreaRegistration.RegisterAllAreas();
+            FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+            RouteConfig.RegisterRoutes(RouteTable.Routes);
+            BundleConfig.RegisterBundles(BundleTable.Bundles);
+        }
+
+        protected void Application_BeginRequest()
+        {
+            var path = Request.Path ?? "";
+            if (path.StartsWith("/Assets", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Content", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Scripts", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Uploads", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Shop", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/ShopAdmin", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/ShopAccount", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/api", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Pay", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var tenant = TenantStore.ResolveByHost(Request.Url.Host);
+            if (tenant == null) return;
+
+            if (path == "/" || string.IsNullOrWhiteSpace(path.Trim('/')))
+            {
+                Context.RewritePath("~/Shop/" + tenant.CompanyCode);
+                return;
+            }
+
+            Context.RewritePath("~/Shop/" + tenant.CompanyCode + "/" + path.TrimStart('/'));
+        }
+    }
+}
