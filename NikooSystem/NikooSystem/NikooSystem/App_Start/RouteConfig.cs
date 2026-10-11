@@ -70,6 +70,18 @@ namespace NikooSystem
             );
 
             routes.MapRoute(
+                name: "TorobApiByCompany",
+                url: "torob_api/v3/{company}/products",
+                defaults: new { controller = "TorobApi", action = "Products" }
+            );
+
+            routes.MapRoute(
+                name: "TorobApi",
+                url: "torob_api/v3/products",
+                defaults: new { controller = "TorobApi", action = "Products", company = UrlParameter.Optional }
+            );
+
+            routes.MapRoute(
                 name: "Demo",
                 url: "Demo/{slug}",
                 defaults: new { controller = "Demo", action = "Index" }

@@ -1,0 +1,163 @@
+@model NikooSystem.Models.Store.StoreSignupVm
+@{
+    ViewBag.Title = "ساخت فروشگاه رایگان";
+    var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
+    var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
+    var codeSuffix = string.IsNullOrEmpty(rootDomain) ? null : "." + rootDomain;
+}
+<link href="~/Content/onboarding.css" rel="stylesheet" />
+<main id="main" class="ob-page">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="ob-card">
+                    <h1>فروشگاه آنلاین خودت را بساز</h1>
+                    <p class="ob-sub">بدون نیاز به برنامه‌نویس و پشتیبان؛ @trialDays روز رایگان امتحان کن، اگر راضی بودی اشتراک را پرداخت کن.</p>
+
+                    @using (Html.BeginForm("Index", "Signup", FormMethod.Post, new { id = "signupForm", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="ob-hp" aria-hidden="true">
+                            <label for="Website">وب‌سایت</label>
+                            @Html.TextBoxFor(m => m.Website, new { tabindex = "-1", autocomplete = "off" })
+                        </div>
+
+                        <div class="mb-4">
+                            <span class="ob-label">۱. فروشگاهت چه چیزی می‌فروشد؟</span>
+                            <div class="ob-types">
+                                @foreach (var t in NikooSystem.Helpers.StoreTypes.All)
+                                {
+                                    var active = Model.StoreType == t.Id;
+                                    <label class="ob-type @(active ? "active" : "")">
+                                        <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
+                                        <i class="bi @t.Icon"></i>
+                                        <div><strong>@t.Name</strong><span>@t.Description</span></div>
+                                    </label>
+                                }
+                            </div>
+                            <div class="ob-help">نگران نباش؛ بعداً همه‌چیز از جمله قالب و دسته‌بندی‌ها قابل تغییر است.</div>
+                        </div>
+
+                        <span class="ob-label">۲. مشخصات فروشگاه</span>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label" for="StoreName">نام فروشگاه</label>
+                                @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control", placeholder = "مثلاً پوشاک آریا" })
+                                @Html.ValidationMessageFor(m => m.StoreName, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="StoreCode">آدرس فروشگاه (انگلیسی)</label>
+                                <div class="ob-code">
+                                    @Html.TextBoxFor(m => m.StoreCode, new { @class = "form-control", placeholder = "aryashop", autocomplete = "off", spellcheck = "false" })
+                                    @if (codeSuffix != null)
+                                    {
+                                        <span class="ob-code-suffix">@codeSuffix</span>
+                                    }
+                                </div>
+                                <div class="ob-code-status" id="codeStatus"></div>
+                                @Html.ValidationMessageFor(m => m.StoreCode, "", new { @class = "text-danger small" })
+                            </div>
+                        </div>
+
+                        <span class="ob-label">۳. مشخصات شما (مدیر فروشگاه)</span>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label" for="FullName">نام و نام خانوادگی</label>
+                                @Html.TextBoxFor(m => m.FullName, new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="Mobile">شماره موبایل</label>
+                                @Html.TextBoxFor(m => m.Mobile, new { @class = "form-control", placeholder = "09121234567", dir = "ltr", inputmode = "numeric" })
+                                <div class="ob-help">نام کاربری ورود به پنل شما همین شماره است.</div>
+                                @Html.ValidationMessageFor(m => m.Mobile, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="Password">رمز عبور</label>
+                                <div class="input-group" dir="ltr">
+                                    @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password" })
+                                    <button class="btn btn-outline-secondary" type="button" id="togglePass" title="نمایش رمز"><i class="bi bi-eye"></i></button>
+                                </div>
+                                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="Email">ایمیل (اختیاری)</label>
+                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", dir = "ltr" })
+                                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                            </div>
+                            <div class="col-12 form-check ms-1">
+                                @Html.CheckBoxFor(m => m.AcceptTerms, new { @class = "form-check-input" })
+                                <label class="form-check-label" for="AcceptTerms">
+                                    <a href="@Url.Action("Terms","Home")" target="_blank">شرایط استفاده</a> را خواندم و می‌پذیرم
+                                </label>
+                                @Html.ValidationMessageFor(m => m.AcceptTerms, "", new { @class = "text-danger small d-block" })
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn-primary-shop w-100 py-3">
+                                    <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
+                                </button>
+                                <div class="text-center mt-3 small">
+                                    قبلاً فروشگاه ساخته‌اید؟ <a href="@Url.Action("Login","Signup")">ورود فروشندگان</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="ob-card">
+                    <h5 class="mb-3">بعد از ثبت‌نام چه اتفاقی می‌افتد؟</h5>
+                    <ul class="ob-benefits">
+                        <li><i class="bi bi-lightning-charge"></i><div><strong>فروشگاه شما فوراً ساخته می‌شود</strong><span>با قالب آماده، منو، صفحات و چند محصول نمونه</span></div></li>
+                        <li><i class="bi bi-signpost-split"></i><div><strong>راهنمای قدم‌به‌قدم</strong><span>لوگو، رنگ، اولین محصول، درگاه پرداخت و دامنه را در چند دقیقه تنظیم می‌کنید</span></div></li>
+                        <li><i class="bi bi-palette"></i><div><strong>ظاهر دلخواه</strong><span>چند قالب آماده، رنگ‌ها، منوها و صفحات قابل تغییر</span></div></li>
+                        <li><i class="bi bi-credit-card"></i><div><strong>درگاه پرداخت خودتان</strong><span>پول فروش مستقیم به حساب زرین‌پال شما واریز می‌شود</span></div></li>
+                        <li><i class="bi bi-globe"></i><div><strong>دامنه اختصاصی</strong><span>دامنه خودتان را از داخل پنل وصل کنید</span></div></li>
+                    </ul>
+                    <div class="alert alert-warning small mb-0">
+                        دوره آزمایشی @trialDays روزه است. اگر تا پایان آن اشتراک را پرداخت نکنید، فروشگاه و همه اطلاعاتش حذف می‌شود.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+@section scripts {
+<script>
+(function () {
+  document.querySelectorAll('.ob-type').forEach(function (card) {
+    card.addEventListener('click', function () {
+      document.querySelectorAll('.ob-type').forEach(function (c) { c.classList.remove('active'); });
+      card.classList.add('active');
+      card.querySelector('input').checked = true;
+    });
+  });
+
+  var toggle = document.getElementById('togglePass');
+  var pass = document.getElementById('Password');
+  toggle.addEventListener('click', function () {
+    pass.type = pass.type === 'password' ? 'text' : 'password';
+  });
+
+  var codeInput = document.getElementById('StoreCode');
+  var status = document.getElementById('codeStatus');
+  var timer;
+  codeInput.addEventListener('input', function () {
+    var clean = codeInput.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (clean !== codeInput.value) codeInput.value = clean;
+    clearTimeout(timer);
+    if (clean.length < 3) { status.textContent = ''; status.className = 'ob-code-status'; return; }
+    timer = setTimeout(function () {
+      fetch('@Url.Action("CheckCode","Signup")?code=' + encodeURIComponent(clean))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          status.className = 'ob-code-status ' + (d.ok ? 'ok' : 'err');
+          status.textContent = d.ok ? ('✓ ' + d.message + ' آدرس شما: ' + d.preview) : d.message;
+        });
+    }, 350);
+  });
+})();
+</script>
+}

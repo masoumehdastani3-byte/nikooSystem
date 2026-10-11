@@ -11,25 +11,35 @@ namespace NikooSystem.Controllers
         private readonly ZarinPalService _zarinPal = new ZarinPalService();
 
         [HttpGet]
-        public ActionResult Buy(int productId)
+        public ActionResult Buy(int productId, string company = null)
         {
             var product = JsonStore.GetProduct(productId);
             if (product == null || !product.IsActive)
                 return HttpNotFound();
 
             var model = new CheckoutViewModel { Product = product };
+            var trial = TrialTenant(company);
+            if (trial != null)
+            {
+                model.CustomerName = trial.OwnerName;
+                model.CustomerMobile = trial.OwnerMobile;
+                model.CustomerEmail = trial.OwnerEmail;
+            }
+            ViewBag.TrialTenant = trial;
             return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Buy(int productId, CheckoutViewModel model)
+        public async Task<ActionResult> Buy(int productId, CheckoutViewModel model, string company = null)
         {
             var product = JsonStore.GetProduct(productId);
             if (product == null || !product.IsActive)
                 return HttpNotFound();
 
             model.Product = product;
+            var trial = TrialTenant(company);
+            ViewBag.TrialTenant = trial;
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -38,6 +48,7 @@ namespace NikooSystem.Controllers
             {
                 ProductId = product.Id,
                 ProductTitle = product.Title,
+                CompanyCode = trial?.CompanyCode,
                 Amount = product.Price,
                 CustomerName = model.CustomerName,
                 CustomerMobile = model.CustomerMobile,
@@ -51,7 +62,7 @@ namespace NikooSystem.Controllers
 
             var payment = await _zarinPal.RequestPaymentAsync(
                 order.Amount,
-                "درخواست دمو " + order.ProductTitle + " - سفارش " + order.OrderNumber,
+                (trial != null ? "اشتراک فروشگاه " + trial.Name : "درخواست دمو " + order.ProductTitle) + " - سفارش " + order.OrderNumber,
                 order.CustomerEmail,
                 order.CustomerMobile,
                 order.Id.ToString());
@@ -104,7 +115,17 @@ namespace NikooSystem.Controllers
             order.PaymentMessage = verify.Message;
             JsonStore.UpdateOrder(order);
 
+            if (!string.IsNullOrEmpty(order.CompanyCode))
+                TenantProvisioningService.MarkPaid(order.CompanyCode);
+
             return RedirectToAction("Success", new { id = order.Id });
+        }
+
+        /// <summary>فروشگاه آزمایشی زنده‌ای که این خرید باید آن را دائمی کند</summary>
+        private static Models.Store.TenantInfo TrialTenant(string company)
+        {
+            var tenant = TenantStore.GetTenant(company);
+            return tenant != null && tenant.IsTrial && !tenant.IsPaid ? tenant : null;
         }
 
         public ActionResult Success(int id)

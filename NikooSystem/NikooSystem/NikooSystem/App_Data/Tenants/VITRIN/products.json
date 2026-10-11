@@ -1,0 +1,159 @@
+[
+  {
+    "Id": 4,
+    "CategoryId": 2,
+    "Title": "شلوار کتان",
+    "Slug": "p-f42a8905",
+    "ShortDescription": "یک توضیح کوتاه",
+    "Description": "یک توضیح کوتاه",
+    "Price": 15000,
+    "CompareAtPrice": null,
+    "Stock": 10,
+    "Sku": null,
+    "IsActive": true,
+    "IsFeatured": true,
+    "IsSample": false,
+    "SoldCount": 0,
+    "ViewCount": 3,
+    "Images": [
+      {
+        "Id": "7f818d96dbf14f589b0c85c7fb564dfc",
+        "ThumbUrl": "/Uploads/VITRIN/thumbs/6d328572900b48f9b28e78474842a104.jpg",
+        "LargeUrl": "/Uploads/VITRIN/large/6d328572900b48f9b28e78474842a104.jpg",
+        "Alt": "شلوار کتان",
+        "SortOrder": 1
+      }
+    ],
+    "Attributes": [],
+    "CollectionIds": [
+      1
+    ],
+    "CreatedAt": "2026-10-10T16:44:39.2171161+03:30",
+    "UpdatedAt": "2026-10-10T17:35:42.1264121+03:30"
+  },
+  {
+    "Id": 1,
+    "CategoryId": 1,
+    "Title": "محصول نمونه اول",
+    "Slug": "sample-1",
+    "ShortDescription": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید",
+    "Description": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 250000,
+    "CompareAtPrice": 337500,
+    "Stock": 50,
+    "Sku": "SKU-1",
+    "IsActive": true,
+    "IsFeatured": true,
+    "IsSample": true,
+    "SoldCount": 7,
+    "ViewCount": 43,
+    "Images": [
+      {
+        "Id": "ebc655ae47074c8b84b376ffd6a4ee29",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "Alt": "محصول نمونه اول",
+        "SortOrder": 1
+      },
+      {
+        "Id": "01910ce6923147e9bf956feeedf51746",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-4.jpg",
+        "Alt": "محصول نمونه اول ۲",
+        "SortOrder": 2
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "رنگ",
+        "Value": "مشکی"
+      }
+    ],
+    "CollectionIds": [],
+    "CreatedAt": "2026-10-10T16:30:28.3145515+03:30",
+    "UpdatedAt": "2026-10-10T17:34:18.624707+03:30"
+  },
+  {
+    "Id": 2,
+    "CategoryId": 1,
+    "Title": "محصول نمونه دوم",
+    "Slug": "sample-2",
+    "ShortDescription": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید",
+    "Description": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 480000,
+    "CompareAtPrice": 648000,
+    "Stock": 50,
+    "Sku": "SKU-2",
+    "IsActive": true,
+    "IsFeatured": true,
+    "IsSample": true,
+    "SoldCount": 14,
+    "ViewCount": 81,
+    "Images": [
+      {
+        "Id": "fb5a7cc0109344c187ca4e2e89e06735",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "Alt": "محصول نمونه دوم",
+        "SortOrder": 1
+      },
+      {
+        "Id": "96dd226f9cb04e1a94981aab85c56911",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-5.jpg",
+        "Alt": "محصول نمونه دوم ۲",
+        "SortOrder": 2
+      }
+    ],
+    "Attributes": [
+      {
+        "AttributeId": 1,
+        "Name": "رنگ",
+        "Value": "سفید"
+      }
+    ],
+    "CollectionIds": [],
+    "CreatedAt": "2026-10-10T16:30:28.3145515+03:30",
+    "UpdatedAt": "2026-10-10T17:32:42.0056203+03:30"
+  },
+  {
+    "Id": 3,
+    "CategoryId": 2,
+    "Title": "محصول نمونه پیشنهادی",
+    "Slug": "sample-3",
+    "ShortDescription": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید",
+    "Description": "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید — قابل ویرایش از پنل مدیریت فروشگاه.",
+    "Price": 150000,
+    "CompareAtPrice": 202500,
+    "Stock": 50,
+    "Sku": "SKU-3",
+    "IsActive": true,
+    "IsFeatured": false,
+    "IsSample": true,
+    "SoldCount": 21,
+    "ViewCount": 122,
+    "Images": [
+      {
+        "Id": "bf0461e501314a5ba073dd88ff332468",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "Alt": "محصول نمونه پیشنهادی",
+        "SortOrder": 1
+      },
+      {
+        "Id": "3a626c3aae5c4c52b73e02537c2c15cd",
+        "ThumbUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "LargeUrl": "/Assets/img/portfolio/portfolio-6.jpg",
+        "Alt": "محصول نمونه پیشنهادی ۲",
+        "SortOrder": 2
+      }
+    ],
+    "Attributes": [],
+    "CollectionIds": [
+      1
+    ],
+    "CreatedAt": "2026-10-10T16:30:28.3145515+03:30",
+    "UpdatedAt": "2026-10-10T17:36:01.6240566+03:30"
+  }
+]

@@ -1,118 +1,290 @@
 @model IEnumerable<NikooSystem.Models.Store.StoreProduct>
-@using NikooSystem.Helpers
 @using NikooSystem.Models.Store
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
-    ViewBag.Title = "محصولات";
     var company = (string)ViewBag.CompanyCode;
-    var settings = (StoreSettings)ViewBag.Settings;
-    var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
+    var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).OrderBy(c => c.SortOrder).ToList();
+    var counts = (Dictionary<int, int>)ViewBag.CategoryCounts;
+    var category = ViewBag.Category as StoreCategory;
     int? categoryId = ViewBag.CategoryId as int?;
+    var collection = ViewBag.Collection as StoreCollection;
     var q = ViewBag.Q as string;
     var sort = (ViewBag.Sort as string) ?? "newest";
-    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+    long? minPrice = ViewBag.MinPrice as long?;
+    long? maxPrice = ViewBag.MaxPrice as long?;
+    var inStock = (bool)ViewBag.InStock;
+    var onSale = (bool)ViewBag.OnSale;
+    var page = (int)ViewBag.Page;
+    var totalPages = (int)ViewBag.TotalPages;
+    var totalCount = (int)ViewBag.TotalCount;
+    var fa = System.Globalization.CultureInfo.GetCultureInfo("fa-IR");
+
+    ViewBag.Title = collection != null ? collection.Title : category != null ? category.Title : "همه محصولات";
+    ViewBag.MetaDescription = collection != null && !string.IsNullOrWhiteSpace(collection.Description)
+        ? collection.Description
+        : collection != null || category != null
+            ? "خرید " + ViewBag.Title + " از " + ((StoreSettings)ViewBag.Settings).StoreName
+            : "همه محصولات " + ((StoreSettings)ViewBag.Settings).StoreName;
+
+    var sorts = new[]
+    {
+        new { Id = "newest", Title = "جدیدترین" },
+        new { Id = "bestseller", Title = "پرفروش‌ترین" },
+        new { Id = "popular", Title = "پربازدیدترین" },
+        new { Id = "price_asc", Title = "ارزان‌ترین" },
+        new { Id = "price_desc", Title = "گران‌ترین" },
+        new { Id = "rating", Title = "بیشترین امتیاز" }
+    };
+    var hasFilters = categoryId.HasValue || collection != null || !string.IsNullOrWhiteSpace(q) || minPrice.HasValue || maxPrice.HasValue || inStock || onSale;
+    var roots = cats.Where(c => c.ParentId == null).ToList();
 }
-<div class="page-hero-lite">
+@functions {
+    /// <summary>آدرس همین صفحه با فیلترهای فعلی؛ مقدار null یک فیلتر را حذف می‌کند</summary>
+    string CatalogUrl(object overrides)
+    {
+        var values = new System.Web.Routing.RouteValueDictionary
+        {
+            { "company", ViewBag.CompanyCode },
+            { "categoryId", ViewBag.CategoryId },
+            { "collectionId", ViewBag.CollectionId },
+            { "q", ViewBag.Q },
+            { "sort", ViewBag.Sort },
+            { "minPrice", ViewBag.MinPrice },
+            { "maxPrice", ViewBag.MaxPrice },
+            { "inStock", (bool)ViewBag.InStock ? (object)true : null },
+            { "onSale", (bool)ViewBag.OnSale ? (object)true : null },
+            { "previewTemplate", ViewBag.PreviewTemplate }
+        };
+        foreach (var kv in new System.Web.Routing.RouteValueDictionary(overrides))
+            values[kv.Key] = kv.Value;
+        if (!values.ContainsKey("page")) values["page"] = null;
+        if ((values["sort"] as string) == "newest") values["sort"] = null;
+        foreach (var key in values.Keys.ToList())
+        {
+            var v = values[key];
+            if (v == null || (v is string && string.IsNullOrWhiteSpace((string)v)) || (v is int && (int)v == 1 && key == "page"))
+                values.Remove(key);
+        }
+        return Url.Action("Catalog", "Shop", values);
+    }
+}
+
+<div class="cat-hero">
     <div class="container">
-        <h1 class="section-title mb-1">محصولات فروشگاه</h1>
-        <p class="text-muted mb-0">جستجو، فیلتر و مرتب‌سازی</p>
+        <nav class="cat-breadcrumb" aria-label="مسیر">
+            <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
+            <i class="bi bi-chevron-left"></i>
+            @if (category != null || collection != null)
+            {
+                <a href="@CatalogUrl(new { categoryId = (int?)null, collectionId = (int?)null })">محصولات</a>
+                <i class="bi bi-chevron-left"></i>
+                <span>@ViewBag.Title</span>
+            }
+            else
+            {
+                <span>محصولات</span>
+            }
+        </nav>
+        <h1>@ViewBag.Title</h1>
+        @if (collection != null && !string.IsNullOrWhiteSpace(collection.Description))
+        {
+            <p class="cat-hero-desc">@collection.Description</p>
+        }
+        <p>@totalCount.ToString("N0", fa) محصول@(string.IsNullOrWhiteSpace(q) ? "" : " برای «" + q + "»")</p>
     </div>
 </div>
+
 <section class="pb-5">
     <div class="container">
-        @if (layoutId == "marketplace")
-        {
-            <div class="mp-catalog-layout">
-                <aside class="mp-sidebar">
-                    <h3>دسته‌بندی</h3>
-                    <a class="@(categoryId==null?"active":"")" href="@Url.Action("Catalog","Shop", new { company, sort, q })">همه</a>
-                    @foreach (var c in cats.Where(x => x.ParentId == null))
+        <div class="cat-layout">
+            <aside class="cat-filters" id="catFilters">
+                <div class="cat-filters-head">
+                    <strong><i class="bi bi-funnel"></i> فیلترها</strong>
+                    <button type="button" class="cat-filters-close" data-cat-toggle aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+                </div>
+
+                <form method="get" action="@Url.Action("Catalog","Shop", new { company })">
+                    @if (categoryId.HasValue) { <input type="hidden" name="categoryId" value="@categoryId" /> }
+                    @if (collection != null) { <input type="hidden" name="collectionId" value="@collection.Id" /> }
+                    @if (sort != "newest") { <input type="hidden" name="sort" value="@sort" /> }
+                    @if (ViewBag.PreviewTemplate != null) { <input type="hidden" name="previewTemplate" value="@ViewBag.PreviewTemplate" /> }
+
+                    <div class="cat-block">
+                        <div class="cat-search">
+                            <i class="bi bi-search"></i>
+                            <input type="search" name="q" value="@q" placeholder="جستجو در محصولات..." />
+                        </div>
+                    </div>
+
+                    <div class="cat-block">
+                        <h3>دسته‌بندی</h3>
+                        <ul class="cat-tree">
+                            <li><a class="@(categoryId == null ? "active" : "")" href="@CatalogUrl(new { categoryId = (int?)null })">همه محصولات</a></li>
+                            @foreach (var root in roots)
+                            {
+                                var children = cats.Where(c => c.ParentId == root.Id).ToList();
+                                <li>
+                                    <a class="@(categoryId == root.Id ? "active" : "")" href="@CatalogUrl(new { categoryId = root.Id })">
+                                        @root.Title <span class="cat-count">@(counts.ContainsKey(root.Id) ? counts[root.Id].ToString("N0", fa) : "۰")</span>
+                                    </a>
+                                    @if (children.Any())
+                                    {
+                                        <ul>
+                                            @foreach (var ch in children)
+                                            {
+                                                <li>
+                                                    <a class="@(categoryId == ch.Id ? "active" : "")" href="@CatalogUrl(new { categoryId = ch.Id })">
+                                                        @ch.Title <span class="cat-count">@(counts.ContainsKey(ch.Id) ? counts[ch.Id].ToString("N0", fa) : "۰")</span>
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="cat-block">
+                        <h3>محدوده قیمت (تومان)</h3>
+                        <div class="cat-price">
+                            <input type="number" name="minPrice" min="0" step="1000" value="@minPrice" placeholder="از" dir="ltr" />
+                            <span>تا</span>
+                            <input type="number" name="maxPrice" min="0" step="1000" value="@maxPrice" placeholder="تا" dir="ltr" />
+                        </div>
+                    </div>
+
+                    <div class="cat-block">
+                        <label class="cat-switch">
+                            <input type="checkbox" name="inStock" value="true" @(inStock ? "checked" : null) />
+                            <span>فقط کالاهای موجود</span>
+                        </label>
+                        <label class="cat-switch">
+                            <input type="checkbox" name="onSale" value="true" @(onSale ? "checked" : null) />
+                            <span>فقط تخفیف‌دار</span>
+                        </label>
+                    </div>
+
+                    <button class="btn-wm w-100" type="submit">اعمال فیلتر</button>
+                    @if (hasFilters)
                     {
-                        <a class="@(categoryId==c.Id?"active":"")" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id, sort, q })">@c.Title</a>
+                        <a class="cat-clear" href="@Url.Action("Catalog","Shop", new { company, previewTemplate = ViewBag.PreviewTemplate })">حذف همه فیلترها</a>
                     }
-                </aside>
-                <div>
-                    <form method="get" class="row g-2 mb-4 align-items-end panel-card">
-                        <div class="col-md-5">
-                            <label class="form-label">جستجو</label>
-                            <input class="form-control" name="q" value="@q" placeholder="جستجو در محصولات..." />
-                        </div>
-                        <div class="col-md-4">
-                            <label class="form-label">مرتب‌سازی</label>
-                            <select class="form-select" name="sort">
-                                <option value="newest" @(sort=="newest"?"selected":"")>جدیدترین</option>
-                                <option value="price_asc" @(sort=="price_asc"?"selected":"")>ارزان‌ترین</option>
-                                <option value="price_desc" @(sort=="price_desc"?"selected":"")>گران‌ترین</option>
-                                <option value="popular" @(sort=="popular"?"selected":"")>محبوب‌ترین</option>
-                                <option value="bestseller" @(sort=="bestseller"?"selected":"")>پرفروش‌ترین</option>
-                                <option value="rating" @(sort=="rating"?"selected":"")>بالاترین امتیاز</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3"><button class="btn-wm w-100" type="submit">اعمال</button></div>
-                        @if (categoryId.HasValue)
+                </form>
+            </aside>
+            <div class="cat-backdrop" data-cat-toggle></div>
+
+            <div class="cat-main">
+                <div class="cat-toolbar">
+                    <button type="button" class="cat-filter-btn" data-cat-toggle><i class="bi bi-funnel"></i> فیلترها</button>
+                    <div class="cat-sort">
+                        <span class="cat-sort-label"><i class="bi bi-sort-down"></i> مرتب‌سازی:</span>
+                        @foreach (var s in sorts)
                         {
-                            <input type="hidden" name="categoryId" value="@categoryId" />
+                            <a class="@(sort == s.Id ? "active" : "")" href="@CatalogUrl(new { sort = s.Id })">@s.Title</a>
                         }
-                    </form>
-                    <div class="product-grid grid-marketplace">
+                    </div>
+                    <select class="cat-sort-select" onchange="location.href=this.value" aria-label="مرتب‌سازی">
+                        @foreach (var s in sorts)
+                        {
+                            <option value="@CatalogUrl(new { sort = s.Id })" @(sort == s.Id ? "selected" : null)>@s.Title</option>
+                        }
+                    </select>
+                </div>
+
+                @if (hasFilters)
+                {
+                    <div class="cat-chips">
+                        @if (collection != null)
+                        {
+                            <a href="@CatalogUrl(new { collectionId = (int?)null })"><i class="bi bi-tag"></i> @collection.Title <i class="bi bi-x"></i></a>
+                        }
+                        @if (category != null)
+                        {
+                            <a href="@CatalogUrl(new { categoryId = (int?)null })">@category.Title <i class="bi bi-x"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(q))
+                        {
+                            <a href="@CatalogUrl(new { q = (string)null })">«@q» <i class="bi bi-x"></i></a>
+                        }
+                        @if (minPrice.HasValue)
+                        {
+                            <a href="@CatalogUrl(new { minPrice = (long?)null })">از @minPrice.Value.ToString("N0", fa) تومان <i class="bi bi-x"></i></a>
+                        }
+                        @if (maxPrice.HasValue)
+                        {
+                            <a href="@CatalogUrl(new { maxPrice = (long?)null })">تا @maxPrice.Value.ToString("N0", fa) تومان <i class="bi bi-x"></i></a>
+                        }
+                        @if (inStock)
+                        {
+                            <a href="@CatalogUrl(new { inStock = (bool?)null })">فقط موجود <i class="bi bi-x"></i></a>
+                        }
+                        @if (onSale)
+                        {
+                            <a href="@CatalogUrl(new { onSale = (bool?)null })">فقط تخفیف‌دار <i class="bi bi-x"></i></a>
+                        }
+                    </div>
+                }
+
+                @if (Model.Any())
+                {
+                    <div class="cat-grid">
                         @foreach (var p in Model)
                         {
                             @Html.Partial("_StoreProductCard", p)
                         }
                     </div>
-                </div>
-            </div>
-        }
-        else
-        {
-            <form method="get" class="row g-2 mb-4 align-items-end panel-card">
-                <div class="col-md-4">
-                    <label class="form-label">جستجو</label>
-                    <input class="form-control" name="q" value="@q" placeholder="جستجو در محصولات..." />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">گروه</label>
-                    <select class="form-select" name="categoryId">
-                        <option value="">همه گروه‌ها</option>
-                        @foreach (var c in cats)
-                        {
-                            <option value="@c.Id" @(categoryId == c.Id ? "selected" : "")>@(c.ParentId.HasValue ? "— " : "")@c.Title</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">مرتب‌سازی</label>
-                    <select class="form-select" name="sort">
-                        <option value="newest" @(sort=="newest"?"selected":"")>جدیدترین</option>
-                        <option value="price_asc" @(sort=="price_asc"?"selected":"")>ارزان‌ترین</option>
-                        <option value="price_desc" @(sort=="price_desc"?"selected":"")>گران‌ترین</option>
-                        <option value="popular" @(sort=="popular"?"selected":"")>محبوب‌ترین</option>
-                        <option value="bestseller" @(sort=="bestseller"?"selected":"")>پرفروش‌ترین</option>
-                        <option value="rating" @(sort=="rating"?"selected":"")>بالاترین امتیاز</option>
-                    </select>
-                </div>
-                <div class="col-md-2"><button class="btn-wm w-100" type="submit">اعمال</button></div>
-            </form>
 
-            <div class="wm-tabs mb-4">
-                <a class="@(categoryId==null?"active":"")" href="@Url.Action("Catalog","Shop", new { company, sort, q })">همه</a>
-                @foreach (var c in cats.Where(x => x.ParentId == null).Take(8))
+                    if (totalPages > 1)
+                    {
+                        <nav class="cat-pager" aria-label="صفحه‌بندی">
+                            @if (page > 1)
+                            {
+                                <a href="@CatalogUrl(new { page = page - 1 })" aria-label="قبلی"><i class="bi bi-chevron-right"></i></a>
+                            }
+                            @for (var i = 1; i <= totalPages; i++)
+                            {
+                                if (i == 1 || i == totalPages || Math.Abs(i - page) <= 2)
+                                {
+                                    <a class="@(i == page ? "active" : "")" href="@CatalogUrl(new { page = i })">@i.ToString(fa)</a>
+                                }
+                                else if (Math.Abs(i - page) == 3)
+                                {
+                                    <span>…</span>
+                                }
+                            }
+                            @if (page < totalPages)
+                            {
+                                <a href="@CatalogUrl(new { page = page + 1 })" aria-label="بعدی"><i class="bi bi-chevron-left"></i></a>
+                            }
+                        </nav>
+                    }
+                }
+                else
                 {
-                    <a class="@(categoryId==c.Id?"active":"")" href="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id, sort, q })">@c.Title</a>
+                    <div class="cat-empty">
+                        <i class="bi bi-search"></i>
+                        <h3>محصولی با این مشخصات پیدا نشد</h3>
+                        <p>فیلترها را تغییر دهید یا عبارت دیگری جستجو کنید.</p>
+                        <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company, previewTemplate = ViewBag.PreviewTemplate })">مشاهده همه محصولات</a>
+                    </div>
                 }
             </div>
-
-            <div class="product-grid grid-@layoutId">
-                @foreach (var p in Model)
-                {
-                    @Html.Partial("_StoreProductCard", p)
-                }
-            </div>
-        }
-
-        @if (!Model.Any())
-        {
-            <div class="panel-card mt-3">محصولی یافت نشد.</div>
-        }
+        </div>
     </div>
 </section>
+
+@section scripts {
+<script>
+(function () {
+  document.querySelectorAll('[data-cat-toggle]').forEach(function (el) {
+    el.addEventListener('click', function () {
+      document.body.classList.toggle('cat-filters-open');
+    });
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.body.classList.remove('cat-filters-open');
+  });
+})();
+</script>
+}

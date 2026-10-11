@@ -12,17 +12,17 @@
         <div class="row align-items-center g-4 lf-hero-row">
             <div class="col-lg-6 lf-hero-copy">
                 <p class="lf-eyebrow">نیکو سیستم آفرین</p>
-                <h1>فروشگاه‌های آنلاین آماده برای کسب‌وکار شما</h1>
+                <h1>فروشگاه آنلاین خودت را در چند دقیقه بساز</h1>
                 <p class="lf-hero-lead">
-                    دمو را ببینید، سفارش دهید و آنلاین پرداخت کنید.
-                    راه‌اندازی سریع، پشتیبانی واقعی و فروشگاه آمادهٔ فروش.
+                    بدون برنامه‌نویس و بدون پشتیبان: نوع فروشگاه را انتخاب کن، لوگو و محصولاتت را اضافه کن،
+                    درگاه پرداخت و دامنه خودت را وصل کن. @NikooSystem.Services.TenantProvisioningService.TrialDays روز رایگان امتحان کن.
                 </p>
                 <div class="lf-hero-cta">
-                    <a class="lf-btn lf-btn-warm" href="#stores">
-                        <i class="bi bi-cart3"></i> مشاهده فروشگاه‌های آماده
+                    <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">
+                        <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
                     </a>
-                    <a class="lf-btn lf-btn-ghost" href="#steps">
-                        <i class="bi bi-list-check"></i> از دمو تا پرداخت
+                    <a class="lf-btn lf-btn-ghost" href="#stores">
+                        <i class="bi bi-eye"></i> دیدن فروشگاه‌های نمونه
                     </a>
                 </div>
             </div>
@@ -103,6 +103,9 @@
                                 مشاهده دمو <i class="bi bi-arrow-left"></i>
                             </a>
                         </div>
+                        <a class="lf-btn lf-btn-primary w-100 mt-2" href="@Url.Action("Index","Signup", new { type = p.DemoSlug })">
+                            <i class="bi bi-rocket-takeoff"></i> مثل این بساز
+                        </a>
                     </div>
                 </article>
             }
@@ -135,8 +138,8 @@
 <section id="steps" class="lf-steps">
     <div class="container">
         <header class="lf-section-head">
-            <h2>فرآیند خرید</h2>
-            <p>از دمو تا پرداخت در چند قدم</p>
+            <h2>از ثبت‌نام تا اولین فروش</h2>
+            <p>همه مراحل را خودتان و بدون نیاز به پشتیبان انجام می‌دهید</p>
         </header>
         <div class="row align-items-center g-4">
             <div class="col-lg-5">
@@ -144,12 +147,12 @@
             </div>
             <div class="col-lg-7">
                 <div class="lf-steps-grid">
-                    <div class="lf-step"><span>۱</span><div><strong>انتخاب محصول</strong><em>فروشگاه مناسب کسب‌وکار خود را انتخاب کنید</em></div></div>
-                    <div class="lf-step"><span>۲</span><div><strong>مشاهده دمو</strong><em>نمونه واقعی فروشگاه را آنلاین ببینید</em></div></div>
-                    <div class="lf-step"><span>۳</span><div><strong>ثبت اطلاعات</strong><em>مشخصات سفارش را وارد کنید</em></div></div>
-                    <div class="lf-step"><span>۴</span><div><strong>پرداخت آنلاین</strong><em>پرداخت امن و ثبت سفارش</em></div></div>
-                    <div class="lf-step"><span>۵</span><div><strong>تأیید سفارش</strong><em>وضعیت سفارش را پیگیری کنید</em></div></div>
-                    <div class="lf-step"><span>۶</span><div><strong>تحویل و پشتیبانی</strong><em>راه‌اندازی و همراهی پس از فروش</em></div></div>
+                    <div class="lf-step"><span>۱</span><div><strong>ثبت‌نام رایگان</strong><em>نوع فروشگاه و آدرس آن را انتخاب کنید</em></div></div>
+                    <div class="lf-step"><span>۲</span><div><strong>نام و لوگو</strong><em>فروشگاه بلافاصله با محتوای نمونه ساخته می‌شود</em></div></div>
+                    <div class="lf-step"><span>۳</span><div><strong>انتخاب قالب</strong><em>ظاهر و رنگ‌ها را با یک کلیک عوض کنید</em></div></div>
+                    <div class="lf-step"><span>۴</span><div><strong>افزودن محصولات</strong><em>عکس، قیمت و موجودی را وارد کنید</em></div></div>
+                    <div class="lf-step"><span>۵</span><div><strong>درگاه و دامنه</strong><em>زرین‌پال و دامنه خودتان را وصل کنید</em></div></div>
+                    <div class="lf-step"><span>۶</span><div><strong>فعال‌سازی دائمی</strong><em>پیش از پایان دوره آزمایشی اشتراک را پرداخت کنید</em></div></div>
                 </div>
             </div>
         </div>
@@ -183,9 +186,9 @@
             </div>
             <aside class="lf-stats-cta">
                 <h3>آماده شروع هستید؟</h3>
-                <p>دمو را ببینید و در چند قدم سفارش خود را ثبت کنید.</p>
-                <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })">
-                    شروع خرید <i class="bi bi-arrow-left"></i>
+                <p>فروشگاهت را همین حالا بساز و @NikooSystem.Services.TenantProvisioningService.TrialDays روز رایگان امتحانش کن.</p>
+                <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">
+                    ساخت فروشگاه رایگان <i class="bi bi-arrow-left"></i>
                 </a>
             </aside>
         </div>

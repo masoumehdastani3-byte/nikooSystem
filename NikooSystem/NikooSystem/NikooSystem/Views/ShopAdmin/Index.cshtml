@@ -2,8 +2,40 @@
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "داشبورد";
     var company = (string)ViewBag.CompanyCode;
+    var checklist = (List<NikooSystem.Models.Store.SetupChecklistItem>)ViewBag.Checklist;
+    var required = checklist.Where(c => !c.Optional).ToList();
+    var doneCount = required.Count(c => c.Done);
+    var percent = required.Count == 0 ? 100 : doneCount * 100 / required.Count;
 }
+<link href="~/Content/onboarding.css" rel="stylesheet" />
 <h2 class="mb-4">داشبورد</h2>
+
+@if (checklist.Any(c => !c.Done))
+{
+    <div class="panel-card ob-checklist mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">آماده‌سازی فروشگاه برای فروش</h5>
+            <span class="small text-muted">@doneCount از @required.Count مرحله</span>
+        </div>
+        <div class="progress"><div class="progress-bar bg-success" style="width:@(percent)%"></div></div>
+        <ul>
+            @foreach (var item in checklist)
+            {
+                <li class="@(item.Done ? "done" : "")">
+                    <i class="bi @(item.Done ? "bi-check-circle-fill" : "bi-circle")"></i>
+                    <div>
+                        <strong>@item.Title</strong>@if (item.Optional) {<span class="badge bg-light text-muted ms-1">اختیاری</span>}
+                        @if (!item.Done) { <span class="hint">@item.Hint</span> }
+                    </div>
+                    @if (!item.Done)
+                    {
+                        <a class="go" href="@item.Url">انجام بده <i class="bi bi-arrow-left"></i></a>
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
 <div class="row g-3 mb-4">
     <div class="col-md-4"><div class="panel-card"><div class="text-muted">محصولات</div><div class="fs-3 fw-bold">@ViewBag.ProductCount</div></div></div>
     <div class="col-md-4"><div class="panel-card"><div class="text-muted">سفارش‌ها</div><div class="fs-3 fw-bold">@ViewBag.OrderCount</div></div></div>

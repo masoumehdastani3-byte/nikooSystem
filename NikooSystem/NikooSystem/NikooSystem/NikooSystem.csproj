@@ -100,6 +100,50 @@
       <Private>True</Private>
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.IdentityModel.Abstractions, Version=7.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Abstractions.7.6.2\lib\net462\Microsoft.IdentityModel.Abstractions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.JsonWebTokens, Version=7.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.JsonWebTokens.7.6.2\lib\net462\Microsoft.IdentityModel.JsonWebTokens.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Logging, Version=7.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Logging.7.6.2\lib\net462\Microsoft.IdentityModel.Logging.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Tokens, Version=7.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.Tokens.7.6.2\lib\net462\Microsoft.IdentityModel.Tokens.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.IdentityModel.Tokens.Jwt, Version=7.6.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IdentityModel.Tokens.Jwt.7.6.2\lib\net462\System.IdentityModel.Tokens.Jwt.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.6.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.7.1\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web, Version=4.0.5.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Encodings.Web.4.7.2\lib\net461\System.Text.Encodings.Web.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Text.Json, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Text.Json.4.7.2\lib\net461\System.Text.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions, Version=4.2.0.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -132,20 +176,30 @@
     <Compile Include="Controllers\ShopAdminController.cs" />
     <Compile Include="Controllers\ShopBaseController.cs" />
     <Compile Include="Controllers\ShopController.cs" />
+    <Compile Include="Controllers\SignupController.cs" />
+    <Compile Include="Controllers\TorobApiController.cs" />
     <Compile Include="Filters\AdminAuthorizeAttribute.cs" />
+    <Compile Include="Helpers\HomeSections.cs" />
     <Compile Include="Helpers\SiteHelpers.cs" />
     <Compile Include="Helpers\StoreMenuHelper.cs" />
     <Compile Include="Helpers\StoreTemplates.cs" />
+    <Compile Include="Helpers\StoreTypes.cs" />
     <Compile Include="Models\HubPayment.cs" />
     <Compile Include="Models\Order.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\Store\StoreModels.cs" />
+    <Compile Include="Models\Torob\TorobApiModels.cs" />
     <Compile Include="Models\ViewModels.cs" />
     <Compile Include="Services\ImageService.cs" />
     <Compile Include="Services\JsonStore.cs" />
     <Compile Include="Services\PasswordHelper.cs" />
     <Compile Include="Services\PaymentHubService.cs" />
+    <Compile Include="Services\TenantProvisioningService.cs" />
     <Compile Include="Services\TenantStore.cs" />
+    <Compile Include="Services\TutorialService.cs" />
+    <Compile Include="Services\TorobCatalogService.cs" />
+    <Compile Include="Services\TorobTokenValidator.cs" />
+    <Compile Include="Services\TorobWebhookService.cs" />
     <Compile Include="Services\ZarinPalService.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -228,6 +282,16 @@
     <Content Include="Content\admin-table.js" />
     <Content Include="Content\storefront.css" />
     <Content Include="Content\storefront-themes.css" />
+    <Content Include="Content\onboarding.css" />
+    <Content Include="Content\template-picker.css" />
+    <Content Include="Content\storefront-product.css" />
+    <Content Include="Content\product-gallery.js" />
+    <Content Include="Content\admin-pages.css" />
+    <Content Include="Content\page-layout.js" />
+    <Content Include="Content\tutorial.css" />
+    <Content Include="Content\tutorial.js" />
+    <Content Include="Content\tutorials\*.json" />
+    <Content Include="Content\tutorials\videos\*.json;Content\tutorials\videos\*.webm" />
     <Content Include="Views\Shop\Index.cshtml" />
     <Content Include="Views\Shop\Catalog.cshtml" />
     <Content Include="Views\Shop\Product.cshtml" />
@@ -253,6 +317,15 @@
     <Content Include="Views\ShopAdmin\Gallery.cshtml" />
     <Content Include="Views\ShopAdmin\Orders.cshtml" />
     <Content Include="Views\ShopAdmin\Customers.cshtml" />
+    <Content Include="Views\ShopAdmin\Setup.cshtml" />
+    <Content Include="Views\ShopAdmin\_TemplatePicker.cshtml" />
+    <Content Include="Views\ShopAdmin\Collections.cshtml" />
+    <Content Include="Views\ShopAdmin\EditCollection.cshtml" />
+    <Content Include="Views\ShopAdmin\PageLayout.cshtml" />
+    <Content Include="Views\ShopAdmin\_PageSection.cshtml" />
+    <Content Include="Views\Signup\Index.cshtml" />
+    <Content Include="Views\Signup\Login.cshtml" />
+    <Content Include="Views\Signup\ChooseStore.cshtml" />
     <Content Include="Views\ShopAccount\Login.cshtml" />
     <Content Include="Views\ShopAccount\Register.cshtml" />
     <Content Include="Views\ShopAccount\Orders.cshtml" />

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
@@ -13,16 +14,72 @@ namespace NikooSystem.Controllers
         [HttpGet]
         public ActionResult Index()
         {
+            var products = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive).ToList();
+            var collections = TenantStore.GetCollections(CompanyCode).Where(c => c.IsActive).ToList();
+            var sections = HomeSections.Resolve(CurrentSettings).Where(s => s.IsVisible).ToList();
+
+            var sectionProducts = new Dictionary<string, List<StoreProduct>>();
+            foreach (var sec in sections.Where(s => s.Type == "products"))
+                sectionProducts[sec.Id] = SectionProducts(sec, products, collections);
+
             ViewBag.Categories = TenantStore.GetCategories(CompanyCode).Where(c => c.IsActive && c.ParentId == null).ToList();
-            ViewBag.Featured = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive && p.IsFeatured).Take(8).ToList();
+            ViewBag.Featured = products.Where(p => p.IsFeatured).Take(8).ToList();
             ViewBag.Gallery = TenantStore.GetGallery(CompanyCode).Take(6).ToList();
+            ViewBag.Sections = sections;
+            ViewBag.SectionProducts = sectionProducts;
+            ViewBag.Collections = collections;
             return View();
         }
 
-        [HttpGet]
-        public ActionResult Catalog(int? categoryId, string q, string sort = "newest")
+        private List<StoreProduct> SectionProducts(StoreHomeSection sec, List<StoreProduct> products, List<StoreCollection> collections)
         {
-            var products = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive).AsEnumerable();
+            IEnumerable<StoreProduct> q;
+            switch (sec.Source)
+            {
+                case "collection":
+                    if (!sec.CollectionId.HasValue || collections.All(c => c.Id != sec.CollectionId.Value))
+                        return new List<StoreProduct>();
+                    q = products.Where(p => p.CollectionIds != null && p.CollectionIds.Contains(sec.CollectionId.Value))
+                        .OrderByDescending(p => p.CreatedAt);
+                    break;
+                case "category":
+                    if (!sec.CategoryId.HasValue) return new List<StoreProduct>();
+                    var catIds = GetCategoryTreeIds(sec.CategoryId.Value);
+                    q = products.Where(p => catIds.Contains(p.CategoryId)).OrderByDescending(p => p.CreatedAt);
+                    break;
+                case "bestseller":
+                    q = products.OrderByDescending(p => p.SoldCount);
+                    break;
+                case "onsale":
+                    q = products.Where(p => p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+                        .OrderByDescending(p => (p.CompareAtPrice.Value - p.Price) / (double)p.CompareAtPrice.Value);
+                    break;
+                case "featured":
+                    q = products.Where(p => p.IsFeatured);
+                    break;
+                default:
+                    q = products.OrderByDescending(p => p.CreatedAt);
+                    break;
+            }
+            return q.Take(Math.Min(HomeSections.MaxProductsPerSection, Math.Max(1, sec.Count))).ToList();
+        }
+
+        private const int CatalogPageSize = 24;
+
+        [HttpGet]
+        public ActionResult Catalog(int? categoryId, string q, string sort = "newest",
+            long? minPrice = null, long? maxPrice = null, bool inStock = false, bool onSale = false, int page = 1,
+            int? collectionId = null)
+        {
+            var activeProducts = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive).ToList();
+            var categories = TenantStore.GetCategories(CompanyCode).Where(c => c.IsActive).ToList();
+            var collection = collectionId.HasValue
+                ? TenantStore.GetCollections(CompanyCode).FirstOrDefault(c => c.IsActive && c.Id == collectionId.Value)
+                : null;
+
+            var products = activeProducts.AsEnumerable();
+            if (collection != null)
+                products = products.Where(p => p.CollectionIds != null && p.CollectionIds.Contains(collection.Id));
             if (categoryId.HasValue)
             {
                 var catIds = GetCategoryTreeIds(categoryId.Value);
@@ -31,7 +88,12 @@ namespace NikooSystem.Controllers
             if (!string.IsNullOrWhiteSpace(q))
                 products = products.Where(p =>
                     (p.Title ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    (p.ShortDescription ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
+                    (p.ShortDescription ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    (p.Sku ?? "").IndexOf(q, StringComparison.OrdinalIgnoreCase) >= 0);
+            if (minPrice.HasValue) products = products.Where(p => p.Price >= minPrice.Value);
+            if (maxPrice.HasValue) products = products.Where(p => p.Price <= maxPrice.Value);
+            if (inStock) products = products.Where(p => p.Stock > 0);
+            if (onSale) products = products.Where(p => p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price);
 
             switch ((sort ?? "").ToLowerInvariant())
             {
@@ -56,11 +118,28 @@ namespace NikooSystem.Controllers
                     break;
             }
 
-            ViewBag.Categories = TenantStore.GetCategories(CompanyCode).Where(c => c.IsActive).ToList();
+            var all = products.ToList();
+            var totalPages = Math.Max(1, (int)Math.Ceiling(all.Count / (double)CatalogPageSize));
+            page = Math.Min(Math.Max(1, page), totalPages);
+
+            ViewBag.Categories = categories;
+            ViewBag.CategoryCounts = categories.ToDictionary(
+                c => c.Id,
+                c => { var ids = GetCategoryTreeIds(c.Id); return activeProducts.Count(p => ids.Contains(p.CategoryId)); });
             ViewBag.CategoryId = categoryId;
+            ViewBag.Category = categoryId.HasValue ? categories.FirstOrDefault(c => c.Id == categoryId.Value) : null;
+            ViewBag.Collection = collection;
+            ViewBag.CollectionId = collection?.Id;
             ViewBag.Q = q;
             ViewBag.Sort = sort;
-            return View(products.ToList());
+            ViewBag.MinPrice = minPrice;
+            ViewBag.MaxPrice = maxPrice;
+            ViewBag.InStock = inStock;
+            ViewBag.OnSale = onSale;
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalCount = all.Count;
+            return View(all.Skip((page - 1) * CatalogPageSize).Take(CatalogPageSize).ToList());
         }
 
         [HttpGet]
@@ -72,12 +151,26 @@ namespace NikooSystem.Controllers
             product.ViewCount++;
             TenantStore.UpsertProduct(CompanyCode, product);
 
+            var options = HomeSections.LayoutOf(CurrentSettings);
+            var productTags = product.CollectionIds ?? new List<int>();
             ViewBag.Category = TenantStore.GetCategories(CompanyCode).FirstOrDefault(c => c.Id == product.CategoryId);
-            ViewBag.Related = TenantStore.GetProducts(CompanyCode)
-                .Where(p => p.IsActive && p.CategoryId == product.CategoryId && p.Id != product.Id)
-                .Take(4).ToList();
+            ViewBag.Collections = productTags.Any()
+                ? TenantStore.GetCollections(CompanyCode).Where(c => c.IsActive && productTags.Contains(c.Id)).ToList()
+                : new List<StoreCollection>();
+            ViewBag.Related = new List<StoreProduct>();
+            if (options.ShowRelatedProducts)
+            {
+                var others = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive && p.Id != product.Id).ToList();
+                var sameTag = others.Where(p => p.CollectionIds != null && p.CollectionIds.Any(productTags.Contains));
+                ViewBag.Related = others.Where(p => p.CategoryId == product.CategoryId)
+                    .Concat(sameTag)
+                    .Distinct()
+                    .Take(Math.Min(12, Math.Max(1, options.RelatedProductsCount)))
+                    .ToList();
+            }
             ViewBag.Reviews = TenantStore.GetProductReviews(CompanyCode, product.Id);
             ViewBag.AvgRating = TenantStore.GetAverageRating(CompanyCode, product.Id);
+            ViewBag.MetaDescription = string.IsNullOrWhiteSpace(product.ShortDescription) ? product.Title : product.ShortDescription;
             return View(product);
         }
 
@@ -87,6 +180,8 @@ namespace NikooSystem.Controllers
         {
             var product = TenantStore.GetProduct(CompanyCode, productId);
             if (product == null || !product.IsActive) return HttpNotFound();
+            if (!HomeSections.LayoutOf(CurrentSettings).ShowReviews)
+                return RedirectToAction("Product", new { company = CompanyCode, slug = product.Slug });
 
             if (string.IsNullOrWhiteSpace(authorName) || string.IsNullOrWhiteSpace(comment))
             {
@@ -127,9 +222,24 @@ namespace NikooSystem.Controllers
             var product = TenantStore.GetProduct(CompanyCode, productId);
             if (product == null || !product.IsActive) return HttpNotFound();
             if (quantity < 1) quantity = 1;
+            if (product.Stock <= 0)
+            {
+                TempData["Error"] = "این محصول در حال حاضر موجود نیست.";
+                return RedirectToAction("Product", new { company = CompanyCode, slug = product.Slug });
+            }
 
             var cart = GetCart();
             var existing = cart.FirstOrDefault(x => x.ProductId == productId);
+            var inCart = existing?.Quantity ?? 0;
+            if (inCart + quantity > product.Stock)
+            {
+                quantity = product.Stock - inCart;
+                if (quantity <= 0)
+                {
+                    TempData["Error"] = "حداکثر موجودی این محصول (" + product.Stock + " عدد) در سبد شماست.";
+                    return RedirectToAction("Cart", new { company = CompanyCode });
+                }
+            }
             if (existing != null) existing.Quantity += quantity;
             else
             {

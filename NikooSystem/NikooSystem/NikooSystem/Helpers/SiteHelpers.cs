@@ -12,6 +12,14 @@ namespace NikooSystem.Helpers
             return amount.ToString("N0", CultureInfo.GetCultureInfo("fa-IR")) + " تومان";
         }
 
+        private static readonly PersianCalendar Shamsi = new PersianCalendar();
+
+        /// <summary>تاریخ شمسی به شکل ۱۴۰۵/۰۷/۱۸</summary>
+        public static string ToShamsi(this DateTime date)
+        {
+            return string.Format("{0:0000}/{1:00}/{2:00}", Shamsi.GetYear(date), Shamsi.GetMonth(date), Shamsi.GetDayOfMonth(date));
+        }
+
         public static string StatusText(this OrderStatus status)
         {
             switch (status)

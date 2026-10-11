@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
 using NikooSystem.Services;
 using Newtonsoft.Json;
@@ -33,12 +34,36 @@ namespace NikooSystem.Controllers
                 CurrentSettings = TenantStore.GetSettings(CompanyCode);
             }
 
+            ApplyTemplatePreview();
+
             ViewBag.CompanyCode = CompanyCode;
             ViewBag.Settings = CurrentSettings;
             ViewBag.Tenant = Tenant;
             ViewBag.Menus = TenantStore.GetMenus(CompanyCode).Where(m => m.IsActive).ToList();
             ViewBag.CartCount = GetCart().Sum(x => x.Quantity);
             base.OnActionExecuting(filterContext);
+        }
+
+        /// <summary>
+        /// ?previewTemplate=id renders the store with another template and its default colours,
+        /// without saving anything. Used by the template picker in the admin panel.
+        /// </summary>
+        private void ApplyTemplatePreview()
+        {
+            if (!(this is ShopController) || Request.HttpMethod != "GET") return;
+            var previewId = Request.QueryString["previewTemplate"];
+            if (CurrentSettings == null || string.IsNullOrWhiteSpace(previewId)) return;
+
+            var template = StoreTemplates.All.FirstOrDefault(t => t.Id == previewId);
+            if (template == null) return;
+
+            // settings may be cached and shared, so preview works on a copy
+            var copy = JsonConvert.DeserializeObject<StoreSettings>(JsonConvert.SerializeObject(CurrentSettings));
+            copy.LayoutStyle = template.Id;
+            copy.PrimaryColor = template.PrimaryColor;
+            copy.SecondaryColor = template.SecondaryColor;
+            CurrentSettings = copy;
+            ViewBag.PreviewTemplate = template.Id;
         }
 
         protected string CartSessionKey => "shop_cart_" + CompanyCode;

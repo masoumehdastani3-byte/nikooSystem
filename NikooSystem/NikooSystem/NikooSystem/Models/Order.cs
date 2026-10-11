@@ -25,6 +25,9 @@ namespace NikooSystem.Models
         public string OrderNumber { get; set; }
         public int ProductId { get; set; }
         public string ProductTitle { get; set; }
+
+        /// <summary>کد فروشگاه آزمایشی که با این پرداخت دائمی می‌شود</summary>
+        public string CompanyCode { get; set; }
         public long Amount { get; set; }
 
         [Required(ErrorMessage = "نام الزامی است")]

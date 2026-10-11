@@ -3,35 +3,62 @@
 @{
     var company = (string)ViewBag.CompanyCode;
     var p = Model;
-    var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
-    var rating = NikooSystem.Services.TenantStore.GetAverageRating(company, p.Id);
+    var images = (p.Images ?? new List<NikooSystem.Models.Store.StoreProductImage>()).OrderBy(i => i.SortOrder).ToList();
+    var img = images.FirstOrDefault();
+    var hoverImg = images.Skip(1).FirstOrDefault();
+    var reviews = NikooSystem.Services.TenantStore.GetProductReviews(company, p.Id);
+    var rating = reviews.Any() ? reviews.Average(r => r.Rating) : 0;
+    var onSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price;
+    var outOfStock = p.Stock <= 0;
+    var url = Url.Action("Product", "Shop", new { company, slug = p.Slug });
 }
-<article class="wm-product">
-    @if (p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+<article class="wm-product @(outOfStock ? "is-out" : "")">
+    @if (onSale && !outOfStock)
     {
         var off = (int)Math.Round(100.0 * (p.CompareAtPrice.Value - p.Price) / p.CompareAtPrice.Value);
-        <span class="wm-badge">-@off%</span>
+        <span class="wm-badge">٪@off تخفیف</span>
     }
-    <a class="thumb" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
+    @if (outOfStock)
+    {
+        <span class="wm-badge wm-badge-out">ناموجود</span>
+    }
+    <a class="thumb @(hoverImg != null ? "has-alt" : "")" href="@url">
         <img src="@(img?.ThumbUrl ?? img?.LargeUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@p.Title" loading="lazy" />
+        @if (hoverImg != null)
+        {
+            <img class="alt" src="@(hoverImg.ThumbUrl ?? hoverImg.LargeUrl)" alt="" loading="lazy" aria-hidden="true" />
+        }
     </a>
     <div class="body">
-        <h3><a href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">@p.Title</a></h3>
-        <div class="wm-meta">@p.ShortDescription</div>
-        <div class="wm-rating">★ @((rating > 0 ? rating : 4.5).ToString("0.0"))</div>
+        <h3><a href="@url">@p.Title</a></h3>
+        @if (!string.IsNullOrWhiteSpace(p.ShortDescription))
+        {
+            <div class="wm-meta">@p.ShortDescription</div>
+        }
+        @if (rating > 0)
+        {
+            <div class="wm-rating"><i class="bi bi-star-fill"></i> @rating.ToString("0.0") <span class="wm-rating-count">(@reviews.Count)</span></div>
+        }
         <div class="wm-price">
-            @if (p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+            @if (onSale)
             {
                 <del>@p.CompareAtPrice.Value.ToToman()</del>
             }
             @p.Price.ToToman()
         </div>
-        @using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { @class = "mt-2 product-cart-form" }))
+        @if (outOfStock)
         {
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="productId" value="@p.Id" />
-            <input type="hidden" name="quantity" value="1" />
-            <button class="btn-wm-cart" type="submit"><i class="bi bi-bag"></i> <span>افزودن به سبد</span></button>
+            <a class="btn-wm-cart is-disabled mt-2" href="@url"><i class="bi bi-bell"></i> <span>ناموجود</span></a>
+        }
+        else
+        {
+            using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { @class = "mt-2 product-cart-form" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" value="@p.Id" />
+                <input type="hidden" name="quantity" value="1" />
+                <button class="btn-wm-cart" type="submit"><i class="bi bi-bag"></i> <span>افزودن به سبد</span></button>
+            }
         }
     </div>
 </article>

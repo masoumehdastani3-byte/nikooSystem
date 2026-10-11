@@ -5,6 +5,8 @@
     var company = (string)ViewBag.CompanyCode;
     var cats = (IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories;
     var attrs = (IEnumerable<NikooSystem.Models.Store.StoreAttributeDef>)ViewBag.AttributeDefs;
+    var tags = ((IEnumerable<NikooSystem.Models.Store.StoreCollection>)ViewBag.Collections)?.ToList() ?? new List<NikooSystem.Models.Store.StoreCollection>();
+    var productTags = Model.CollectionIds ?? new List<int>();
 }
 <h2 class="mb-3">@ViewBag.Title</h2>
 @using (Html.BeginForm("EditProduct", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "productForm" }))
@@ -50,6 +52,29 @@
 
         <div class="col-md-3 form-check mt-4 pt-3"><label><input type="checkbox" name="IsActive" value="true" @(Model.IsActive?"checked":"") /> فعال</label><input type="hidden" name="IsActive" value="false" /></div>
         <div class="col-md-3 form-check mt-4 pt-3"><label><input type="checkbox" name="IsFeatured" value="true" @(Model.IsFeatured?"checked":"") /> ویژه</label><input type="hidden" name="IsFeatured" value="false" /></div>
+        <div class="col-12">
+            <h5>برچسب‌های ویژه</h5>
+            @if (tags.Any())
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var t in tags)
+                    {
+                        <label class="tag-check">
+                            <input type="checkbox" name="CollectionIds" value="@t.Id" @(productTags.Contains(t.Id) ? "checked" : "") />
+                            <span><i class="bi bi-tag"></i> @t.Title@(t.IsActive ? "" : " (غیرفعال)")</span>
+                        </label>
+                    }
+                </div>
+                <div class="form-text">کالا در ردیف‌های صفحه اول و صفحه هر برچسب نمایش داده می‌شود.</div>
+            }
+            else
+            {
+                <div class="text-muted small">
+                    هنوز برچسبی ندارید. با برچسب‌ها می‌توانید کالاهایی مثل «ویژه روز دختر» را در صفحه اول جدا نمایش دهید —
+                    <a href="@Url.Action("EditCollection","ShopAdmin", new { company })">ساخت برچسب</a>
+                </div>
+            }
+        </div>
         <div class="col-12">
             <h5>خصوصیات محصول (مرتبط با گروه)</h5>
             <div id="attrs">

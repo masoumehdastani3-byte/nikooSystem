@@ -18,10 +18,19 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewBag.Title - @settings.StoreName</title>
+    @if (ViewBag.MetaDescription != null)
+    {
+        <meta name="description" content="@ViewBag.MetaDescription" />
+    }
+    @if (ViewBag.PreviewTemplate != null)
+    {
+        <meta name="robots" content="noindex, nofollow" />
+    }
     <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
     <link href="~/Content/storefront.css" rel="stylesheet" />
     <link href="~/Content/storefront-themes.css" rel="stylesheet" />
+    <link href="~/Content/storefront-product.css" rel="stylesheet" />
     <style>
         :root {
             --store-primary: @primary;
@@ -418,6 +427,20 @@ else if (layoutId == "fashion")
     </div>
 </footer>
 <script src="~/Assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+@if (ViewBag.PreviewTemplate != null)
+{
+    <script>
+    (function () {
+      var id = '@ViewBag.PreviewTemplate';
+      document.querySelectorAll('a[href]').forEach(function (a) {
+        if (a.origin !== location.origin) return;
+        var url = new URL(a.href);
+        url.searchParams.set('previewTemplate', id);
+        a.href = url.toString();
+      });
+    })();
+    </script>
+}
 @RenderSection("scripts", required: false)
 </body>
 </html>

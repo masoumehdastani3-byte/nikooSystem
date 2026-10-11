@@ -1,0 +1,20 @@
+[
+  {
+    "Id": 1,
+    "Name": "رنگ",
+    "InputType": "text",
+    "Options": null,
+    "IsFilterable": true,
+    "SortOrder": 1,
+    "CategoryIds": []
+  },
+  {
+    "Id": 2,
+    "Name": "برند",
+    "InputType": "text",
+    "Options": null,
+    "IsFilterable": true,
+    "SortOrder": 2,
+    "CategoryIds": []
+  }
+]

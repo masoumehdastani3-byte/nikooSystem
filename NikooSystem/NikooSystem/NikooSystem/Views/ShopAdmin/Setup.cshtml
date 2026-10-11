@@ -1,0 +1,262 @@
+@model NikooSystem.Models.Store.StoreSettings
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "راه‌اندازی فروشگاه";
+    var company = (string)ViewBag.CompanyCode;
+    var step = (int)ViewBag.Step;
+    var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+    var categories = (List<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories;
+    var sampleCount = (int)ViewBag.SampleCount;
+    var realCount = (int)ViewBag.RealProductCount;
+    var storeUrl = (string)ViewBag.StoreUrl;
+    var serverIp = NikooSystem.Services.TenantProvisioningService.ServerIp;
+    var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
+    var steps = new[] { "نام و لوگو", "ظاهر فروشگاه", "اولین محصول", "درگاه پرداخت", "آدرس سایت" };
+}
+<link href="~/Content/storefront-themes.css" rel="stylesheet" />
+<link href="~/Content/onboarding.css" rel="stylesheet" />
+
+@if ((bool)ViewBag.Welcome)
+{
+    <div class="alert alert-success">
+        <strong>فروشگاه شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده فروش کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
+    </div>
+}
+
+<h2 class="mb-3">راه‌اندازی فروشگاه</h2>
+
+<nav class="ob-stepper">
+    @for (var i = 1; i <= steps.Length; i++)
+    {
+        var cls = i == step ? "current" : (i < step ? "done" : "");
+        <a class="@cls" href="@Url.Action("Setup", new { company, step = i })">
+            <span class="num">@(i < step ? "✓" : i.ToString())</span> @steps[i - 1]
+        </a>
+    }
+</nav>
+
+<div class="panel-card">
+@if (step == 1)
+{
+    using (Html.BeginForm("SetupInfo", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <h5>فروشگاه شما چه نامی دارد؟</h5>
+        <p class="text-muted small">این اطلاعات در بالای سایت، فوتر و صفحه «تماس با ما» نمایش داده می‌شود.</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">نام فروشگاه</label>
+                <input class="form-control" name="storeName" value="@Model.StoreName" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">شعار کوتاه (اختیاری)</label>
+                <input class="form-control" name="tagline" value="@Model.Tagline" placeholder="مثلاً: پوشاک باکیفیت با قیمت مناسب" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">تلفن تماس</label>
+                <input class="form-control" name="phone" value="@Model.Phone" dir="ltr" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">آدرس</label>
+                <input class="form-control" name="address" value="@Model.Address" placeholder="شهر، خیابان، پلاک" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">لوگو</label>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    @if (NikooSystem.Services.TenantProvisioningService.HasCustomLogo(Model))
+                    {
+                        <img class="ob-preview-img" src="@Model.LogoUrl" alt="لوگو" />
+                    }
+                    <input class="form-control" style="max-width:360px" type="file" name="logoFile" accept=".png,.jpg,.jpeg,.gif" />
+                </div>
+                <div class="form-text">بهتر است PNG با پس‌زمینه شفاف باشد. اگر لوگو ندارید، نام فروشگاه به‌جای آن نمایش داده می‌شود.</div>
+            </div>
+        </div>
+        <div class="ob-actions">
+            <span></span>
+            <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+        </div>
+    }
+}
+else if (step == 2)
+{
+    using (Html.BeginForm("SetupLook", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <h5>ظاهر فروشگاه را انتخاب کنید</h5>
+        <p class="text-muted small mb-1">روی یک قالب کلیک کنید؛ رنگ‌ها خودکار تنظیم می‌شوند و در صورت تمایل می‌توانید تغییرشان دهید.</p>
+        <div class="mb-3">
+            @Html.Partial("_TemplatePicker", Model.LayoutStyle)
+        </div>
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">رنگ اصلی</label>
+                <input class="form-control form-control-color w-100" type="color" name="primaryColor" id="PrimaryColor" value="@Model.PrimaryColor" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">رنگ فرعی</label>
+                <input class="form-control form-control-color w-100" type="color" name="secondaryColor" id="SecondaryColor" value="@Model.SecondaryColor" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">تصویر بنر صفحه اول (اختیاری)</label>
+                <input class="form-control" type="file" name="heroFile" accept=".png,.jpg,.jpeg" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">عنوان بنر</label>
+                <input class="form-control" name="heroTitle" value="@Model.HeroTitle" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">توضیح بنر</label>
+                <input class="form-control" name="heroSubtitle" value="@Model.HeroSubtitle" />
+            </div>
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 1 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> پیش‌نمایش</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
+else if (step == 3)
+{
+    using (Html.BeginForm("SetupProduct", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <h5>اولین محصولتان را اضافه کنید</h5>
+        <p class="text-muted small">
+            @if (realCount > 0)
+            {
+                <span>تا الان @realCount محصول اضافه کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
+            }
+            else
+            {
+                <span>فقط عنوان، قیمت و یک عکس کافی است؛ جزئیات بیشتر را بعداً از بخش «محصولات» اضافه کنید.</span>
+            }
+        </p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">عنوان محصول</label>
+                <input class="form-control" name="title" placeholder="مثلاً: کفش اسپرت مردانه" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">قیمت (تومان)</label>
+                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">موجودی</label>
+                <input class="form-control" name="stock" type="number" min="0" value="10" dir="ltr" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">گروه</label>
+                <select class="form-select" name="categoryId">
+                    @foreach (var c in categories)
+                    {
+                        <option value="@c.Id">@c.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">عکس محصول</label>
+                <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg,.gif" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">توضیح کوتاه</label>
+                <input class="form-control" name="shortDescription" />
+            </div>
+            @if (sampleCount > 0)
+            {
+                <div class="col-12 form-check ms-1">
+                    <input class="form-check-input" type="checkbox" name="removeSamples" value="true" id="removeSamples" />
+                    <input type="hidden" name="removeSamples" value="false" />
+                    <label class="form-check-label" for="removeSamples">@sampleCount محصول نمونه را از فروشگاه حذف کن</label>
+                </div>
+            }
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 2 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Setup", new { company, step = 4 })">رد شدن</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
+else if (step == 4)
+{
+    var hasMerchant = NikooSystem.Services.TenantProvisioningService.HasValidMerchant(Model);
+    using (Html.BeginForm("SetupPayment", "ShopAdmin", new { company }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <h5>دریافت پول از مشتری (درگاه زرین‌پال)</h5>
+        <p class="text-muted small">مبلغ هر سفارش مستقیم به حساب زرین‌پال خودتان واریز می‌شود.</p>
+        <ol class="small mb-3">
+            <li>در <a href="https://www.zarinpal.com" target="_blank" rel="noopener">zarinpal.com</a> ثبت‌نام کنید و احراز هویت را کامل کنید.</li>
+            <li>در پنل زرین‌پال یک «درگاه پرداخت» برای آدرس فروشگاهتان بسازید.</li>
+            <li>«مرچنت کد» (۳۶ کاراکتر) را کپی کنید و اینجا قرار دهید.</li>
+        </ol>
+        <div class="row g-3">
+            <div class="col-md-8">
+                <label class="form-label">مرچنت کد زرین‌پال</label>
+                <input class="form-control font-monospace" name="merchantId" dir="ltr" value="@(hasMerchant ? Model.ZarinPalMerchantId : "")" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+            </div>
+            <div class="col-12 form-check ms-1">
+                <input class="form-check-input" type="checkbox" name="enablePayment" value="true" id="enablePayment" @(Model.EnablePayment && hasMerchant ? "checked" : null) />
+                <input type="hidden" name="enablePayment" value="false" />
+                <label class="form-check-label" for="enablePayment">پرداخت آنلاین فعال باشد</label>
+            </div>
+        </div>
+        <div class="alert alert-light border small mt-3 mb-0">
+            هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، سفارش‌ها بدون پرداخت ثبت می‌شوند و در بخش «سفارش‌ها» می‌بینید.
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 3 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Setup", new { company, step = 5 })">رد شدن</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
+else
+{
+    using (Html.BeginForm("SetupDomain", "ShopAdmin", new { company }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <h5>آدرس فروشگاه شما</h5>
+        <p>فروشگاه شما همین حالا از این آدرس در دسترس است:</p>
+        <p><a class="fs-5" dir="ltr" href="@storeUrl" target="_blank">@storeUrl</a></p>
+        <hr />
+        <h6>دامنه اختصاصی (اختیاری)</h6>
+        <p class="text-muted small">اگر دامنه دارید (مثلاً myshop.ir) آن را وارد کنید. اگر ندارید، این بخش را خالی بگذارید و بعداً از «اطلاعات فروشگاه» اضافه کنید.</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <input class="form-control" name="customDomain" dir="ltr" value="@(tenant?.CustomDomain)" placeholder="myshop.ir" />
+            </div>
+        </div>
+        <div class="ob-dns mt-3">
+            <strong>بعد از وارد کردن دامنه، در پنل جایی که دامنه را خریده‌اید:</strong>
+            <ul class="mb-0 mt-2">
+                @if (!string.IsNullOrEmpty(serverIp))
+                {
+                    <li>یک رکورد <code>A</code> برای <code>@@</code> با مقدار <code>@serverIp</code> بسازید.</li>
+                }
+                @if (!string.IsNullOrEmpty(rootDomain))
+                {
+                    <li>یک رکورد <code>CNAME</code> برای <code>www</code> با مقدار <code>@(company.ToLowerInvariant()).@rootDomain</code> بسازید.</li>
+                }
+                else if (!string.IsNullOrEmpty(serverIp))
+                {
+                    <li>یک رکورد <code>A</code> برای <code>www</code> با مقدار <code>@serverIp</code> بسازید.</li>
+                }
+                <li>تغییرات DNS معمولاً بین چند دقیقه تا ۲۴ ساعت طول می‌کشد.</li>
+            </ul>
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 4 })">بازگشت</a>
+            <button class="btn-store" type="submit"><i class="bi bi-check2-circle"></i> پایان راه‌اندازی</button>
+        </div>
+    }
+}
+</div>

@@ -1,0 +1,126 @@
+.tut-launch {
+    position: fixed;
+    left: 22px;
+    bottom: 22px;
+    z-index: 1040;
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    border: 0;
+    border-radius: 999px;
+    padding: .65rem 1.1rem;
+    background: #1e293b;
+    color: #fff;
+    font-weight: 700;
+    font-size: .92rem;
+    box-shadow: 0 10px 28px rgba(15, 23, 42, .28);
+    transition: transform .15s ease, background .15s ease;
+}
+.tut-launch:hover { background: #0f172a; transform: translateY(-2px); }
+.tut-launch i { font-size: 1.25rem; color: #facc15; }
+.tut-launch.is-new { animation: tut-pulse 1.8s ease-in-out 4; }
+body.tut-active .tut-launch { display: none; }
+
+@keyframes tut-pulse {
+    0%, 100% { box-shadow: 0 10px 28px rgba(15, 23, 42, .28), 0 0 0 0 rgba(250, 204, 21, .55); }
+    50% { box-shadow: 0 10px 28px rgba(15, 23, 42, .28), 0 0 0 12px rgba(250, 204, 21, 0); }
+}
+
+.tut-root { position: fixed; inset: 0; z-index: 2000; font-family: 'Far_Yekan', Tahoma, sans-serif; }
+.tut-block { position: absolute; inset: 0; }
+.tut-spot {
+    position: fixed;
+    border-radius: 12px;
+    box-shadow: 0 0 0 9999px rgba(15, 23, 42, .62);
+    outline: 3px solid #facc15;
+    outline-offset: 0;
+    pointer-events: none;
+    transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease;
+}
+.tut-pop {
+    position: fixed;
+    width: min(360px, calc(100vw - 28px));
+    background: #fff;
+    color: #1e293b;
+    border-radius: 16px;
+    padding: 1.1rem 1.15rem 1rem;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, .35);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .2s ease, transform .2s ease;
+}
+.tut-pop.is-shown { opacity: 1; transform: none; }
+.tut-pop.is-intro { width: min(460px, calc(100vw - 28px)); text-align: center; padding: 1.8rem 1.6rem 1.4rem; }
+.tut-pop.is-intro .tut-title { font-size: 1.45rem; }
+.tut-close {
+    position: absolute;
+    top: .55rem;
+    left: .55rem;
+    border: 0;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 1rem;
+    line-height: 1;
+    padding: .35rem;
+}
+.tut-close:hover { color: #1e293b; }
+.tut-count { font-size: .78rem; font-weight: 700; color: #b45309; margin-bottom: .2rem; min-height: 1em; }
+.tut-title { font-size: 1.08rem; font-weight: 800; margin: 0 0 .45rem; }
+.tut-text { font-size: .93rem; line-height: 1.85; margin: 0; color: #475569; }
+.tut-bar { display: none; height: 4px; border-radius: 4px; background: #f1f5f9; margin-top: .9rem; overflow: hidden; }
+.tut-bar span { display: block; height: 100%; width: 0; background: #facc15; }
+.tut-nav { display: flex; justify-content: space-between; gap: .5rem; margin-top: 1rem; }
+.tut-nav button {
+    border: 0;
+    border-radius: 10px;
+    padding: .45rem .9rem;
+    font-weight: 700;
+    font-size: .88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+.tut-prev { background: #f1f5f9; color: #334155; }
+.tut-prev:disabled { opacity: .45; }
+.tut-next { background: #1e293b; color: #fff; }
+.tut-next:hover { background: #0f172a; }
+
+.tut-auto .tut-nav, .tut-auto .tut-close { display: none; }
+.tut-auto .tut-bar { display: block; }
+.tut-cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    font-size: 1.7rem;
+    color: #fff;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .55));
+    transform-origin: 0 0;
+    transition: transform .8s cubic-bezier(.45, .05, .25, 1);
+    pointer-events: none;
+}
+.tut-cursor i { display: block; transform: scaleX(-1); }
+
+.tut-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2100;
+    background: rgba(15, 23, 42, .72);
+    display: grid;
+    place-items: center;
+    padding: 1rem;
+}
+.tut-modal-box {
+    width: min(960px, 100%);
+    background: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .4);
+}
+.tut-modal-head, .tut-modal-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem 1rem;
+}
+.tut-video { display: block; width: 100%; max-height: 72vh; background: #0f172a; }

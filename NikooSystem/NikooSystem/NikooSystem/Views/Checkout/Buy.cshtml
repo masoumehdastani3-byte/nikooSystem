@@ -1,14 +1,22 @@
 @model NikooSystem.Models.CheckoutViewModel
 @using NikooSystem.Helpers
 @{
-    ViewBag.Title = "درخواست دمو";
+    var trial = ViewBag.TrialTenant as NikooSystem.Models.Store.TenantInfo;
+    ViewBag.Title = trial != null ? "فعال‌سازی دائمی فروشگاه" : "درخواست دمو";
     ViewBag.Nav = "products";
 }
 <main id="main">
     <div class="page-hero">
         <div class="container">
-            <h1>درخواست دمو</h1>
-            <p class="text-muted">اطلاعات خود را وارد کنید؛ سپس به درگاه پرداخت منتقل می‌شوید</p>
+            <h1>@ViewBag.Title</h1>
+            @if (trial != null)
+            {
+                <p class="text-muted">با پرداخت اشتراک، فروشگاه «@trial.Name» از حالت آزمایشی خارج می‌شود و حذف نخواهد شد.</p>
+            }
+            else
+            {
+                <p class="text-muted">اطلاعات خود را وارد کنید؛ سپس به درگاه پرداخت منتقل می‌شوید</p>
+            }
         </div>
     </div>
     <section class="pb-5">
@@ -37,6 +45,10 @@
                         @using (Html.BeginForm("Buy", "Checkout", new { productId = Model.Product.Id }, FormMethod.Post))
                         {
                             @Html.AntiForgeryToken()
+                            if (trial != null)
+                            {
+                                <input type="hidden" name="company" value="@trial.CompanyCode" />
+                            }
                             <div class="row gy-3">
                                 <div class="col-md-6">
                                     @Html.LabelFor(m => m.CustomerName)

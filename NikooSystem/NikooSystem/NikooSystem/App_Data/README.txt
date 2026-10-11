@@ -94,6 +94,16 @@ ASP.NET MVC 5 (.NET Framework 4.8)
 `GET https://nikoooo.ir/api/payments/status/{token}`  
 با همان هدرهای `X-App-Id` و `X-Api-Key`.
 
+## اتصال ترب (Torob Product API v3)
+هر فروشگاه tenant در پنل ShopAdmin → تنظیمات می‌تواند API ترب را فعال کند.
+
+- Endpoint (با دامنه اختصاصی): `POST https://دامنه-فروشگاه/torob_api/v3/products`
+- بدون دامنه: `POST https://سایت-اصلی/torob_api/v3/{CompanyCode}/products`
+- احراز هویت: هدر `X-Torob-Token` (JWT امضای ترب) و `X-Torob-Token-Version: 1`
+- بدنه نمونه: `{"page":1,"sort":"date_added_desc"}`
+- Webhook به‌روزرسانی (اختیاری): توکن Bearer از ترب در تنظیمات فروشگاه؛ پس از ذخیره محصول به `api.torob.com` اطلاع داده می‌شود.
+- تست محلی: در Web.config می‌توانید `Torob.SkipJwtValidation` را `true` کنید (production: false).
+
 ## امکانات
 - صفحه اصلی با ظاهر مشابه قالب استاتیک
 - لیست و جزئیات محصولات نرم‌افزاری

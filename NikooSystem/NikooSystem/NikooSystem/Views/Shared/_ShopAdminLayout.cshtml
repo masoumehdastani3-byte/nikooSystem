@@ -1,6 +1,10 @@
 @{
     var settings = (NikooSystem.Models.Store.StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
+    var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+    var onTrial = tenant != null && tenant.IsTrial && !tenant.IsPaid;
+    var subscriptionProductId = onTrial ? NikooSystem.Services.TenantProvisioningService.SubscriptionProductId(tenant.StoreType) : null;
+    var tutorial = NikooSystem.Services.TutorialService.Get(ViewContext.RouteData.Values["action"] as string);
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -13,6 +17,8 @@
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
     <link href="~/Content/storefront.css" rel="stylesheet" />
     <link href="~/Content/admin-table.css" rel="stylesheet" />
+    <link href="~/Content/admin-pages.css" rel="stylesheet" />
+    @if (tutorial != null) { <link href="~/Content/tutorial.css" rel="stylesheet" /> }
     <style>body{font-family:'Far_Yekan',Tahoma,sans-serif!important}</style>
 </head>
 <body>
@@ -23,9 +29,12 @@
             <div class="small opacity-75">کد شرکت: @company</div>
         </div>
         <a href="@Url.Action("Index","ShopAdmin", new { company })"><i class="bi bi-speedometer2"></i> داشبورد</a>
+        <a href="@Url.Action("Setup","ShopAdmin", new { company })"><i class="bi bi-magic"></i> راه‌اندازی سریع</a>
         <a href="@Url.Action("Settings","ShopAdmin", new { company })"><i class="bi bi-shop"></i> اطلاعات فروشگاه</a>
+        <a href="@Url.Action("PageLayout","ShopAdmin", new { company })"><i class="bi bi-layout-text-window-reverse"></i> چیدمان صفحات</a>
         <a href="@Url.Action("Products","ShopAdmin", new { company })"><i class="bi bi-box"></i> محصولات</a>
         <a href="@Url.Action("Categories","ShopAdmin", new { company })"><i class="bi bi-diagram-3"></i> گروه‌ها</a>
+        <a href="@Url.Action("Collections","ShopAdmin", new { company })"><i class="bi bi-tags"></i> برچسب‌های ویژه</a>
         <a href="@Url.Action("Attributes","ShopAdmin", new { company })"><i class="bi bi-list-check"></i> خصوصیات</a>
         <a href="@Url.Action("Menus","ShopAdmin", new { company })"><i class="bi bi-menu-button-wide"></i> منوها</a>
         <a href="@Url.Action("Pages","ShopAdmin", new { company })"><i class="bi bi-file-earmark-text"></i> صفحات</a>
@@ -38,6 +47,21 @@
         <a href="@Url.Action("Logout","ShopAdmin", new { company })"><i class="bi bi-box-arrow-right"></i> خروج</a>
     </aside>
     <main class="admin-main">
+        @if (onTrial)
+        {
+            <link href="~/Content/onboarding.css" rel="stylesheet" />
+            <div class="trial-banner">
+                <i class="bi bi-hourglass-split"></i>
+                <div class="grow">
+                    <strong>دوره آزمایشی: @tenant.TrialDaysLeft() روز باقی مانده</strong>
+                    <div class="small text-muted">اگر تا پایان این مدت اشتراک را پرداخت نکنید، فروشگاه و همه اطلاعات آن حذف می‌شود.</div>
+                </div>
+                @if (subscriptionProductId.HasValue)
+                {
+                    <a class="btn btn-warning btn-sm" href="@Url.Action("Buy","Checkout", new { productId = subscriptionProductId.Value, company })">پرداخت و فعال‌سازی دائمی</a>
+                }
+            </div>
+        }
         @if (TempData["Ok"] != null) { <div class="alert alert-success">@TempData["Ok"]</div> }
         @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
         @RenderBody()
@@ -45,5 +69,13 @@
 </div>
 <script src="~/Content/admin-table.js"></script>
 @RenderSection("scripts", required: false)
+@if (tutorial != null)
+{
+    <button type="button" class="tut-launch" id="tutLaunch" data-page="@tutorial.Page" data-title="@tutorial.Title" data-video="@tutorial.VideoUrl">
+        <i class="bi bi-play-circle-fill"></i> آموزش این صفحه
+    </button>
+    <script type="application/json" id="tutData">@Html.Raw(tutorial.TourJson)</script>
+    <script src="~/Content/tutorial.js"></script>
+}
 </body>
 </html>

@@ -5,10 +5,39 @@
     var company = (string)ViewBag.CompanyCode;
 }
 <h2 class="mb-4">اطلاعات و ظاهر فروشگاه + درگاه پرداخت</h2>
-@using (Html.BeginForm("Settings", "ShopAdmin", new { company }, FormMethod.Post))
+@using (Html.BeginForm("Settings", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
 {
     @Html.AntiForgeryToken()
     <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">لوگو</label>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                @if (!string.IsNullOrEmpty(Model.LogoUrl))
+                {
+                    <img src="@Model.LogoUrl" alt="لوگو" style="max-height:60px;max-width:180px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fafafa" />
+                }
+                <input class="form-control" style="max-width:300px" type="file" name="logoFile" accept=".png,.jpg,.jpeg,.gif" />
+            </div>
+            @if (!string.IsNullOrEmpty(Model.LogoUrl))
+            {
+                <div class="form-check mt-1">
+                    <input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="removeLogo" />
+                    <input type="hidden" name="removeLogo" value="false" />
+                    <label class="form-check-label small" for="removeLogo">حذف لوگو (نام فروشگاه به‌جای آن نمایش داده شود)</label>
+                </div>
+            }
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">تصویر بنر صفحه اول</label>
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                @if (!string.IsNullOrEmpty(Model.HeroImageUrl))
+                {
+                    <img src="@Model.HeroImageUrl" alt="بنر" style="max-height:60px;max-width:140px;border-radius:8px;object-fit:cover" />
+                }
+                <input class="form-control" style="max-width:300px" type="file" name="heroFile" accept=".png,.jpg,.jpeg" />
+            </div>
+            @Html.HiddenFor(m => m.HeroImageUrl)
+        </div>
         <div class="col-md-6"><label class="form-label">نام فروشگاه</label>@Html.TextBoxFor(m => m.StoreName, new { @class = "form-control" })</div>
         <div class="col-md-6"><label class="form-label">شعار</label>@Html.TextBoxFor(m => m.Tagline, new { @class = "form-control" })</div>
         <div class="col-12"><label class="form-label">درباره فروشگاه</label>@Html.TextAreaFor(m => m.About, 3, 1, new { @class = "form-control" })</div>
@@ -17,7 +46,6 @@
         <div class="col-md-4"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Address, new { @class = "form-control" })</div>
         <div class="col-md-6"><label class="form-label">عنوان هیرو</label>@Html.TextBoxFor(m => m.HeroTitle, new { @class = "form-control" })</div>
         <div class="col-md-6"><label class="form-label">زیرعنوان هیرو</label>@Html.TextBoxFor(m => m.HeroSubtitle, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">تصویر هیرو (URL)</label>@Html.TextBoxFor(m => m.HeroImageUrl, new { @class = "form-control" })</div>
         <div class="col-md-3"><label class="form-label">رنگ اصلی</label><input class="form-control form-control-color w-100" type="color" name="PrimaryColor" id="PrimaryColor" value="@Model.PrimaryColor" /></div>
         <div class="col-md-3"><label class="form-label">رنگ فرعی</label><input class="form-control form-control-color w-100" type="color" name="SecondaryColor" id="SecondaryColor" value="@Model.SecondaryColor" /></div>
         <div class="col-md-8"><label class="form-label">متن فوتر</label>@Html.TextBoxFor(m => m.FooterText, new { @class = "form-control" })</div>
@@ -26,27 +54,7 @@
             <p class="text-muted small">یکی از قالب‌های آماده را انتخاب کنید. در صورت نیاز رنگ‌ها را هم دستی تغییر دهید.</p>
         </div>
         <div class="col-12">
-            <input type="hidden" name="LayoutStyle" id="LayoutStyle" value="@NikooSystem.Helpers.StoreTemplates.Normalize(Model.LayoutStyle)" />
-            <div class="template-grid">
-                @foreach (var t in NikooSystem.Helpers.StoreTemplates.All)
-                {
-                    var active = NikooSystem.Helpers.StoreTemplates.Normalize(Model.LayoutStyle) == t.Id;
-                    <label class="template-card @(active ? "active" : "")" data-id="@t.Id" data-primary="@t.PrimaryColor" data-secondary="@t.SecondaryColor">
-                        <input type="radio" name="templatePick" value="@t.Id" @(active ? "checked" : null) />
-                        <div class="template-preview">
-                            <div class="bar" style="background:@t.PreviewGradient"></div>
-                            <div class="body">
-                                <div class="block"></div>
-                                <div class="block"></div>
-                            </div>
-                        </div>
-                        <div class="template-meta">
-                            <strong>@t.Name</strong>
-                            <span>@t.Description</span>
-                        </div>
-                    </label>
-                }
-            </div>
+            @Html.Partial("_TemplatePicker", Model.LayoutStyle)
         </div>
 
         <div class="col-12"><hr /><h5>شبکه‌های اجتماعی</h5>
@@ -69,6 +77,26 @@
             @Html.TextAreaFor(m => m.EnamadHtml, 6, 1, new { @class = "form-control", dir = "ltr", style = "font-family:Consolas,monospace;font-size:13px;", placeholder = "<a referrerpolicy=\"origin\" target=\"_blank\" href=\"https://trustseal.enamad.ir/...\"><img ... /></a>" })
         </div>
 
+        @{
+            var siteTenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+            var defaultUrl = (string)ViewBag.StoreUrl;
+            var ip = NikooSystem.Services.TenantProvisioningService.ServerIp;
+        }
+        <div class="col-12"><hr /><h5>آدرس و دامنه فروشگاه</h5>
+            <p class="text-muted small mb-0">آدرس رایگان فروشگاه شما: <a href="@defaultUrl" target="_blank" dir="ltr">@defaultUrl</a></p>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">دامنه اختصاصی (اختیاری)</label>
+            <input class="form-control" name="customDomain" dir="ltr" value="@(siteTenant?.CustomDomain)" placeholder="myshop.ir" />
+            <div class="form-text">
+                بدون http و www وارد کنید. برای حذف دامنه، کادر را خالی کنید.
+                @if (!string.IsNullOrEmpty(ip))
+                {
+                    <span>سپس در پنل دامنه، رکورد <code>A</code> را روی <code dir="ltr">@ip</code> تنظیم کنید.</span>
+                }
+            </div>
+        </div>
+
         <div class="col-12"><hr /><h5>درگاه پرداخت</h5></div>
         <div class="col-md-6"><label class="form-label">MerchantId</label>@Html.TextBoxFor(m => m.ZarinPalMerchantId, new { @class = "form-control" })</div>
         <div class="col-md-3 form-check mt-4 pt-2">
@@ -81,33 +109,52 @@
             <input type="hidden" name="EnablePayment" value="false" />
             <label class="form-check-label">فعال بودن پرداخت</label>
         </div>
+
+        <div class="col-12"><hr /><h5>اتصال به ترب (Torob)</h5>
+            <p class="text-muted small mb-0">طبق <a href="https://github.com/Torob/Torob-Sync/blob/main/product_api_v3.md" target="_blank" rel="noopener">Product API v3</a>؛ آدرس endpoint را در پنل فروشندگان ترب ثبت کنید.</p>
+        </div>
+        @{
+            var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+            var scheme = Request.Url.Scheme;
+            var host = Request.Url.Authority;
+            var hasDomain = tenant != null && !string.IsNullOrWhiteSpace(tenant.CustomDomain);
+            var apiOnDomain = hasDomain
+                ? (scheme + "://" + tenant.CustomDomain.Trim() + "/torob_api/v3/products")
+                : null;
+            var apiWithCode = scheme + "://" + host + "/torob_api/v3/" + company + "/products";
+        }
+        <div class="col-12 form-check">
+            <input class="form-check-input" type="checkbox" name="EnableTorob" value="true" @(Model.EnableTorob ? "checked" : "") />
+            <input type="hidden" name="EnableTorob" value="false" />
+            <label class="form-check-label">فعال‌سازی API محصولات برای ترب</label>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">آدرس عمومی فروشگاه (برای لینک محصول در ترب)</label>
+            @Html.TextBoxFor(m => m.PublicStoreBaseUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://shop.example.com" })
+            <div class="form-text">اگر دامنه اختصاصی در tenants.json تنظیم شده باشد، همان اولویت دارد.</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">توکن Webhook ترب (Bearer)</label>
+            @Html.TextBoxFor(m => m.TorobWebhookBearerToken, new { @class = "form-control", dir = "ltr", placeholder = "از پشتیبانی ترب" })
+            <div class="form-text">برای به‌روزرسانی سریع محصول بعد از ذخیره در پنل (اختیاری).</div>
+        </div>
+        <div class="col-12">
+            <label class="form-label">آدرس API برای ثبت در ترب</label>
+            @if (!string.IsNullOrEmpty(apiOnDomain))
+            {
+                <input class="form-control font-monospace" dir="ltr" readonly value="@apiOnDomain" />
+                <div class="form-text">با دامنه اختصاصی: POST + هدرهای X-Torob-Token و X-Torob-Token-Version: 1</div>
+            }
+            else
+            {
+                <input class="form-control font-monospace" dir="ltr" readonly value="@apiWithCode" />
+                <div class="form-text">تا زمان اتصال دامنه اختصاصی از این آدرس (شامل کد فروشگاه) استفاده کنید.</div>
+            }
+        </div>
+
         <div class="col-12"><hr /><h5>مدیر فروشگاه</h5></div>
         <div class="col-md-4"><label class="form-label">نام کاربری ادمین</label>@Html.TextBoxFor(m => m.AdminUsername, new { @class = "form-control" })</div>
         <div class="col-md-4"><label class="form-label">رمز جدید (اختیاری)</label><input class="form-control" type="password" name="newPassword" /></div>
         <div class="col-12"><button class="btn-store" type="submit">ذخیره تنظیمات</button></div>
     </div>
-}
-
-@section scripts {
-<link href="~/Content/storefront-themes.css" rel="stylesheet" />
-<script>
-(function () {
-  var cards = document.querySelectorAll('.template-card');
-  var hidden = document.getElementById('LayoutStyle');
-  var primary = document.getElementById('PrimaryColor');
-  var secondary = document.getElementById('SecondaryColor');
-  cards.forEach(function (card) {
-    card.addEventListener('click', function () {
-      cards.forEach(function (c) { c.classList.remove('active'); });
-      card.classList.add('active');
-      var id = card.getAttribute('data-id');
-      hidden.value = id;
-      var radio = card.querySelector('input[type=radio]');
-      if (radio) radio.checked = true;
-      if (primary) primary.value = card.getAttribute('data-primary');
-      if (secondary) secondary.value = card.getAttribute('data-secondary');
-    });
-  });
-})();
-</script>
 }

@@ -54,22 +54,108 @@ namespace NikooSystem.Services
             }
         }
 
+        /// <summary>فروشگاه فعال است و دوره آزمایشی‌اش تمام نشده</summary>
+        public static bool IsLive(TenantInfo tenant)
+        {
+            return tenant != null && tenant.IsActive && !tenant.IsTrialExpired();
+        }
+
         public static TenantInfo GetTenant(string companyCode)
         {
             if (string.IsNullOrWhiteSpace(companyCode)) return null;
             return GetTenants().FirstOrDefault(t =>
-                string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase) && t.IsActive);
+                string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase) && IsLive(t));
         }
 
         public static TenantInfo ResolveByHost(string host)
         {
             if (string.IsNullOrWhiteSpace(host)) return null;
-            host = host.Split(':')[0].Trim().ToLowerInvariant();
+            host = host.Split(':')[0].Trim().TrimEnd('.').ToLowerInvariant();
             if (host == "localhost" || host == "127.0.0.1") return null;
+
+            var root = TenantProvisioningService.RootDomain;
+            if (!string.IsNullOrEmpty(root) && host.EndsWith("." + root, StringComparison.Ordinal))
+            {
+                var sub = host.Substring(0, host.Length - root.Length - 1);
+                if (sub != "www" && sub.IndexOf('.') < 0)
+                    return GetTenant(sub);
+            }
+
+            var bare = host.StartsWith("www.", StringComparison.Ordinal) ? host.Substring(4) : host;
             return GetTenants().FirstOrDefault(t =>
-                t.IsActive &&
+                IsLive(t) &&
                 !string.IsNullOrWhiteSpace(t.CustomDomain) &&
-                string.Equals(t.CustomDomain.Trim(), host, StringComparison.OrdinalIgnoreCase));
+                string.Equals(t.CustomDomain.Trim(), bare, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static bool CompanyCodeExists(string companyCode)
+        {
+            if (string.IsNullOrWhiteSpace(companyCode)) return false;
+            return GetTenants().Any(t => string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase))
+                || Directory.Exists(Path.Combine(DataRoot, companyCode));
+        }
+
+        public static void AddTenant(TenantInfo tenant)
+        {
+            lock (RegistryLock)
+            {
+                EnsureSeed();
+                var list = ReadList<TenantInfo>(RegistryFile);
+                if (list.Any(t => string.Equals(t.CompanyCode, tenant.CompanyCode, StringComparison.OrdinalIgnoreCase)))
+                    throw new InvalidOperationException("این آدرس فروشگاه قبلاً گرفته شده است.");
+                list.Add(tenant);
+                WriteList(RegistryFile, list);
+            }
+        }
+
+        public static void UpdateTenant(TenantInfo tenant)
+        {
+            lock (RegistryLock)
+            {
+                EnsureSeed();
+                var list = ReadList<TenantInfo>(RegistryFile);
+                var idx = list.FindIndex(t => string.Equals(t.CompanyCode, tenant.CompanyCode, StringComparison.OrdinalIgnoreCase));
+                if (idx < 0) return;
+                list[idx] = tenant;
+                WriteList(RegistryFile, list);
+            }
+        }
+
+        public static void RemoveTenant(string companyCode)
+        {
+            lock (RegistryLock)
+            {
+                EnsureSeed();
+                var list = ReadList<TenantInfo>(RegistryFile);
+                if (list.RemoveAll(t => string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase)) > 0)
+                    WriteList(RegistryFile, list);
+            }
+        }
+
+        /// <summary>حذف کامل داده‌ها و فایل‌های آپلودشده فروشگاه</summary>
+        public static void DeleteTenantData(string companyCode)
+        {
+            if (string.IsNullOrWhiteSpace(companyCode)) return;
+            lock (LockFor(companyCode))
+            {
+                var dir = Path.Combine(DataRoot, companyCode);
+                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+
+                var uploads = HostingEnvironment.MapPath("~/Uploads/" + companyCode);
+                if (!string.IsNullOrEmpty(uploads) && Directory.Exists(uploads)) Directory.Delete(uploads, true);
+            }
+            lock (TenantLocks) TenantLocks.Remove(companyCode);
+        }
+
+        /// <summary>ساخت داده اولیه فروشگاه جدید بر اساس نوع کسب‌وکار</summary>
+        public static void SeedNewTenant(string companyCode, string storeType, Action<StoreSettings> customize)
+        {
+            lock (LockFor(companyCode))
+            {
+                if (File.Exists(PathOf(companyCode, "settings.json")))
+                    throw new InvalidOperationException("داده این فروشگاه از قبل وجود دارد.");
+                SeedTenantData(companyCode.ToUpperInvariant(), storeType, customize);
+            }
         }
 
         public static string ResolveCompanyCode(HttpRequestBase request, string routeCompany = null)
@@ -162,6 +248,7 @@ namespace NikooSystem.Services
                 }
                 else
                 {
+                    product.UpdatedAt = DateTime.Now;
                     var idx = list.FindIndex(x => x.Id == product.Id);
                     if (idx >= 0) list[idx] = product;
                     else list.Add(product);
@@ -180,6 +267,20 @@ namespace NikooSystem.Services
                 if (removed) WriteList(PathOf(companyCode, "products.json"), list);
                 return removed;
             }
+        }
+
+        public static List<StoreCollection> GetCollections(string companyCode)
+        {
+            EnsureTenantSeed(companyCode);
+            lock (LockFor(companyCode))
+                return ReadList<StoreCollection>(PathOf(companyCode, "collections.json"))
+                    .OrderBy(c => c.SortOrder).ThenBy(c => c.Id).ToList();
+        }
+
+        public static void SaveCollections(string companyCode, List<StoreCollection> list)
+        {
+            lock (LockFor(companyCode))
+                WriteList(PathOf(companyCode, "collections.json"), list);
         }
 
         public static List<StoreMenuItem> GetMenus(string companyCode)
@@ -446,7 +547,7 @@ namespace NikooSystem.Services
             }
         }
 
-        private static void SeedTenantData(string code)
+        private static void SeedTenantData(string code, string storeType = null, Action<StoreSettings> customize = null)
         {
             StoreSettings settings;
             List<StoreCategory> cats;
@@ -456,7 +557,25 @@ namespace NikooSystem.Services
             List<StorePage> pages;
             List<StoreGalleryItem> gallery;
 
-            if (code == "FASHION")
+            var type = storeType ?? (code == "FASHION" ? "fashion" : code == "GROCERY" ? "grocery" : "digital");
+
+            if (type == "general")
+            {
+                settings = BaseSettings(code, "فروشگاه من", "فروشگاه آنلاین", "#222222", "#e5e5e5",
+                    "به فروشگاه ما خوش آمدید", "محصولات منتخب با قیمت مناسب و ارسال سریع", "minimal");
+                cats = new List<StoreCategory>
+                {
+                    new StoreCategory { Id = 1, Title = "محصولات", Slug = "products", SortOrder = 1 },
+                    new StoreCategory { Id = 2, Title = "پیشنهاد ویژه", Slug = "special", SortOrder = 2 }
+                };
+                attrs = new List<StoreAttributeDef>
+                {
+                    new StoreAttributeDef { Id = 1, Name = "رنگ", InputType = "text", IsFilterable = true, SortOrder = 1 },
+                    new StoreAttributeDef { Id = 2, Name = "برند", InputType = "text", IsFilterable = true, SortOrder = 2 }
+                };
+                products = GeneralProducts();
+            }
+            else if (type == "fashion")
             {
                 settings = BaseSettings(code, "Boutique Mode", "فروشگاه آنلاین پوشاک", "#46d2ad", "#002c3e",
                     "پوشاک تازه برای فصل جدید", "کالکشن منتخب زنانه و مردانه با ارسال سریع", "fashion");
@@ -477,7 +596,7 @@ namespace NikooSystem.Services
                 };
                 products = FashionProducts();
             }
-            else if (code == "GROCERY")
+            else if (type == "grocery")
             {
                 settings = BaseSettings(code, "نیکو مارکت", "فروشگاه ارگانیک تازه", "#6aa84f", "#e8f5d8",
                     "مواد تازه، زندگی سالم‌تر", "محصولات ارگانیک با تحویل سریع تا درب منزل", "organic");
@@ -516,6 +635,8 @@ namespace NikooSystem.Services
                 products = DigitalProducts();
             }
 
+            customize?.Invoke(settings);
+
             menus = new List<StoreMenuItem>
             {
                 new StoreMenuItem { Id = 1, Title = "خانه", Url = "/Shop/" + code, SortOrder = 1, Location = "main" },
@@ -529,7 +650,7 @@ namespace NikooSystem.Services
             pages = new List<StorePage>
             {
                 new StorePage { Id = 1, Title = "درباره ما", Slug = "about", IsPublished = true, BodyHtml = "<p>" + settings.About + "</p><p>این فروشگاه روی پلتفرم نیکو سیستم آفرین اجرا می‌شود و قابل سفارشی‌سازی کامل است.</p>" },
-                new StorePage { Id = 2, Title = "تماس با ما", Slug = "contact", IsPublished = true, BodyHtml = "<p>تلفن: " + settings.Phone + "</p><p>ایمیل: " + settings.Email + "</p><p>" + settings.Address + "</p>" },
+                new StorePage { Id = 2, Title = "تماس با ما", Slug = "contact", IsPublished = true, BodyHtml = ContactPageHtml(settings) },
                 new StorePage { Id = 3, Title = "شرایط فروش",Slug = "terms", IsPublished = true, BodyHtml = "<p>پس از ثبت سفارش و پرداخت موفق، پیگیری از پنل کاربری امکان‌پذیر است.</p>" }
             };
 
@@ -571,12 +692,32 @@ namespace NikooSystem.Services
                 HeroImageUrl = "/Assets/img/hero-img.png",
                 FooterText = "© " + name + " — قدرت‌گرفته از نیکو سیستم آفرین",
                 LayoutStyle = layoutStyle,
-                HomeSectionsJson = "[\"hero\",\"categories\",\"featured\",\"gallery\",\"about\"]",
                 AdminUsername = "admin",
                 AdminPasswordHash = PasswordHelper.Hash("Admin@123"),
                 ZarinPalMerchantId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 ZarinPalSandbox = true,
                 EnablePayment = true
+            };
+        }
+
+        private static string ContactPageHtml(StoreSettings s)
+        {
+            var html = "";
+            if (!string.IsNullOrWhiteSpace(s.Phone)) html += "<p>تلفن: " + HttpUtility.HtmlEncode(s.Phone) + "</p>";
+            if (!string.IsNullOrWhiteSpace(s.Email)) html += "<p>ایمیل: " + HttpUtility.HtmlEncode(s.Email) + "</p>";
+            if (!string.IsNullOrWhiteSpace(s.Address)) html += "<p>" + HttpUtility.HtmlEncode(s.Address) + "</p>";
+            return html == "" ? "<p>اطلاعات تماس به‌زودی تکمیل می‌شود.</p>" : html;
+        }
+
+        private static List<StoreProduct> GeneralProducts()
+        {
+            return new List<StoreProduct>
+            {
+                P(1, 1, "محصول نمونه اول", "sample-1", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 250000, true, "/Assets/img/portfolio/portfolio-4.jpg",
+                    A(1, "رنگ", "مشکی")),
+                P(2, 1, "محصول نمونه دوم", "sample-2", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 480000, true, "/Assets/img/portfolio/portfolio-5.jpg",
+                    A(1, "رنگ", "سفید")),
+                P(3, 2, "محصول نمونه پیشنهادی", "sample-3", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 150000, false, "/Assets/img/portfolio/portfolio-6.jpg")
             };
         }
 
@@ -647,6 +788,7 @@ namespace NikooSystem.Services
                 Sku = "SKU-" + id,
                 IsActive = true,
                 IsFeatured = featured,
+                IsSample = true,
                 SoldCount = id * 7,
                 ViewCount = id * 40,
                 Images = new List<StoreProductImage>

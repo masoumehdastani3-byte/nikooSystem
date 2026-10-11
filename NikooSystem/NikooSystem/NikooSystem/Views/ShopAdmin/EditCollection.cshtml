@@ -1,0 +1,107 @@
+@model NikooSystem.Models.Store.StoreCollection
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش برچسب" : "برچسب جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<NikooSystem.Models.Store.StoreProduct>)ViewBag.Products;
+    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+    var onHome = (bool)ViewBag.OnHome;
+}
+<h2 class="mb-3">@ViewBag.Title</h2>
+@using (Html.BeginForm("SaveCollection", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3">
+        <div class="col-md-6">
+            <label class="form-label">عنوان برچسب</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", placeholder = "مثلاً: ویژه روز دختر", maxlength = "60", required = "required" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">اسلاگ <span class="text-muted small">(اختیاری)</span></label>
+            @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", dir = "ltr" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">ترتیب</label>
+            @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })
+        </div>
+        <div class="col-12">
+            <label class="form-label">توضیح کوتاه <span class="text-muted small">(زیر عنوان ردیف در صفحه اول نمایش داده می‌شود)</span></label>
+            @Html.TextBoxFor(m => m.Description, new { @class = "form-control", maxlength = "160", placeholder = "مثلاً: هدیه‌های منتخب برای روز دختر با بسته‌بندی ویژه" })
+        </div>
+        <div class="col-md-4">
+            <label class="tag-check">
+                <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                <span>برچسب فعال است</span>
+            </label>
+            <input type="hidden" name="IsActive" value="false" />
+        </div>
+        <div class="col-md-8">
+            <label class="tag-check">
+                <input type="checkbox" name="showOnHome" value="true" @(onHome ? "checked" : "") />
+                <span><i class="bi bi-house"></i> یک ردیف از این کالاها در صفحه اول نمایش بده</span>
+            </label>
+            <input type="hidden" name="showOnHome" value="false" />
+        </div>
+    </div>
+
+    <div class="panel-card mt-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h5 class="mb-0">کالاهای این برچسب <span class="adm-pill is-on" id="pickCount">0</span></h5>
+            <div class="d-flex gap-2 align-items-center">
+                <input type="search" class="form-control form-control-sm" id="pickSearch" placeholder="جستجوی کالا..." style="max-width:220px" />
+                <label class="small text-nowrap"><input type="checkbox" id="pickOnlySelected" /> فقط انتخاب‌شده‌ها</label>
+            </div>
+        </div>
+        @if (!products.Any())
+        {
+            <p class="text-muted mb-0">هنوز کالایی ثبت نشده است.</p>
+        }
+        <div class="pick-grid" id="pickGrid">
+            @foreach (var p in products)
+            {
+                var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
+                var selected = p.CollectionIds != null && Model.Id > 0 && p.CollectionIds.Contains(Model.Id);
+                <label class="pick-item" data-title="@p.Title">
+                    <input type="checkbox" name="productIds" value="@p.Id" @(selected ? "checked" : "") />
+                    <img src="@(img?.ThumbUrl ?? img?.LargeUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="" loading="lazy" />
+                    <span class="pick-body">
+                        <strong>@p.Title</strong>
+                        <small>@(cats.ContainsKey(p.CategoryId) ? cats[p.CategoryId] : "")@(p.IsActive ? "" : " — غیرفعال")</small>
+                    </span>
+                    <i class="bi bi-check-circle-fill pick-tick"></i>
+                </label>
+            }
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <button class="btn-store" type="submit">ذخیره برچسب</button>
+        <a class="btn-outline-store" href="@Url.Action("Collections","ShopAdmin", new { company })">بازگشت</a>
+    </div>
+}
+@section scripts {
+<script>
+(function () {
+  var grid = document.getElementById('pickGrid');
+  var search = document.getElementById('pickSearch');
+  var onlySel = document.getElementById('pickOnlySelected');
+  var count = document.getElementById('pickCount');
+  function refresh() {
+    var q = (search.value || '').trim().toLowerCase();
+    var n = 0;
+    grid.querySelectorAll('.pick-item').forEach(function (item) {
+      var checked = item.querySelector('input').checked;
+      if (checked) n++;
+      var match = !q || item.dataset.title.toLowerCase().indexOf(q) >= 0;
+      item.hidden = !match || (onlySel.checked && !checked);
+    });
+    count.textContent = n.toLocaleString('fa-IR');
+  }
+  grid.addEventListener('change', refresh);
+  search.addEventListener('input', refresh);
+  onlySel.addEventListener('change', refresh);
+  refresh();
+})();
+</script>
+}

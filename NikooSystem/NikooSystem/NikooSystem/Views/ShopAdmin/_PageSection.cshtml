@@ -1,0 +1,142 @@
+@model NikooSystem.Models.Store.StoreHomeSection
+@using NikooSystem.Helpers
+@using NikooSystem.Models.Store
+@{
+    var type = HomeSections.Type(Model.Type);
+    var company = (string)ViewBag.CompanyCode;
+    var collections = (List<StoreCollection>)ViewBag.Collections;
+    var cats = (List<StoreCategory>)ViewBag.Categories;
+    var editable = type.HasTitle || type.IsCustom;
+}
+<li class="ls-item @(Model.IsVisible ? "" : "is-hidden")" data-id="@Model.Id" data-type="@Model.Type">
+    <div class="ls-row">
+        <span class="ls-handle" title="برای جابه‌جایی بکشید"><i class="bi bi-grip-vertical"></i></span>
+        <span class="ls-icon"><i class="bi @type.Icon"></i></span>
+        <div class="ls-name">
+            <strong>@type.Name @if (type.IsCustom) { <span class="adm-pill is-on">دلخواه</span> }</strong>
+            <small class="ls-summary" data-hint="@type.Hint">@type.Hint</small>
+        </div>
+        <div class="ls-actions">
+            <button type="button" class="ls-btn" data-move="-1" title="بالاتر"><i class="bi bi-arrow-up"></i></button>
+            <button type="button" class="ls-btn" data-move="1" title="پایین‌تر"><i class="bi bi-arrow-down"></i></button>
+            @if (editable)
+            {
+                <button type="button" class="ls-btn" data-edit title="تنظیمات بخش"><i class="bi bi-sliders"></i></button>
+            }
+            @if (type.IsCustom)
+            {
+                <button type="button" class="ls-btn is-danger" data-remove title="حذف بخش"><i class="bi bi-trash"></i></button>
+            }
+            <label class="form-check form-switch ls-switch" title="نمایش در سایت">
+                <input class="form-check-input" type="checkbox" data-field="IsVisible" @(Model.IsVisible ? "checked" : "") aria-label="نمایش در سایت" />
+            </label>
+        </div>
+    </div>
+    @if (editable)
+    {
+        <div class="ls-edit" hidden>
+            <div class="row g-2">
+                @if (type.HasTitle)
+                {
+                    <div class="col-md-6">
+                        <label class="form-label">عنوان@(type.Id == "banner" ? "" : " (اختیاری)")</label>
+                        <input class="form-control" data-field="Title" value="@Model.Title" maxlength="80"
+                               placeholder="@(type.Id == "banner" ? "مثلاً: جشنواره روز دختر" : type.IsCustom ? "خالی = نام برچسب یا نوع کالاها" : "خالی = عنوان پیش‌فرض قالب")" />
+                    </div>
+                }
+                @if (type.IsCustom)
+                {
+                    <div class="col-md-6">
+                        <label class="form-label">زیرعنوان (اختیاری)</label>
+                        <input class="form-control" data-field="Subtitle" value="@Model.Subtitle" maxlength="160" />
+                    </div>
+                }
+                @if (type.Id == "products")
+                {
+                    <div class="col-md-4">
+                        <label class="form-label">کدام کالاها نمایش داده شوند؟</label>
+                        <select class="form-select" data-field="Source" data-source>
+                            @foreach (var s in HomeSections.ProductSources)
+                            {
+                                <option value="@s.Key" @(Model.Source == s.Key ? "selected" : "")>@s.Value</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4" data-when="collection">
+                        <label class="form-label">برچسب</label>
+                        @if (collections.Any())
+                        {
+                            <select class="form-select" data-field="CollectionId" data-type="int">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach (var c in collections)
+                                {
+                                    <option value="@c.Id" @(Model.CollectionId == c.Id ? "selected" : "")>@c.Title@(c.IsActive ? "" : " (غیرفعال)")</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            <div class="small text-muted pt-2">
+                                هنوز برچسبی ندارید —
+                                <a href="@Url.Action("EditCollection","ShopAdmin", new { company })">ساخت برچسب</a>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-4" data-when="category">
+                        <label class="form-label">گروه کالا</label>
+                        <select class="form-select" data-field="CategoryId" data-type="int">
+                            <option value="">— انتخاب کنید —</option>
+                            @foreach (var c in cats)
+                            {
+                                <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@(c.ParentId.HasValue ? "— " : "")@c.Title</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">تعداد</label>
+                        <input class="form-control" type="number" min="1" max="@HomeSections.MaxProductsPerSection" data-field="Count" data-type="int" value="@Model.Count" />
+                    </div>
+                }
+                @if (type.Id == "banner")
+                {
+                    <div class="col-md-4">
+                        <label class="form-label">متن دکمه</label>
+                        <input class="form-control" data-field="ButtonText" value="@Model.ButtonText" maxlength="40" placeholder="مثلاً: مشاهده هدیه‌ها" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">دکمه به کجا برود؟</label>
+                        <div class="input-group">
+                            <select class="form-select ls-link-pick" data-link-pick aria-label="انتخاب سریع لینک">
+                                <option value="">انتخاب سریع…</option>
+                                <option value="@Url.Action("Catalog","Shop", new { company })">همه محصولات</option>
+                                <option value="@Url.Action("Catalog","Shop", new { company, onSale = true })">کالاهای تخفیف‌دار</option>
+                                @foreach (var c in collections)
+                                {
+                                    <option value="@Url.Action("Catalog","Shop", new { company, collectionId = c.Id })">برچسب: @c.Title</option>
+                                }
+                                @foreach (var c in cats)
+                                {
+                                    <option value="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">گروه: @c.Title</option>
+                                }
+                            </select>
+                            <input class="form-control" data-field="LinkUrl" value="@Model.LinkUrl" dir="ltr" placeholder="/Shop/... یا https://..." />
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">تصویر پس‌زمینه (اختیاری)</label>
+                        <input class="form-control" type="file" name="bannerImage_@Model.Id" accept="image/*" />
+                        <input type="hidden" data-field="ImageUrl" value="@Model.ImageUrl" />
+                        <div class="form-text">بدون تصویر، بنر با رنگ اصلی فروشگاه نمایش داده می‌شود. اندازه مناسب: ۱۶۰۰×۶۰۰ پیکسل.</div>
+                        @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                        {
+                            <div class="ls-img">
+                                <img src="@Model.ImageUrl" alt="" />
+                                <button type="button" class="btn btn-link text-danger p-0" data-clear-image>حذف تصویر</button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</li>

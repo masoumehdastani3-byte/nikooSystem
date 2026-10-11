@@ -10,6 +10,8 @@ namespace NikooSystem
 {
     public class MvcApplication : System.Web.HttpApplication
     {
+        private static System.Threading.Timer _trialCleanupTimer;
+
         protected void Application_Start()
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -17,6 +19,12 @@ namespace NikooSystem
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+
+            _trialCleanupTimer = new System.Threading.Timer(_ =>
+            {
+                try { TenantProvisioningService.PurgeExpiredTrials(); }
+                catch { }
+            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
         }
 
         protected void Application_BeginRequest()
@@ -31,6 +39,7 @@ namespace NikooSystem
                 path.StartsWith("/ShopAccount", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/api", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/Pay", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith("/torob_api", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/Admin", StringComparison.OrdinalIgnoreCase))
             {
                 return;

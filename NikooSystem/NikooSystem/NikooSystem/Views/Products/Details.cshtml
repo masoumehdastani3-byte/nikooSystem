@@ -33,9 +33,13 @@
                         <div class="d-flex flex-wrap gap-2 mt-4">
                             @if (!string.IsNullOrEmpty(Model.DemoSlug))
                             {
+                                <a class="btn-primary-shop" href="@Url.Action("Index","Signup", new { type = Model.DemoSlug })"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@NikooSystem.Services.TenantProvisioningService.TrialDays روز)</a>
                                 <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })"><i class="bi bi-eye"></i> مشاهده دمو فروشگاه</a>
                             }
-                            <a class="btn-primary-shop" href="@Url.Action("Buy","Checkout", new { productId = Model.Id })"><i class="bi bi-cart-check"></i> درخواست دمو</a>
+                            else
+                            {
+                                <a class="btn-primary-shop" href="@Url.Action("Buy","Checkout", new { productId = Model.Id })"><i class="bi bi-cart-check"></i> درخواست دمو</a>
+                            }
                         </div>
                     </div>
                 </div>

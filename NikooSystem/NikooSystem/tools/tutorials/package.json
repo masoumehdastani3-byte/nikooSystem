@@ -1,0 +1,12 @@
+{
+  "name": "nikoo-tutorial-recorder",
+  "private": true,
+  "type": "module",
+  "description": "Records the admin-panel tutorial videos from Content/tutorials/*.json",
+  "scripts": {
+    "record": "node record.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "^1.48.0"
+  }
+}

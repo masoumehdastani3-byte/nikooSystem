@@ -1,0 +1,32 @@
+@model List<NikooSystem.Models.Store.TenantInfo>
+@{
+    ViewBag.Title = "انتخاب فروشگاه";
+}
+<link href="~/Content/onboarding.css" rel="stylesheet" />
+<main id="main" class="ob-page">
+    <div class="container" style="max-width:520px;">
+        <div class="ob-card">
+            <h1>کدام فروشگاه؟</h1>
+            <p class="ob-sub">با این شماره چند فروشگاه دارید؛ یکی را برای مدیریت انتخاب کنید.</p>
+            <div class="ob-store-list">
+                @foreach (var t in Model)
+                {
+                    <a href="@Url.Action("Index","ShopAdmin", new { company = t.CompanyCode })">
+                        <div>
+                            <strong>@t.Name</strong>
+                            <div class="small text-muted" dir="ltr">@t.CompanyCode.ToLowerInvariant()</div>
+                        </div>
+                        @if (t.IsTrial)
+                        {
+                            <span class="badge bg-warning text-dark">آزمایشی — @t.TrialDaysLeft() روز</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">فعال</span>
+                        }
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</main>

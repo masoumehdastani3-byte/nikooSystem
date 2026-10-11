@@ -1,0 +1,117 @@
+@model NikooSystem.Models.Store.StorePageLayout
+@using NikooSystem.Helpers
+@using NikooSystem.Models.Store
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "چیدمان صفحات";
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var sections = (List<StoreHomeSection>)ViewBag.Sections;
+    var collections = (List<StoreCollection>)ViewBag.Collections;
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">چیدمان صفحات</h2>
+        <p class="text-muted mb-0">بخش‌های صفحه اول را روشن و خاموش کنید، جابه‌جا کنید یا بخش تازه بسازید.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده صفحه اول</a>
+</div>
+
+@using (Html.BeginForm("PageLayout", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "layoutForm" }))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="sectionsJson" id="sectionsJson" />
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <div class="panel-card">
+                <div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
+                    <h5 class="mb-0"><i class="bi bi-house"></i> صفحه اول</h5>
+                    <span class="small text-muted">قالب فعلی: @template.Name</span>
+                </div>
+                <p class="small text-muted mt-2">بخش‌ها را با نگه‌داشتن <i class="bi bi-grip-vertical"></i> بکشید یا با فلش‌ها جابه‌جا کنید. کلید کنار هر بخش آن را در سایت نمایش می‌دهد یا مخفی می‌کند.</p>
+
+                <ul class="ls-list" id="lsList">
+                    @foreach (var sec in sections)
+                    {
+                        @Html.Partial("_PageSection", sec)
+                    }
+                </ul>
+
+                <div class="ls-add">
+                    <div class="ls-add-title">افزودن بخش تازه</div>
+                    <div class="ls-add-grid">
+                        <button type="button" class="ls-add-btn" data-add="products">
+                            <i class="bi bi-bag-check"></i>
+                            <span><strong>ردیف محصولات</strong><small>کالاهای یک برچسب (مثل «روز دختر»)، پرفروش‌ها، تخفیف‌دارها یا یک گروه</small></span>
+                        </button>
+                        <button type="button" class="ls-add-btn" data-add="banner">
+                            <i class="bi bi-badge-ad"></i>
+                            <span><strong>بنر تبلیغاتی</strong><small>تصویر و متن دلخواه با دکمه برای جشنواره‌ها و مناسبت‌ها</small></span>
+                        </button>
+                    </div>
+                    @if (!collections.Any())
+                    {
+                        <div class="small text-muted mt-2">
+                            <i class="bi bi-lightbulb"></i> برای نمایش کالاهای خاص (مثلاً ویژه روز دختر)، اول از
+                            <a href="@Url.Action("Collections","ShopAdmin", new { company })">برچسب‌های ویژه</a> یک برچسب بسازید.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="panel-card">
+                <h5><i class="bi bi-box-seam"></i> صفحه محصول</h5>
+                <p class="small text-muted">بخش‌هایی که در صفحه هر کالا نمایش داده می‌شوند.</p>
+                <div class="ls-options">
+                    <label class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="showRelatedProducts" value="true" id="optRelated" @(Model.ShowRelatedProducts ? "checked" : "") />
+                        <input type="hidden" name="showRelatedProducts" value="false" />
+                        <span>محصولات مشابه</span>
+                        <small>کالاهای همان گروه یا با برچسب مشترک</small>
+                    </label>
+                    <div class="ls-sub" data-when-checked="optRelated">
+                        <label class="small">تعداد:</label>
+                        <input class="form-control form-control-sm" type="number" name="relatedProductsCount" min="1" max="12" value="@Model.RelatedProductsCount" />
+                    </div>
+                    <label class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="showReviews" value="true" @(Model.ShowReviews ? "checked" : "") />
+                        <input type="hidden" name="showReviews" value="false" />
+                        <span>نظرات و امتیاز مشتریان</span>
+                        <small>ستاره‌ها، فهرست نظرات و فرم ثبت نظر</small>
+                    </label>
+                    <label class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="showSpecifications" value="true" @(Model.ShowSpecifications ? "checked" : "") />
+                        <input type="hidden" name="showSpecifications" value="false" />
+                        <span>مشخصات فنی</span>
+                        <small>خلاصه خصوصیات کنار عکس و جدول مشخصات</small>
+                    </label>
+                    <label class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="showBuyPerks" value="true" @(Model.ShowBuyPerks ? "checked" : "") />
+                        <input type="hidden" name="showBuyPerks" value="false" />
+                        <span>مزایای خرید</span>
+                        <small>پرداخت امن، پیگیری سفارش، شماره مشاوره</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ls-savebar">
+        <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره چیدمان</button>
+        <span class="ls-dirty" id="lsDirty" hidden><i class="bi bi-dot"></i> تغییرات ذخیره نشده</span>
+    </div>
+}
+
+<template id="tpl-products">
+    @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "products", Source = collections.Any(c => c.IsActive) ? "collection" : "newest", Count = 8 })
+</template>
+<template id="tpl-banner">
+    @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "banner" })
+</template>
+
+@section scripts {
+<script src="~/Content/page-layout.js"></script>
+}

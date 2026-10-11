@@ -35,7 +35,8 @@
                     <li><a class="nav-link @(ViewBag.Nav=="products"?"active":"")" href="@Url.Action("Index","Products")">محصولات</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="about"?"active":"")" href="@Url.Action("About","Home")">درباره ما</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="contact"?"active":"")" href="@Url.Action("Contact","Home")">تماس با ما</a></li>
-                    <li><a class="getstarted" href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })"><i class="bi bi-cart3"></i> فروشگاه دموها</a></li>
+                    <li><a class="nav-link" href="@Url.Action("Login","Signup")">ورود فروشندگان</a></li>
+                    <li><a class="getstarted" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان</a></li>
                 </ul>
                 <i class="bi bi-list mobile-nav-toggle"></i>
             </nav>
@@ -88,13 +89,15 @@
                     <div class="col-lg-2 col-6 footer-links">
                         <h4>محصولات</h4>
                         <ul>
-                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })">فروشگاه آنلاین</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Signup")">ساخت فروشگاه رایگان</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Login","Signup")">ورود فروشندگان</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })">فروشگاه‌های نمونه</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products")">همه محصولات</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Login","Admin")">ورود پنل</a></li>
                         </ul>
                     </div>
                     <div class="col-lg-3 col-md-12 footer-contact text-center text-md-start">
-                        <h4>تماس با ما</h4>
+                        <h4>تماس با ما</h4>in
                         <p>
                             تهران، نارمک<br>
                             خیابان شهید نیلفروشان ، پلاک 679<br><br>

@@ -1,0 +1,129 @@
+@model string
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var current = NikooSystem.Helpers.StoreTemplates.Normalize(Model);
+}
+<link href="~/Content/template-picker.css" rel="stylesheet" />
+<input type="hidden" name="LayoutStyle" id="LayoutStyle" value="@current" />
+<p class="text-muted small mb-2">
+    <i class="bi bi-info-circle"></i>
+    تصویر هر قالب، صفحه اول <strong>فروشگاه خودتان</strong> با همان محصولات و اطلاعات است. برای دیدن کامل و گشتن در صفحات، «پیش‌نمایش بزرگ» را بزنید.
+</p>
+<div class="tpl-grid">
+    @foreach (var t in NikooSystem.Helpers.StoreTemplates.All)
+    {
+        var active = current == t.Id;
+        var previewUrl = Url.Action("Index", "Shop", new { company, previewTemplate = t.Id });
+        <div class="tpl-card @(active ? "active" : "")" data-id="@t.Id" data-primary="@t.PrimaryColor" data-secondary="@t.SecondaryColor" data-name="@t.Name" data-url="@previewUrl" role="button" tabindex="0">
+            <div class="tpl-thumb" style="--tpl-bg:@t.PreviewGradient">
+                <span class="tpl-loading">در حال بارگذاری پیش‌نمایش…</span>
+                <iframe src="@previewUrl" loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="@t.Name"></iframe>
+                <span class="tpl-selected"><i class="bi bi-check-circle-fill"></i> انتخاب شده</span>
+            </div>
+            <div class="tpl-meta">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="tpl-swatch" style="background:@t.PrimaryColor"></span>
+                    <span class="tpl-swatch" style="background:@t.SecondaryColor"></span>
+                    <strong>@t.Name</strong>
+                </div>
+                <span class="tpl-desc">@t.Description</span>
+                <button type="button" class="btn btn-sm btn-outline-secondary w-100 mt-2 tpl-zoom"><i class="bi bi-arrows-fullscreen"></i> پیش‌نمایش بزرگ</button>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="tpl-modal" id="tplModal" hidden>
+    <div class="tpl-modal-box">
+        <div class="tpl-modal-head">
+            <strong id="tplModalName"></strong>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" data-device="desktop"><i class="bi bi-display"></i> دسکتاپ</button>
+                <button type="button" class="btn btn-outline-secondary" data-device="mobile"><i class="bi bi-phone"></i> موبایل</button>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+                <button type="button" class="btn btn-success btn-sm" id="tplModalPick"><i class="bi bi-check2"></i> انتخاب این قالب</button>
+                <button type="button" class="btn btn-light btn-sm" id="tplModalClose" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </div>
+        <div class="tpl-modal-body">
+            <iframe id="tplModalFrame" title="پیش‌نمایش قالب"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+  var DESKTOP_WIDTH = 1280;
+  var cards = document.querySelectorAll('.tpl-card');
+  var hidden = document.getElementById('LayoutStyle');
+  var modal = document.getElementById('tplModal');
+  var frame = document.getElementById('tplModalFrame');
+  var modalCard = null;
+
+  function fit(card) {
+    var thumb = card.querySelector('.tpl-thumb');
+    thumb.style.setProperty('--tpl-scale', thumb.clientWidth / DESKTOP_WIDTH);
+  }
+
+  function pick(card) {
+    cards.forEach(function (c) { c.classList.remove('active'); });
+    card.classList.add('active');
+    hidden.value = card.getAttribute('data-id');
+    var primary = document.getElementById('PrimaryColor');
+    var secondary = document.getElementById('SecondaryColor');
+    if (primary) primary.value = card.getAttribute('data-primary');
+    if (secondary) secondary.value = card.getAttribute('data-secondary');
+  }
+
+  function openModal(card) {
+    modalCard = card;
+    document.getElementById('tplModalName').textContent = card.getAttribute('data-name');
+    setDevice('desktop');
+    frame.src = card.getAttribute('data-url');
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    frame.src = 'about:blank';
+    document.body.style.overflow = '';
+  }
+
+  function setDevice(device) {
+    modal.querySelectorAll('[data-device]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-device') === device);
+    });
+    modal.classList.toggle('is-mobile', device === 'mobile');
+  }
+
+  cards.forEach(function (card) {
+    fit(card);
+    var iframe = card.querySelector('.tpl-thumb iframe');
+    iframe.addEventListener('load', function () { card.classList.add('loaded'); });
+
+    card.addEventListener('click', function () { pick(card); });
+    card.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(card); }
+    });
+    card.querySelector('.tpl-zoom').addEventListener('click', function (e) {
+      e.stopPropagation();
+      openModal(card);
+    });
+  });
+
+  window.addEventListener('resize', function () { cards.forEach(fit); });
+
+  modal.querySelectorAll('[data-device]').forEach(function (b) {
+    b.addEventListener('click', function () { setDevice(b.getAttribute('data-device')); });
+  });
+  document.getElementById('tplModalPick').addEventListener('click', function () {
+    if (modalCard) pick(modalCard);
+    closeModal();
+  });
+  document.getElementById('tplModalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+})();
+</script>

@@ -1,138 +1,403 @@
 @model NikooSystem.Models.Store.StoreProduct
 @using NikooSystem.Helpers
 @using NikooSystem.Models.Store
+@using Newtonsoft.Json
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = Model.Title;
     var company = (string)ViewBag.CompanyCode;
-    var related = (IEnumerable<StoreProduct>)ViewBag.Related ?? Enumerable.Empty<StoreProduct>();
-    var reviews = (IEnumerable<StoreProductReview>)ViewBag.Reviews ?? Enumerable.Empty<StoreProductReview>();
+    var settings = (StoreSettings)ViewBag.Settings;
+    var category = ViewBag.Category as StoreCategory;
+    var options = HomeSections.LayoutOf(settings);
+    var tags = (ViewBag.Collections as List<StoreCollection>) ?? new List<StoreCollection>();
+    var related = ((IEnumerable<StoreProduct>)ViewBag.Related ?? Enumerable.Empty<StoreProduct>()).ToList();
+    var reviews = ((IEnumerable<StoreProductReview>)ViewBag.Reviews ?? Enumerable.Empty<StoreProductReview>()).OrderByDescending(r => r.CreatedAt).ToList();
     var avg = ViewBag.AvgRating as double? ?? 0;
     var images = (Model.Images ?? new List<StoreProductImage>()).OrderBy(i => i.SortOrder).ToList();
-    var main = images.FirstOrDefault();
+    var attributes = options.ShowSpecifications
+        ? (Model.Attributes ?? new List<StoreProductAttribute>()).Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Value)).ToList()
+        : new List<StoreProductAttribute>();
+    var onSale = Model.CompareAtPrice.HasValue && Model.CompareAtPrice > Model.Price;
+    var discount = onSale ? (int)Math.Round(100.0 * (Model.CompareAtPrice.Value - Model.Price) / Model.CompareAtPrice.Value) : 0;
+    var outOfStock = Model.Stock <= 0;
+    var lowStock = !outOfStock && Model.Stock <= 5;
+    const string placeholder = "/Assets/img/portfolio/portfolio-1.jpg";
+
+    var baseUrl = Request.Url.GetLeftPart(UriPartial.Authority);
+    var structured = new Dictionary<string, object>
+    {
+        { "@context", "https://schema.org" },
+        { "@type", "Product" },
+        { "name", Model.Title },
+        { "description", string.IsNullOrWhiteSpace(Model.Description) ? Model.ShortDescription : Model.Description },
+        { "image", images.Select(i => baseUrl + (i.LargeUrl ?? i.ThumbUrl)).ToList() },
+        { "offers", new Dictionary<string, object>
+            {
+                { "@type", "Offer" },
+                { "url", Request.Url.GetLeftPart(UriPartial.Path) },
+                { "priceCurrency", "IRR" },
+                { "price", Model.Price * 10 },
+                { "availability", outOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock" },
+                { "seller", new Dictionary<string, object> { { "@type", "Organization" }, { "name", settings.StoreName } } }
+            }
+        }
+    };
+    if (!string.IsNullOrWhiteSpace(Model.Sku)) { structured["sku"] = Model.Sku; }
+    if (options.ShowReviews && reviews.Any())
+    {
+        structured["aggregateRating"] = new Dictionary<string, object>
+        {
+            { "@type", "AggregateRating" },
+            { "ratingValue", Math.Round(avg, 1) },
+            { "reviewCount", reviews.Count }
+        };
+    }
+    var structuredJson = JsonConvert.SerializeObject(structured, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml });
 }
-<section class="py-4">
+
+<script type="application/ld+json">@Html.Raw(structuredJson)</script>
+
+<section class="pd-page">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-6">
-                <div class="panel-card p-0 overflow-hidden">
-                    <img id="mainImage" class="w-100" src="@(main?.LargeUrl ?? main?.ThumbUrl)" alt="@Model.Title" />
-                </div>
-                @if (images.Count > 0)
-                {
-                    <div class="d-flex gap-2 mt-2 flex-wrap">
-                        @foreach (var img in images)
+        <nav class="cat-breadcrumb" aria-label="مسیر">
+            <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
+            <i class="bi bi-chevron-left"></i>
+            <a href="@Url.Action("Catalog","Shop", new { company })">محصولات</a>
+            @if (category != null)
+            {
+                <i class="bi bi-chevron-left"></i>
+                <a href="@Url.Action("Catalog","Shop", new { company, categoryId = category.Id })">@category.Title</a>
+            }
+            <i class="bi bi-chevron-left"></i>
+            <span>@Model.Title</span>
+        </nav>
+
+        <div class="pd-top">
+            @* ========== GALLERY ========== *@
+            <div class="pd-gallery">
+                <div class="pg" id="productGallery">
+                    <div class="pg-stage">
+                        <div class="pg-track" tabindex="0" aria-label="تصاویر محصول">
+                            @if (images.Any())
+                            {
+                                for (var i = 0; i < images.Count; i++)
+                                {
+                                    var im = images[i];
+                                    <div class="pg-slide">
+                                        <img class="pg-img @(im.LargeUrl != null && im.LargeUrl != im.ThumbUrl ? "is-low" : "")"
+                                             src="@(im.ThumbUrl ?? im.LargeUrl)"
+                                             data-large="@(im.LargeUrl ?? im.ThumbUrl)"
+                                             alt="@(string.IsNullOrWhiteSpace(im.Alt) ? Model.Title : im.Alt) - تصویر @(i + 1)"
+                                             draggable="false" />
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="pg-slide"><img class="pg-img" src="@placeholder" data-large="@placeholder" alt="@Model.Title" draggable="false" /></div>
+                            }
+                        </div>
+                        @if (onSale && !outOfStock)
                         {
-                            <button type="button" class="border-0 bg-transparent p-0" onclick="document.getElementById('mainImage').src='@(img.LargeUrl ?? img.ThumbUrl)'">
-                                <img src="@(img.ThumbUrl ?? img.LargeUrl)" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid #e7e5e4;" loading="lazy" />
-                            </button>
+                            <span class="pg-badge">٪@discount تخفیف</span>
+                        }
+                        @if (images.Count > 1)
+                        {
+                            <button type="button" class="pg-nav pg-prev" aria-label="تصویر قبلی"><i class="bi bi-chevron-right"></i></button>
+                            <button type="button" class="pg-nav pg-next" aria-label="تصویر بعدی"><i class="bi bi-chevron-left"></i></button>
+                            <span class="pg-counter"><b>1</b> / @images.Count</span>
+                        }
+                        <button type="button" class="pg-expand" aria-label="نمایش تمام‌صفحه"><i class="bi bi-arrows-fullscreen"></i></button>
+                    </div>
+                    @if (images.Count > 1)
+                    {
+                        <div class="pg-thumbs">
+                            @for (var i = 0; i < images.Count; i++)
+                            {
+                                <button type="button" class="pg-thumb @(i == 0 ? "active" : "")" data-index="@i" aria-label="تصویر @(i + 1)">
+                                    <img src="@(images[i].ThumbUrl ?? images[i].LargeUrl)" alt="" loading="lazy" draggable="false" />
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @* ========== INFO / BUY BOX ========== *@
+            <div class="pd-info">
+                @if (category != null)
+                {
+                    <a class="pd-cat" href="@Url.Action("Catalog","Shop", new { company, categoryId = category.Id })">@category.Title</a>
+                }
+                <h1 class="pd-title">@Model.Title</h1>
+                <div class="pd-meta">
+                    @if (options.ShowReviews && reviews.Any())
+                    {
+                        <a class="pd-rating" href="#pdTabs" data-open-tab="tab-reviews">
+                            @for (var s = 1; s <= 5; s++)
+                            {
+                                <i class="bi @(avg >= s ? "bi-star-fill" : (avg >= s - 0.5 ? "bi-star-half" : "bi-star"))"></i>
+                            }
+                            <span>@avg.ToString("0.0") (@reviews.Count نظر)</span>
+                        </a>
+                    }
+                    else if (options.ShowReviews)
+                    {
+                        <a class="pd-rating is-empty" href="#pdTabs" data-open-tab="tab-reviews"><i class="bi bi-star"></i> اولین نفری باشید که نظر می‌دهد</a>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Sku))
+                    {
+                        <span class="pd-sku">کد کالا: <span dir="ltr">@Model.Sku</span></span>
+                    }
+                </div>
+
+                @if (tags.Any())
+                {
+                    <div class="pd-tags">
+                        @foreach (var t in tags)
+                        {
+                            <a href="@Url.Action("Catalog","Shop", new { company, collectionId = t.Id })"><i class="bi bi-tag"></i> @t.Title</a>
                         }
                     </div>
                 }
-            </div>
-            <div class="col-lg-6">
-                <h1 class="section-title">@Model.Title</h1>
-                @if (avg > 0)
+
+                @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
                 {
-                    <div class="mb-2 text-warning">★ @avg.ToString("0.0") <span class="text-muted">(@reviews.Count() نظر)</span></div>
+                    <p class="pd-lead">@Model.ShortDescription</p>
                 }
-                <p>@Model.ShortDescription</p>
-                <div class="price fs-3 mb-3 wm-price">
-                    @if (Model.CompareAtPrice.HasValue && Model.CompareAtPrice > Model.Price)
-                    {
-                        <del>@Model.CompareAtPrice.Value.ToToman()</del>
-                    }
-                    @Model.Price.ToToman()
-                </div>
-                @if (Model.Attributes != null && Model.Attributes.Any())
+
+                @if (attributes.Any())
                 {
-                    <div class="panel-card mb-3">
-                        <h5>خصوصیات</h5>
-                        <ul class="mb-0">
-                            @foreach (var a in Model.Attributes)
+                    <ul class="pd-key-specs">
+                        @foreach (var a in attributes.Take(5))
+                        {
+                            <li><span>@a.Name</span><strong>@a.Value</strong></li>
+                        }
+                    </ul>
+                }
+
+                <div class="pd-buy">
+                    <div class="pd-price-row">
+                        @if (onSale)
+                        {
+                            <div class="pd-old">
+                                <del>@Model.CompareAtPrice.Value.ToToman()</del>
+                                <span class="pd-off">٪@discount</span>
+                            </div>
+                        }
+                        <div class="pd-price">@Model.Price.ToToman()</div>
+                        @if (onSale)
+                        {
+                            <div class="pd-save">سود شما از این خرید: @((Model.CompareAtPrice.Value - Model.Price).ToToman())</div>
+                        }
+                    </div>
+
+                    <div class="pd-stock @(outOfStock ? "is-out" : (lowStock ? "is-low" : "is-ok"))">
+                        @if (outOfStock)
+                        {
+                            <i class="bi bi-x-circle"></i> <span>ناموجود</span>
+                        }
+                        else if (lowStock)
+                        {
+                            <i class="bi bi-exclamation-circle"></i> <span>فقط @Model.Stock عدد در انبار باقی مانده</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check-circle"></i> <span>موجود در انبار</span>
+                        }
+                    </div>
+
+                    @if (!outOfStock)
+                    {
+                        using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { id = "pdBuyForm", @class = "pd-buy-form" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="productId" value="@Model.Id" />
+                            <div class="pd-qty" data-max="@Model.Stock">
+                                <button type="button" data-step="1" aria-label="افزایش تعداد"><i class="bi bi-plus"></i></button>
+                                <input type="number" name="quantity" value="1" min="1" max="@Model.Stock" aria-label="تعداد" />
+                                <button type="button" data-step="-1" aria-label="کاهش تعداد"><i class="bi bi-dash"></i></button>
+                            </div>
+                            <button class="btn-wm pd-add" type="submit"><i class="bi bi-bag-plus"></i> افزودن به سبد خرید</button>
+                        }
+                    }
+                    else
+                    {
+                        <button class="btn-wm pd-add" type="button" disabled>این کالا فعلاً موجود نیست</button>
+                    }
+
+                    @if (options.ShowBuyPerks)
+                    {
+                        <ul class="pd-perks">
+                            @if (settings.EnablePayment)
                             {
-                                <li><strong>@a.Name:</strong> @a.Value</li>
+                                <li><i class="bi bi-shield-check"></i> پرداخت امن اینترنتی</li>
+                            }
+                            <li><i class="bi bi-receipt"></i> ثبت سفارش و پیگیری آنلاین</li>
+                            @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                            {
+                                <li><i class="bi bi-headset"></i> مشاوره خرید: <a href="tel:@settings.Phone" dir="ltr">@settings.Phone</a></li>
                             }
                         </ul>
-                    </div>
-                }
-                <p>@Model.Description</p>
-                @using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="productId" value="@Model.Id" />
-                    <div class="d-flex gap-2 align-items-center">
-                        <input class="form-control" style="max-width:100px" type="number" name="quantity" value="1" min="1" />
-                        <button class="btn-wm" type="submit"><i class="bi bi-bag-plus"></i> افزودن به سبد</button>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
 
-        <div class="row g-4 mt-4">
-            <div class="col-lg-7">
-                <div class="panel-card">
-                    <h3 class="section-title">نظرات کاربران</h3>
-                    @foreach (var r in reviews)
+        @* ========== TABS ========== *@
+        <div class="pd-tabs-wrap" id="pdTabs">
+            <ul class="nav pd-tabs" role="tablist">
+                <li role="presentation"><button class="active" type="button" data-bs-toggle="tab" data-bs-target="#tab-desc" role="tab">توضیحات</button></li>
+                @if (attributes.Any())
+                {
+                    <li role="presentation"><button type="button" data-bs-toggle="tab" data-bs-target="#tab-specs" role="tab">مشخصات</button></li>
+                }
+                @if (options.ShowReviews)
+                {
+                    <li role="presentation"><button type="button" data-bs-toggle="tab" data-bs-target="#tab-reviews" role="tab" id="tab-reviews-btn">نظرات (@reviews.Count)</button></li>
+                }
+            </ul>
+            <div class="tab-content pd-tab-body">
+                <div class="tab-pane fade show active" id="tab-desc" role="tabpanel">
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
                     {
-                        <div class="border-bottom py-3">
-                            <div class="d-flex justify-content-between">
-                                <strong>@r.AuthorName</strong>
-                                <span class="text-warning">@r.Rating از ۵</span>
-                            </div>
-                            <div class="small text-muted">@r.CreatedAt.ToString("yyyy/MM/dd")</div>
-                            <p class="mb-0 mt-1">@r.Comment</p>
-                        </div>
+                        <div class="pd-desc">@Model.Description</div>
                     }
-                    @if (!reviews.Any())
+                    else
                     {
-                        <p class="text-muted mb-0">هنوز نظری ثبت نشده است.</p>
-                    }
-                </div>
-            </div>
-            <div class="col-lg-5">
-                <div class="panel-card">
-                    <h5>ثبت نظر</h5>
-                    @using (Html.BeginForm("AddReview", "Shop", new { company }, FormMethod.Post))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="productId" value="@Model.Id" />
-                        <div class="mb-2"><label class="form-label">نام</label><input class="form-control" name="authorName" required /></div>
-                        <div class="mb-2">
-                            <label class="form-label">امتیاز</label>
-                            <select class="form-select" name="rating">
-                                <option value="5">۵ عالی</option>
-                                <option value="4">۴</option>
-                                <option value="3">۳</option>
-                                <option value="2">۲</option>
-                                <option value="1">۱ ضعیف</option>
-                            </select>
-                        </div>
-                        <div class="mb-2"><label class="form-label">نظر شما</label><textarea class="form-control" name="comment" rows="4" required></textarea></div>
-                        <button class="btn-wm" type="submit">ارسال نظر</button>
+                        <p class="text-muted mb-0">توضیحاتی برای این محصول ثبت نشده است.</p>
                     }
                 </div>
+                @if (attributes.Any())
+                {
+                    <div class="tab-pane fade" id="tab-specs" role="tabpanel">
+                        <table class="pd-spec-table">
+                            @foreach (var a in attributes)
+                            {
+                                <tr><th>@a.Name</th><td>@a.Value</td></tr>
+                            }
+                        </table>
+                    </div>
+                }
+                @if (options.ShowReviews)
+                {
+                <div class="tab-pane fade" id="tab-reviews" role="tabpanel">
+                    <div class="pd-reviews">
+                        <div class="pd-review-list">
+                            @if (reviews.Any())
+                            {
+                                <div class="pd-review-summary">
+                                    <strong>@avg.ToString("0.0")</strong>
+                                    <span>از ۵ — بر اساس @reviews.Count نظر</span>
+                                </div>
+                                foreach (var r in reviews)
+                                {
+                                    <div class="pd-review">
+                                        <div class="pd-review-head">
+                                            <strong>@r.AuthorName</strong>
+                                            <span class="pd-review-stars">
+                                                @for (var s = 1; s <= 5; s++)
+                                                {
+                                                    <i class="bi @(r.Rating >= s ? "bi-star-fill" : "bi-star")"></i>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div class="pd-review-date">@r.CreatedAt.ToShamsi()</div>
+                                        <p>@r.Comment</p>
+                                    </div>
+                                }
+                            }
+                            else
+                            {
+                                <p class="text-muted">هنوز نظری ثبت نشده است. تجربه خود را با دیگران به اشتراک بگذارید.</p>
+                            }
+                        </div>
+                        <div class="pd-review-form">
+                            <h3>نظر شما درباره این محصول</h3>
+                            @using (Html.BeginForm("AddReview", "Shop", new { company }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@Model.Id" />
+                                <div class="mb-2"><label class="form-label">نام</label><input class="form-control" name="authorName" required maxlength="60" /></div>
+                                <div class="mb-2">
+                                    <label class="form-label">امتیاز</label>
+                                    <select class="form-select" name="rating">
+                                        <option value="5">۵ — عالی</option>
+                                        <option value="4">۴ — خوب</option>
+                                        <option value="3">۳ — متوسط</option>
+                                        <option value="2">۲ — ضعیف</option>
+                                        <option value="1">۱ — خیلی ضعیف</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3"><label class="form-label">نظر شما</label><textarea class="form-control" name="comment" rows="4" required maxlength="1000"></textarea></div>
+                                <button class="btn-wm" type="submit">ثبت نظر</button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                }
             </div>
         </div>
 
         @if (related.Any())
         {
-            <h2 class="section-title mt-5">محصولات مرتبط</h2>
-            <div class="product-grid">
-                @foreach (var p in related)
-                {
-                    var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
-                    <article class="product-card">
-                        <a class="thumb" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
-                            <img src="@(img?.ThumbUrl ?? img?.LargeUrl)" alt="@p.Title" loading="lazy" />
-                        </a>
-                        <div class="body">
-                            <h3><a href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">@p.Title</a></h3>
-                            <div class="price">@p.Price.ToToman()</div>
-                        </div>
-                    </article>
-                }
+            <div class="pd-related">
+                <div class="pd-related-head">
+                    <h2>محصولات مشابه</h2>
+                    @if (category != null)
+                    {
+                        <a href="@Url.Action("Catalog","Shop", new { company, categoryId = category.Id })">مشاهده همه <i class="bi bi-arrow-left"></i></a>
+                    }
+                </div>
+                <div class="cat-grid">
+                    @foreach (var p in related)
+                    {
+                        @Html.Partial("_StoreProductCard", p)
+                    }
+                </div>
             </div>
         }
     </div>
 </section>
+
+@if (!outOfStock)
+{
+    <div class="pd-sticky">
+        <div>
+            <div class="pd-sticky-title">@Model.Title</div>
+            <div class="pd-sticky-price">@Model.Price.ToToman()</div>
+        </div>
+        <button class="btn-wm" type="submit" form="pdBuyForm"><i class="bi bi-bag-plus"></i> افزودن به سبد</button>
+    </div>
+}
+
+<div class="pg-lightbox" id="pgLightbox" hidden>
+    <div class="pg-lb-top">
+        <span class="pg-counter"><b>1</b> / @Math.Max(1, images.Count)</span>
+        <button type="button" class="pg-lb-close" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="pg-track" aria-label="تصاویر محصول در اندازه بزرگ">
+        @if (images.Any())
+        {
+            for (var i = 0; i < images.Count; i++)
+            {
+                <div class="pg-slide">
+                    <img class="pg-img is-low" data-low="@(images[i].ThumbUrl ?? images[i].LargeUrl)" data-large="@(images[i].LargeUrl ?? images[i].ThumbUrl)" alt="@Model.Title - تصویر @(i + 1)" draggable="false" />
+                </div>
+            }
+        }
+        else
+        {
+            <div class="pg-slide"><img class="pg-img" data-low="@placeholder" data-large="@placeholder" alt="@Model.Title" draggable="false" /></div>
+        }
+    </div>
+    @if (images.Count > 1)
+    {
+        <button type="button" class="pg-nav pg-prev" aria-label="تصویر قبلی"><i class="bi bi-chevron-right"></i></button>
+        <button type="button" class="pg-nav pg-next" aria-label="تصویر بعدی"><i class="bi bi-chevron-left"></i></button>
+    }
+</div>
+
+@section scripts {
+<script src="~/Content/product-gallery.js"></script>
+}
