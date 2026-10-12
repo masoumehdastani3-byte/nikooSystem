@@ -1,5 +1,4 @@
-@model NikooSystem.Models.Store.StoreOrder
-@using NikooSystem.Helpers
+@model StoreOrder
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var ok = ViewBag.Ok as bool? == true;
@@ -26,8 +25,20 @@
                 if (Model.RefId.HasValue) { <p>کد پیگیری: @Model.RefId</p> }
                 if (!string.IsNullOrEmpty(Model.PaymentMessage)) { <p class="small">@Model.PaymentMessage</p> }
             }
-            <a class="btn-store mt-3" href="@Url.Action("Index","Shop", new { company })">بازگشت به فروشگاه</a>
+            @if (ok && Model != null && Model.Items.Any(i => i.IsDigital))
+            {
+                <p class="mt-3"><i class="bi bi-collection-play"></i> کتاب‌ها، دوره‌ها و فایل‌های این سفارش در «کتابخانه من» آماده‌اند.</p>
+                <a class="btn-store mt-2" href="@Url.Action("Library","ShopAccount", new { company })"><i class="bi bi-collection-play"></i> کتابخانه من</a>
+            }
+            else
+            {
+                <a class="btn-store mt-3" href="@Url.Action("Index","Shop", new { company })">بازگشت به فروشگاه</a>
+            }
             <a class="btn-outline-store mt-3" href="@Url.Action("Orders","ShopAccount", new { company })">سفارش‌های من</a>
+            @if (ok && Model != null && !string.IsNullOrWhiteSpace(Model.TrackingCode))
+            {
+                <p class="mt-3 small">کد رهگیری مرسوله: <strong dir="ltr">@Model.TrackingCode</strong></p>
+            }
         </div>
     </div>
 </section>

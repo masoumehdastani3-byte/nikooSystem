@@ -1,36 +1,41 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreMenuItem>
+@model PagedList<TreeRow<StoreMenuItem>>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "منوها";
-    var company = (string)ViewBag.CompanyCode;
+    var locations = new Dictionary<string, string> { ["main"] = "منوی اصلی", ["footer"] = "فوتر" };
 }
-<div class="d-flex justify-content-between mb-3">
-    <h2>منوی درختی</h2>
-    <a class="btn-store" href="@Url.Action("EditMenu","ShopAdmin", new { company })">آیتم جدید</a>
-</div>
+@Html.PageHeader("منوی درختی", "آیتم جدید", "EditMenu")
 <div class="panel-card">
-    <table class="table">
-        <thead><tr><th>عنوان</th><th>محل</th><th>لینک</th><th>والد</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var m in Model.OrderBy(x => x.Location).ThenBy(x => x.SortOrder))
-        {
-            var parent = Model.FirstOrDefault(p => p.Id == m.ParentId);
-            <tr>
-                <td>@(m.ParentId.HasValue ? "— " : "")@m.Title</td>
-                <td>@m.Location</td>
-                <td class="small">@m.Url</td>
-                <td>@(parent?.Title ?? "—")</td>
-                <td class="text-nowrap">
-                    <a href="@Url.Action("EditMenu","ShopAdmin", new { company, id = m.Id })">ویرایش</a>
-                    @using (Html.BeginForm("DeleteMenu", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@m.Id" />
-                        <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                    }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @Html.GridToolbar("جستجو در عنوان منو…", new GridSelect("location", "همه محل‌ها", locations))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>عنوان</th><th>محل</th><th>لینک</th><th>والد</th><th>ترتیب</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    var m = row.Node;
+                    <tr>
+                        <td style="padding-inline-start:@(12 + row.Depth * 24)px">
+                            @if (row.Depth > 0) { <i class="bi bi-arrow-return-left text-muted"></i> }
+                            @m.Title
+                            @if (!m.IsActive) { <span class="badge bg-secondary">غیرفعال</span> }
+                        </td>
+                        <td>@(locations.ContainsKey(m.Location ?? "") ? locations[m.Location] : m.Location)</td>
+                        <td class="small" dir="ltr">@m.Url</td>
+                        <td>@(row.Parent?.Title ?? "—")</td>
+                        <td>@m.SortOrder</td>
+                        <td class="row-actions">
+                            @Html.EditLink("EditMenu", m.Id)
+                            @Html.DeleteButton("DeleteMenu", m.Id, "«" + m.Title + "» و زیرمجموعه‌هایش حذف شوند؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-list-nested fs-3 d-block mb-1"></i>آیتمی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

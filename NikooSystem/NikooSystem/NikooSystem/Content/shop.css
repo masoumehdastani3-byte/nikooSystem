@@ -50,6 +50,32 @@ html, body, button, input, textarea, select {
   box-shadow: 0 8px 28px rgba(1, 41, 112, 0.06);
   border: 1px solid #eef2f8;
 }
+/* قوانین، حریم خصوصی و راهنمای خرید */
+.legal-text { line-height: 2; }
+.legal-text h2 {
+  font-size: 1.1rem;
+  color: #012970;
+  margin: 1.75rem 0 .75rem;
+  padding-top: .25rem;
+  scroll-margin-top: 90px;
+}
+.legal-text h2:first-child { margin-top: 0; }
+.legal-text h2 i { color: #4154f1; }
+.legal-text ul { padding-right: 1.25rem; margin-bottom: .5rem; }
+.legal-text li { margin-bottom: .35rem; }
+.legal-toc { position: sticky; top: 90px; padding: 1.25rem; }
+.legal-toc h2 { font-size: 1rem; color: #012970; margin-bottom: .75rem; }
+.legal-toc ol { list-style: none; padding: 0; margin: 0; font-size: .875rem; }
+.legal-toc li { margin-bottom: .4rem; }
+.legal-toc a { color: #444; }
+.legal-toc a:hover { color: #4154f1; }
+.legal-contact h2 { font-size: 1.05rem; color: #012970; margin-bottom: 1rem; }
+.legal-contact ul { list-style: none; padding: 0; margin: 0 0 .75rem; line-height: 2; }
+.legal-contact li i { color: #4154f1; margin-left: .25rem; }
+.buy-steps { padding-right: 1.25rem; }
+.buy-steps li { margin-bottom: .6rem; }
+.buy-prices th { color: #012970; font-weight: 600; white-space: nowrap; }
+.lf-enamad img { max-width: 110px; background: #fff; border-radius: 10px; padding: 4px; }
 .btn-primary-shop {
   background: #4154f1;
   border: none;

@@ -1,5 +1,3 @@
-@using NikooSystem.Helpers
-@using NikooSystem.Models.Store
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var settings = (StoreSettings)ViewBag.Settings;
@@ -10,7 +8,12 @@
     var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
     var sectionProducts = (ViewBag.SectionProducts as Dictionary<string, List<StoreProduct>>) ?? new Dictionary<string, List<StoreProduct>>();
     var collections = ((IEnumerable<StoreCollection>)ViewBag.Collections)?.ToList() ?? new List<StoreCollection>();
-    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+    var layoutId = template.Layout;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var perks = kind.IsDigital
+        ? new[] { new[] { "bi-lightning-charge", "دسترسی فوری", "بلافاصله پس از پرداخت" }, new[] { "bi-collection-play", "دسترسی دائمی", "از کتابخانه من" }, new[] { "bi-credit-card", "پرداخت امن", "زرین‌پال" }, new[] { "bi-headset", "پشتیبانی", "۹ تا ۲۱" } }
+        : new[] { new[] { "bi-truck", "ارسال سریع", "۱ تا ۳ روز کاری" }, new[] { "bi-shield-check", "گارانتی اصالت", "ضمانت کالا" }, new[] { "bi-credit-card", "پرداخت امن", "زرین‌پال" }, new[] { "bi-headset", "پشتیبانی", "۹ تا ۲۱" } };
     ViewBag.Title = "خانه";
     var heroTitle = string.IsNullOrWhiteSpace(settings.HeroTitle) ? "تخفیف ویژه محصولات تازه و منتخب فروشگاه" : settings.HeroTitle;
     var heroSub = string.IsNullOrWhiteSpace(settings.HeroSubtitle) ? "به جمع مشتریان بپیوندید و از پیشنهادهای روزانه بهره‌مند شوید." : settings.HeroSubtitle;
@@ -82,18 +85,27 @@
         {
             var bento = featured.Take(4).ToList();
             var bentoStyles = new[] { "sp-card-purple", "sp-card-orange", "sp-card-green", "sp-card-black" };
-            var bentoIcons = new[] { "bi-smartwatch", "bi-phone", "bi-headphones", "bi-camera" };
-            var bentoFallback = new[] {
-                new { t = "ساعت هوشمند", s = "پوشیدنی‌ها" },
-                new { t = "موبایل و لوازم", s = "جانبی‌ها" },
-                new { t = "صوتی و هدفون", s = "صدای حرفه‌ای" },
-                new { t = "دوربین و تصویر", s = "عکاسی" }
-            };
+            var bentoIcons = template.IsSkin
+                ? new[] { "bi-bag", "bi-gift", "bi-star", "bi-heart" }
+                : new[] { "bi-smartwatch", "bi-phone", "bi-headphones", "bi-camera" };
+            var bentoFallback = template.IsSkin
+                ? new[] {
+                    new { t = "تازه‌رسیده‌ها", s = "جدید" },
+                    new { t = "پیشنهاد هدیه", s = "برای عزیزان" },
+                    new { t = "پرفروش‌ها", s = "انتخاب مشتریان" },
+                    new { t = "محبوب‌ترین‌ها", s = "بیشترین امتیاز" }
+                }
+                : new[] {
+                    new { t = "ساعت هوشمند", s = "پوشیدنی‌ها" },
+                    new { t = "موبایل و لوازم", s = "جانبی‌ها" },
+                    new { t = "صوتی و هدفون", s = "صدای حرفه‌ای" },
+                    new { t = "دوربین و تصویر", s = "عکاسی" }
+                };
             <section class="hero-marketplace">
                 <div class="container">
                     <div class="sp-bento">
                         <a class="sp-bento-main" href="@Url.Action("Catalog","Shop", new { company })">
-                            <div class="sp-eyebrow"><i class="bi bi-lightning-charge-fill"></i> پیشنهاد تکنولوژی</div>
+                            <div class="sp-eyebrow"><i class="bi @(template.KickerIcon ?? "bi-lightning-charge-fill")"></i> @(template.Kicker ?? "پیشنهاد تکنولوژی")</div>
                             <h1>@heroTitle</h1>
                             <p>@heroSub</p>
                             <span class="btn-wm" style="width:fit-content;">مشاهده فروشگاه</span>
@@ -141,7 +153,7 @@
                             <img src="@heroImg" alt="@settings.StoreName" />
                         </div>
                         <div class="boutique-hero-text">
-                            <div class="wm-hero-kicker">بوتیک منتخب</div>
+                            <div class="wm-hero-kicker">@(template.Kicker ?? "بوتیک منتخب")</div>
                             <h1>@heroTitle</h1>
                             <p>@heroSub</p>
                             <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">کاوش مجموعه</a>
@@ -157,7 +169,7 @@
                     <div class="wm-hero-card">
                         <div>
                             <span class="fw-hero-badge">تا ۳۰٪ تخفیف هفته</span>
-                            <div class="wm-hero-kicker"><i class="bi bi-leaf-fill"></i> محصولات ارگانیک تازه</div>
+                            <div class="wm-hero-kicker"><i class="bi @(template.KickerIcon ?? "bi-leaf-fill")"></i> @(template.Kicker ?? "محصولات ارگانیک تازه")</div>
                             <h1>@heroTitle</h1>
                             <p>@heroSub</p>
                             <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">
@@ -179,8 +191,16 @@
             <section class="bf-strip">
                 <div class="container">
                     <div class="bf-strip-grid">
-                        <div><i class="bi bi-truck"></i><span>ارسال سریع سراسر کشور</span></div>
-                        <div><i class="bi bi-arrow-repeat"></i><span>امکان مرجوعی آسان</span></div>
+                        @if (kind.IsDigital)
+                        {
+                            <div><i class="bi bi-lightning-charge"></i><span>دسترسی فوری پس از پرداخت</span></div>
+                            <div><i class="bi bi-eye"></i><span>پیش‌نمایش رایگان</span></div>
+                        }
+                        else
+                        {
+                            <div><i class="bi bi-truck"></i><span>ارسال سریع سراسر کشور</span></div>
+                            <div><i class="bi bi-arrow-repeat"></i><span>امکان مرجوعی آسان</span></div>
+                        }
                         <div><i class="bi bi-shield-check"></i><span>خرید امن و مطمئن</span></div>
                         <div><i class="bi bi-headset"></i><span>پشتیبانی واقعی</span></div>
                     </div>
@@ -192,10 +212,10 @@
             <section class="wm-section pt-0">
                 <div class="container">
                     <div class="sp-feature-strip">
-                        <div class="sp-feature"><i class="bi bi-truck"></i><div><strong>ارسال سریع</strong><span>۱ تا ۳ روز کاری</span></div></div>
-                        <div class="sp-feature"><i class="bi bi-shield-check"></i><div><strong>گارانتی اصالت</strong><span>ضمانت کالا</span></div></div>
-                        <div class="sp-feature"><i class="bi bi-credit-card"></i><div><strong>پرداخت امن</strong><span>زرین‌پال</span></div></div>
-                        <div class="sp-feature"><i class="bi bi-headset"></i><div><strong>پشتیبانی</strong><span>۹ تا ۲۱</span></div></div>
+                        @foreach (var perk in perks)
+                        {
+                            <div class="sp-feature"><i class="bi @perk[0]"></i><div><strong>@perk[1]</strong><span>@perk[2]</span></div></div>
+                        }
                     </div>
                 </div>
             </section>
@@ -251,7 +271,7 @@
         }
         else if (layoutId == "organic")
         {
-            var fwIcons = new[] { "bi-apple", "bi-cup-straw", "bi-egg-fried", "bi-droplet", "bi-basket2" };
+            var fwIcons = template.CategoryIcons ?? new[] { "bi-apple", "bi-cup-straw", "bi-egg-fried", "bi-droplet", "bi-basket2" };
             <section class="wm-section">
                 <div class="container">
                     <h2 class="wm-section-title text-center">@(sec.Title ?? "خرید بر اساس دسته")</h2>
@@ -403,7 +423,7 @@
                     <h2 class="wm-section-title">پیشنهادهای ویژه</h2>
                     <div class="wm-offers mp-offers-row">
                         <a class="wm-offer" href="@Url.Action("Catalog","Shop", new { company, sort = "price_asc" })" style="background:linear-gradient(135deg,#4F46E5,#7C3AED)">
-                            <small>حراج گجت</small>
+                            <small>@(template.IsSkin ? "حراج ویژه" : "حراج گجت")</small>
                             <h3>تا ۴۰٪ تخفیف</h3>
                         </a>
                         <a class="wm-offer" href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })" style="background:linear-gradient(135deg,#0F172A,#334155)">
@@ -498,6 +518,10 @@
                 </div>
             </section>
         }
+    }
+    else if (HomeSections.IsShared(sec.Type))
+    {
+        @Html.Partial("_HomeRich", sec)
     }
     else if (sec.Type == "products")
     {

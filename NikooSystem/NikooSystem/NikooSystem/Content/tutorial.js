@@ -30,9 +30,15 @@
   }
 
   function isVisible(node) {
-    if (!node) return false;
+    if (!node || closedGroup(node)) return false;
     var r = node.getBoundingClientRect();
     return r.width > 0 && r.height > 0 && getComputedStyle(node).visibility !== 'hidden';
+  }
+
+  // Chrome still lays out the content of a closed <details>, so its size alone does not tell.
+  function closedGroup(node) {
+    var group = node.closest && node.closest('details:not([open])');
+    return group && !group.querySelector('summary').contains(node) ? group : null;
   }
 
   function gridColumn(node) {
@@ -44,19 +50,26 @@
     return node;
   }
 
-  function firstVisible(selector) {
+  // A target inside a closed menu group counts as visible when the group's heading is.
+  function firstVisible(selector, reveal) {
     var list;
     try { list = document.querySelectorAll(selector); } catch (e) { return null; }
     for (var i = 0; i < list.length; i++) if (isVisible(list[i])) return list[i];
+    for (var j = 0; j < list.length; j++) {
+      var group = closedGroup(list[j]);
+      if (!group || !isVisible(group.querySelector('summary'))) continue;
+      if (reveal) group.open = true;
+      return list[j];
+    }
     return null;
   }
 
-  function findTarget(step) {
+  function findTarget(step, reveal) {
     if (step.field) {
-      var input = firstVisible('[name="' + String(step.field).replace(/["\\]/g, '') + '"]');
+      var input = firstVisible('[name="' + String(step.field).replace(/["\\]/g, '') + '"]', reveal);
       return input ? gridColumn(input) : null;
     }
-    return step.target ? firstVisible(step.target) : null;
+    return step.target ? firstVisible(step.target, reveal) : null;
   }
 
   function isUntargeted(step) {
@@ -190,7 +203,7 @@
     state.index = index;
     var step = state.steps[index];
     var ui = state.ui;
-    var target = step.intro ? null : findTarget(step);
+    var target = step.intro ? null : findTarget(step, true);
     state.target = target;
 
     var numbered = state.steps.filter(function (s) { return !s.intro; });

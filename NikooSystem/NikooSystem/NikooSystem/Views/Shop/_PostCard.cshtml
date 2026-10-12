@@ -1,0 +1,36 @@
+@model StorePost
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var url = Url.RouteUrl("ShopPost", new { company, slug = Model.Slug });
+    var category = Model.CategoryId.HasValue
+        ? (ViewBag.Categories as IEnumerable<StoreCategory>)?.FirstOrDefault(c => c.Id == Model.CategoryId.Value)
+        : null;
+    var compact = ViewData["compact"] as bool? == true;
+}
+<article class="cn-card @(compact ? "is-compact" : "")">
+    <a class="cn-card-img" href="@url">
+        <img src="@(Model.CoverImageUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@Model.Title" loading="lazy" />
+        @if (category != null && !compact)
+        {
+            <span class="cn-card-cat">@category.Title</span>
+        }
+    </a>
+    <div class="cn-card-body">
+        @if (!string.IsNullOrWhiteSpace(Model.Kicker))
+        {
+            <div class="cn-kicker">@Model.Kicker</div>
+        }
+        <h3><a href="@url">@Model.Title</a></h3>
+        @if (!compact && !string.IsNullOrWhiteSpace(Model.Summary))
+        {
+            <p>@Model.Summary</p>
+        }
+        <div class="cn-meta">
+            <span><i class="bi bi-clock"></i> @Model.PublishedAt.ToShamsiText()</span>
+            @if (Model.ViewCount > 0)
+            {
+                <span><i class="bi bi-eye"></i> @Model.ViewCount.ToFa()</span>
+            }
+        </div>
+    </div>
+</article>

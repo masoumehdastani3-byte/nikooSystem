@@ -1,0 +1,18 @@
+@model NikooSystem.Models.VisitReport
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "آمار بازدید";
+    var store = (TenantInfo)ViewBag.Store;
+}
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>آمار بازدید «@store.Name»</h1>
+        <p>کد @store.CompanyCode · بازدید روزانه و ماهانه این سایت</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("Visits","Admin")"><i class="bi bi-arrow-right"></i> همه سایت‌ها</a>
+        <a class="btn btn-outline-primary" href="@Url.Action("Store","Admin", new { id = store.CompanyCode })"><i class="bi bi-shop"></i> پرونده سایت</a>
+    </div>
+</div>
+@Html.Partial("_VisitReport", Model)

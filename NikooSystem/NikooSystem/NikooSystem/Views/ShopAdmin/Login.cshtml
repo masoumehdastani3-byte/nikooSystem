@@ -1,12 +1,14 @@
-@model NikooSystem.Models.Store.StoreLoginVm
+@model StoreLoginVm
 @{
     Layout = null;
-    var settings = (NikooSystem.Models.Store.StoreSettings)ViewBag.Settings;
+    var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
     var primary = string.IsNullOrWhiteSpace(settings.PrimaryColor) ? "#1b4332" : settings.PrimaryColor;
     var accent = string.IsNullOrWhiteSpace(settings.SecondaryColor) ? "#95d5b2" : settings.SecondaryColor;
-    var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+    var tenant = ViewBag.Tenant as TenantInfo;
     var isShowcase = tenant == null || string.IsNullOrEmpty(tenant.OwnerMobile);
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var siteNoun = kind.SiteNoun;
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -14,7 +16,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>ورود مدیر - @settings.StoreName</title>
-    <link href="~/Assets/css/style.css" rel="stylesheet" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link href="@Url.Asset("~/Assets/css/style.css")" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
     <style>
@@ -277,14 +280,35 @@
                 }
                 <strong>@settings.StoreName</strong>
             </div>
-            <div class="brand-kicker"><i class="bi bi-shield-lock"></i> پنل مدیریت امن فروشگاه</div>
-            <h1>مدیریت فروشگاه خود را از اینجا شروع کنید</h1>
-            <p>محصولات، سفارش‌ها، منوها، گالری و درگاه پرداخت را از یک پنل یکپارچه کنترل کنید.</p>
+            <div class="brand-kicker"><i class="bi bi-shield-lock"></i> پنل مدیریت امن @siteNoun</div>
+            <h1>مدیریت @siteNoun خود را از اینجا شروع کنید</h1>
+            <p>@(kind.IsContent ? "خبرها، مقاله‌ها، نظرات، پیام‌ها، منوها و صفحات را از یک پنل یکپارچه کنترل کنید."
+                 : kind.IsBooking ? "نوبت‌ها، تقویم، خدمات، ساعت کاری متخصصان و بیعانه آنلاین را از یک پنل یکپارچه کنترل کنید."
+                 : kind.IsDigital ? "دوره‌ها، کتاب‌ها، فایل‌ها، سفارش‌ها و درگاه پرداخت را از یک پنل یکپارچه کنترل کنید."
+                 : "محصولات، سفارش‌ها، منوها، گالری و درگاه پرداخت را از یک پنل یکپارچه کنترل کنید.")</p>
         </div>
         <div class="brand-stats">
-            <div class="brand-stat"><strong>محصولات</strong><span>مدیریت موجودی و گالری</span></div>
-            <div class="brand-stat"><strong>سفارش‌ها</strong><span>پیگیری و وضعیت پرداخت</span></div>
-            <div class="brand-stat"><strong>ظاهر فروشگاه</strong><span>رنگ، منو و صفحات</span></div>
+            @if (kind.IsContent)
+            {
+                <div class="brand-stat"><strong>مطالب</strong><span>تیتر یک، خبر فوری و زمان‌بندی</span></div>
+                <div class="brand-stat"><strong>نظرات</strong><span>تأیید و پاسخ به خوانندگان</span></div>
+            }
+            else if (kind.IsBooking)
+            {
+                <div class="brand-stat"><strong>تقویم نوبت‌ها</strong><span>نمای هفتگی و ثبت نوبت تلفنی</span></div>
+                <div class="brand-stat"><strong>متخصصان</strong><span>ساعت کاری، تعطیلی و مرخصی</span></div>
+            }
+            else if (kind.IsDigital)
+            {
+                <div class="brand-stat"><strong>دوره‌ها و کتاب‌ها</strong><span>جلسه‌ها و فایل‌های محافظت‌شده</span></div>
+                <div class="brand-stat"><strong>سفارش‌ها</strong><span>دسترسی فوری پس از پرداخت</span></div>
+            }
+            else
+            {
+                <div class="brand-stat"><strong>محصولات</strong><span>مدیریت موجودی و گالری</span></div>
+                <div class="brand-stat"><strong>سفارش‌ها</strong><span>پیگیری و وضعیت پرداخت</span></div>
+            }
+            <div class="brand-stat"><strong>ظاهر @siteNoun</strong><span>رنگ، منو و صفحات</span></div>
         </div>
     </aside>
 
@@ -292,7 +316,7 @@
         <div class="login-card">
             <div class="eyebrow">خوش آمدید</div>
             <h2>ورود به پنل مدیریت</h2>
-            <p class="sub">برای ادامه، اطلاعات حساب مدیر فروشگاه را وارد کنید.</p>
+            <p class="sub">برای ادامه، اطلاعات حساب مدیر @siteNoun را وارد کنید.</p>
             <div class="code-pill"><i class="bi bi-building"></i> کد شرکت: @company</div>
 
             @using (Html.BeginForm())
@@ -318,7 +342,7 @@
             }
 
             <div class="login-links">
-                <a href="@Url.Action("Index","Shop", new { company })"><i class="bi bi-shop"></i> بازگشت به فروشگاه</a>
+                <a href="@Url.Action("Index","Shop", new { company })"><i class="bi @(kind.Sells ? "bi-shop" : "bi-house")"></i> بازگشت به @siteNoun</a>
                 <a href="@Url.Action("Index","Home")" target="_blank">نیکو سیستم آفرین</a>
             </div>
 
@@ -326,7 +350,7 @@
             {
                 <div class="demo-hint">
                     برای دمو می‌توانید با <code>admin</code> و <code>Admin&#64;123</code> وارد شوید.
-                    <br />می‌خواهید فروشگاه خودتان را داشته باشید؟ <a href="@Url.Action("Index","Signup")">رایگان بسازید</a>
+                    <br />می‌خواهید @siteNoun خودتان را داشته باشید؟ <a href="@Url.Action("Index","Signup")">رایگان بسازید</a>
                 </div>
             }
         </div>

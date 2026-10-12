@@ -26,9 +26,14 @@ namespace NikooSystem.Models
         public int ProductId { get; set; }
         public string ProductTitle { get; set; }
 
-        /// <summary>کد فروشگاه آزمایشی که با این پرداخت دائمی می‌شود</summary>
+        /// <summary>کد فروشگاهی که اشتراکش با این پرداخت تمدید می‌شود</summary>
         public string CompanyCode { get; set; }
         public long Amount { get; set; }
+
+        /// <summary>Months of subscription the order buys (3, 6 or 12; 0 for a product purchase).</summary>
+        public int Months { get; set; }
+        /// <summary>The store's new end of subscription, set once the months were added (so they are added only once).</summary>
+        public DateTime? SubscriptionEndsAt { get; set; }
 
         [Required(ErrorMessage = "نام الزامی است")]
         [Display(Name = "نام و نام خانوادگی")]

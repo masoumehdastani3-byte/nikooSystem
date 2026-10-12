@@ -978,6 +978,275 @@ body.lf-home .navbar-mobile .active {
   .lf-store-grid { grid-template-columns: repeat(2, 1fr); }
   .lf-stats-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---- testimonials */
+.lf-testimonials {
+  padding: 4rem 0;
+  background: #fff;
+}
+.lf-quote {
+  height: 100%;
+  margin: 0;
+  padding: 1.4rem;
+  border: 1px solid var(--lf-line);
+  border-radius: var(--lf-radius);
+  background: linear-gradient(160deg, #fff 0%, #f8fbff 100%);
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+}
+.lf-quote-stars { color: #f59e0b; font-size: .9rem; letter-spacing: 2px; }
+.lf-quote blockquote {
+  flex: 1;
+  margin: 0;
+  color: var(--lf-ink);
+  line-height: 2;
+}
+.lf-quote figcaption {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+}
+.lf-quote figcaption img,
+.lf-quote-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+.lf-quote-avatar {
+  display: grid;
+  place-items: center;
+  background: var(--lf-blue-soft);
+  color: var(--lf-blue-mid);
+  font-weight: 700;
+}
+.lf-quote figcaption strong { display: block; color: var(--lf-ink); }
+.lf-quote figcaption em { font-style: normal; font-size: .85rem; color: var(--lf-muted); }
+
+/* ---- faq */
+.lf-faq {
+  padding: 4rem 0;
+  background: #f8fafc;
+}
+.lf-faq-list {
+  max-width: 820px;
+  margin: 0 auto;
+  display: grid;
+  gap: .75rem;
+}
+.lf-faq-item {
+  border: 1px solid var(--lf-line);
+  border-radius: 12px;
+  background: #fff;
+}
+.lf-faq-item summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 1rem 1.2rem;
+  font-weight: 700;
+  color: var(--lf-ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.lf-faq-item summary::-webkit-details-marker { display: none; }
+.lf-faq-item summary i { color: var(--lf-blue-mid); transition: transform .2s; }
+.lf-faq-item[open] summary i { transform: rotate(180deg); }
+.lf-faq-item[open] summary { color: var(--lf-blue); }
+.lf-faq-answer {
+  padding: 0 1.2rem 1rem;
+  color: var(--lf-muted);
+  line-height: 2;
+}
+.lf-faq-answer p:last-child,
+.lf-faq-answer ul:last-child { margin-bottom: 0; }
+
+/* ---------- Modules ---------- */
+.lf-modules {
+  padding: 4rem 0;
+  background: #f8fafc;
+}
+.lf-module-grid {
+  display: flex;
+  flex-direction: column;
+  max-width: 920px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid var(--lf-line);
+  border-radius: 16px;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+.lf-module {
+  position: relative;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1rem 1.25rem;
+  transition: background-color .2s ease;
+}
+.lf-module + .lf-module { border-top: 1px solid var(--lf-line); }
+.lf-module:hover { background: #f8fafc; }
+.lf-module > i {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--lf-blue-soft);
+  color: var(--lf-blue-mid);
+  font-size: 1.15rem;
+  flex-shrink: 0;
+}
+.lf-module.is-highlight > i {
+  background: var(--lf-warm-soft);
+  color: var(--lf-warm);
+}
+.lf-module h3 {
+  margin: 0 0 .3rem;
+  font-size: .98rem;
+  color: var(--lf-ink);
+  line-height: 1.5;
+}
+.lf-module p {
+  margin: 0;
+  color: var(--lf-muted);
+  font-size: .85rem;
+  line-height: 1.75;
+}
+@media (max-width: 575px) {
+  .lf-module { padding: .9rem 1rem; gap: .8rem; }
+}
+.lf-module-only {
+  display: inline-block;
+  margin-top: .45rem;
+  font-size: .72rem;
+  font-weight: 700;
+  color: var(--lf-blue-mid);
+  background: var(--lf-blue-soft);
+  border-radius: 999px;
+  padding: .12rem .55rem;
+}
+.lf-kind-features {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: .55rem;
+}
+.lf-kind-features li {
+  display: flex;
+  gap: .5rem;
+  align-items: flex-start;
+  color: var(--lf-ink);
+  line-height: 1.7;
+}
+.lf-kind-features i { color: var(--lf-warm); margin-top: .15rem; }
+
+/* ---------- Subscription periods on product pages ---------- */
+.lf-plans {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+  margin: .25rem 0 .6rem;
+}
+.lf-plan {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+  padding: .8rem .5rem .7rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  text-align: center;
+}
+.lf-plan.is-best { border-color: var(--lf-warm); box-shadow: 0 0 0 1px var(--lf-warm) inset; }
+.lf-plan-name { font-size: .85rem; color: #6b7280; }
+.lf-plan strong { font-size: 1.05rem; color: #111827; }
+.lf-plan small { color: #6b7280; font-size: .75rem; }
+.lf-plan-off {
+  position: absolute;
+  top: -.6rem;
+  inset-inline-start: 50%;
+  transform: translateX(50%);
+  padding: 0 .5rem;
+  border-radius: 999px;
+  background: var(--lf-warm);
+  color: #fff;
+  font-size: .7rem;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .lf-plans { grid-template-columns: 1fr; }
+  .lf-plan { flex-direction: row; justify-content: space-between; padding-top: .9rem; }
+}
+
+/* ---------- Store templates on product pages ---------- */
+.lf-templates { scroll-margin-top: 90px; }
+.lf-tpl-card {
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+}
+.lf-tpl-card .tpl-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.lf-tpl-actions { margin-top: auto; padding-top: .6rem; }
+.lf-tpl-card .tpl-thumb { cursor: zoom-in; }
+.lf-tpl-card .tpl-meta .btn {
+  white-space: nowrap;
+  padding: .4rem .5rem;
+  font-size: .8rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .3rem;
+}
+.lf-tpl-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+}
+.lf-tpl-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: .2rem .6rem;
+  border-radius: 999px;
+  background: var(--lf-warm);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  pointer-events: none;
+}
+.lf-tpl-badge.is-default { background: var(--lf-blue); }
+.lf-tpl-count {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--lf-blue);
+  background: #eef4ff;
+  border-radius: 999px;
+  padding: .2rem .65rem;
+  text-decoration: none;
+}
+.lf-tpl-count:hover { color: var(--lf-warm); }
 @media (max-width: 992px) {
   .lf-hero { padding-top: 7.5rem; text-align: center; }
   .lf-hero h1,

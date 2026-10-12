@@ -1,54 +1,136 @@
 @{
     Layout = null;
+    var signedIn = Session["AdminUser"] != null;
+    var action = (ViewContext.RouteData.Values["action"] as string ?? "").ToLowerInvariant();
+    var unread = signedIn ? NikooSystem.Services.SiteContentStore.UnreadMessageCount() : 0;
+    var awaitingTickets = signedIn ? NikooSystem.Services.SupportDesk.CountAwaitingSupport() : 0;
+    var awaitingDomains = signedIn ? NikooSystem.Services.CustomDomains.CountWaitingSupport() : 0;
+    var siteName = NikooSystem.Services.SiteContentStore.Settings.SiteName;
+    var groups = new[]
+    {
+        new { Title = "", Items = new[]
+        {
+            new { Text = "داشبورد", Icon = "bi-speedometer2", Action = "Index", Also = "index", Badge = 0 },
+            new { Text = "آمار بازدید", Icon = "bi-bar-chart-line", Action = "Visits", Also = "visits storevisits", Badge = 0 }
+        } },
+        new { Title = "فروش", Items = new[]
+        {
+            new { Text = "محصولات", Icon = "bi-box-seam", Action = "Products", Also = "products createproduct editproduct", Badge = 0 },
+            new { Text = "قالب دموها", Icon = "bi-palette", Action = "DemoTemplates", Also = "demotemplates demotemplate", Badge = 0 },
+            new { Text = "سفارش‌ها", Icon = "bi-receipt", Action = "Orders", Also = "orders orderdetails", Badge = 0 }
+        } },
+        new { Title = "مشتریان", Items = new[]
+        {
+            new { Text = "فروشگاه‌ها", Icon = "bi-shop", Action = "Stores", Also = "stores store", Badge = 0 },
+            new { Text = "دامنه‌های مشتریان", Icon = "bi-globe", Action = "Domains", Also = "domains", Badge = awaitingDomains },
+            new { Text = "تیکت‌های پشتیبانی", Icon = "bi-headset", Action = "Tickets", Also = "tickets ticket", Badge = awaitingTickets },
+            new { Text = "پیام‌های تماس", Icon = "bi-envelope", Action = "Messages", Also = "messages message", Badge = unread }
+        } },
+        new { Title = "درگاه پرداخت", Items = new[]
+        {
+            new { Text = "اپلیکیشن‌ها", Icon = "bi-plug", Action = "PaymentApps", Also = "paymentapps editpaymentapp", Badge = 0 },
+            new { Text = "تراکنش‌ها", Icon = "bi-credit-card", Action = "HubPayments", Also = "hubpayments hubpayment", Badge = 0 }
+        } },
+        new { Title = "محتوای سایت", Items = new[]
+        {
+            new { Text = "تنظیمات و متن‌ها", Icon = "bi-sliders", Action = "SiteSettings", Also = "sitesettings", Badge = 0 },
+            new { Text = "راهنمای سئو", Icon = "bi-google", Action = "SeoGuide", Also = "seoguide", Badge = 0 },
+            new { Text = "اینماد", Icon = "bi-patch-check", Action = "Enamad", Also = "enamad", Badge = 0 },
+            new { Text = "سوالات متداول", Icon = "bi-question-circle", Action = "Faqs", Also = "faqs editfaq", Badge = 0 },
+            new { Text = "نظرات مشتریان", Icon = "bi-chat-quote", Action = "Testimonials", Also = "testimonials edittestimonial", Badge = 0 }
+        } },
+        new { Title = "حساب", Items = new[]
+        {
+            new { Text = "اطلاع‌رسانی بله", Icon = "bi-bell", Action = "Notifications", Also = "notifications", Badge = 0 },
+            new { Text = "نام کاربری و رمز", Icon = "bi-shield-lock", Action = "Account", Also = "account", Badge = 0 }
+        } }
+    };
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>@ViewBag.Title - پنل نیکو سیستم آفرین</title>
-    <link href="~/Assets/css/style.css" rel="stylesheet">
+    <meta name="robots" content="noindex, nofollow">
+    <title>@ViewBag.Title - پنل @siteName</title>
+    <link href="~/Assets/img/favicon.png" rel="icon">
+    <link href="@Url.Asset("~/Assets/css/style.css")" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="~/Content/admin.css" rel="stylesheet">
-    <link href="~/Content/admin-table.css" rel="stylesheet">
-    <style>body,.admin-body{font-family:'Far_Yekan',Tahoma,sans-serif!important}</style>
+    <link href="@Url.Asset("~/Content/admin.css")" rel="stylesheet">
+    <link href="@Url.Asset("~/Content/admin-table.css")" rel="stylesheet">
+    <style>body,.admin-body,h1,h2,h3,h4,h5,h6,button,input,textarea,select{font-family:'Far_Yekan',Tahoma,sans-serif!important}</style>
 </head>
 <body class="admin-body">
-    @if (Session["AdminUser"] != null)
+    @if (signedIn)
     {
-        <nav class="navbar navbar-expand-lg navbar-dark admin-nav">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="@Url.Action("Index","Admin")">پنل نیکو سیستم آفرین</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="adminNav">
-                    <ul class="navbar-nav me-auto">
-                        <li class="nav-item"><a class="nav-link" href="@Url.Action("Index","Admin")">داشبورد</a></li>
-                        <li class="nav-item"><a class="nav-link" href="@Url.Action("Products","Admin")">محصولات</a></li>
-                        <li class="nav-item"><a class="nav-link" href="@Url.Action("Orders","Admin")">سفارشات</a></li>
-                        <li class="nav-item"><a class="nav-link" href="@Url.Action("Index","Home")" target="_blank">مشاهده سایت</a></li>
-                    </ul>
-                    <span class="navbar-text text-white-50 me-3">@Session["AdminUser"]</span>
-                    <a class="btn btn-outline-light btn-sm" href="@Url.Action("Logout","Admin")">خروج</a>
+        <div class="adm-shell">
+            <aside class="adm-side offcanvas-lg offcanvas-end" tabindex="-1" id="admSide" aria-label="منوی پنل">
+                <div class="adm-brand">
+                    <a href="@Url.Action("Index","Admin")">
+                        <img src="~/Assets/img/logo.png" alt="" />
+                        <span>پنل @siteName</span>
+                    </a>
+                    <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#admSide" aria-label="بستن"></button>
                 </div>
+                <nav class="adm-nav">
+                    @foreach (var group in groups)
+                    {
+                        if (group.Title != "")
+                        {
+                            <div class="adm-nav-title">@group.Title</div>
+                        }
+                        foreach (var item in group.Items)
+                        {
+                            var active = item.Also.Split(' ').Contains(action);
+                            <a class="adm-nav-link @(active ? "is-active" : null)" href="@Url.Action(item.Action, "Admin")" @(active ? Html.Raw("aria-current=\"page\"") : null)>
+                                <i class="bi @item.Icon" aria-hidden="true"></i>
+                                <span>@item.Text</span>
+                                @if (item.Badge > 0)
+                                {
+                                    <em class="adm-badge" title="@item.Badge.ToFa() @(item.Action == "Tickets" ? "تیکت در انتظار پاسخ" : "پیام خوانده‌نشده")">@item.Badge.ToFa()</em>
+                                }
+                            </a>
+                        }
+                    }
+                </nav>
+                <div class="adm-side-foot">
+                    <a class="adm-nav-link" href="@Url.Action("Index","Home")" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i><span>مشاهده سایت</span></a>
+                    <a class="adm-nav-link" href="@Url.Action("Logout","Admin")"><i class="bi bi-box-arrow-right"></i><span>خروج</span></a>
+                </div>
+            </aside>
+            <div class="adm-main">
+                <header class="adm-top">
+                    <button class="adm-menu-btn d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#admSide" aria-controls="admSide" aria-label="منو">
+                        <i class="bi bi-list"></i>
+                    </button>
+                    <strong class="adm-top-title">@ViewBag.Title</strong>
+                    <div class="adm-top-user">
+                        @if (unread > 0)
+                        {
+                            <a class="adm-top-icon" href="@Url.Action("Messages","Admin", new { status = "unread" })" title="@unread.ToFa() پیام خوانده‌نشده">
+                                <i class="bi bi-bell"></i><em>@unread.ToFa()</em>
+                            </a>
+                        }
+                        <span class="adm-avatar"><i class="bi bi-person"></i></span>
+                        <span class="d-none d-sm-inline">@Session["AdminUser"]</span>
+                    </div>
+                </header>
+                <main class="adm-content">
+                    @Html.FlashMessages()
+                    @RenderBody()
+                </main>
             </div>
-        </nav>
+        </div>
     }
-    <main class="container py-4">
-        @if (TempData["Success"] != null)
-        {
-            <div class="alert alert-success">@TempData["Success"]</div>
-        }
-        @if (TempData["Error"] != null)
-        {
-            <div class="alert alert-danger">@TempData["Error"]</div>
-        }
-        @RenderBody()
-    </main>
+    else
+    {
+        <main class="container py-4">
+            @Html.FlashMessages()
+            @RenderBody()
+        </main>
+    }
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/Content/admin-table.js"></script>
     @RenderSection("scripts", required: false)
 </body>
 </html>

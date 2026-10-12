@@ -1,0 +1,95 @@
+@model List<StoreAppointment>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "تقویم نوبت‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var weekStart = (DateTime)ViewBag.WeekStart;
+    var staffId = (int?)ViewBag.StaffId;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var timeOffs = (List<StoreTimeOff>)ViewBag.TimeOffs;
+    var fmt = System.Globalization.CultureInfo.InvariantCulture;
+    var today = DateTime.Today;
+    var now = DateTime.Now;
+    var colors = new[] { "#0f766e", "#7c3aed", "#c2410c", "#0369a1", "#be185d", "#4d7c0f", "#a16207", "#475569" };
+    Func<int, string> colorOf = id => colors[Math.Abs(staff.FindIndex(p => p.Id == id)) % colors.Length];
+    Func<int?, string> staffName = id => id.HasValue ? (staff.FirstOrDefault(p => p.Id == id.Value)?.Name ?? "—") : "همه";
+}
+<link href="@Url.Asset("~/Content/admin-booking.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">تقویم نوبت‌ها</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-outline-store" href="@Url.Action("TimeOff","ShopAdmin", new { company })"><i class="bi bi-calendar-x"></i> تعطیلی و مرخصی</a>
+        <a class="btn-store" href="@Url.Action("NewAppointment","ShopAdmin", new { company, staffId })"><i class="bi bi-plus-lg"></i> نوبت جدید</a>
+    </div>
+</div>
+
+<div class="panel-card">
+    <div class="bk-cal-bar">
+        <div class="btn-group" role="group" aria-label="هفته">
+            <a class="btn btn-outline-secondary" href="@Url.Action("Calendar","ShopAdmin", new { company, start = weekStart.AddDays(-7).ToString("yyyy-MM-dd", fmt), staffId })" title="هفته قبل"><i class="bi bi-chevron-right"></i></a>
+            <a class="btn btn-outline-secondary" href="@Url.Action("Calendar","ShopAdmin", new { company, staffId })">این هفته</a>
+            <a class="btn btn-outline-secondary" href="@Url.Action("Calendar","ShopAdmin", new { company, start = weekStart.AddDays(7).ToString("yyyy-MM-dd", fmt), staffId })" title="هفته بعد"><i class="bi bi-chevron-left"></i></a>
+        </div>
+        <strong class="bk-cal-range">@weekStart.ToShamsiText() تا @weekStart.AddDays(6).ToShamsiText()</strong>
+        <form method="get" action="@Url.Action("Calendar","ShopAdmin", new { company })" class="ms-auto">
+            <input type="hidden" name="start" value="@weekStart.ToString("yyyy-MM-dd", fmt)" />
+            <select class="form-select form-select-sm" name="staffId" onchange="this.form.submit()" aria-label="متخصص">
+                <option value="">همه متخصصان</option>
+                @foreach (var p in staff)
+                {
+                    <option value="@p.Id" @(staffId == p.Id ? "selected" : "")>@p.Name</option>
+                }
+            </select>
+        </form>
+    </div>
+
+    <div class="bk-cal">
+        @for (var i = 0; i < 7; i++)
+        {
+            var day = weekStart.AddDays(i);
+            var dayItems = Model.Where(a => a.StartAt.Date == day).OrderBy(a => a.StartAt).ToList();
+            var closed = timeOffs.Where(t => t.Date == day).ToList();
+            <div class="bk-cal-day @(day == today ? "is-today" : "") @(day < today ? "is-past" : "")">
+                <div class="bk-cal-head">
+                    <span>@BookingTime.DayNames[i]</span>
+                    <small>@day.ToShamsiText()</small>
+                    @if (dayItems.Any()) { <em>@dayItems.Count.ToFa()</em> }
+                </div>
+                @foreach (var t in closed)
+                {
+                    <div class="bk-cal-off" title="@t.Reason">
+                        <i class="bi bi-slash-circle"></i>
+                        @(t.StaffId.HasValue ? staffName(t.StaffId) : "تعطیل")
+                        @if (!t.IsWholeDay()) { <span>@BookingTime.Clock(t.StartMinute.Value)–@BookingTime.Clock(t.EndMinute.Value)</span> }
+                    </div>
+                }
+                @foreach (var a in dayItems)
+                {
+                    <a class="bk-cal-item status-@a.Status.ToString().ToLowerInvariant() @(a.EndAt < now && a.Status == AppointmentStatus.Confirmed ? "needs-close" : "")"
+                       style="--c:@colorOf(a.StaffId)"
+                       href="@Url.Action("AppointmentDetails","ShopAdmin", new { company, id = a.Id })">
+                        <b>@BookingTime.Clock(a.StartAt)</b>
+                        <span>@a.CustomerName</span>
+                        <small>@(a.ServiceTitle + (staffId.HasValue ? "" : " · " + a.StaffName))</small>
+                        @if (a.Status != AppointmentStatus.Confirmed) { <i class="badge @a.Status.StatusBadgeClass()">@a.Status.StatusText()</i> }
+                    </a>
+                }
+                @if (day >= today)
+                {
+                    <a class="bk-cal-add" href="@Url.Action("NewAppointment","ShopAdmin", new { company, date = day.ToString("yyyy-MM-dd", fmt), staffId })"><i class="bi bi-plus"></i> نوبت</a>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!staffId.HasValue && staff.Count > 1)
+    {
+        <div class="bk-cal-legend">
+            @foreach (var p in staff)
+            {
+                <a href="@Url.Action("Calendar","ShopAdmin", new { company, start = weekStart.ToString("yyyy-MM-dd", fmt), staffId = p.Id })"><span style="--c:@colorOf(p.Id)"></span> @p.Name</a>
+            }
+        </div>
+    }
+    <div class="small text-muted mt-2"><i class="bi bi-info-circle"></i> نوبت‌های گذشته‌ای که هنوز «تأیید شده» مانده‌اند خط‌چین نمایش داده می‌شوند؛ آن‌ها را «انجام شد» یا «مراجعه نکرد» کنید.</div>
+</div>

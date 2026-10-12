@@ -1,0 +1,75 @@
+@model PagedList<StorePost>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "مطالب";
+    var company = (string)ViewBag.CompanyCode;
+    var categories = (List<StoreCategory>)ViewBag.Categories;
+    var cats = categories.ToDictionary(c => c.Id, c => c.Title);
+    var states = new Dictionary<string, string>
+    {
+        ["published"] = "منتشرشده",
+        ["scheduled"] = "زمان‌بندی‌شده",
+        ["draft"] = "پیش‌نویس",
+        ["featured"] = "تیتر یک",
+        ["breaking"] = "خبر فوری"
+    };
+}
+@Html.PageHeader("خبرها و مقاله‌ها", "مطلب جدید", "EditPost")
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در تیتر، روتیتر، نویسنده یا برچسب…",
+        new GridSelect("categoryId", "همه سرویس‌ها", GridHtml.Options(categories, c => c.Id, c => c.TreeTitle())),
+        new GridSelect("state", "همه وضعیت‌ها", states))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>تصویر</th>
+                    @Html.SortHeader("title", "تیتر")
+                    <th>سرویس</th>
+                    <th>وضعیت</th>
+                    @Html.SortHeader("views", "بازدید")
+                    @Html.SortHeader("published", "انتشار")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td><img class="admin-thumb" src="@p.CoverImageUrl" alt="" /></td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(p.Kicker)) { <div class="small text-muted">@p.Kicker</div> }
+                            <strong>@p.Title</strong>
+                            <div class="small">
+                                @if (p.IsFeatured) { <span class="badge bg-primary-subtle text-primary-emphasis">تیتر یک</span> }
+                                @if (p.IsBreaking) { <span class="badge bg-danger">فوری</span> }
+                                @if (p.IsSample) { <span class="badge bg-light text-muted">نمونه</span> }
+                            </div>
+                        </td>
+                        <td>@(p.CategoryId.HasValue && cats.ContainsKey(p.CategoryId.Value) ? cats[p.CategoryId.Value] : "—")</td>
+                        <td>
+                            @if (!p.IsPublished) { <span class="badge bg-secondary">پیش‌نویس</span> }
+                            else if (!p.IsLive()) { <span class="badge bg-warning text-dark" title="@p.PublishedAt.ToShamsi()">زمان‌بندی‌شده</span> }
+                            else { <span class="badge bg-success-subtle text-success-emphasis">منتشر</span> }
+                        </td>
+                        <td>@p.ViewCount</td>
+                        <td class="small text-muted">@p.PublishedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @if (p.IsLive())
+                            {
+                                @Html.IconLink(Url.RouteUrl("ShopPost", new { company, slug = p.Slug }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            }
+                            @Html.EditLink("EditPost", p.Id)
+                            @Html.DeleteButton("DeletePost", p.Id, "«" + p.Title + "» و نظرهایش حذف شوند؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-newspaper fs-3 d-block mb-1"></i>مطلبی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

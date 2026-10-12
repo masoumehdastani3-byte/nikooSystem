@@ -1,0 +1,121 @@
+@model StoreStaff
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش " + Model.Name : "متخصص جدید";
+    var company = (string)ViewBag.CompanyCode;
+    Func<int, string> clock = m => (m / 60).ToString("00") + ":" + (m % 60).ToString("00");
+}
+<link href="@Url.Asset("~/Content/admin-booking.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Staff","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+
+@using (Html.BeginForm("EditStaff", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="panel-card row g-3 h-100 m-0">
+                <h5 class="mb-0">مشخصات</h5>
+                <div class="col-12">
+                    <label class="form-label" for="Name">نام</label>
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", maxlength = "80", required = "required", placeholder = "مثلاً دکتر سارا احمدی" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="Title">تخصص یا سمت</label>
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "120", placeholder = "مثلاً متخصص پوست و مو" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="Bio">معرفی کوتاه</label>
+                    @Html.TextAreaFor(m => m.Bio, new { @class = "form-control", rows = "3", maxlength = "1000" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label">عکس</label>
+                    @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+                    {
+                        <div class="d-flex align-items-center gap-3 mb-2">
+                            <img src="@Model.PhotoUrl" alt="" style="width:64px;height:64px;border-radius:50%;object-fit:cover" />
+                            <label class="small"><input type="checkbox" name="removePhoto" value="true" /> حذف عکس</label>
+                        </div>
+                    }
+                    <input class="form-control" type="file" name="photoFile" accept=".png,.jpg,.jpeg" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="SortOrder">ترتیب نمایش</label>
+                    @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
+                </div>
+                <div class="col-6 d-flex align-items-end">
+                    @Html.BoolField("IsActive", Model.IsActive, "فعال (نوبت می‌پذیرد)")
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="panel-card h-100">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <h5 class="mb-0">ساعت کاری هفتگی</h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="copyFirst"><i class="bi bi-files"></i> ساعت شنبه برای همه روزهای کاری</button>
+                </div>
+                <p class="small text-muted">برای هر روز تا دو بازه (مثلاً صبح و عصر). روز تعطیل را تیک بزنید. نوبت‌های آنلاین فقط در همین بازه‌ها ساخته می‌شوند.</p>
+                <table class="table align-middle bk-hours-table">
+                    <thead><tr><th>روز</th><th>تعطیل</th><th>بازه اول</th><th>بازه دوم (اختیاری)</th></tr></thead>
+                    <tbody>
+                        @for (var d = 0; d < 7; d++)
+                        {
+                            var hours = Model.HoursOn(d).ToList();
+                            var first = hours.ElementAtOrDefault(0);
+                            var second = hours.ElementAtOrDefault(1);
+                            <tr data-day="@d" class="@(hours.Any() ? "" : "is-off")">
+                                <th>@BookingTime.DayNames[d]</th>
+                                <td><input class="form-check-input day-off" type="checkbox" name="off@(d)" value="true" @(hours.Any() ? "" : "checked") aria-label="تعطیل @BookingTime.DayNames[d]" /></td>
+                                <td>
+                                    <div class="bk-range">
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)s1" value="@(first != null ? clock(first.StartMinute) : "")" aria-label="شروع" />
+                                        <span>تا</span>
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)e1" value="@(first != null ? clock(first.EndMinute) : "")" aria-label="پایان" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="bk-range">
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)s2" value="@(second != null ? clock(second.StartMinute) : "")" aria-label="شروع بازه دوم" />
+                                        <span>تا</span>
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)e2" value="@(second != null ? clock(second.EndMinute) : "")" aria-label="پایان بازه دوم" />
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="small text-muted"><i class="bi bi-calendar-x"></i> برای مرخصی یک روز خاص از <a href="@Url.Action("TimeOff","ShopAdmin", new { company })">تعطیلی و مرخصی</a> استفاده کنید.</div>
+            </div>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            @Html.FormActions("Staff")
+        </div>
+    </div>
+}
+
+@section scripts {
+<script>
+(function () {
+  var rows = document.querySelectorAll('.bk-hours-table tbody tr');
+  rows.forEach(function (row) {
+    var off = row.querySelector('.day-off');
+    var sync = function () {
+      row.classList.toggle('is-off', off.checked);
+      row.querySelectorAll('input[type=time]').forEach(function (i) { i.disabled = off.checked; });
+    };
+    off.addEventListener('change', sync);
+    sync();
+  });
+  document.getElementById('copyFirst').addEventListener('click', function () {
+    var source = rows[0].querySelectorAll('input[type=time]');
+    rows.forEach(function (row, i) {
+      if (i === 0 || row.querySelector('.day-off').checked) return;
+      row.querySelectorAll('input[type=time]').forEach(function (input, k) { input.value = source[k].value; });
+    });
+  });
+})();
+</script>
+}

@@ -1,0 +1,71 @@
+@{
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus ?? Enumerable.Empty<StoreMenuItem>();
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var socials = new[]
+    {
+        new { Url = settings.InstagramUrl, Icon = "bi-instagram", Title = "اینستاگرام" },
+        new { Url = settings.TelegramUrl, Icon = "bi-telegram", Title = "تلگرام" },
+        new { Url = settings.WhatsAppUrl, Icon = "bi-whatsapp", Title = "واتساپ" },
+        new { Url = settings.LinkedInUrl, Icon = "bi-linkedin", Title = "لینکدین" },
+        new { Url = settings.TwitterUrl, Icon = "bi-twitter", Title = "توییتر" },
+        new { Url = settings.AparatUrl, Icon = "bi-play-btn", Title = "آپارات" },
+        new { Url = settings.YouTubeUrl, Icon = "bi-youtube", Title = "یوتیوب" }
+    }.Where(s => !string.IsNullOrWhiteSpace(s.Url)).ToList();
+}
+<footer class="wm-footer store-footer cn-footer">
+    <div class="container py-5">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <h4>@settings.StoreName</h4>
+                <p class="opacity-75">@settings.About</p>
+                @if (socials.Any())
+                {
+                    <div class="wm-socials mt-3">
+                        @foreach (var s in socials)
+                        {
+                            <a href="@s.Url" target="_blank" rel="noopener noreferrer" title="@s.Title"><i class="bi @s.Icon"></i></a>
+                        }
+                    </div>
+                }
+            </div>
+            <div class="col-6 col-lg-2">
+                <h5>دسترسی سریع</h5>
+                @foreach (var item in StoreMenuHelper.Roots(menus, "footer"))
+                {
+                    <div><a href="@item.Url">@item.Title</a></div>
+                }
+                @if (kind.IsBooking)
+                {
+                    <div><a href="@Url.Action("Services","Shop", new { company })">خدمات و تعرفه‌ها</a></div>
+                    <div><a href="@Url.Action("Book","Shop", new { company })">رزرو نوبت</a></div>
+                    <div><a href="@Url.Action("Track","Shop", new { company })">پیگیری و لغو نوبت</a></div>
+                    <div><a href="@Url.Action("Gallery","Shop", new { company })">گالری</a></div>
+                    <div><a href="@Url.Action("Contact","Shop", new { company })">تماس با ما</a></div>
+                }
+                else
+                {
+                    <div><a href="@Url.Action("Blog","Shop", new { company })">آرشیو مطالب</a></div>
+                    <div><a href="@Url.Action("Gallery","Shop", new { company })">گالری</a></div>
+                    <div><a href="@Url.Action("Contact","Shop", new { company })">تماس با ما</a></div>
+                    <div><a href="@Url.Action("Rss","Shop", new { company })"><i class="bi bi-rss"></i> خوراک RSS</a></div>
+                }
+            </div>
+            <div class="col-6 col-lg-3">
+                <h5>ارتباط با ما</h5>
+                @if (!string.IsNullOrWhiteSpace(settings.Phone)) { <div><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></div> }
+                @if (!string.IsNullOrWhiteSpace(settings.Email)) { <div><i class="bi bi-envelope"></i> @settings.Email</div> }
+                @if (!string.IsNullOrWhiteSpace(settings.Address)) { <div><i class="bi bi-geo-alt"></i> @settings.Address</div> }
+            </div>
+            <div class="col-lg-3">
+                @if (NikooSystem.Services.SiteVerification.Seal(settings.EnamadHtml) != null)
+                {
+                    <h5>نماد اعتماد</h5>
+                    <div class="wm-enamad">@NikooSystem.Services.SiteVerification.SealHtml(settings)</div>
+                }
+            </div>
+        </div>
+        <div class="pt-4 mt-4 border-top small opacity-75">@(settings.FooterText ?? "© " + settings.StoreName)</div>
+    </div>
+</footer>

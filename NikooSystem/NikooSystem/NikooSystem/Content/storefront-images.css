@@ -1,0 +1,64 @@
+/*
+  Uploaded images of any size and shape keep the storefront even. Loaded after the template styles: it only adds what a
+  frame is missing, so each template keeps its own shapes. body[data-img-fit] is the owner's choice (StoreImageFit):
+    auto     frames are filled; storefront-images.js marks a much longer or wider picture .fit-contain so it is shown whole
+    cover    frames are always filled, the edges that do not fit are cut
+    contain  pictures are always shown whole on a plain background
+*/
+
+/* ---------- Frames whose height used to follow the picture ---------- */
+.wm-hero-visual img { aspect-ratio: 4 / 3; height: auto; }
+:where(.hero-minimal-img) img { aspect-ratio: 16 / 7; height: auto; }
+.cn-cover img { aspect-ratio: 16 / 9; height: auto; }
+.bk-person > img, .bk-avatar { aspect-ratio: 1; }
+
+/* ---------- Logo: the template's height, any width up to a limit, never stretched ---------- */
+body.store-body .wm-brand img {
+    width: auto;
+    max-width: min(180px, 42vw);
+    object-fit: contain;
+    flex: none;
+}
+
+/* ---------- Pictures inside the owner's own text (pages, posts, descriptions) ---------- */
+.cn-body img, .rich-text img {
+    max-width: 100%;
+    height: auto;
+    max-height: 80vh;
+    object-fit: contain;
+}
+.cn-body iframe, .cn-body video, .rich-text iframe, .rich-text video { max-width: 100%; }
+.cn-body table, .rich-text table { display: block; max-width: 100%; overflow-x: auto; }
+
+/* ---------- How a picture sits in its frame ---------- */
+.wm-product .thumb img,
+.product-card .thumb img,
+.gallery-item img,
+.cn-card-img img,
+.library-cover img,
+.bk-service-img,
+.cn-topic-lead img,
+.cn-list-item img,
+.cn-side-story img,
+.dl-lead img,
+.pg-thumb img,
+.cart-item-thumb img,
+.rh-about-media img {
+    object-position: center;
+}
+
+body[data-img-fit="contain"] :is(.wm-product .thumb img, .product-card .thumb img, .gallery-item img, .cn-card-img img,
+    .library-cover img, .bk-service-img, .cn-topic-lead img, .cn-list-item img, .cn-side-story img, .dl-lead img,
+    .pg-thumb img, .cart-item-thumb img, .rh-about-media img),
+body[data-img-fit="auto"] img.fit-contain {
+    object-fit: contain !important;
+    background-color: var(--fit-bg, #f4f4f5);
+}
+
+body[data-img-fit="cover"] :is(.wm-product .thumb img, .product-card .thumb img) {
+    object-fit: cover !important;
+    padding: 0 !important;
+}
+
+/* A picture that failed to load keeps its frame instead of collapsing the card */
+img.img-broken { visibility: hidden; }

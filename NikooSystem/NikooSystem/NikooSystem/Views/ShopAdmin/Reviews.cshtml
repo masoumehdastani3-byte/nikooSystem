@@ -1,40 +1,73 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreProductReview>
+@model PagedList<StoreProductReview>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "نظرات محصولات";
+    ViewBag.Title = "نظرات مشتریان";
     var company = (string)ViewBag.CompanyCode;
-    var products = (Dictionary<int, string>)ViewBag.Products;
+    var products = (Dictionary<int, StoreProduct>)ViewBag.Products;
 }
-<h2 class="mb-3">نظرات مشتریان</h2>
+@Html.PageHeader("نظرات مشتریان")
 <div class="panel-card">
-<table class="table">
-    <thead><tr><th>محصول</th><th>نویسنده</th><th>امتیاز</th><th>نظر</th><th>وضعیت</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var r in Model)
-    {
-        <tr>
-            <td>@(products.ContainsKey(r.ProductId) ? products[r.ProductId] : r.ProductId.ToString())</td>
-            <td>@r.AuthorName</td>
-            <td>@r.Rating / 5</td>
-            <td>@r.Comment</td>
-            <td>@(r.IsApproved ? "تأیید شده" : "مخفی")</td>
-            <td class="text-nowrap">
-                @using (Html.BeginForm("ToggleReview", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline" }))
+    @Html.GridToolbar("جستجو در متن نظر یا نام نویسنده…",
+        new GridSelect("state", "همه نظرها", new Dictionary<string, string> { ["pending"] = "مخفی", ["approved"] = "تأییدشده" }))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>محصول</th>
+                    @Html.SortHeader("author", "نویسنده")
+                    @Html.SortHeader("rating", "امتیاز")
+                    <th>نظر</th>
+                    @Html.SortHeader("date", "تاریخ")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model)
                 {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@r.Id" />
-                    <input type="hidden" name="approved" value="@(!r.IsApproved)" />
-                    <button class="btn btn-sm btn-outline-secondary" type="submit">@(r.IsApproved ? "مخفی کردن" : "تأیید")</button>
+                    StoreProduct product;
+                    products.TryGetValue(r.ProductId, out product);
+                    <tr>
+                        <td>
+                            @if (product != null)
+                            {
+                                <a href="@Url.Action("Product", "Shop", new { company, slug = product.Slug })" target="_blank" rel="noopener">@product.Title</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">محصول حذف‌شده</span>
+                            }
+                        </td>
+                        <td>@r.AuthorName</td>
+                        <td class="text-warning text-nowrap" title="@r.Rating از ۵">
+                            @for (var i = 1; i <= 5; i++)
+                            {
+                                <i class="bi @(i <= r.Rating ? "bi-star-fill" : "bi-star")"></i>
+                            }
+                        </td>
+                        <td>
+                            @r.Comment
+                            @if (!r.IsApproved) { <span class="badge bg-secondary">مخفی</span> }
+                        </td>
+                        <td class="small text-muted">@r.CreatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @if (r.IsApproved)
+                            {
+                                @Html.IconPost("ToggleReview", new { id = r.Id, approved = false }, "bi-eye-slash", "مخفی کردن", "is-toggle")
+                            }
+                            else
+                            {
+                                @Html.IconPost("ToggleReview", new { id = r.Id, approved = true }, "bi-check2-circle", "تأیید و نمایش", "is-ok")
+                            }
+                            @Html.DeleteButton("DeleteReview", r.Id, "این نظر حذف شود؟")
+                        </td>
+                    </tr>
                 }
-                @using (Html.BeginForm("DeleteReview", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف؟');" }))
+                @if (Model.Count == 0)
                 {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@r.Id" />
-                    <button class="btn btn-sm btn-outline-danger" type="submit">حذف</button>
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-chat-square-text fs-3 d-block mb-1"></i>نظری پیدا نشد.</td></tr>
                 }
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

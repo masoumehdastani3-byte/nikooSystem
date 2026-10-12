@@ -1,0 +1,53 @@
+/* Booking sites in the owner's panel: week calendar, free-time picker, weekly hours editor. */
+.bk-cal-bar { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.bk-cal-bar .btn-group .btn { display: inline-flex; align-items: center; }
+.bk-cal-range { font-size: 1.05rem; }
+.bk-cal-bar form { min-width: 200px; }
+
+.bk-cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .5rem; }
+.bk-cal-day { display: flex; flex-direction: column; gap: .4rem; min-height: 260px; padding: .5rem; border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; }
+.bk-cal-day.is-today { border-color: var(--bs-primary, #0d6efd); background: #fff; box-shadow: 0 0 0 2px rgba(13, 110, 253, .12); }
+.bk-cal-day.is-past { opacity: .8; }
+.bk-cal-head { display: flex; align-items: baseline; gap: .35rem; flex-wrap: wrap; padding-bottom: .35rem; border-bottom: 1px dashed #e5e7eb; }
+.bk-cal-head span { font-weight: 800; }
+.bk-cal-head small { color: #6b7280; font-size: .75rem; }
+.bk-cal-head em { margin-inline-start: auto; font-style: normal; font-size: .75rem; background: #e5e7eb; border-radius: 999px; padding: 0 .45rem; }
+
+.bk-cal-item {
+  --c: #0f766e;
+  display: flex; flex-direction: column; gap: .05rem; padding: .4rem .5rem; border-radius: 8px;
+  background: #fff; border: 1px solid #e5e7eb; border-inline-start: 4px solid var(--c);
+  color: #111827; text-decoration: none; font-size: .82rem; line-height: 1.5;
+}
+.bk-cal-item:hover { box-shadow: 0 4px 12px rgba(15, 23, 42, .1); color: #111827; }
+.bk-cal-item b { color: var(--c); }
+.bk-cal-item small { color: #6b7280; font-size: .72rem; }
+.bk-cal-item i.badge { align-self: flex-start; font-style: normal; font-weight: 600; font-size: .68rem; margin-top: .15rem; }
+.bk-cal-item.status-completed { background: #f0fdf4; }
+.bk-cal-item.status-noshow { background: #fef2f2; text-decoration: line-through; }
+.bk-cal-item.status-pendingpayment { background: #fffbeb; }
+.bk-cal-item.needs-close { border-style: dashed; border-inline-start-style: solid; }
+.bk-cal-off { font-size: .75rem; padding: .3rem .45rem; border-radius: 8px; background: repeating-linear-gradient(45deg, #f3f4f6, #f3f4f6 6px, #e5e7eb 6px, #e5e7eb 12px); color: #374151; }
+.bk-cal-off span { display: block; color: #6b7280; }
+.bk-cal-add { margin-top: auto; text-align: center; font-size: .78rem; padding: .25rem; border: 1px dashed #cbd5e1; border-radius: 8px; color: #64748b; text-decoration: none; }
+.bk-cal-add:hover { background: #fff; color: #0f172a; }
+.bk-cal-legend { display: flex; flex-wrap: wrap; gap: .75rem 1.25rem; margin-top: 1rem; font-size: .85rem; }
+.bk-cal-legend a { color: #374151; text-decoration: none; display: inline-flex; align-items: center; gap: .35rem; }
+.bk-cal-legend span { --c: #0f766e; width: 12px; height: 12px; border-radius: 3px; background: var(--c); }
+
+@media (max-width: 991px) {
+  .bk-cal { grid-template-columns: 1fr; }
+  .bk-cal-day { min-height: 0; }
+  .bk-cal-day.is-past { display: none; }
+}
+
+.bk-free { display: flex; flex-wrap: wrap; gap: .4rem; min-height: 2rem; font-size: .85rem; color: #6b7280; }
+.bk-free button { border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; padding: .3rem .7rem; font-weight: 700; color: #0f172a; }
+.bk-free button:hover { border-color: #0f766e; color: #0f766e; }
+.bk-free button.active { background: #0f766e; border-color: #0f766e; color: #fff; }
+
+.bk-hours-table th, .bk-hours-table td { white-space: nowrap; }
+.bk-hours-table tr.is-off th { color: #9ca3af; }
+.bk-range { display: flex; align-items: center; gap: .35rem; }
+.bk-range input { width: 110px; }
+.bk-range span { color: #6b7280; font-size: .8rem; }

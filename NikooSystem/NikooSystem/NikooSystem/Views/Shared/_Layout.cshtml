@@ -1,19 +1,38 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var site = NikooSystem.Services.SiteContentStore.Settings;
+    var socials = new[]
+    {
+        new { Url = site.InstagramUrl, Icon = "bi-instagram", Name = "اینستاگرام" },
+        new { Url = site.TelegramUrl, Icon = "bi-telegram", Name = "تلگرام" },
+        new { Url = site.WhatsAppUrl, Icon = "bi-whatsapp", Name = "واتساپ" },
+        new { Url = site.LinkedInUrl, Icon = "bi-linkedin", Name = "لینکدین" }
+    }.Where(s => !string.IsNullOrWhiteSpace(s.Url)).ToList();
+    var seo = NikooSystem.Helpers.SeoHtml.Seo(Html);
+    seo.GoogleVerification = seo.GoogleVerification ?? site.GoogleVerification;
+    if (!string.IsNullOrEmpty(site.EnamadMeta))
+    {
+        seo.Meta.Add(new KeyValuePair<string, string>("enamad", site.EnamadMeta));
+    }
+    NikooSystem.Helpers.Seo.Defaults(seo, Request, ViewBag.Title as string, site.SiteName,
+        ViewBag.MetaDescription as string ?? site.MetaDescription, "/Assets/img/hero-img.png");
+}
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>@ViewBag.Title - نیکو سیستم آفرین</title>
-    <meta name="description" content="نیکو سیستم آفرین | فروشگاه‌های آنلاین آماده — از دمو تا پرداخت آنلاین">
+    @Html.Partial("_SeoHead")
     <link href="~/Assets/img/favicon.png" rel="icon">
+    <link href="~/Assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+    <meta name="theme-color" content="#4154f1">
     <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <link href="~/Assets/vendor/aos/aos.css" rel="stylesheet">
     <link href="~/Assets/vendor/remixicon/remixicon.css" rel="stylesheet">
     <link href="~/Assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-    <link href="~/Assets/css/style.css" rel="stylesheet">
-    <link href="~/Content/shop.css" rel="stylesheet">
-    <link href="~/Content/landing.css" rel="stylesheet">
+    <link href="@Url.Asset("~/Assets/css/style.css")" rel="stylesheet">
+    <link href="@Url.Asset("~/Content/shop.css")" rel="stylesheet">
+    <link href="@Url.Asset("~/Content/landing.css")" rel="stylesheet">
     <style>
       /* جلوگیری از مخفی ماندن محتوا اگر AOS دیر لود شود */
       [data-aos] { opacity: 1 !important; transform: none !important; }
@@ -26,14 +45,15 @@
     <header id="header" class="header fixed-top">
         <div class="container-fluid container-xl d-flex align-items-center justify-content-between">
             <a href="@Url.Action("Index","Home")" class="logo d-flex align-items-center">
-                <img src="~/Assets/img/logo.png" alt="نیکو سیستم آفرین">
-                <span>نیکو سیستم آفرین</span>
+                <img src="~/Assets/img/logo.png" alt="@site.SiteName">
+                <span>@site.SiteName</span>
             </a>
             <nav id="navbar" class="navbar">
                 <ul>
                     <li><a class="nav-link @(ViewBag.Nav=="home"?"active":"")" href="@Url.Action("Index","Home")">خانه</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="products"?"active":"")" href="@Url.Action("Index","Products")">محصولات</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="about"?"active":"")" href="@Url.Action("About","Home")">درباره ما</a></li>
+                    <li><a class="nav-link @(ViewBag.Nav=="terms"?"active":"")" href="@Url.Action("Terms","Home")">قوانین و مقررات</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="contact"?"active":"")" href="@Url.Action("Contact","Home")">تماس با ما</a></li>
                     <li><a class="nav-link" href="@Url.Action("Login","Signup")">ورود فروشندگان</a></li>
                     <li><a class="getstarted" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان</a></li>
@@ -46,44 +66,58 @@
     @RenderBody()
 
     <footer id="footer" class="footer">
-        <div class="footer-newsletter lf-social lf-social-footer">
-            <div class="container">
-                <a class="lf-social-card" href="http://labkhandfarda.ir/" target="_blank" rel="noopener noreferrer">
-                    <div class="lf-social-media">
-                        <img src="~/Assets/img/labkhand-farda.png" alt="فعالیت های اجتماعی لبخند فردا" />
-                    </div>
-                    <div class="lf-social-body">
-                        <span class="lf-social-eyebrow"><i class="bi bi-heart-fill"></i> مسئولیت اجتماعی</span>
-                        <h2>فعالیت های اجتماعی</h2>
-                        <p>
-                            نیکو سیستم آفرین در کنار فعالیت‌های تخصصی، از طرح‌های خیریه و قرض‌الحسنه
-                            «لبخند فردا» حمایت می‌کند؛ جایی برای کمک به نیازمندان، وام بدون بهره و همراهی اجتماعی.
-                        </p>
-                        <span class="lf-btn lf-btn-warm">
-                            ورود به لبخند فردا <i class="bi bi-box-arrow-up-left"></i>
-                        </span>
-                    </div>
-                </a>
+        @if (site.ShowCharity && !string.IsNullOrWhiteSpace(site.CharityTitle))
+        {
+            <div class="footer-newsletter lf-social lf-social-footer">
+                <div class="container">
+                    <a class="lf-social-card" href="@(site.CharityUrl ?? "#")" target="_blank" rel="noopener noreferrer">
+                        <div class="lf-social-media">
+                            <img src="~/Assets/img/labkhand-farda.png" alt="@site.CharityTitle" />
+                        </div>
+                        <div class="lf-social-body">
+                            <span class="lf-social-eyebrow"><i class="bi bi-heart-fill"></i> مسئولیت اجتماعی</span>
+                            <h2>@site.CharityTitle</h2>
+                            <p>@site.CharityText</p>
+                            @if (!string.IsNullOrWhiteSpace(site.CharityUrl))
+                            {
+                                <span class="lf-btn lf-btn-warm">
+                                    ورود به سایت <i class="bi bi-box-arrow-up-left"></i>
+                                </span>
+                            }
+                        </div>
+                    </a>
+                </div>
             </div>
-        </div>
+        }
         <div class="footer-top">
             <div class="container">
                 <div class="row gy-4">
                     <div class="col-lg-5 col-md-12 footer-info">
                         <a href="@Url.Action("Index","Home")" class="logo d-flex align-items-center">
-                            <img src="~/Assets/img/logo_full.png" alt="نیکو سیستم آفرین">
-                            <span class="ms-2">نیکو سیستم آفرین</span>
+                            <img src="~/Assets/img/logo_full.png" alt="@site.SiteName">
+                            <span class="ms-2">@site.SiteName</span>
                         </a>
-                        <p class="mt-3">نیکو سیستم آفرین؛ فروشگاه‌های آنلاین آماده. دمو را ببینید، سفارش دهید و آنلاین پرداخت کنید.</p>
+                        <p class="mt-3">@site.FooterAbout</p>
+                        @if (socials.Any())
+                        {
+                            <div class="social-links mt-3">
+                                @foreach (var s in socials)
+                                {
+                                    <a href="@s.Url" target="_blank" rel="noopener noreferrer" title="@s.Name" aria-label="@s.Name"><i class="bi @s.Icon"></i></a>
+                                }
+                            </div>
+                        }
                     </div>
                     <div class="col-lg-2 col-6 footer-links">
                         <h4>لینک‌های مفید</h4>
                         <ul>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Home")">خانه</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products")">محصولات</a></li>
-                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Terms","Home")">شرایط استفاده</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("BuyGuide","Home")">راهنمای خرید</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Terms","Home")">قوانین و مقررات</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Privacy","Home")">حریم خصوصی</a></li>
-                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Guide","Pay")">راهنمای پرداخت</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("About","Home")">درباره ما</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Guide","Pay")">API پرداخت</a></li>
                         </ul>
                     </div>
                     <div class="col-lg-2 col-6 footer-links">
@@ -97,20 +131,33 @@
                         </ul>
                     </div>
                     <div class="col-lg-3 col-md-12 footer-contact text-center text-md-start">
-                        <h4>تماس با ما</h4>in
+                        <h4>تماس با ما</h4>
                         <p>
-                            تهران، نارمک<br>
-                            خیابان شهید نیلفروشان ، پلاک 679<br><br>
-                            <strong>تلفن:</strong> 021-77458550<br>
-                            <strong>ایمیل:</strong> info@nikoooo.ir
+                            @Html.Lines(site.Address)
+                            @if (!string.IsNullOrWhiteSpace(site.PostalCode))
+                            {
+                                <br><strong>کد پستی:</strong> <span dir="ltr">@site.PostalCode</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(site.Phone))
+                            {
+                                <br><br><strong>تلفن:</strong> <a href="tel:@site.Phone.Replace("-", "").Replace(" ", "")" dir="ltr">@site.Phone</a>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(site.Email))
+                            {
+                                <br><strong>ایمیل:</strong> <a href="mailto:@site.Email">@site.Email</a>
+                            }
                         </p>
+                        @if (NikooSystem.Services.SiteVerification.Seal(site.EnamadHtml) != null)
+                        {
+                            <div class="lf-enamad mt-3">@NikooSystem.Services.SiteVerification.SealHtml(site)</div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
         <div class="container">
             <div class="copyright">
-                &copy; @DateTime.Now.Year <strong><span>نیکو سیستم آفرین</span></strong> — همه حقوق محفوظ است
+                &copy; @DateTime.Now.Year <strong><span>@site.SiteName</span></strong> — همه حقوق محفوظ است
             </div>
         </div>
     </footer>

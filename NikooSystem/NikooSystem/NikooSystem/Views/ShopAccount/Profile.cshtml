@@ -1,11 +1,13 @@
-@model NikooSystem.Models.Store.StoreCustomer
+@model StoreCustomer
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = "پروفایل";
     var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
 }
 <section class="py-4">
     <div class="container" style="max-width:560px;">
+        @Html.Partial("_AccountNav", "Profile")
         <div class="panel-card">
             <h2 class="section-title">پروفایل من</h2>
             @using (Html.BeginForm())
@@ -14,7 +16,14 @@
                 <div class="mb-3"><label class="form-label">نام</label><input class="form-control" name="FullName" value="@Model.FullName" /></div>
                 <div class="mb-3"><label class="form-label">موبایل</label><input class="form-control" value="@Model.Mobile" disabled /></div>
                 <div class="mb-3"><label class="form-label">ایمیل</label><input class="form-control" name="Email" value="@Model.Email" /></div>
-                <div class="mb-3"><label class="form-label">آدرس</label><input class="form-control" name="Address" value="@Model.Address" /></div>
+                if (kind.IsShop)
+                {
+                    <div class="mb-3"><label class="form-label">آدرس</label><input class="form-control" name="Address" value="@Model.Address" /></div>
+                }
+                else
+                {
+                    <input type="hidden" name="Address" value="@Model.Address" />
+                }
                 <div class="mb-3"><label class="form-label">رمز جدید (اختیاری)</label><input class="form-control" type="password" name="newPassword" /></div>
                 <button class="btn-store" type="submit">ذخیره</button>
             }

@@ -34,8 +34,12 @@
                                 <small class="text-muted">@p.Category</small>
                                 <h4>@p.Title</h4>
                                 <p class="small text-muted">@p.ShortDescription</p>
+                                @if (!string.IsNullOrEmpty(p.DemoSlug))
+                                {
+                                    <a class="lf-tpl-count" href="@Url.Action("Details","Products", new { id = p.Id })#templates"><i class="bi bi-palette"></i> @StoreTemplates.ForKind(StoreTypes.Get(p.DemoSlug).Kind).Count().ToString().ToFaDigits() قالب آماده با پیش‌نمایش زنده</a>
+                                }
                                 <div class="d-flex justify-content-between align-items-center mt-3">
-                                    <span class="price">@p.Price.ToToman()</span>
+                                    <span class="price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>
                                     <div>
                                         @if (!string.IsNullOrEmpty(p.DemoSlug))
                                         {

@@ -1,6 +1,4 @@
-@model NikooSystem.Models.Store.StorePageLayout
-@using NikooSystem.Helpers
-@using NikooSystem.Models.Store
+@model StorePageLayout
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "چیدمان صفحات";
@@ -9,6 +7,7 @@
     var sections = (List<StoreHomeSection>)ViewBag.Sections;
     var collections = (List<StoreCollection>)ViewBag.Collections;
     var template = StoreTemplates.Get(settings.LayoutStyle);
+    var kind = (SiteKindInfo)ViewBag.Kind;
 }
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
@@ -41,16 +40,26 @@
                 <div class="ls-add">
                     <div class="ls-add-title">افزودن بخش تازه</div>
                     <div class="ls-add-grid">
-                        <button type="button" class="ls-add-btn" data-add="products">
-                            <i class="bi bi-bag-check"></i>
-                            <span><strong>ردیف محصولات</strong><small>کالاهای یک برچسب (مثل «روز دختر»)، پرفروش‌ها، تخفیف‌دارها یا یک گروه</small></span>
-                        </button>
+                        @if (kind.IsContent)
+                        {
+                            <button type="button" class="ls-add-btn" data-add="posts">
+                                <i class="bi bi-journal-text"></i>
+                                <span><strong>ردیف مطالب</strong><small>مطالب یک سرویس، جدیدترین‌ها یا پربازدیدترین‌ها</small></span>
+                            </button>
+                        }
+                        else if (kind.Sells)
+                        {
+                            <button type="button" class="ls-add-btn" data-add="products">
+                                <i class="bi bi-bag-check"></i>
+                                <span><strong>ردیف محصولات</strong><small>کالاهای یک برچسب (مثل «روز دختر»)، پرفروش‌ها، تخفیف‌دارها یا یک گروه</small></span>
+                            </button>
+                        }
                         <button type="button" class="ls-add-btn" data-add="banner">
                             <i class="bi bi-badge-ad"></i>
                             <span><strong>بنر تبلیغاتی</strong><small>تصویر و متن دلخواه با دکمه برای جشنواره‌ها و مناسبت‌ها</small></span>
                         </button>
                     </div>
-                    @if (!collections.Any())
+                    @if (kind.Sells && !collections.Any())
                     {
                         <div class="small text-muted mt-2">
                             <i class="bi bi-lightbulb"></i> برای نمایش کالاهای خاص (مثلاً ویژه روز دختر)، اول از
@@ -62,6 +71,30 @@
         </div>
 
         <div class="col-xl-4">
+            @if (kind.IsContent)
+            {
+                <div class="panel-card">
+                    <h5><i class="bi bi-journal-text"></i> صفحه مطلب</h5>
+                    <p class="small text-muted mb-2">هر مطلب با تیتر، لید، تصویر شاخص، دکمه‌های اشتراک‌گذاری، مطالب مرتبط و نظرات خوانندگان نمایش داده می‌شود.</p>
+                    <ul class="small text-muted mb-0">
+                        <li>نظر دادن برای هر مطلب از صفحه ویرایش آن روشن یا خاموش می‌شود.</li>
+                        <li>تأیید نظرها پیش از انتشار از «اطلاعات سایت» تنظیم می‌شود.</li>
+                    </ul>
+                </div>
+            }
+            else if (kind.IsBooking)
+            {
+                <div class="panel-card">
+                    <h5><i class="bi bi-calendar-check"></i> صفحه رزرو نوبت</h5>
+                    <p class="small text-muted mb-2">مشتری در چهار قدم نوبت می‌گیرد: خدمت، متخصص، روز و ساعت خالی، و مشخصات خودش.</p>
+                    <ul class="small text-muted mb-0">
+                        <li>ساعت‌های خالی از <a href="@Url.Action("Staff","ShopAdmin", new { company })">ساعت کاری متخصصان</a>، تعطیلی‌ها و نوبت‌های قبلی ساخته می‌شود.</li>
+                        <li>فاصله نوبت‌ها، مهلت لغو و بیعانه از <a href="@Url.Action("Settings","ShopAdmin", new { company })">اطلاعات سایت</a> تنظیم می‌شود.</li>
+                    </ul>
+                </div>
+            }
+            else
+            {
             <div class="panel-card">
                 <h5><i class="bi bi-box-seam"></i> صفحه محصول</h5>
                 <p class="small text-muted">بخش‌هایی که در صفحه هر کالا نمایش داده می‌شوند.</p>
@@ -96,6 +129,7 @@
                     </label>
                 </div>
             </div>
+            }
         </div>
     </div>
 
@@ -105,13 +139,22 @@
     </div>
 }
 
-<template id="tpl-products">
-    @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "products", Source = collections.Any(c => c.IsActive) ? "collection" : "newest", Count = 8 })
-</template>
+@if (kind.IsContent)
+{
+    <template id="tpl-posts">
+        @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "posts", Source = "newest", Count = 6 })
+    </template>
+}
+else if (kind.Sells)
+{
+    <template id="tpl-products">
+        @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "products", Source = collections.Any(c => c.IsActive) ? "collection" : "newest", Count = 8 })
+    </template>
+}
 <template id="tpl-banner">
     @Html.Partial("_PageSection", new StoreHomeSection { Id = "__ID__", Type = "banner" })
 </template>
 
 @section scripts {
-<script src="~/Content/page-layout.js"></script>
+<script src="@Url.Asset("~/Content/page-layout.js")"></script>
 }

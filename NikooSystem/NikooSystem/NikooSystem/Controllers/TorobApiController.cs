@@ -16,17 +16,11 @@ namespace NikooSystem.Controllers
             Response.ContentType = "application/json; charset=utf-8";
 
             if (!TorobTokenValidator.TryValidate(Request, out var authError))
-            {
-                Response.StatusCode = 401;
-                return Content(JsonConvert.SerializeObject(new TorobErrorResponse { Error = authError }), "application/json");
-            }
+                return Error(401, authError);
 
-            var companyCode = ResolveCompanyCode(company);
-            if (string.IsNullOrEmpty(companyCode))
-            {
-                Response.StatusCode = 404;
-                return Content(JsonConvert.SerializeObject(new TorobErrorResponse { Error = "shop not found" }), "application/json");
-            }
+            var companyCode = TenantStore.ResolveCompanyCode(Request, company);
+            if (string.IsNullOrEmpty(companyCode) || TenantStore.GetTenant(companyCode)?.IsSubscriptionLocked() == true)
+                return Error(404, "shop not found");
 
             JObject body;
             try
@@ -40,32 +34,28 @@ namespace NikooSystem.Controllers
             }
             catch
             {
-                Response.StatusCode = 400;
-                return Content(JsonConvert.SerializeObject(new TorobErrorResponse { Error = "invalid json body" }), "application/json");
+                return Error(400, "invalid json body");
             }
 
             try
             {
-                var result = TorobCatalogService.HandleRequest(companyCode, body, Request);
-                return Content(JsonConvert.SerializeObject(result), "application/json");
+                return JsonText(TorobCatalogService.HandleRequest(companyCode, body, Request));
             }
             catch (TorobApiException ex)
             {
-                Response.StatusCode = 400;
-                return Content(JsonConvert.SerializeObject(new TorobErrorResponse { Error = ex.Message }), "application/json");
+                return Error(400, ex.Message);
             }
         }
 
-        private string ResolveCompanyCode(string routeCompany)
+        private ActionResult Error(int status, string message)
         {
-            if (!string.IsNullOrWhiteSpace(routeCompany))
-            {
-                var t = TenantStore.GetTenant(routeCompany);
-                return t?.CompanyCode;
-            }
+            Response.StatusCode = status;
+            return JsonText(new TorobErrorResponse { Error = message });
+        }
 
-            var byHost = TenantStore.ResolveByHost(Request.Url?.Host);
-            return byHost?.CompanyCode;
+        private ContentResult JsonText(object value)
+        {
+            return Content(JsonConvert.SerializeObject(value), "application/json");
         }
     }
 }

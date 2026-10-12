@@ -1,11 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using NikooSystem.Helpers;
 using NikooSystem.Models;
 using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
 {
+    [NoIndex]
     public class CheckoutController : Controller
     {
         private readonly ZarinPalService _zarinPal = new ZarinPalService();
@@ -13,34 +15,29 @@ namespace NikooSystem.Controllers
         [HttpGet]
         public ActionResult Buy(int productId, string company = null)
         {
-            var product = JsonStore.GetProduct(productId);
+            var product = SiteStore.GetProduct(productId);
             if (product == null || !product.IsActive)
                 return HttpNotFound();
 
-            var model = new CheckoutViewModel { Product = product };
-            var trial = TrialTenant(company);
-            if (trial != null)
-            {
-                model.CustomerName = trial.OwnerName;
-                model.CustomerMobile = trial.OwnerMobile;
-                model.CustomerEmail = trial.OwnerEmail;
-            }
-            ViewBag.TrialTenant = trial;
-            return View(model);
+            var store = SubscribedStore(company);
+            if (store != null)
+                return RedirectToAction("Subscription", "ShopAdmin", new { company = store.CompanyCode });
+            return View(new CheckoutViewModel { Product = product });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Buy(int productId, CheckoutViewModel model, string company = null)
         {
-            var product = JsonStore.GetProduct(productId);
+            var product = SiteStore.GetProduct(productId);
             if (product == null || !product.IsActive)
                 return HttpNotFound();
 
-            model.Product = product;
-            var trial = TrialTenant(company);
-            ViewBag.TrialTenant = trial;
+            var store = SubscribedStore(company);
+            if (store != null)
+                return RedirectToAction("Subscription", "ShopAdmin", new { company = store.CompanyCode });
 
+            model.Product = product;
             if (!ModelState.IsValid)
                 return View(model);
 
@@ -48,7 +45,6 @@ namespace NikooSystem.Controllers
             {
                 ProductId = product.Id,
                 ProductTitle = product.Title,
-                CompanyCode = trial?.CompanyCode,
                 Amount = product.Price,
                 CustomerName = model.CustomerName,
                 CustomerMobile = model.CustomerMobile,
@@ -58,11 +54,11 @@ namespace NikooSystem.Controllers
                 Status = OrderStatus.PendingPayment
             };
 
-            order = JsonStore.AddOrder(order);
+            order = SiteStore.AddOrder(order);
 
             var payment = await _zarinPal.RequestPaymentAsync(
                 order.Amount,
-                (trial != null ? "اشتراک فروشگاه " + trial.Name : "درخواست دمو " + order.ProductTitle) + " - سفارش " + order.OrderNumber,
+                "درخواست دمو " + order.ProductTitle + " - سفارش " + order.OrderNumber,
                 order.CustomerEmail,
                 order.CustomerMobile,
                 order.Id.ToString());
@@ -71,41 +67,33 @@ namespace NikooSystem.Controllers
             {
                 order.Status = OrderStatus.Failed;
                 order.PaymentMessage = payment.Message;
-                JsonStore.UpdateOrder(order);
+                SiteStore.UpdateOrder(order);
                 TempData["Error"] = payment.Message;
                 return View(model);
             }
 
             order.Authority = payment.Authority;
-            JsonStore.UpdateOrder(order);
+            SiteStore.UpdateOrder(order);
             return Redirect(payment.PaymentUrl);
         }
 
         [HttpGet]
         public async Task<ActionResult> Callback(int? orderId, string Authority, string Status)
         {
-            if (orderId == null)
-                return RedirectToAction("Failed");
-
-            var order = JsonStore.GetOrder(orderId.Value);
+            var order = orderId.HasValue ? SiteStore.GetOrder(orderId.Value) : null;
             if (order == null)
                 return RedirectToAction("Failed");
+            if (order.Status == OrderStatus.Paid)
+                return RedirectToAction("Success", new { id = order.Id });
 
-            if (!string.Equals(Status, "OK", StringComparison.OrdinalIgnoreCase))
-            {
-                order.Status = OrderStatus.Failed;
-                order.PaymentMessage = "پرداخت توسط کاربر لغو شد یا ناموفق بود.";
-                JsonStore.UpdateOrder(order);
-                return RedirectToAction("Failed", new { id = order.Id });
-            }
-
-            var authority = Authority ?? order.Authority;
-            var verify = await _zarinPal.VerifyPaymentAsync(authority, order.Amount);
+            var verify = await _zarinPal.VerifyCallbackAsync(order.Authority, Authority, Status, order.Amount);
+            if (verify.Forged)
+                return RedirectToAction("Failed");
             if (!verify.Success)
             {
                 order.Status = OrderStatus.Failed;
                 order.PaymentMessage = verify.Message;
-                JsonStore.UpdateOrder(order);
+                SiteStore.UpdateOrder(order);
                 return RedirectToAction("Failed", new { id = order.Id });
             }
 
@@ -113,24 +101,25 @@ namespace NikooSystem.Controllers
             order.RefId = verify.RefId;
             order.PaidAt = DateTime.Now;
             order.PaymentMessage = verify.Message;
-            JsonStore.UpdateOrder(order);
+            SiteStore.UpdateOrder(order);
 
             if (!string.IsNullOrEmpty(order.CompanyCode))
-                TenantProvisioningService.MarkPaid(order.CompanyCode);
+                Subscriptions.Apply(order.Id);
+            Notifications.SiteOrder(SiteStore.GetOrder(order.Id) ?? order);
 
             return RedirectToAction("Success", new { id = order.Id });
         }
 
-        /// <summary>فروشگاه آزمایشی زنده‌ای که این خرید باید آن را دائمی کند</summary>
-        private static Models.Store.TenantInfo TrialTenant(string company)
+        /// <summary>A customer's store (not a demo): its subscription is paid from the store's panel.</summary>
+        private static Models.Store.TenantInfo SubscribedStore(string company)
         {
             var tenant = TenantStore.GetTenant(company);
-            return tenant != null && tenant.IsTrial && !tenant.IsPaid ? tenant : null;
+            return tenant != null && !TenantStore.IsDemo(tenant.CompanyCode) ? tenant : null;
         }
 
         public ActionResult Success(int id)
         {
-            var order = JsonStore.GetOrder(id);
+            var order = SiteStore.GetOrder(id);
             if (order == null) return HttpNotFound();
             return View(order);
         }
@@ -139,7 +128,7 @@ namespace NikooSystem.Controllers
         {
             Order order = null;
             if (id.HasValue)
-                order = JsonStore.GetOrder(id.Value);
+                order = SiteStore.GetOrder(id.Value);
             return View(order);
         }
     }

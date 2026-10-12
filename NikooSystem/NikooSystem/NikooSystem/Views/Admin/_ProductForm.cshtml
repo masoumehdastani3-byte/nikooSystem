@@ -1,45 +1,117 @@
 @model NikooSystem.Models.Product
-<div class="row g-3 mb-3">
-    <div class="col-md-8">
-        @Html.LabelFor(m => m.Title)
-        @Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
-        @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+@using NikooSystem.Helpers
+@{
+    var categories = NikooSystem.Services.SiteStore.GetProducts().Select(p => p.Category).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().OrderBy(c => c).ToList();
+    var demoTypes = StoreTypes.All.Where(t => NikooSystem.Services.TenantStore.DemoBySlug.ContainsKey(t.Id)).ToList();
+    string demoCode;
+    NikooSystem.Services.TenantStore.DemoBySlug.TryGetValue(Model.DemoSlug ?? "", out demoCode);
+    var demoTemplate = demoCode == null ? null : StoreTemplates.Get(NikooSystem.Services.TenantStore.GetSettings(demoCode)?.LayoutStyle);
+}
+@Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="adm-card">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    @Html.LabelFor(m => m.Title, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-md-4">
+                    @Html.LabelFor(m => m.Price, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "1000", step = "1000", dir = "ltr" })
+                    @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger small" })
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PriceSixMonths, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.PriceSixMonths, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                    <div class="form-text">۰ یعنی خودکار: دو برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.SixMonthDiscount.ToFa()٪ تخفیف.</div>
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.PriceYearly, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.PriceYearly, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                    <div class="form-text">۰ یعنی خودکار: چهار برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.YearlyDiscount.ToFa()٪ تخفیف. این دو قیمت فقط برای محصولاتی است که دمو دارند (اشتراک سایت).</div>
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.Category, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Category, new { @class = "form-control", list = "productCategories", placeholder = "مثلاً فروشگاه آنلاین" })
+                    <datalist id="productCategories">
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c"></option>
+                        }
+                    </datalist>
+                    <div class="form-text">محصولات «فروشگاه آنلاین» در بخش فروشگاه‌های آماده صفحه اصلی می‌آیند.</div>
+                </div>
+                <div class="col-md-6">
+                    @Html.LabelFor(m => m.DemoSlug, new { @class = "form-label" })
+                    <select class="form-select" id="DemoSlug" name="DemoSlug">
+                        <option value="">بدون دمو</option>
+                        @foreach (var t in demoTypes)
+                        {
+                            <option value="@t.Id" @(string.Equals(Model.DemoSlug, t.Id, StringComparison.OrdinalIgnoreCase) ? "selected" : null)>@t.Name</option>
+                        }
+                    </select>
+                    @Html.ValidationMessageFor(m => m.DemoSlug, "", new { @class = "text-danger small" })
+                    <div class="form-text">دکمه «مشاهده دمو» به سایت نمونه همین نوع و «مثل این بساز» به ثبت‌نام همین نوع می‌رود.</div>
+                </div>
+                <div class="col-12">
+                    @Html.LabelFor(m => m.ShortDescription, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.ShortDescription, new { @class = "form-control" })
+                </div>
+                <div class="col-12">
+                    @Html.LabelFor(m => m.Description, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.Description, 6, 1, new { @class = "form-control" })
+                </div>
+            </div>
+        </div>
+        <div class="adm-card">
+            <div class="adm-card-title">نمایش در گوگل</div>
+            @Html.Partial("_SeoFields", new SeoFieldsVm
+            {
+                Title = Model.SeoTitle,
+                Description = Model.SeoDescription,
+                AutoTitle = SeoPages.SiteProductTitle(new NikooSystem.Models.Product { Title = string.IsNullOrWhiteSpace(Model.Title) ? "عنوان محصول" : Model.Title }, NikooSystem.Services.SiteContentStore.Settings),
+                AutoDescription = Seo.FirstText(Model.ShortDescription, Model.Description) ?? "از توضیح کوتاه محصول ساخته می‌شود",
+                Url = Model.Id > 0 ? Seo.SiteUrl(Request) + "/Products/Details/" + Model.Id : null
+            })
+        </div>
     </div>
-    <div class="col-md-4">
-        @Html.LabelFor(m => m.Price)
-        @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number" })
-        @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger" })
-    </div>
-    <div class="col-md-6">
-        @Html.LabelFor(m => m.Category)
-        @Html.TextBoxFor(m => m.Category, new { @class = "form-control", placeholder = "مثلاً فروشگاه آنلاین" })
-    </div>
-    <div class="col-md-6">
-        @Html.LabelFor(m => m.DemoSlug)
-        @Html.TextBoxFor(m => m.DemoSlug, new { @class = "form-control", placeholder = "fashion / grocery / digital" })
-    </div>
-    <div class="col-12">
-        @Html.LabelFor(m => m.ShortDescription)
-        @Html.TextBoxFor(m => m.ShortDescription, new { @class = "form-control" })
-    </div>
-    <div class="col-12">
-        @Html.LabelFor(m => m.Description)
-        @Html.TextAreaFor(m => m.Description, 5, 1, new { @class = "form-control" })
-    </div>
-    <div class="col-md-6">
-        @Html.LabelFor(m => m.ImageUrl)
-        @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control", placeholder = "/Assets/img/..." })
-    </div>
-    <div class="col-md-6">
-        <label>آپلود تصویر جدید</label>
-        <input type="file" name="imageFile" class="form-control" accept="image/*" />
-    </div>
-    <div class="col-md-3 form-check mt-4">
-        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
-        @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
-    </div>
-    <div class="col-md-3 form-check mt-4">
-        @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
-        @Html.LabelFor(m => m.IsFeatured, new { @class = "form-check-label" })
+    <div class="col-lg-4">
+        <div class="adm-card">
+            <div class="adm-card-title">تصویر</div>
+            <img id="productPreview" src="@(string.IsNullOrEmpty(Model.ImageUrl) ? "/Assets/img/portfolio/portfolio-1.jpg" : Model.ImageUrl)" alt="" class="w-100 rounded-3 mb-2" style="aspect-ratio:16/10;object-fit:cover;background:#eef2ff" />
+            <input type="file" name="imageFile" class="form-control mb-2" accept="image/*" aria-label="آپلود تصویر جدید"
+                   onchange="if(this.files[0]){document.getElementById('productPreview').src=URL.createObjectURL(this.files[0])}" />
+            @Html.ValidationMessage("imageFile", "", new { @class = "text-danger small" })
+            <details class="small">
+                <summary class="text-muted">یا آدرس تصویر</summary>
+                @Html.TextBoxFor(m => m.ImageUrl, new { @class = "form-control form-control-sm mt-2", dir = "ltr", placeholder = "/Assets/img/..." })
+            </details>
+            <div class="form-text">نسبت مناسب: افقی ۱۶ به ۱۰</div>
+        </div>
+        <div class="adm-card">
+            <div class="form-check mb-2">
+                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+            </div>
+            <div class="form-check">
+                @Html.CheckBoxFor(m => m.IsFeatured, new { @class = "form-check-input" })
+                <label class="form-check-label" for="IsFeatured">پیشنهادی (نشان «پیشنهادی» و نمایش در اول فهرست)</label>
+            </div>
+        </div>
+        @if (demoCode != null)
+        {
+            <div class="adm-card">
+                <div class="adm-card-title">قالب دمو</div>
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="rounded-circle border" style="width:14px;height:14px;background:@demoTemplate.PrimaryColor"></span>
+                    <span class="rounded-circle border" style="width:14px;height:14px;background:@demoTemplate.SecondaryColor"></span>
+                    <strong>@demoTemplate.Name</strong>
+                </div>
+                <div class="form-text mb-2">دموی «@StoreTypes.Get(Model.DemoSlug).Name» با این قالب باز می‌شود؛ بازدیدکننده داخل دمو بقیه قالب‌ها را هم امتحان می‌کند.</div>
+                <a class="btn btn-sm btn-outline-primary" href="@Url.Action("DemoTemplate","Admin", new { slug = Model.DemoSlug })"><i class="bi bi-palette"></i> تغییر قالب دمو</a>
+            </div>
+        }
     </div>
 </div>

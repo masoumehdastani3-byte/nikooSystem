@@ -1,0 +1,109 @@
+@model StoreAppointment
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "نوبت " + Model.CustomerName;
+    var company = (string)ViewBag.CompanyCode;
+    var history = (List<StoreAppointment>)ViewBag.History;
+    var statuses = Enum.GetValues(typeof(AppointmentStatus)).Cast<AppointmentStatus>();
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">نوبت <span dir="ltr">@Model.Code</span> <span class="badge @Model.Status.StatusBadgeClass() fs-6 align-middle">@Model.Status.StatusText()</span></h2>
+    <div class="d-flex gap-2">
+        <a class="btn-outline-store" href="@Url.Action("Calendar","ShopAdmin", new { company, start = Model.StartAt.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture) })"><i class="bi bi-calendar-week"></i> در تقویم</a>
+        <a class="btn-outline-store" href="@Url.Action("Appointments","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> فهرست نوبت‌ها</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">زمان و خدمت</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-3">روز</dt><dd class="col-sm-9">@BookingTime.DayNames[BookingTime.DayOf(Model.StartAt)] @Model.StartAt.ToShamsiText()</dd>
+                <dt class="col-sm-3">ساعت</dt><dd class="col-sm-9">@BookingTime.Clock(Model.StartAt) تا @BookingTime.Clock(Model.EndAt)</dd>
+                <dt class="col-sm-3">خدمت</dt><dd class="col-sm-9">@Model.ServiceTitle</dd>
+                <dt class="col-sm-3">متخصص</dt><dd class="col-sm-9">@Model.StaffName</dd>
+                <dt class="col-sm-3">هزینه</dt><dd class="col-sm-9">@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</dd>
+                @if (!string.IsNullOrWhiteSpace(Model.Notes))
+                {
+                    <dt class="col-sm-3">توضیح مراجع</dt><dd class="col-sm-9">@Html.Lines(Model.Notes)</dd>
+                }
+            </dl>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-3">وضعیت و یادداشت</h5>
+            @using (Html.BeginForm("UpdateAppointment", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="apStatus">وضعیت</label>
+                        <select class="form-select" name="status" id="apStatus">
+                            @foreach (var s in statuses)
+                            {
+                                <option value="@s" @(Model.Status == s ? "selected" : "")>@s.StatusText()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="apNote">یادداشت داخلی (مراجع نمی‌بیند)</label>
+                        <textarea class="form-control" name="adminNote" id="apNote" rows="3" maxlength="1000">@Model.AdminNote</textarea>
+                    </div>
+                </div>
+                <p class="small text-muted mt-2 mb-3"><i class="bi bi-info-circle"></i> با «لغو شده» زمان این نوبت برای دیگران آزاد می‌شود. «انجام شده» در درآمد ماه حساب می‌شود.</p>
+                <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">مراجع</h5>
+            <div class="fw-bold">@Model.CustomerName</div>
+            <div dir="ltr" class="text-end"><a href="tel:@Model.CustomerMobile">@Model.CustomerMobile</a></div>
+            @if (!string.IsNullOrEmpty(Model.CustomerEmail)) { <div dir="ltr" class="text-end small">@Model.CustomerEmail</div> }
+            <hr />
+            <div class="small text-muted">
+                ثبت @(Model.Source == "admin" ? "توسط شما" : "آنلاین") در @Model.CreatedAt.ToShamsi()
+                @if (Model.CancelledAt.HasValue) { <div>لغو در @Model.CancelledAt.Value.ToShamsi()</div> }
+            </div>
+        </div>
+        @if (Model.Deposit > 0 || Model.PaidAmount > 0)
+        {
+            <div class="panel-card mb-3">
+                <h5 class="mb-3">بیعانه</h5>
+                <dl class="row small mb-0">
+                    <dt class="col-5">مبلغ بیعانه</dt><dd class="col-7">@Model.Deposit.ToToman()</dd>
+                    <dt class="col-5">پرداخت‌شده</dt><dd class="col-7">@(Model.PaidAmount > 0 ? Model.PaidAmount.ToToman() : "—")</dd>
+                    <dt class="col-5">زمان پرداخت</dt><dd class="col-7">@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsi() : "—")</dd>
+                    <dt class="col-5">کد رهگیری بانک</dt><dd class="col-7" dir="ltr">@(Model.RefId?.ToString() ?? "—")</dd>
+                    @if (!string.IsNullOrEmpty(Model.PaymentMessage))
+                    {
+                        <dt class="col-5">پیام درگاه</dt><dd class="col-7">@Model.PaymentMessage</dd>
+                    }
+                </dl>
+            </div>
+        }
+        <div class="panel-card">
+            <h5 class="mb-3">نوبت‌های دیگر این مراجع</h5>
+            @if (history.Any())
+            {
+                <ul class="list-unstyled mb-0 small">
+                    @foreach (var h in history)
+                    {
+                        <li class="d-flex justify-content-between align-items-center py-1 border-bottom gap-2">
+                            <a href="@Url.Action("AppointmentDetails","ShopAdmin", new { company, id = h.Id })">@h.StartAt.ToShamsi() — @h.ServiceTitle</a>
+                            <span class="badge @h.Status.StatusBadgeClass()">@h.Status.StatusText()</span>
+                        </li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <div class="small text-muted">اولین نوبت این مراجع است.</div>
+            }
+        </div>
+    </div>
+</div>

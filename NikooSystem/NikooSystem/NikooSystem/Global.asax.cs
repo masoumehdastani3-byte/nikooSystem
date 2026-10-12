@@ -11,6 +11,7 @@ namespace NikooSystem
     public class MvcApplication : System.Web.HttpApplication
     {
         private static System.Threading.Timer _trialCleanupTimer;
+        private static System.Threading.Timer _balePollTimer;
 
         protected void Application_Start()
         {
@@ -24,7 +25,22 @@ namespace NikooSystem
             {
                 try { TenantProvisioningService.PurgeExpiredTrials(); }
                 catch { }
+                try { Subscriptions.SendReminders(); }
+                catch { }
+                try { CustomDomains.CheckPending(); }
+                catch { }
+                try { CartStore.PurgeOlderThan(DateTime.Now.AddDays(-30)); }
+                catch { }
             }, null, TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
+
+            // replies to support tickets written in Bale arrive even when no panel page is open
+            _balePollTimer = new System.Threading.Timer(_ => BaleNotifier.PollInBackground(), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(5));
+        }
+
+        protected void Application_End()
+        {
+            try { VisitStats.Flush(); }
+            catch { }
         }
 
         protected void Application_BeginRequest()
@@ -47,6 +63,15 @@ namespace NikooSystem
 
             var tenant = TenantStore.ResolveByHost(Request.Url.Host);
             if (tenant == null) return;
+
+            if (string.Equals(path, CustomDomains.ProbePath, StringComparison.OrdinalIgnoreCase))
+            {
+                Response.ContentType = "text/plain";
+                Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                Response.Write(CustomDomains.ProbeAnswer(tenant.CompanyCode));
+                Context.ApplicationInstance.CompleteRequest();
+                return;
+            }
 
             if (path == "/" || string.IsNullOrWhiteSpace(path.Trim('/')))
             {

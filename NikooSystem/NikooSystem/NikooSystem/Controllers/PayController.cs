@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using NikooSystem.Helpers;
 using NikooSystem.Models;
 using NikooSystem.Services;
 
@@ -11,9 +12,10 @@ namespace NikooSystem.Controllers
         private readonly ZarinPalService _zarinPal = new ZarinPalService();
 
         [HttpGet]
+        [NoIndex]
         public ActionResult Start(string token)
         {
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             if (payment == null)
                 return HttpNotFound();
 
@@ -24,7 +26,7 @@ namespace NikooSystem.Controllers
             {
                 payment.Status = HubPaymentStatus.Expired;
                 payment.PaymentMessage = "مهلت پرداخت به پایان رسیده است.";
-                JsonStore.UpdateHubPayment(payment);
+                SiteStore.UpdateHubPayment(payment);
             }
 
             if (payment.Status != HubPaymentStatus.Pending)
@@ -44,7 +46,7 @@ namespace NikooSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Start(string token, PayStartViewModel model)
         {
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             if (payment == null)
                 return HttpNotFound();
 
@@ -59,7 +61,7 @@ namespace NikooSystem.Controllers
             payment.CustomerName = model.CustomerName;
             payment.CustomerMobile = model.CustomerMobile;
             payment.CustomerEmail = model.CustomerEmail;
-            JsonStore.UpdateHubPayment(payment);
+            SiteStore.UpdateHubPayment(payment);
 
             return await RedirectToGateway(payment);
         }
@@ -68,7 +70,7 @@ namespace NikooSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Confirm(string token)
         {
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             if (payment == null)
                 return HttpNotFound();
 
@@ -96,13 +98,13 @@ namespace NikooSystem.Controllers
             {
                 payment.Status = HubPaymentStatus.Failed;
                 payment.PaymentMessage = result.Message;
-                JsonStore.UpdateHubPayment(payment);
+                SiteStore.UpdateHubPayment(payment);
                 TempData["Error"] = result.Message;
                 return RedirectToAction("Start", new { token = payment.Token });
             }
 
             payment.Authority = result.Authority;
-            JsonStore.UpdateHubPayment(payment);
+            SiteStore.UpdateHubPayment(payment);
             return Redirect(result.PaymentUrl);
         }
 
@@ -111,28 +113,22 @@ namespace NikooSystem.Controllers
         {
             // orderId carries hub payment token (see ZarinPalService callback query)
             var token = orderId;
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             if (payment == null)
                 return RedirectToAction("Done", new { token = token ?? "", ok = 0 });
 
-            var client = JsonStore.GetPaymentClient(payment.AppId);
+            var client = SiteStore.GetPaymentClient(payment.AppId);
+            if (payment.Status == HubPaymentStatus.Paid)
+                return Redirect(BuildReturnOrDone(payment, client, true));
 
-            if (!string.Equals(Status, "OK", StringComparison.OrdinalIgnoreCase))
-            {
-                payment.Status = HubPaymentStatus.Failed;
-                payment.PaymentMessage = "پرداخت توسط کاربر لغو شد یا ناموفق بود.";
-                JsonStore.UpdateHubPayment(payment);
-                await PaymentHubService.TryNotifyAsync(payment, client);
-                return Redirect(BuildReturnOrDone(payment, client, false));
-            }
-
-            var authority = Authority ?? payment.Authority;
-            var verify = await _zarinPal.VerifyPaymentAsync(authority, payment.Amount);
+            var verify = await _zarinPal.VerifyCallbackAsync(payment.Authority, Authority, Status, payment.Amount);
+            if (verify.Forged)
+                return RedirectToAction("Done", new { token = payment.Token, ok = 0 });
             if (!verify.Success)
             {
                 payment.Status = HubPaymentStatus.Failed;
                 payment.PaymentMessage = verify.Message;
-                JsonStore.UpdateHubPayment(payment);
+                SiteStore.UpdateHubPayment(payment);
                 await PaymentHubService.TryNotifyAsync(payment, client);
                 return Redirect(BuildReturnOrDone(payment, client, false));
             }
@@ -141,7 +137,8 @@ namespace NikooSystem.Controllers
             payment.RefId = verify.RefId;
             payment.PaidAt = DateTime.Now;
             payment.PaymentMessage = verify.Message;
-            JsonStore.UpdateHubPayment(payment);
+            SiteStore.UpdateHubPayment(payment);
+            Notifications.HubPayment(payment, client);
             await PaymentHubService.TryNotifyAsync(payment, client);
             return Redirect(BuildReturnOrDone(payment, client, true));
         }
@@ -155,14 +152,15 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
+        [NoIndex]
         public ActionResult Done(string token, int? ok)
         {
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             ViewBag.Ok = ok == 1 || (payment != null && payment.Status == HubPaymentStatus.Paid);
 
             if (payment != null && !string.IsNullOrWhiteSpace(payment.ReturnUrl))
             {
-                var client = JsonStore.GetPaymentClient(payment.AppId);
+                var client = SiteStore.GetPaymentClient(payment.AppId);
                 if (client != null)
                     ViewBag.SignedReturnUrl = PaymentHubService.BuildSignedReturnUrl(payment, client);
             }
@@ -176,6 +174,7 @@ namespace NikooSystem.Controllers
             ViewBag.Title = "راهنمای اتصال پرداخت";
             ViewBag.Nav = "";
             ViewBag.BaseUrl = PaymentHubService.BaseUrl;
+            Seo.Of(HttpContext).Description = "راهنمای اتصال سایت یا اپلیکیشن به درگاه پرداخت مرکزی نیکو سیستم: ساخت پرداخت با API، بازگشت از درگاه و استعلام وضعیت، با نمونه کد.";
             return View();
         }
     }

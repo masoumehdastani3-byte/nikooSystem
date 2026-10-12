@@ -1,0 +1,129 @@
+@model PagedList<StorePost>
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+    var query = (PostQuery)ViewBag.Query;
+    var categories = ((IEnumerable<StoreCategory>)ViewBag.Categories).OrderBy(c => c.SortOrder).ToList();
+    var category = ViewBag.Category as StoreCategory;
+    var popular = (ViewBag.Popular as IEnumerable<StorePost>)?.ToList() ?? new List<StorePost>();
+    var roots = categories.Where(c => c.ParentId == null).ToList();
+
+    ViewBag.Title = category != null ? category.Title
+        : !string.IsNullOrWhiteSpace(query.Tag) ? "برچسب: " + query.Tag
+        : !string.IsNullOrWhiteSpace(query.Q) ? "جستجو: " + query.Q
+        : "آخرین مطالب";
+    if (category != null && !string.IsNullOrWhiteSpace(category.Description))
+    {
+        ViewBag.MetaDescription = category.Description;
+    }
+    var hasFilters = category != null || !string.IsNullOrWhiteSpace(query.Q) || !string.IsNullOrWhiteSpace(query.Tag);
+}
+
+<div class="cn-archive-head">
+    <div class="container">
+        <nav class="cat-breadcrumb" aria-label="مسیر">
+            <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
+            <i class="bi bi-chevron-left"></i>
+            @if (hasFilters)
+            {
+                <a href="@Url.Action("Blog","Shop", new { company })">مطالب</a>
+                <i class="bi bi-chevron-left"></i>
+            }
+            <span>@ViewBag.Title</span>
+        </nav>
+        <h1>@ViewBag.Title</h1>
+        @if (category != null && !string.IsNullOrWhiteSpace(category.Description))
+        {
+            <p>@category.Description</p>
+        }
+        <p class="cn-archive-count">@Model.TotalCount.ToFa() مطلب</p>
+    </div>
+</div>
+
+<section class="pb-5">
+    <div class="container">
+        <div class="cn-tabs">
+            <a class="@(category == null ? "active" : "")" href="@Url.Action("Blog","Shop", new { company, q = query.Q })">همه</a>
+            @foreach (var c in roots)
+            {
+                <a class="@(category != null && (category.Id == c.Id || category.ParentId == c.Id) ? "active" : "")" href="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">@c.Title</a>
+            }
+        </div>
+
+        <div class="cn-layout">
+            <div class="cn-main">
+                <form class="cn-archive-search" method="get" action="@Url.Action("Blog","Shop", new { company })">
+                    @if (category != null) { <input type="hidden" name="categoryId" value="@category.Id" /> }
+                    <i class="bi bi-search"></i>
+                    <input type="search" name="q" value="@query.Q" placeholder="جستجو در عنوان، لید و متن..." />
+                    <button class="btn-wm" type="submit">جستجو</button>
+                </form>
+
+                @if (!string.IsNullOrWhiteSpace(query.Tag) || !string.IsNullOrWhiteSpace(query.Q))
+                {
+                    <div class="cat-chips">
+                        @if (!string.IsNullOrWhiteSpace(query.Tag))
+                        {
+                            <a href="@Url.Action("Blog","Shop", new { company, categoryId = category?.Id, q = query.Q })"><i class="bi bi-tag"></i> @query.Tag <i class="bi bi-x"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(query.Q))
+                        {
+                            <a href="@Url.Action("Blog","Shop", new { company, categoryId = category?.Id, tag = query.Tag })">«@query.Q» <i class="bi bi-x"></i></a>
+                        }
+                    </div>
+                }
+
+                @if (Model.Any())
+                {
+                    if (Model.Page > 1)
+                    {
+                        <a class="infinite-prev" href="@Html.QueryUrl(new Dictionary<string, object> { ["page"] = null })"><i class="bi bi-arrow-up"></i> از ابتدای فهرست</a>
+                    }
+                    <div class="cn-grid" data-infinite>
+                        @Html.Partial("_PostItems", Model)
+                    </div>
+                }
+                else
+                {
+                    <div class="cat-empty">
+                        <i class="bi bi-journal-x"></i>
+                        <h3>مطلبی پیدا نشد</h3>
+                        <p>عبارت دیگری جستجو کنید یا سرویس دیگری را ببینید.</p>
+                        <a class="btn-wm" href="@Url.Action("Blog","Shop", new { company })">همه مطالب</a>
+                    </div>
+                }
+            </div>
+
+            <aside class="cn-aside">
+                @if (popular.Any())
+                {
+                    <div class="cn-box">
+                        <h3><i class="bi bi-graph-up"></i> پربازدیدترین‌ها</h3>
+                        <ol class="cn-ranked">
+                            @foreach (var p in popular)
+                            {
+                                <li><a href="@Url.RouteUrl("ShopPost", new { company, slug = p.Slug })">@p.Title</a></li>
+                            }
+                        </ol>
+                    </div>
+                }
+                @if (categories.Any())
+                {
+                    <div class="cn-box">
+                        <h3><i class="bi bi-grid"></i> سرویس‌ها</h3>
+                        <ul class="cat-tree">
+                            @foreach (var c in categories)
+                            {
+                                <li><a class="@(category?.Id == c.Id ? "active" : "")" href="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">@(c.ParentId.HasValue ? "— " : "")@c.Title</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </aside>
+        </div>
+    </div>
+</section>
+
+@section scripts {
+<script src="@Url.Asset("~/Content/infinite-scroll.js")"></script>
+}

@@ -1,0 +1,20 @@
+@model NikooSystem.Models.VisitReport
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "آمار بازدید";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var company = (string)ViewBag.CompanyCode;
+}
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">آمار بازدید</h2>
+        <p class="text-muted small mb-0">چند نفر به @kind.SiteNoun شما سر زده‌اند و چند صفحه دیده‌اند؛ روزانه و ماهانه.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+</div>
+@if ((bool)ViewBag.IsDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این @kind.SiteNoun نمونه (دمو) است؛ بازدیدهای این صفحه مربوط به کسانی است که دمو را امتحان کرده‌اند.</div>
+}
+@Html.Partial("_VisitReport", Model)

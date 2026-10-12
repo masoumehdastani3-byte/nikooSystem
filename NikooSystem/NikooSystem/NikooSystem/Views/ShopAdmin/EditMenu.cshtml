@@ -1,9 +1,9 @@
-@model NikooSystem.Models.Store.StoreMenuItem
+@model StoreMenuItem
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = Model.Id > 0 ? "ویرایش منو" : "آیتم منوی جدید";
     var company = (string)ViewBag.CompanyCode;
-    var menus = (IEnumerable<NikooSystem.Models.Store.StoreMenuItem>)ViewBag.Menus;
+    var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus;
 }
 <h2 class="mb-3">@ViewBag.Title</h2>
 @using (Html.BeginForm("SaveMenu", "ShopAdmin", new { company }, FormMethod.Post))
@@ -15,26 +15,26 @@
         <div class="col-md-6"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Url, new { @class = "form-control", placeholder = "/Shop/" + company + "/Catalog" })</div>
         <div class="col-md-4">
             <label class="form-label">محل</label>
-            <select class="form-select" name="Location">
+            <select class="form-select" name="Location" id="Location">
                 <option value="main" @(Model.Location=="main"?"selected":"")>منوی اصلی</option>
                 <option value="footer" @(Model.Location=="footer"?"selected":"")>فوتر</option>
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label">والد</label>
-            <select class="form-select" name="ParentId">
-                <option value="">بدون والد</option>
-                @foreach (var m in menus.Where(x => x.Id != Model.Id && x.ParentId == null))
-                {
-                    <option value="@m.Id" @(Model.ParentId == m.Id ? "selected" : "")>@m.Title</option>
-                }
-            </select>
+            <label class="form-label" for="ParentId">والد</label>
+            <div class="qm-field">
+                <select class="form-select" name="ParentId" id="ParentId" data-qm="menus" data-qm-roots data-qm-except="@Model.Id">
+                    <option value="">بدون والد</option>
+                    @foreach (var m in menus.Where(x => x.Id != Model.Id && x.ParentId == null))
+                    {
+                        <option value="@m.Id" @(Model.ParentId == m.Id ? "selected" : "")>@m.Title</option>
+                    }
+                </select>
+                @Html.QuickManage("menus", "آیتم‌های منو", "#Location")
+            </div>
         </div>
         <div class="col-md-2"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
-        <div class="col-md-2 form-check mt-4 pt-3"><label><input type="checkbox" name="IsActive" value="true" @(Model.IsActive?"checked":"") /> فعال</label><input type="hidden" name="IsActive" value="false" /></div>
-        <div class="col-12">
-            <button class="btn-store" type="submit">ذخیره</button>
-            <a class="btn-outline-store" href="@Url.Action("Menus","ShopAdmin", new { company })">بازگشت</a>
-        </div>
+        <div class="col-md-2 form-check mt-4 pt-3">@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
+        <div class="col-12">@Html.FormActions("Menus")</div>
     </div>
 }

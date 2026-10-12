@@ -1,7 +1,4 @@
-@model NikooSystem.Models.Store.StoreProduct
-@using NikooSystem.Helpers
-@using NikooSystem.Models.Store
-@using Newtonsoft.Json
+@model StoreProduct
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = Model.Title;
@@ -17,52 +14,28 @@
     var attributes = options.ShowSpecifications
         ? (Model.Attributes ?? new List<StoreProductAttribute>()).Where(a => !string.IsNullOrWhiteSpace(a.Name) && !string.IsNullOrWhiteSpace(a.Value)).ToList()
         : new List<StoreProductAttribute>();
-    var onSale = Model.CompareAtPrice.HasValue && Model.CompareAtPrice > Model.Price;
-    var discount = onSale ? (int)Math.Round(100.0 * (Model.CompareAtPrice.Value - Model.Price) / Model.CompareAtPrice.Value) : 0;
-    var outOfStock = Model.Stock <= 0;
-    var lowStock = !outOfStock && Model.Stock <= 5;
+    var onSale = Model.IsOnSale();
+    var discount = Model.DiscountPercent();
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var digital = Model.IsDigital();
+    var owned = ViewBag.Owned as bool? == true;
+    var course = Model.ProductType == StoreProductType.Course;
+    var lessons = Model.Lessons ?? new List<StoreLesson>();
+    var files = Model.Files ?? new List<StoreProductFile>();
+    var outOfStock = !digital && Model.Stock <= 0;
+    var lowStock = !digital && !outOfStock && Model.Stock <= 5;
+    var accessUrl = course
+        ? Url.Action("Learn", "ShopAccount", new { company, id = Model.Id })
+        : Url.Action("Library", "ShopAccount", new { company });
     const string placeholder = "/Assets/img/portfolio/portfolio-1.jpg";
-
-    var baseUrl = Request.Url.GetLeftPart(UriPartial.Authority);
-    var structured = new Dictionary<string, object>
-    {
-        { "@context", "https://schema.org" },
-        { "@type", "Product" },
-        { "name", Model.Title },
-        { "description", string.IsNullOrWhiteSpace(Model.Description) ? Model.ShortDescription : Model.Description },
-        { "image", images.Select(i => baseUrl + (i.LargeUrl ?? i.ThumbUrl)).ToList() },
-        { "offers", new Dictionary<string, object>
-            {
-                { "@type", "Offer" },
-                { "url", Request.Url.GetLeftPart(UriPartial.Path) },
-                { "priceCurrency", "IRR" },
-                { "price", Model.Price * 10 },
-                { "availability", outOfStock ? "https://schema.org/OutOfStock" : "https://schema.org/InStock" },
-                { "seller", new Dictionary<string, object> { { "@type", "Organization" }, { "name", settings.StoreName } } }
-            }
-        }
-    };
-    if (!string.IsNullOrWhiteSpace(Model.Sku)) { structured["sku"] = Model.Sku; }
-    if (options.ShowReviews && reviews.Any())
-    {
-        structured["aggregateRating"] = new Dictionary<string, object>
-        {
-            { "@type", "AggregateRating" },
-            { "ratingValue", Math.Round(avg, 1) },
-            { "reviewCount", reviews.Count }
-        };
-    }
-    var structuredJson = JsonConvert.SerializeObject(structured, new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml });
 }
-
-<script type="application/ld+json">@Html.Raw(structuredJson)</script>
 
 <section class="pd-page">
     <div class="container">
         <nav class="cat-breadcrumb" aria-label="مسیر">
             <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
             <i class="bi bi-chevron-left"></i>
-            <a href="@Url.Action("Catalog","Shop", new { company })">محصولات</a>
+            <a href="@Url.Action("Catalog","Shop", new { company })">@kind.ItemsLabel</a>
             @if (category != null)
             {
                 <i class="bi bi-chevron-left"></i>
@@ -130,6 +103,16 @@
                     <a class="pd-cat" href="@Url.Action("Catalog","Shop", new { company, categoryId = category.Id })">@category.Title</a>
                 }
                 <h1 class="pd-title">@Model.Title</h1>
+                @if (digital)
+                {
+                    <div class="pd-digital-head">
+                        <span class="wm-type is-inline"><i class="bi @Model.ProductType.TypeIcon()"></i> @Model.ProductType.TypeText()</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.Author))
+                        {
+                            <span><i class="bi bi-person-badge"></i> @(course ? "مدرس" : "نویسنده"): <strong>@Model.Author</strong></span>
+                        }
+                    </div>
+                }
                 <div class="pd-meta">
                     @if (options.ShowReviews && reviews.Any())
                     {
@@ -166,6 +149,24 @@
                     <p class="pd-lead">@Model.ShortDescription</p>
                 }
 
+                @if (digital)
+                {
+                    <ul class="pd-key-specs">
+                        @if (course)
+                        {
+                            <li><span>تعداد جلسه‌ها</span><strong>@lessons.Count.ToFa() جلسه</strong></li>
+                            if (lessons.Any(l => l.IsFree))
+                            {
+                                <li><span>جلسه رایگان</span><strong>@lessons.Count(l => l.IsFree).ToFa() جلسه</strong></li>
+                            }
+                        }
+                        @if (files.Any() && !course)
+                        {
+                            <li><span>فایل‌ها</span><strong>@files.Count.ToFa() فایل · @files.Sum(f => f.Size).ToFileSize()</strong></li>
+                        }
+                        <li><span>دسترسی</span><strong>بلافاصله پس از پرداخت، برای همیشه</strong></li>
+                    </ul>
+                }
                 @if (attributes.Any())
                 {
                     <ul class="pd-key-specs">
@@ -185,13 +186,42 @@
                                 <span class="pd-off">٪@discount</span>
                             </div>
                         }
-                        <div class="pd-price">@Model.Price.ToToman()</div>
+                        <div class="pd-price">@(Model.Price == 0 ? "رایگان" : Model.Price.ToToman())</div>
                         @if (onSale)
                         {
                             <div class="pd-save">سود شما از این خرید: @((Model.CompareAtPrice.Value - Model.Price).ToToman())</div>
                         }
                     </div>
 
+                    @if (digital)
+                    {
+                        if (owned)
+                        {
+                            <div class="pd-stock is-ok"><i class="bi bi-check-circle"></i> <span>این مورد را خریده‌اید و در کتابخانه شما است.</span></div>
+                            <a class="btn-wm pd-add" href="@accessUrl"><i class="bi @(course ? "bi-play-circle" : "bi-download")"></i> @(course ? "ادامه یادگیری" : "دانلود از کتابخانه من")</a>
+                        }
+                        else
+                        {
+                            <div class="pd-stock is-ok"><i class="bi bi-lightning-charge"></i> <span>دسترسی فوری پس از پرداخت</span></div>
+                            using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { id = "pdBuyForm", @class = "pd-buy-form" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@Model.Id" />
+                                <input type="hidden" name="quantity" value="1" />
+                                <button class="btn-wm pd-add" type="submit"><i class="bi bi-cart-plus"></i> @(Model.Price == 0 ? "دریافت رایگان" : course ? "ثبت‌نام در دوره" : "خرید و دانلود")</button>
+                            }
+                        }
+                        if (!string.IsNullOrWhiteSpace(Model.PreviewUrl))
+                        {
+                            <a class="pd-preview" href="@Model.PreviewUrl" target="_blank" rel="noopener"><i class="bi bi-play-circle"></i> @(course ? "تماشای ویدیوی معرفی" : "دیدن نمونه / پیش‌نمایش")</a>
+                        }
+                        else if (course && lessons.Any(l => l.IsFree) && !owned)
+                        {
+                            <a class="pd-preview" href="@accessUrl"><i class="bi bi-play-circle"></i> تماشای جلسه‌های رایگان</a>
+                        }
+                    }
+                    else
+                    {
                     <div class="pd-stock @(outOfStock ? "is-out" : (lowStock ? "is-low" : "is-ok"))">
                         @if (outOfStock)
                         {
@@ -207,7 +237,7 @@
                         }
                     </div>
 
-                    @if (!outOfStock)
+                    if (!outOfStock)
                     {
                         using (Html.BeginForm("AddToCart", "Shop", new { company }, FormMethod.Post, new { id = "pdBuyForm", @class = "pd-buy-form" }))
                         {
@@ -225,6 +255,7 @@
                     {
                         <button class="btn-wm pd-add" type="button" disabled>این کالا فعلاً موجود نیست</button>
                     }
+                    }
 
                     @if (options.ShowBuyPerks)
                     {
@@ -233,7 +264,14 @@
                             {
                                 <li><i class="bi bi-shield-check"></i> پرداخت امن اینترنتی</li>
                             }
-                            <li><i class="bi bi-receipt"></i> ثبت سفارش و پیگیری آنلاین</li>
+                            @if (digital)
+                            {
+                                <li><i class="bi bi-collection-play"></i> دسترسی دائمی از «کتابخانه من»</li>
+                            }
+                            else
+                            {
+                                <li><i class="bi bi-receipt"></i> ثبت سفارش و پیگیری آنلاین</li>
+                            }
                             @if (!string.IsNullOrWhiteSpace(settings.Phone))
                             {
                                 <li><i class="bi bi-headset"></i> مشاوره خرید: <a href="tel:@settings.Phone" dir="ltr">@settings.Phone</a></li>
@@ -248,6 +286,14 @@
         <div class="pd-tabs-wrap" id="pdTabs">
             <ul class="nav pd-tabs" role="tablist">
                 <li role="presentation"><button class="active" type="button" data-bs-toggle="tab" data-bs-target="#tab-desc" role="tab">توضیحات</button></li>
+                @if (course && lessons.Any())
+                {
+                    <li role="presentation"><button type="button" data-bs-toggle="tab" data-bs-target="#tab-lessons" role="tab">سرفصل‌ها (@lessons.Count.ToFa())</button></li>
+                }
+                else if (digital && files.Any())
+                {
+                    <li role="presentation"><button type="button" data-bs-toggle="tab" data-bs-target="#tab-files" role="tab">فایل‌ها (@files.Count.ToFa())</button></li>
+                }
                 @if (attributes.Any())
                 {
                     <li role="presentation"><button type="button" data-bs-toggle="tab" data-bs-target="#tab-specs" role="tab">مشخصات</button></li>
@@ -268,6 +314,60 @@
                         <p class="text-muted mb-0">توضیحاتی برای این محصول ثبت نشده است.</p>
                     }
                 </div>
+                @if (course && lessons.Any())
+                {
+                    <div class="tab-pane fade" id="tab-lessons" role="tabpanel">
+                        <div class="pd-curriculum">
+                            @foreach (var group in lessons.Select((l, i) => new { Lesson = l, Number = i + 1 }).GroupBy(x => x.Lesson.Section ?? ""))
+                            {
+                                if (!string.IsNullOrWhiteSpace(group.Key))
+                                {
+                                    <h4>@group.Key</h4>
+                                }
+                                <ol>
+                                    @foreach (var x in group)
+                                    {
+                                        var open = owned || x.Lesson.IsFree;
+                                        <li class="@(open ? "is-open" : "is-locked")">
+                                            <span class="pd-lesson-no">@x.Number.ToFa()</span>
+                                            @if (open)
+                                            {
+                                                <a href="@Url.Action("Learn","ShopAccount", new { company, id = Model.Id, lesson = x.Lesson.Id })">@x.Lesson.Title</a>
+                                            }
+                                            else
+                                            {
+                                                <span>@x.Lesson.Title</span>
+                                            }
+                                            @if (x.Lesson.IsFree && !owned) { <em class="pd-free">رایگان</em> }
+                                            @if (!string.IsNullOrWhiteSpace(x.Lesson.Duration)) { <small>@x.Lesson.Duration.ToFaDigits()</small> }
+                                            <i class="bi @(open ? "bi-play-circle" : "bi-lock")"></i>
+                                        </li>
+                                    }
+                                </ol>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (digital && files.Any())
+                {
+                    <div class="tab-pane fade" id="tab-files" role="tabpanel">
+                        <ul class="pd-files">
+                            @foreach (var f in files)
+                            {
+                                <li>
+                                    <i class="bi bi-file-earmark-arrow-down"></i>
+                                    <span>@f.Title</span>
+                                    <small>@System.IO.Path.GetExtension(f.FileName).TrimStart('.').ToUpperInvariant() · @f.Size.ToFileSize()</small>
+                                    <i class="bi @(owned ? "bi-unlock" : "bi-lock")"></i>
+                                </li>
+                            }
+                        </ul>
+                        @if (!owned)
+                        {
+                            <p class="text-muted small mb-0 mt-2"><i class="bi bi-shield-lock"></i> فایل‌ها پس از خرید در «کتابخانه من» قابل دانلود هستند.</p>
+                        }
+                    </div>
+                }
                 @if (attributes.Any())
                 {
                     <div class="tab-pane fade" id="tab-specs" role="tabpanel">
@@ -360,14 +460,14 @@
     </div>
 </section>
 
-@if (!outOfStock)
+@if (!outOfStock && !owned)
 {
     <div class="pd-sticky">
         <div>
             <div class="pd-sticky-title">@Model.Title</div>
-            <div class="pd-sticky-price">@Model.Price.ToToman()</div>
+            <div class="pd-sticky-price">@(Model.Price == 0 ? "رایگان" : Model.Price.ToToman())</div>
         </div>
-        <button class="btn-wm" type="submit" form="pdBuyForm"><i class="bi bi-bag-plus"></i> افزودن به سبد</button>
+        <button class="btn-wm" type="submit" form="pdBuyForm"><i class="bi @(digital ? "bi-cart-plus" : "bi-bag-plus")"></i> @(digital ? "خرید" : "افزودن به سبد")</button>
     </div>
 }
 

@@ -1,5 +1,4 @@
 @model NikooSystem.Models.PayStartViewModel
-@using NikooSystem.Helpers
 @{
     ViewBag.Title = "پرداخت آنلاین";
     ViewBag.Nav = "";
@@ -17,10 +16,7 @@
     </div>
     <section class="pb-5">
         <div class="container" style="max-width:720px;">
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-danger">@TempData["Error"]</div>
-            }
+            @Html.FlashMessages()
             <div class="checkout-box mb-4">
                 <h5 class="mb-3">جزئیات پرداخت</h5>
                 <div class="d-flex justify-content-between mb-2"><span>شرح</span><strong>@payment.Description</strong></div>

@@ -1,0 +1,116 @@
+@model NikooSystem.Models.SiteSettings
+@using NikooSystem.Controllers
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "اینماد سایت اصلی";
+    var domain = (string)ViewBag.Domain;
+    var checks = (List<EnamadCheck>)ViewBag.Checks;
+    var ready = checks.Where(c => !c.Optional).All(c => c.Ok);
+}
+<link href="@Url.Asset("~/Content/domain.css")" rel="stylesheet" />
+
+<div class="dm-print-only mb-3">
+    <h3 class="mb-1">راهنمای گرفتن اینماد برای @Model.SiteName</h3>
+    <div class="small text-muted">@DateTime.Now.ToShamsiText()</div>
+</div>
+
+<div class="adm-head">
+    <div>
+        <h1>اینماد سایت اصلی</h1>
+        <p>
+            آنچه کارشناس <a href="https://enamad.ir" target="_blank" rel="noopener">اینماد</a> در سایت @Model.SiteName بررسی می‌کند، مراحل ثبت درخواست، تأیید مالکیت دامنه و نصب نماد در فوتر.
+            اینماد سایت‌های مشتریان جداست و هر کدام از صفحه «اینماد» پنل خودشان می‌گیرند.
+        </p>
+    </div>
+    <button type="button" class="btn btn-outline-secondary btn-sm dm-no-print" id="dmPrint"><i class="bi bi-printer"></i> چاپ یا ذخیره PDF</button>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.VerifyHomeTitle))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-type"></i> عنوان صفحه اول موقتاً «<b>@Model.VerifyHomeTitle</b>» است. بعد از تأیید مالکیت در اینماد، آن را از بخش «تأیید مالکیت دامنه» حذف کنید تا عنوان همیشگی برای گوگل برگردد.
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="adm-card mb-3">
+            <h5 class="mb-1"><i class="bi bi-clipboard-check"></i> آماده بودن سایت</h5>
+            <p class="small text-muted">
+                @(ready ? "همه موارد لازم آماده است؛ می‌توانید در اینماد درخواست ثبت کنید." : "کارشناس اینماد این موارد را در سایت می‌بیند؛ پیش از ثبت درخواست آن‌ها را کامل کنید.")
+            </p>
+            <ul class="list-unstyled mb-0">
+                @foreach (var c in checks)
+                {
+                    <li class="mb-2">
+                        <i class="bi @(c.Ok ? "bi-check-circle-fill text-success" : c.Optional ? "bi-info-circle-fill text-secondary" : "bi-exclamation-circle-fill text-warning")"></i>
+                        <strong>@c.Title@(c.Optional ? " (پیشنهادی)" : ""):</strong>
+                        @c.Text
+                        @if (c.Url != null)
+                        {
+                            <a class="dm-no-print" href="@c.Url" target="_blank" rel="noopener">@c.LinkText</a>
+                        }
+                        else if (c.Action != null)
+                        {
+                            <a class="dm-no-print" href="@Url.Action(c.Action, "Admin")">@c.LinkText</a>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> گرفتن اینماد قدم‌به‌قدم</h5>
+            <ol class="mb-0">
+                <li class="mb-2"><strong>آماده‌سازی:</strong> موارد بالا را کامل کنید؛ به‌ویژه کد پستی و تلفن ثابت را در <a href="@Url.Action("SiteSettings","Admin")">تنظیمات و متن‌ها</a> بنویسید و متن <a href="@Url.Action("Terms","Home")" target="_blank" rel="noopener">قوانین و مقررات</a> را یک بار بخوانید.</li>
+                <li class="mb-2"><strong>دامنه:</strong> دامنه <b dir="ltr">@(domain ?? "nikoooo.ir")</b> باید به نام خود شما (یا شرکت) ثبت شده باشد؛ برای دامنه ir، صاحب شناسه ایرنیک باید همان کسی باشد که در اینماد ثبت‌نام می‌کند.</li>
+                <li class="mb-2"><strong>ثبت‌نام:</strong> در <a href="https://enamad.ir" target="_blank" rel="noopener">enamad.ir</a> با کد ملی و موبایلی که به نام خودتان است حساب بسازید، احراز هویت را کامل کنید و دامنه را اضافه کنید.</li>
+                <li class="mb-2"><strong>اطلاعات کسب‌وکار:</strong> نشانی، کد پستی، تلفن ثابت و ایمیل را دقیقاً همان‌طور بنویسید که در فوتر و صفحه تماس سایت آمده است. حوزه فعالیت: طراحی سایت و فروش نرم‌افزار و خدمات اینترنتی.</li>
+                <li class="mb-2"><strong>تأیید مالکیت دامنه:</strong> هر روشی که اینماد خواست (فایل در ریشه سایت، متاتگ یا کد در عنوان صفحه اول) را از بخش «تأیید مالکیت دامنه» همین صفحه انجام دهید و در پنل اینماد دکمه بررسی را بزنید.</li>
+                <li class="mb-2"><strong>تأیید نشانی:</strong> اینماد معمولاً کدی به نشانی پستی یا تلفن ثابت می‌فرستد؛ آن را در پنل اینماد وارد کنید.</li>
+                <li class="mb-2"><strong>نصب نماد:</strong> بعد از صدور، کد نماد را از پنل اینماد کپی کنید و در بخش «نماد اعتماد در فوتر» بچسبانید؛ نماد در فوتر همه صفحه‌های سایت اصلی می‌نشیند.</li>
+                <li><strong>پایان:</strong> عنوان موقت را (اگر گذاشته بودید) حذف کنید و فایل و متاتگ را نگه دارید. اینماد یک‌ستاره معمولاً سالانه تمدید می‌شود.</li>
+            </ol>
+        </div>
+
+        @Html.Partial("_SiteVerification", new SiteVerificationVm
+        {
+            Site = Model,
+            Controller = "Admin",
+            Route = null,
+            Files = (List<RootFile>)ViewBag.Files,
+            SiteRoot = (string)ViewBag.SiteRoot,
+            Domain = domain,
+            UsualTitle = (string)ViewBag.UsualTitle,
+            CardClass = "adm-card",
+            ButtonClass = "btn btn-primary"
+        })
+    </div>
+
+    <div class="col-lg-5">
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-file-earmark-text"></i> صفحه‌هایی که اینماد می‌بیند</h5>
+            <ul class="small mb-0">
+                <li class="mb-1"><a href="@Url.Action("Terms","Home")" target="_blank" rel="noopener">قوانین و مقررات</a>: خدمات، پرداخت، تحویل، تمدید، انصراف و بازگشت وجه، شکایات (متن آن در «تنظیمات و متن‌ها» ویرایش می‌شود).</li>
+                <li class="mb-1"><a href="@Url.Action("Privacy","Home")" target="_blank" rel="noopener">حریم خصوصی</a></li>
+                <li class="mb-1"><a href="@Url.Action("BuyGuide","Home")" target="_blank" rel="noopener">راهنمای خرید و پرداخت</a>: مراحل خرید، قیمت‌ها، پرداخت ناموفق و بازگشت وجه.</li>
+                <li class="mb-1"><a href="@Url.Action("About","Home")" target="_blank" rel="noopener">درباره ما</a> و <a href="@Url.Action("Contact","Home")" target="_blank" rel="noopener">تماس با ما</a></li>
+                <li>فوتر همه صفحه‌ها: نشانی، کد پستی، تلفن، ایمیل و لینک همه این صفحه‌ها.</li>
+            </ul>
+        </div>
+
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌ها</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">اختلاف نشانی، تلفن یا ایمیل سایت با پرونده اینماد رایج‌ترین دلیل رد درخواست است.</li>
+                <li class="mb-1">تلفن ثابت باید پاسخگو باشد؛ کارشناس اینماد ممکن است تماس بگیرد.</li>
+                <li class="mb-1">متن قوانین پیش‌فرض است؛ اگر شرایط بازگشت وجه یا زمان تحویل شما فرق دارد، پیش از ثبت درخواست آن را اصلاح کنید.</li>
+                <li class="mb-1">فایل‌های تأیید فقط روی دامنه سایت اصلی باز می‌شوند (نه روی دامنه سایت‌های مشتریان).</li>
+                <li>بعد از گرفتن اینماد، درگاه زرین‌پال و ثبت در ساماندهی را هم کامل کنید.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@Html.Partial("_SiteVerificationScript")

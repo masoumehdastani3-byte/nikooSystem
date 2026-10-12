@@ -1,0 +1,123 @@
+@model PagedList<SupportTicket>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "پشتیبانی نیکو";
+    var company = (string)ViewBag.CompanyCode;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var baleLinked = (int)ViewBag.BaleLinked;
+    var botReady = (bool)ViewBag.BotReady;
+    var state = Request.QueryString["state"] ?? "";
+    var tabs = new[]
+    {
+        new { Key = "", Text = "همه" },
+        new { Key = "open", Text = "در انتظار پاسخ" },
+        new { Key = "answered", Text = "پاسخ داده شده" },
+        new { Key = "closed", Text = "بسته شده" }
+    };
+}
+<link href="@Url.Asset("~/Content/support.css")" rel="stylesheet" />
+<div class="sp">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h2 class="mb-1">پشتیبانی نیکو سیستم</h2>
+            <div class="text-muted small">سؤال، مشکل یا درخواستی دارید؟ تیکت بفرستید؛ پاسخ را همین‌جا و در اپلیکیشن بله می‌گیرید.</div>
+        </div>
+        @if (!isDemo)
+        {
+            <a class="btn-store" href="@Url.Action("NewTicket", "ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> تیکت جدید</a>
+        }
+    </div>
+
+    @if (isDemo)
+    {
+        <div class="alert alert-info"><i class="bi bi-info-circle"></i> این یک سایت نمایشی است و از آن تیکت فرستاده نمی‌شود؛ پس از ساخت سایت خودتان، از همین صفحه با پشتیبانی در ارتباط باشید.</div>
+    }
+    else if (botReady)
+    {
+        <div class="sp-bale @(baleLinked > 0 ? "is-on" : null)">
+            <span class="sp-bale-icon"><i class="bi @(baleLinked > 0 ? "bi-check2-all" : "bi-phone")"></i></span>
+            <div class="sp-bale-text">
+                @if (baleLinked > 0)
+                {
+                    <strong>تیکت‌ها در بله هم فعال است</strong>
+                    @:پاسخ پشتیبانی به @baleLinked.ToFa() حساب بله شما هم فرستاده می‌شود و با «پاسخ» روی همان پیام در بله جواب می‌دهید.
+                }
+                else
+                {
+                    <strong>پاسخ‌ها را در بله بگیرید</strong>
+                    @:حساب بله خود را وصل کنید تا پاسخ پشتیبانی همان لحظه در بله برسد و از همان‌جا جواب بدهید یا تیکت تازه بفرستید.
+                }
+            </div>
+            <a class="@(baleLinked > 0 ? "btn-outline-store" : "btn-store")" href="@Url.Action("Notifications", "ShopAdmin", new { company })">
+                <i class="bi bi-bell"></i> @(baleLinked > 0 ? "تنظیمات بله" : "اتصال حساب بله")
+            </a>
+        </div>
+    }
+
+    <div class="row g-3">
+        <div class="col-xl-8">
+            <nav class="sp-tabs" aria-label="وضعیت تیکت‌ها">
+                @foreach (var tab in tabs)
+                {
+                    var active = tab.Key == state;
+                    <a class="@(active ? "is-active" : null)" href="@Html.QueryUrl(new Dictionary<string, object> { ["state"] = tab.Key, ["page"] = null })" @(active ? Html.Raw("aria-current=\"page\"") : null)>@tab.Text</a>
+                }
+            </nav>
+            <div class="panel-card sp-list">
+                @Html.GridToolbar("جستجو در موضوع یا شماره تیکت…")
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                @Html.SortHeader("id", "شماره")
+                                @Html.SortHeader("subject", "موضوع")
+                                <th>وضعیت</th>
+                                @Html.SortHeader("updated", "آخرین پیام")
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var t in Model)
+                            {
+                                var url = Url.Action("Ticket", "ShopAdmin", new { company, id = t.Id });
+                                <tr class="@(t.UnreadByCustomer ? "sp-row-unread" : null)">
+                                    <td class="sp-id">#@t.Id.ToFa()</td>
+                                    <td>
+                                        @if (t.UnreadByCustomer) { <span class="sp-new-dot" title="پاسخ تازه"></span> }
+                                        <a class="sp-subject" href="@url">@t.Subject</a>
+                                        <div class="small text-muted">@SupportLabels.Category(t.Category) · @t.MessageCount.ToFa() پیام</div>
+                                    </td>
+                                    <td><span class="sp-pill @SupportLabels.StatusTone(t.Status)">@SupportLabels.Status(t.Status, false)</span></td>
+                                    <td class="small text-muted">@t.UpdatedAt.ToShamsi() @t.UpdatedAt.ToString("HH:mm").ToFaDigits()</td>
+                                    <td class="row-actions">@Html.IconLink(url, "bi-chat-left-text", "مشاهده گفتگو", "is-view")</td>
+                                </tr>
+                            }
+                            @if (Model.Count == 0)
+                            {
+                                <tr class="admin-empty-row">
+                                    <td colspan="5">
+                                        <i class="bi bi-headset fs-3 d-block mb-1"></i>
+                                        @(state == "" && string.IsNullOrEmpty(Request.QueryString["q"]) ? "هنوز تیکتی نفرستاده‌اید." : "تیکتی با این مشخصات پیدا نشد.")
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @Html.Pager(Model)
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="panel-card">
+                <h5 class="mb-3"><i class="bi bi-question-circle"></i> تیکت چطور کار می‌کند؟</h5>
+                <ol class="sp-steps">
+                    <li>«تیکت جدید» را بزنید، بخش مربوط را انتخاب کنید و مشکل یا درخواست را با جزئیات بنویسید؛ اسکرین‌شات صفحه را هم پیوست کنید (یا با Ctrl+V در متن بچسبانید).</li>
+                    <li>تیکت همان لحظه برای کارشناسان پشتیبانی نیکو در پنل و در بله فرستاده می‌شود.</li>
+                    <li>پاسخ را اینجا می‌بینید و اگر حساب بله را وصل کرده باشید، در بله هم می‌رسد.</li>
+                    <li>در بله کافی است روی پیام تیکت «پاسخ» (Reply) بزنید و بنویسید یا عکس بفرستید؛ جواب شما در همین تیکت ثبت می‌شود.</li>
+                    <li>از بله هم تیکت تازه بفرستید: <code>/ticket</code> و بعد متن درخواست. فهرست تیکت‌ها: <code>/tickets</code></li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>

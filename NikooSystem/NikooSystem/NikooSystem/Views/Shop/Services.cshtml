@@ -1,0 +1,48 @@
+﻿@model List<StoreService>
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "خدمات و تعرفه‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+}
+<section class="cn-section bk-section">
+    <div class="container">
+        <div class="cn-head">
+            <div>
+                <h1 class="cn-block-title">خدمات و تعرفه‌ها</h1>
+                <p class="text-muted mb-0">مدت و هزینه هر خدمت را ببینید و برای همان خدمت نوبت بگیرید.</p>
+            </div>
+            <a class="btn-wm" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> رزرو نوبت</a>
+        </div>
+        @if (Model.Any())
+        {
+            <div class="bk-services">
+                @foreach (var s in Model)
+                {
+                    @Html.Partial("_BookingServiceCard", s)
+                }
+            </div>
+        }
+        else
+        {
+            <div class="cat-empty">
+                <i class="bi bi-clipboard-x"></i>
+                <h3>هنوز خدمتی برای رزرو آنلاین تعریف نشده است</h3>
+            </div>
+        }
+    </div>
+</section>
+@if (staff.Any())
+{
+    <section class="cn-section bk-section bk-section-alt">
+        <div class="container">
+            <h2 class="cn-block-title">متخصصان</h2>
+            <div class="bk-staff-grid">
+                @foreach (var p in staff)
+                {
+                    @Html.Partial("_BookingStaffCard", p)
+                }
+            </div>
+        </div>
+    </section>
+}

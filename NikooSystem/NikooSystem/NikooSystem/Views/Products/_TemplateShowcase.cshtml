@@ -1,0 +1,136 @@
+@model NikooSystem.Models.Product
+@{
+    var type = StoreTypes.Get(Model.DemoSlug);
+    var kind = SiteKinds.Get(type.Kind);
+    string demoCode;
+    NikooSystem.Services.TenantStore.DemoBySlug.TryGetValue(Model.DemoSlug ?? "", out demoCode);
+    var templates = StoreTemplates.ForKind(kind.Id).OrderByDescending(t => t.Id == type.DefaultTemplate).ToList();
+    var subject = kind.IsContent ? "سایت" : kind.IsBooking ? "سامانه نوبت‌دهی" : "فروشگاه";
+}
+<link href="@Url.Asset("~/Content/template-picker.css")" rel="stylesheet" />
+<section id="templates" class="lf-templates mt-5">
+    <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
+        <div>
+            <h2 class="h4 mb-1"><i class="bi bi-palette text-warning"></i> @templates.Count.ToString().ToFaDigits() قالب آماده برای این محصول</h2>
+            <p class="text-muted small mb-0">
+                هر قالب، @subject دمو را با همان اطلاعات واقعی نشان می‌دهد. با «پیش‌نمایش زنده» در صفحات بگردید و نمای موبایل را ببینید؛
+                داخل خود دمو هم با دکمه «قالب دمو» هر وقت خواستید قالب را عوض کنید. بعد از ساخت هم قالب و رنگ‌ها از پنل قابل تغییرند.
+            </p>
+        </div>
+    </div>
+    <div class="tpl-grid">
+        @foreach (var t in templates)
+        {
+            var previewUrl = demoCode == null ? null : Url.Action("Index", "Shop", new { company = demoCode, previewTemplate = t.Id });
+            var signupUrl = Url.Action("Index", "Signup", new { type = type.Id, template = t.Id });
+            <div class="tpl-card lf-tpl-card" data-name="@t.Name" data-url="@previewUrl" data-signup="@signupUrl">
+                <div class="tpl-thumb" style="--tpl-bg:@t.PreviewGradient">
+                    @if (previewUrl != null)
+                    {
+                        <span class="tpl-loading">در حال بارگذاری پیش‌نمایش…</span>
+                        <iframe src="@previewUrl" loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="@t.Name"></iframe>
+                        <button type="button" class="lf-tpl-hit tpl-zoom" aria-label="پیش‌نمایش زنده @t.Name"></button>
+                    }
+                    @if (t.Id == type.DefaultTemplate)
+                    {
+                        <span class="lf-tpl-badge is-default"><i class="bi bi-star-fill"></i> قالب پیش‌فرض</span>
+                    }
+                    else if (t.IsSkin)
+                    {
+                        <span class="lf-tpl-badge"><i class="bi bi-stars"></i> جدید</span>
+                    }
+                </div>
+                <div class="tpl-meta">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="tpl-swatch" style="background:@t.PrimaryColor"></span>
+                        <span class="tpl-swatch" style="background:@t.SecondaryColor"></span>
+                        <strong>@t.Name</strong>
+                    </div>
+                    <span class="tpl-desc">@t.Description</span>
+                    <div class="d-flex gap-2 lf-tpl-actions">
+                        @if (previewUrl != null)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-shop flex-fill tpl-zoom"><i class="bi bi-eye"></i> پیش‌نمایش زنده</button>
+                        }
+                        <a class="btn btn-sm btn-primary-shop flex-fill" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت با این قالب</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<div class="tpl-modal" id="tplModal" hidden>
+    <div class="tpl-modal-box">
+        <div class="tpl-modal-head">
+            <strong id="tplModalName"></strong>
+            <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary active" data-device="desktop"><i class="bi bi-display"></i> دسکتاپ</button>
+                <button type="button" class="btn btn-outline-secondary" data-device="mobile"><i class="bi bi-phone"></i> موبایل</button>
+            </div>
+            <div class="ms-auto d-flex gap-2">
+                <a class="btn btn-light btn-sm" id="tplModalTab" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> تب جدید</a>
+                <a class="btn btn-sm btn-primary-shop" id="tplModalSignup"><i class="bi bi-rocket-takeoff"></i> ساخت @subject با این قالب</a>
+                <button type="button" class="btn btn-light btn-sm" id="tplModalClose" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+            </div>
+        </div>
+        <div class="tpl-modal-body">
+            <iframe id="tplModalFrame" title="پیش‌نمایش قالب"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+  var DESKTOP_WIDTH = 1280;
+  var cards = document.querySelectorAll('.lf-tpl-card');
+  var modal = document.getElementById('tplModal');
+  var frame = document.getElementById('tplModalFrame');
+
+  function fit(card) {
+    var thumb = card.querySelector('.tpl-thumb');
+    thumb.style.setProperty('--tpl-scale', thumb.clientWidth / DESKTOP_WIDTH);
+  }
+
+  function setDevice(device) {
+    modal.querySelectorAll('[data-device]').forEach(function (b) {
+      b.classList.toggle('active', b.getAttribute('data-device') === device);
+    });
+    modal.classList.toggle('is-mobile', device === 'mobile');
+  }
+
+  function openModal(card) {
+    var url = card.getAttribute('data-url');
+    document.getElementById('tplModalName').textContent = card.getAttribute('data-name');
+    document.getElementById('tplModalTab').href = url;
+    document.getElementById('tplModalSignup').href = card.getAttribute('data-signup');
+    setDevice('desktop');
+    frame.src = url;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    frame.src = 'about:blank';
+    document.body.style.overflow = '';
+  }
+
+  cards.forEach(function (card) {
+    fit(card);
+    var iframe = card.querySelector('.tpl-thumb iframe');
+    if (iframe) iframe.addEventListener('load', function () { card.classList.add('loaded'); });
+    card.querySelectorAll('.tpl-zoom').forEach(function (b) {
+      b.addEventListener('click', function () { openModal(card); });
+    });
+  });
+
+  window.addEventListener('resize', function () { cards.forEach(fit); });
+  modal.querySelectorAll('[data-device]').forEach(function (b) {
+    b.addEventListener('click', function () { setDevice(b.getAttribute('data-device')); });
+  });
+  document.getElementById('tplModalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
+})();
+</script>

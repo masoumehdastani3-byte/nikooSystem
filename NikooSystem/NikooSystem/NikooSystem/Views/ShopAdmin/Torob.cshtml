@@ -1,0 +1,191 @@
+@model StoreSettings
+@using NikooSystem.Models.Torob
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اتصال به ترب";
+    var company = (string)ViewBag.CompanyCode;
+    var apiOnDomain = (string)ViewBag.ApiOnDomain;
+    var apiWithCode = (string)ViewBag.ApiWithCode;
+    var api = apiOnDomain ?? apiWithCode;
+    var preview = (TorobProductsResponse)ViewBag.Preview;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var total = preview.Total ?? 0;
+    var hasToken = !string.IsNullOrWhiteSpace(Model.TorobWebhookBearerToken);
+}
+<div class="mb-3">
+    <h2 class="mb-1">اتصال به ترب</h2>
+    <p class="text-muted small mb-0">
+        <a href="https://torob.com" target="_blank" rel="noopener">ترب</a> بزرگ‌ترین موتور جستجو و مقایسه قیمت کالا در ایران است. با این اتصال، محصولات فروشگاه شما با قیمت، تخفیف و موجودی به‌روز در ترب نمایش داده می‌شوند
+        و خریدار با یک کلیک به صفحه همان محصول در فروشگاه شما می‌آید. اتصال طبق <a href="https://github.com/Torob/Torob-Sync/blob/main/product_api_v3.md" target="_blank" rel="noopener">API رسمی نسخه ۳ ترب</a> ساخته شده است.
+    </p>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این فروشگاه نمایشی است و به ترب وصل نمی‌شود؛ پس از ساخت فروشگاه خودتان، از همین صفحه اتصال را روشن کنید.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3"><i class="bi bi-toggle-on"></i> وضعیت و تنظیمات</h5>
+            <p class="mb-3">
+                @if (Model.EnableTorob)
+                {
+                    <span class="badge bg-success"><i class="bi bi-check2-circle"></i> روشن</span>
+                    <span class="small">ترب می‌تواند فهرست @total.ToFa() محصول فعال را بخواند.</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary">خاموش</span>
+                    <span class="small text-muted">تا روشن نشود، API به ترب پاسخ «غیرفعال» می‌دهد.</span>
+                }
+            </p>
+            @using (Html.BeginForm("Torob", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="form-check form-switch mb-3">
+                    <input class="form-check-input" type="checkbox" role="switch" name="enableTorob" id="enableTorob" value="true" @(Model.EnableTorob ? "checked" : null) />
+                    <input type="hidden" name="enableTorob" value="false" />
+                    <label class="form-check-label" for="enableTorob"><strong>فعال‌سازی API محصولات برای ترب</strong></label>
+                </div>
+
+                <label class="form-label">آدرس API برای ثبت در ترب</label>
+                <div class="input-group mb-1" dir="ltr">
+                    <input class="form-control font-monospace" id="torobApi" readonly value="@api" />
+                    <button class="btn btn-outline-secondary" type="button" id="copyApi" title="کپی"><i class="bi bi-clipboard"></i></button>
+                </div>
+                <div class="form-text mb-3">
+                    @if (apiOnDomain != null)
+                    {
+                        <span>روی دامنه اختصاصی شما. آدرس جایگزین (با کد فروشگاه): <code dir="ltr">@apiWithCode</code></span>
+                    }
+                    else
+                    {
+                        <span>تا وقتی دامنه اختصاصی وصل نکرده‌اید از این آدرس استفاده کنید؛ بعد از اتصال دامنه، آدرس روی دامنه خودتان اینجا نمایش داده می‌شود.</span>
+                    }
+                </div>
+
+                <details class="mb-3">
+                    <summary class="small fw-bold">تنظیمات پیشرفته</summary>
+                    <div class="mt-3">
+                        <label class="form-label" for="publicStoreBaseUrl">آدرس صفحه اول فروشگاه (اختیاری)</label>
+                        <input class="form-control" dir="ltr" name="publicStoreBaseUrl" id="publicStoreBaseUrl" value="@Model.PublicStoreBaseUrl" placeholder="https://myshop.ir" />
+                        <div class="form-text mb-3">معمولاً خالی بگذارید؛ لینک محصولات خودکار همان آدرسی است که به گوگل معرفی می‌شود. فقط اگر فروشگاه از آدرس دیگری باز می‌شود آن را وارد کنید.</div>
+
+                        <label class="form-label" for="webhookToken">توکن Webhook ترب (اختیاری)</label>
+                        <input class="form-control" type="password" dir="ltr" name="webhookToken" id="webhookToken" autocomplete="off"
+                               placeholder="@(hasToken ? "ثبت شده — برای تعویض، توکن تازه را وارد کنید" : "توکنی که پشتیبانی ترب می‌دهد")" />
+                        @if (hasToken)
+                        {
+                            <div class="form-check mt-1">
+                                <input class="form-check-input" type="checkbox" name="removeToken" value="true" id="removeToken" />
+                                <label class="form-check-label small" for="removeToken">حذف توکن</label>
+                            </div>
+                        }
+                        <div class="form-text">با این توکن، هر بار محصولی را در پنل ذخیره می‌کنید همان لحظه به ترب خبر داده می‌شود تا قیمت و موجودی سریع‌تر به‌روز شود.</div>
+                    </div>
+                </details>
+
+                <button class="btn-store" type="submit" @(isDemo ? "disabled" : null)><i class="bi bi-check2"></i> ذخیره</button>
+            }
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> راه‌اندازی قدم‌به‌قدم</h5>
+            <ol class="mb-0">
+                <li class="mb-2">
+                    <strong>آماده‌سازی فروشگاه:</strong> ترب معمولاً فروشگاهی را می‌پذیرد که دامنه اختصاصی، <a href="@Url.Action("Enamad","ShopAdmin", new { company })">نماد اعتماد (اینماد)</a>،
+                    اطلاعات تماس و درگاه پرداخت فعال داشته باشد. محصولات را با عکس، قیمت و موجودی درست وارد کنید.
+                </li>
+                <li class="mb-2"><strong>روشن کردن اتصال:</strong> کلید «فعال‌سازی API محصولات برای ترب» را در همین صفحه روشن کنید و ذخیره بزنید.</li>
+                <li class="mb-2">
+                    <strong>ثبت فروشگاه در ترب:</strong> در <a href="https://torob.com" target="_blank" rel="noopener">ترب</a> از بخش «ثبت فروشگاه» یا پنل فروشندگان، فروشگاه را ثبت کنید
+                    و در بخش اتصال محصولات (API) نوع <b>Torob API v3</b> را انتخاب کرده و آدرس API بالا را بدهید. اگر چنین بخشی نبود، همین آدرس را برای پشتیبانی ترب بفرستید.
+                </li>
+                <li class="mb-2"><strong>بررسی ترب:</strong> ترب فهرست محصولات را از آدرس API می‌خواند. فقط درخواستی که امضای دیجیتال خود ترب را دارد (هدر <code>X-Torob-Token</code>) پاسخ می‌گیرد؛ پس کس دیگری نمی‌تواند فهرست شما را از این آدرس بخواند.</li>
+                <li class="mb-2"><strong>به‌روزرسانی سریع (اختیاری):</strong> پس از تأیید، از پشتیبانی ترب «توکن Webhook» بگیرید و در تنظیمات پیشرفته بالا وارد کنید.</li>
+                <li>از آن به بعد کاری لازم نیست: هر تغییری در قیمت، تخفیف و موجودی محصولات خودکار به ترب می‌رسد.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-box-seam"></i> چه چیزی به ترب فرستاده می‌شود؟</h5>
+            <ul class="small mb-2">
+                <li>عنوان و توضیح کوتاه محصول، گروه و همه تصاویر</li>
+                <li>قیمت فعلی و «قیمت قبل از تخفیف» (اگر بیشتر از قیمت فعلی باشد، ترب تخفیف را نشان می‌دهد)</li>
+                <li>موجودی: موجودی صفر یعنی «ناموجود»</li>
+                <li>خصوصیات محصول (مثل رنگ، سایز، برند) به‌عنوان مشخصات فنی</li>
+                <li>لینک صفحه محصول و تاریخ افزودن و آخرین تغییر</li>
+            </ul>
+            <p class="small text-muted mb-0">فقط محصولات فعال فرستاده می‌شوند. صفحه هر محصول هم متاتگ‌های قیمت و موجودی ترب را دارد تا خزنده ترب آن را درست بخواند.</p>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌ها</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">عنوان را کامل بنویسید: نوع کالا + برند + مدل (مثلاً «هدفون بی‌سیم سونی WH-1000XM5»)؛ ترب با عنوان، محصول شما را کنار فروشندگان دیگر همان کالا می‌گذارد.</li>
+                <li class="mb-1">موجودی را به‌روز نگه دارید؛ کالای ناموجودی که «موجود» نمایش داده شود، اعتماد خریدار و امتیاز فروشگاه در ترب را کم می‌کند.</li>
+                <li>آدرس (slug) محصولات را بعد از ثبت در ترب عوض نکنید.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card mt-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+        <h5 class="mb-0"><i class="bi bi-eye"></i> پیش‌نمایش آنچه ترب می‌بیند</h5>
+        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("TorobPreview","ShopAdmin", new { company })" target="_blank" rel="noopener"><i class="bi bi-code-slash"></i> خروجی JSON</a>
+    </div>
+    <p class="small text-muted">@total.ToFa() محصول فعال به ترب معرفی می‌شود@(total > 20 ? "؛ این جدول ۲۰ محصول تازه‌تر را نشان می‌دهد" : "").</p>
+    <div class="table-responsive">
+        <table class="table align-middle small">
+            <thead><tr><th></th><th>عنوان</th><th>گروه</th><th>قیمت</th><th>وضعیت</th><th>لینک</th></tr></thead>
+            <tbody>
+                @foreach (var p in preview.Products.Take(20))
+                {
+                    <tr>
+                        <td style="width:56px">@if (p.ImageLinks.Any()) {<img src="@p.ImageLinks[0]" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px" />}</td>
+                        <td>@p.Title</td>
+                        <td>@(p.CategoryName ?? "—")</td>
+                        <td class="text-nowrap">
+                            @if (p.Availability)
+                            {
+                                @p.CurrentPrice.ToToman()
+                                if (p.OldPrice.HasValue)
+                                {
+                                    <del class="d-block text-muted">@p.OldPrice.Value.ToToman()</del>
+                                }
+                            }
+                            else
+                            {
+                                <span>—</span>
+                            }
+                        </td>
+                        <td>@Html.Raw(p.Availability ? "<span class=\"badge bg-success\">موجود</span>" : "<span class=\"badge bg-secondary\">ناموجود</span>")</td>
+                        <td><a href="@p.PageUrl" target="_blank" rel="noopener" title="@p.PageUrl"><i class="bi bi-box-arrow-up-left"></i></a></td>
+                    </tr>
+                }
+                @if (!preview.Products.Any())
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-box fs-3 d-block mb-1"></i>هنوز محصول فعالی ندارید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('copyApi');
+  btn.addEventListener('click', function () {
+    var input = document.getElementById('torobApi');
+    input.select();
+    (navigator.clipboard ? navigator.clipboard.writeText(input.value) : Promise.reject()).catch(function () { document.execCommand('copy'); });
+    btn.innerHTML = '<i class="bi bi-check2"></i>';
+    setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 1500);
+  });
+})();
+</script>

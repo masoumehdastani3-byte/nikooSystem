@@ -34,7 +34,7 @@ namespace NikooSystem.Controllers
                 return JsonError(400, "ReturnUrl الزامی است.");
 
             if (!PaymentHubService.IsReturnUrlAllowed(client, request.ReturnUrl))
-                return JsonError(400, "ReturnUrl مجاز نیست. دامنه را در payment-clients.json اضافه کنید.");
+                return JsonError(400, "ReturnUrl مجاز نیست. دامنه را در جدول PaymentClientHosts دیتابیس اضافه کنید.");
 
             if (!string.IsNullOrWhiteSpace(request.NotifyUrl))
             {
@@ -67,7 +67,7 @@ namespace NikooSystem.Controllers
                 ExpiresAt = DateTime.Now.AddHours(hours)
             };
 
-            payment = JsonStore.AddHubPayment(payment);
+            payment = SiteStore.AddHubPayment(payment);
             var paymentUrl = PaymentHubService.BaseUrl + "/Pay/Start/" + payment.Token;
 
             return JsonOk(new
@@ -94,7 +94,7 @@ namespace NikooSystem.Controllers
             if (client == null)
                 return JsonError(401, "احراز هویت نامعتبر است.");
 
-            var payment = JsonStore.GetHubPaymentByToken(token);
+            var payment = SiteStore.GetHubPaymentByToken(token);
             if (payment == null || !string.Equals(payment.AppId, client.AppId, StringComparison.OrdinalIgnoreCase))
                 return JsonError(404, "پرداخت پیدا نشد.");
 

@@ -1,0 +1,119 @@
+@model StoreOrder
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "سفارش " + Model.OrderNumber;
+    var company = (string)ViewBag.CompanyCode;
+    var customer = (StoreCustomer)ViewBag.Customer;
+    var statuses = Enum.GetValues(typeof(StoreOrderStatus)).Cast<StoreOrderStatus>();
+    var subtotal = Model.Items.Sum(i => i.UnitPrice * i.Quantity);
+    var hasPhysical = Model.Items.Any(i => !i.IsDigital);
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">سفارش <span dir="ltr">@Model.OrderNumber</span> @Html.StatusBadge(Model.Status)</h2>
+    <a class="btn-outline-store" href="@Url.Action("Orders", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> فهرست سفارش‌ها</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">اقلام سفارش</h5>
+            <table class="table align-middle">
+                <thead><tr><th>کالا</th><th>نوع</th><th>قیمت واحد</th><th>تعداد</th><th>جمع</th></tr></thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.Title</td>
+                            <td class="small">@(item.IsDigital ? "دیجیتال" : "فیزیکی")</td>
+                            <td>@item.UnitPrice.ToToman()</td>
+                            <td>@item.Quantity</td>
+                            <td>@((item.UnitPrice * item.Quantity).ToToman())</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="4" class="text-end">جمع کالاها</td><td>@subtotal.ToToman()</td></tr>
+                    @if (hasPhysical)
+                    {
+                        <tr><td colspan="4" class="text-end">هزینه ارسال</td><td>@(Model.ShippingCost > 0 ? Model.ShippingCost.ToToman() : "رایگان")</td></tr>
+                    }
+                    <tr class="fw-bold"><td colspan="4" class="text-end">مبلغ کل</td><td>@Model.Amount.ToToman()</td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-3">تغییر وضعیت</h5>
+            @using (Html.BeginForm("UpdateOrder", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">وضعیت</label>
+                        <select class="form-select" name="status">
+                            @foreach (var s in statuses)
+                            {
+                                <option value="@s" @(Model.Status == s ? "selected" : "")>@s.StatusText()</option>
+                            }
+                        </select>
+                    </div>
+                    @if (hasPhysical)
+                    {
+                        <div class="col-md-6">
+                            <label class="form-label">کد رهگیری مرسوله</label>
+                            <input class="form-control" name="trackingCode" value="@Model.TrackingCode" dir="ltr" maxlength="60" />
+                        </div>
+                    }
+                    <div class="col-12">
+                        <label class="form-label">یادداشت داخلی (مشتری نمی‌بیند)</label>
+                        <textarea class="form-control" name="adminNote" rows="2" maxlength="1000">@Model.AdminNote</textarea>
+                    </div>
+                </div>
+                <p class="small text-muted mt-2 mb-3">
+                    @if (hasPhysical)
+                    {
+                        <span><i class="bi bi-info-circle"></i> با رفتن سفارش به «پرداخت شده» یا بعد از آن، موجودی کالاها کم می‌شود و با لغو یا ناموفق شدن برمی‌گردد.</span>
+                    }
+                    @if (Model.Items.Any(i => i.IsDigital))
+                    {
+                        <span><i class="bi bi-unlock"></i> مشتری از وضعیت «پرداخت شده» به بعد به دوره‌ها و فایل‌های این سفارش دسترسی دارد.</span>
+                    }
+                </p>
+                <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+            }
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">مشتری</h5>
+            <div class="fw-bold">@Model.CustomerName</div>
+            <div dir="ltr" class="text-end">@Model.CustomerMobile</div>
+            @if (!string.IsNullOrEmpty(Model.CustomerEmail)) { <div dir="ltr" class="text-end small">@Model.CustomerEmail</div> }
+            @if (!string.IsNullOrEmpty(Model.CustomerAddress))
+            {
+                <hr />
+                <div class="small text-muted mb-1">آدرس ارسال</div>
+                <div>@Model.CustomerAddress</div>
+            }
+            @if (customer != null)
+            {
+                <hr />
+                <div class="small text-muted">عضو از @customer.CreatedAt.ToShamsi()</div>
+            }
+        </div>
+        <div class="panel-card">
+            <h5 class="mb-3">پرداخت</h5>
+            <dl class="row small mb-0">
+                <dt class="col-5">ثبت سفارش</dt><dd class="col-7">@Model.CreatedAt.ToShamsi()</dd>
+                <dt class="col-5">پرداخت</dt><dd class="col-7">@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsi() : "—")</dd>
+                <dt class="col-5">کد پیگیری بانک</dt><dd class="col-7" dir="ltr">@(Model.RefId?.ToString() ?? "—")</dd>
+                @if (!string.IsNullOrEmpty(Model.PaymentMessage))
+                {
+                    <dt class="col-5">پیام</dt><dd class="col-7">@Model.PaymentMessage</dd>
+                }
+            </dl>
+        </div>
+    </div>
+</div>

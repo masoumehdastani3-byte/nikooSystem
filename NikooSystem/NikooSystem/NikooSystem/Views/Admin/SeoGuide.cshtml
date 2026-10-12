@@ -1,0 +1,129 @@
+@model NikooSystem.Models.SiteSettings
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "راهنمای سئو";
+    var setting = (string)ViewBag.SiteUrlSetting;
+    var siteUrl = (string)ViewBag.SiteUrl;
+    var stores = (List<NikooSystem.Models.SeoGuideStore>)ViewBag.Stores;
+    var ownTexts = !string.IsNullOrWhiteSpace(Model.SeoTitle) || !string.IsNullOrWhiteSpace(Model.MetaDescription);
+    Func<bool, MvcHtmlString> mark = ok => MvcHtmlString.Create(ok
+        ? "<i class=\"bi bi-check-circle-fill text-success\"></i>"
+        : "<i class=\"bi bi-exclamation-circle-fill text-warning\"></i>");
+}
+<div class="adm-head">
+    <div>
+        <h1>راهنمای سئو و دیده شدن در گوگل</h1>
+        <p>آنچه برای سایت اصلی و همه سایت‌های مشتریان خودکار انجام می‌شود، و کارهایی که باید یک بار انجام دهید.</p>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="adm-card mb-3">
+            <h5 class="mb-3"><i class="bi bi-clipboard-check"></i> وضعیت سایت اصلی</h5>
+            <ul class="list-unstyled mb-0">
+                <li class="mb-3">
+                    @mark(setting.Length > 0)
+                    <strong>آدرس اصلی سایت (Seo.SiteUrl):</strong>
+                    @if (setting.Length > 0)
+                    {
+                        <span>همه آدرس‌ها با <b dir="ltr">@setting</b> به گوگل معرفی می‌شوند.</span>
+                    }
+                    else
+                    {
+                        <span>تنظیم نشده؛ آدرس‌ها از آدرس درخواست ساخته می‌شوند و نسخه‌های www و بدون www یا http و https جدا دیده می‌شوند. روی سرور، در <code>Web.config</code> این مقدار را بگذارید:</span>
+                        <code dir="ltr" class="d-block mt-1">&lt;add key="Seo.SiteUrl" value="https://nikoooo.ir" /&gt;</code>
+                    }
+                </li>
+                <li class="mb-3">
+                    @mark(!string.IsNullOrEmpty(Model.GoogleVerification))
+                    <strong>تأیید مالکیت در گوگل سرچ کنسول:</strong>
+                    @(string.IsNullOrEmpty(Model.GoogleVerification) ? "کد تأیید ثبت نشده است." : "کد تأیید ثبت شده است.")
+                    <a href="@Url.Action("SiteSettings","Admin")">تنظیمات و متن‌ها</a>
+                </li>
+                <li>
+                    @mark(ownTexts)
+                    <strong>عنوان و توضیح صفحه اول:</strong>
+                    @(ownTexts ? "متن اختصاصی دارد." : "متن پیش‌فرض استفاده می‌شود.")
+                    عنوان و توضیح هر محصول هم در فرم <a href="@Url.Action("Products","Admin")">محصولات</a> (کادر «نمایش در گوگل») قابل تنظیم است.
+                </li>
+            </ul>
+        </div>
+
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> معرفی سایت اصلی به گوگل (یک بار)</h5>
+            <ol class="mb-0">
+                <li class="mb-2">در <code>Web.config</code> سرور، مقدار <code>Seo.SiteUrl</code> را روی آدرس نهایی (مثلاً <span dir="ltr">https://nikoooo.ir</span>) بگذارید.</li>
+                <li class="mb-2">در <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Google Search Console</a> یک property از نوع <b>URL prefix</b> با همین آدرس بسازید.</li>
+                <li class="mb-2">روش تأیید <b>HTML tag</b> را بزنید، تگ را کپی کنید و در <a href="@Url.Action("SiteSettings","Admin")">تنظیمات و متن‌ها</a> کادر «کد تأیید گوگل» بچسبانید و ذخیره کنید؛ بعد در سرچ کنسول «Verify» را بزنید.</li>
+                <li class="mb-2">از منوی <b>Sitemaps</b> این آدرس را ثبت کنید (سایت‌هایی که زیر همین دامنه هستند هم داخل آن معرفی می‌شوند):
+                    <code dir="ltr" class="d-block mt-1">@siteUrl/sitemap.xml</code>
+                </li>
+                <li>سایت‌های مشتریان که دامنه یا زیردامنه خودشان را دارند، باید روی همان دامنه جدا در سرچ کنسول ثبت شوند؛ راهنمای آن در پنل هر سایت، صفحه «سئو و گوگل» هست.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-signpost"></i> آدرس‌های مهم</h5>
+            <dl class="small mb-0">
+                <dt>نقشه سایت اصلی</dt>
+                <dd class="text-break"><a class="font-monospace" href="@siteUrl/sitemap.xml" target="_blank" rel="noopener" dir="ltr">@siteUrl/sitemap.xml</a></dd>
+                <dt>robots.txt</dt>
+                <dd class="text-break"><a class="font-monospace" href="@siteUrl/robots.txt" target="_blank" rel="noopener" dir="ltr">@siteUrl/robots.txt</a></dd>
+                <dt>نقشه سایت هر مشتری</dt>
+                <dd><code dir="ltr">/Shop/CODE/sitemap.xml</code> یا <code dir="ltr">/sitemap.xml</code> روی دامنه خودش</dd>
+                <dt>API ترب هر فروشگاه</dt>
+                <dd class="mb-0"><code dir="ltr">/torob_api/v3/CODE/products</code> یا <code dir="ltr">/torob_api/v3/products</code> روی دامنه خودش</dd>
+            </dl>
+        </div>
+
+        <div class="adm-card">
+            <h5 class="mb-2"><i class="bi bi-puzzle"></i> ماژول‌هایی که در سایت تبلیغ می‌شوند</h5>
+            <p class="small text-muted">این فهرست در صفحه اول، صفحه هر محصول، ثبت‌نام و داده ساختاریافته محصولات نمایش داده می‌شود. هر امکان تازه را به <code>Helpers/PlatformModules.cs</code> اضافه کنید تا همه‌جا معرفی شود.</p>
+            <ul class="small mb-0">
+                @foreach (var m in PlatformModules.All)
+                {
+                    <li><i class="bi @m.Icon"></i> @m.Name @if (m.Only != null) {<span class="text-muted">(@m.Only)</span>}</li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="adm-card mt-3">
+    <h5 class="mb-1"><i class="bi bi-shop"></i> سایت‌های مشتریان</h5>
+    <p class="text-muted small">سایت‌های فعال (بدون دموها). نقشه سایت هر کدام خودکار ساخته می‌شود؛ تأیید گوگل و روشن کردن ترب کار صاحب همان سایت است.</p>
+    <div class="table-responsive">
+        <table class="table align-middle small">
+            <thead><tr><th>سایت</th><th>نوع</th><th>نقشه سایت</th><th>معرفی به گوگل</th><th>تأیید سرچ کنسول</th><th>ترب</th></tr></thead>
+            <tbody>
+                @foreach (var s in stores)
+                {
+                    <tr>
+                        <td><a href="@Url.Action("Store","Admin", new { id = s.Code })">@s.Name</a> <span class="text-muted" dir="ltr">@s.Code</span></td>
+                        <td>@s.Kind</td>
+                        <td class="text-break"><a class="font-monospace" href="@s.Sitemap" target="_blank" rel="noopener" dir="ltr">@s.Sitemap</a></td>
+                        <td>@(s.InMainSitemap ? "داخل نقشه سایت اصلی" : "ثبت جدا روی دامنه خودش")</td>
+                        <td>@mark(s.HasVerification)</td>
+                        <td>@(s.Torob.HasValue ? (s.Torob.Value ? "روشن" : "خاموش") : "—")</td>
+                    </tr>
+                }
+                @if (!stores.Any())
+                {
+                    <tr class="admin-empty-row"><td colspan="6">هنوز سایت فعالی جز دموها نیست.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="adm-card mt-3">
+    <h5 class="mb-3"><i class="bi bi-gear-wide-connected"></i> کارهایی که خودکار انجام می‌شود</h5>
+    @Html.Partial("_SeoAutomatic", new ViewDataDictionary { ["Site"] = true })
+    <p class="small text-muted mt-3 mb-0">
+        ترب: فروشگاه‌های کالا API رسمی نسخه ۳ ترب را دارند (امضای ترب بررسی می‌شود) و صفحه هر محصول متاتگ‌های قیمت و موجودی ترب را دارد؛ صاحب فروشگاه از منوی «اتصال به ترب» آن را روشن می‌کند.
+        بله: پیام‌های سایت و فروشگاه‌ها از بازوی <a href="@Url.Action("Notifications","Admin")">اطلاع‌رسانی بله</a> فرستاده می‌شود.
+    </p>
+</div>

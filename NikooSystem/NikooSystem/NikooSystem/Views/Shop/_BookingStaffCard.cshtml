@@ -1,0 +1,25 @@
+@model StoreStaff
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var days = Enumerable.Range(0, 7).Where(d => Model.HoursOn(d).Any()).Select(d => BookingTime.DayNames[d]).ToList();
+}
+<article class="bk-person">
+    @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+    {
+        <img src="@Model.PhotoUrl" alt="@Model.Name" loading="lazy" />
+    }
+    else
+    {
+        <span class="bk-person-avatar"><i class="bi bi-person"></i></span>
+    }
+    <h3>@Model.Name</h3>
+    @if (!string.IsNullOrWhiteSpace(Model.Title))
+    {
+        <div class="bk-person-title">@Model.Title</div>
+    }
+    @if (days.Any())
+    {
+        <div class="bk-person-days"><i class="bi bi-calendar3"></i> @(string.Join("، ", days))</div>
+    }
+    <a class="bk-btn-ghost" href="@Url.Action("Book","Shop", new { company, staffId = Model.Id })">نوبت از @Model.Name</a>
+</article>

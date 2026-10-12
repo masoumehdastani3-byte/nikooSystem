@@ -1,0 +1,50 @@
+@model List<NikooSystem.Models.SiteFaq>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "سوالات متداول";
+    var shown = NikooSystem.Services.SiteContentStore.Settings.ShowFaq;
+}
+<div class="adm-head">
+    <div>
+        <h1>سوالات متداول</h1>
+        <p>
+            در صفحه اصلی سایت، بالای فوتر نمایش داده می‌شوند.
+            @if (!shown)
+            {
+                <span class="adm-chip is-orange">نمایش این بخش در <a href="@Url.Action("SiteSettings","Admin")">تنظیمات</a> خاموش است</span>
+            }
+        </p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@Url.Action("EditFaq","Admin")"><i class="bi bi-plus-lg"></i> سؤال جدید</a>
+    </div>
+</div>
+<div class="adm-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th style="width:4rem">ترتیب</th><th>سؤال و پاسخ</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var f in Model)
+            {
+                <tr>
+                    <td>@f.SortOrder.ToFa()</td>
+                    <td>
+                        <div class="adm-faq-q">@f.Question</div>
+                        <div class="adm-faq-a">@f.Answer</div>
+                    </td>
+                    <td><span class="adm-chip @(f.IsActive ? "is-green" : "is-gray")">@(f.IsActive ? "نمایش" : "پنهان")</span></td>
+                    <td class="row-actions">
+                        @Html.IconPost("ToggleFaq", new { id = f.Id }, f.IsActive ? "bi-eye-slash" : "bi-eye", f.IsActive ? "پنهان کردن" : "نمایش در سایت", "is-toggle")
+                        @Html.EditLink("EditFaq", f.Id)
+                        @Html.DeleteButton("DeleteFaq", f.Id, "این سؤال حذف شود؟")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="4" class="text-center text-muted py-4">سؤالی ثبت نشده است</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

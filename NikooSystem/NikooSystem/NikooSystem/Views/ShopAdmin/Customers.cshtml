@@ -1,22 +1,51 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreCustomer>
+@model PagedList<StoreCustomer>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "مشتریان";
+    var company = (string)ViewBag.CompanyCode;
+    var orderCounts = (Dictionary<int, int>)ViewBag.OrderCounts;
 }
-<h2 class="mb-3">مشتریان فروشگاه</h2>
+@Html.PageHeader("مشتریان")
 <div class="panel-card">
-<table class="table">
-    <thead><tr><th>نام</th><th>موبایل</th><th>ایمیل</th><th>تاریخ عضویت</th></tr></thead>
-    <tbody>
-    @foreach (var c in Model)
-    {
-        <tr>
-            <td>@c.FullName</td>
-            <td>@c.Mobile</td>
-            <td>@c.Email</td>
-            <td>@c.CreatedAt.ToString("yyyy/MM/dd")</td>
-        </tr>
-    }
-    </tbody>
-</table>
+    @Html.GridToolbar("جستجو در نام، موبایل یا ایمیل…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("name", "نام")
+                    @Html.SortHeader("mobile", "موبایل")
+                    <th>ایمیل</th>
+                    <th>سفارش‌ها</th>
+                    @Html.SortHeader("created", "تاریخ عضویت")
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var count = orderCounts.ContainsKey(c.Id) ? orderCounts[c.Id] : 0;
+                    <tr>
+                        <td>@c.FullName</td>
+                        <td dir="ltr" class="text-end">@c.Mobile</td>
+                        <td dir="ltr" class="text-end small">@c.Email</td>
+                        <td>
+                            @if (count > 0)
+                            {
+                                <a href="@Url.Action("Orders", "ShopAdmin", new { company, q = c.Mobile })">@count سفارش</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">—</span>
+                            }
+                        </td>
+                        <td class="small text-muted">@c.CreatedAt.ToShamsi()</td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-people fs-3 d-block mb-1"></i>مشتری‌ای پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

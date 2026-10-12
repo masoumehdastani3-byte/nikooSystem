@@ -1,0 +1,309 @@
+@model TenantInfo
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "دامنه اختصاصی";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var site = kind.SiteNoun;
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var storeUrl = (string)ViewBag.StoreUrl;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var check = ViewBag.Check as DomainCheckResult;
+    var state = Model?.DomainStatus() ?? DomainState.None;
+    var domain = state == DomainState.None ? null : Model.CustomDomain.Trim();
+    var shownDomain = domain ?? "yourdomain.ir";
+    var serverIp = TenantProvisioningService.ServerIp;
+    var wwwIsCname = !string.IsNullOrEmpty(TenantProvisioningService.RootDomain);
+    var wwwTarget = CustomDomains.WwwTarget(company);
+    var ticketUrl = Url.Action("NewTicket", "ShopAdmin", new { company, category = "Domain", subject = "اتصال دامنه " + shownDomain });
+    var stepIndex = state == DomainState.None ? 0 : state == DomainState.WaitingDns ? 1 : state == DomainState.WaitingSupport ? 2 : 4;
+    var steps = new[]
+    {
+        new { Icon = "bi-pencil-square", Title = "ثبت دامنه", Text = "وارد کردن دامنه در همین صفحه", Who = "شما", Support = false },
+        new { Icon = "bi-hdd-network", Title = "تنظیم DNS", Text = "ساخت دو رکورد در پنل خرید دامنه", Who = "شما", Support = false },
+        new { Icon = "bi-shield-lock", Title = "اتصال و SSL", Text = "خودکار به پشتیبانی خبر داده می‌شود", Who = "پشتیبانی نیکو", Support = true },
+        new { Icon = "bi-check2-circle", Title = "فعال", Text = "سایت روی دامنه شما با https", Who = "تمام", Support = false }
+    };
+}
+<link href="@Url.Asset("~/Content/domain.css")" rel="stylesheet" />
+
+<div class="dm-print-only mb-3">
+    <h3 class="mb-1">راهنمای اتصال دامنه به @settings.StoreName</h3>
+    <div class="small text-muted">کد شرکت @company · @DateTime.Now.ToShamsiText()</div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">دامنه اختصاصی</h2>
+        <p class="text-muted small mb-0">
+            @site شما همین حالا با آدرس رایگان <a href="@storeUrl" target="_blank" rel="noopener" dir="ltr">@storeUrl</a> باز می‌شود.
+            اگر دامنه دارید (مثل <span dir="ltr">myshop.ir</span>)، با این راهنما آن را وصل کنید: بخش‌هایی که کار شماست را خودتان انجام می‌دهید و بخش فنی سرور را پشتیبانی نیکو؛ نیازی نیست جداگانه خبر بدهید.
+        </p>
+    </div>
+    <div class="d-flex gap-2 dm-no-print">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="dmPrint"><i class="bi bi-printer"></i> چاپ یا ذخیره PDF راهنما</button>
+        @if (!isDemo)
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="@ticketUrl"><i class="bi bi-headset"></i> کمک از پشتیبانی</a>
+        }
+    </div>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info dm-no-print"><i class="bi bi-info-circle"></i> این @site نمایشی است و دامنه به آن وصل نمی‌شود؛ راهنما را ببینید و پس از ساخت @site خودتان از همین صفحه دامنه را وصل کنید.</div>
+}
+
+<ol class="dm-steps">
+    @for (var i = 0; i < steps.Length; i++)
+    {
+        var s = steps[i];
+        var cls = i < stepIndex || stepIndex == 4 ? "is-done" : i == stepIndex ? "is-current" : "";
+        <li class="dm-step @cls @(s.Support ? "is-support" : null)">
+            <div class="dm-dot"><i class="bi @(i < stepIndex || stepIndex == 4 ? "bi-check-lg" : s.Icon)"></i></div>
+            <strong>@((i + 1).ToFa()). @s.Title</strong>
+            <span>@s.Text</span>
+            <div><span class="dm-who">@s.Who</span></div>
+        </li>
+    }
+</ol>
+
+@switch (state)
+{
+    case DomainState.WaitingDns:
+        <div class="dm-status is-dns">
+            <i class="bi bi-hourglass-split"></i>
+            <div>
+                <strong>منتظر تنظیم DNS توسط شما</strong>
+                <div class="small">دامنه <b dir="ltr">@domain</b> ثبت شده، اما هنوز به سرور نیکو اشاره نمی‌کند. رکوردهای جدول «رکوردهای DNS» را بسازید؛ سیستم هر ساعت خودکار بررسی می‌کند و با «بررسی دوباره» هم همین حالا می‌بینید.</div>
+            </div>
+        </div>
+        break;
+    case DomainState.WaitingSupport:
+        <div class="dm-status is-support">
+            <i class="bi bi-shield-lock"></i>
+            <div>
+                <strong>DNS درست است؛ نوبت پشتیبانی نیکو</strong>
+                <div class="small">
+                    از @Model.DomainDnsOkAt.Value.ToShamsiText() دامنه درست به سرور نیکو اشاره می‌کند و پشتیبانی برای اتصال نهایی و صدور گواهی امنیتی (SSL) خودکار خبردار شده است.
+                    کار دیگری از سمت شما لازم نیست؛ معمولاً تا یک روز کاری انجام می‌شود و نتیجه را همین‌جا و در بله خبر می‌دهیم.
+                </div>
+            </div>
+        </div>
+        break;
+    case DomainState.Active:
+        <div class="dm-status is-active">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+                <strong>دامنه شما فعال است</strong>
+                <div class="small">
+                    @site از <a href="https://@domain" target="_blank" rel="noopener" dir="ltr">https://@domain</a> باز می‌شود و همه آدرس‌ها روی این دامنه به گوگل معرفی می‌شوند. آدرس رایگان قبلی هم همچنان کار می‌کند.
+                </div>
+            </div>
+        </div>
+        break;
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card mb-3 dm-no-print">
+            <h5 class="mb-2"><i class="bi bi-globe"></i> دامنه شما</h5>
+            @using (Html.BeginForm("Domain", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <label class="form-label" for="customDomain">نام دامنه</label>
+                <div class="input-group" dir="ltr">
+                    <input class="form-control" id="customDomain" name="customDomain" value="@domain" placeholder="myshop.ir" @(isDemo ? "disabled" : null) />
+                    <button class="btn-store" type="submit" @(isDemo ? "disabled" : null)><i class="bi bi-check2"></i> ذخیره</button>
+                </div>
+                <div class="form-text">بدون http و www بنویسید؛ هر دو آدرس <span dir="ltr">@shownDomain</span> و <span dir="ltr">www.@shownDomain</span> به @site شما وصل می‌شوند. اگر دامنه ندارید، اول آن را از یکی از فروشندگان دامنه بخرید.</div>
+                if (domain != null && !isDemo)
+                {
+                    <button class="btn btn-link btn-sm text-danger px-0 mt-2" type="submit" name="remove" value="true" onclick="return confirm('دامنه از @site جدا شود؟ سایت با آدرس رایگان در دسترس می‌ماند.');"><i class="bi bi-trash"></i> حذف دامنه</button>
+                }
+            }
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-hdd-network"></i> رکوردهای DNS</h5>
+            @if (string.IsNullOrEmpty(serverIp))
+            {
+                <div class="alert alert-warning small mb-0">
+                    <i class="bi bi-exclamation-triangle"></i> IP سرور هنوز در پنل نیکو ثبت نشده است. لطفاً <a href="@ticketUrl">تیکت بفرستید</a> تا پشتیبانی IP و رکوردهای لازم را به شما بدهد.
+                </div>
+            }
+            else
+            {
+                <p class="small text-muted">این دو رکورد را در بخش «مدیریت DNS» دامنه بسازید (راهنمای پایین می‌گوید کجا). همین مقدارها را دقیق کپی کنید:</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered dm-records small mb-2" dir="ltr">
+                        <thead class="table-light"><tr><th>Type (نوع)</th><th>Name / Host (نام)</th><th>Value / Points to (مقدار)</th><th>TTL</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td><code>A</code></td>
+                                <td><code>@@</code></td>
+                                <td><code id="dmIp">@serverIp</code> <button type="button" class="dm-copy dm-no-print" data-copy="dmIp" title="کپی"><i class="bi bi-clipboard"></i></button></td>
+                                <td>300 / Auto</td>
+                            </tr>
+                            <tr>
+                                <td><code>@(wwwIsCname ? "CNAME" : "A")</code></td>
+                                <td><code>www</code></td>
+                                <td><code id="dmWww">@wwwTarget</code> <button type="button" class="dm-copy dm-no-print" data-copy="dmWww" title="کپی"><i class="bi bi-clipboard"></i></button></td>
+                                <td>300 / Auto</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <ul class="small mb-0">
+                    <li>در بعضی پنل‌ها به‌جای <code>@@</code> باید نام را خالی بگذارید یا نام کامل دامنه (<span dir="ltr">@shownDomain</span>) را بنویسید.</li>
+                    <li>هر رکورد <code>A</code> یا <code>AAAA</code> دیگری که برای <code>@@</code> یا <code>www</code> هست (مثلاً صفحه پیش‌فرض فروشنده دامنه یا «Parking») را حذف کنید؛ وگرنه بخشی از بازدیدکنندگان به آن صفحه می‌روند.</li>
+                    <li>به رکوردهای <code>MX</code> و <code>TXT</code> (مربوط به ایمیل) دست نزنید.</li>
+                </ul>
+            }
+        </div>
+
+        <div class="panel-card mb-3 dm-guide">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> راهنمای قدم‌به‌قدم</h5>
+            <ol class="mb-3">
+                <li class="mb-1">دامنه را در کادر «دامنه شما» وارد و ذخیره کنید.</li>
+                <li class="mb-1">وارد پنل جایی شوید که DNS دامنه آنجاست (پایین توضیح داده شده) و بخش «مدیریت DNS» یا «رکوردها» را باز کنید.</li>
+                <li class="mb-1">رکوردهای قبلی <code>A</code> و <code>AAAA</code> مربوط به <code>@@</code> و <code>www</code> را حذف کنید.</li>
+                <li class="mb-1">دو رکورد جدول «رکوردهای DNS» را بسازید و ذخیره کنید.</li>
+                <li class="mb-1">صبر کنید: تغییر رکوردها معمولاً از چند دقیقه تا چند ساعت، و تغییر سرورهای نام (DNS Server) دامنه‌های ir تا ۲۴ ساعت (گاهی ۴۸ ساعت) طول می‌کشد.</li>
+                <li class="mb-1">سیستم هر ساعت خودکار بررسی می‌کند؛ دکمه «بررسی دوباره» هم همین حالا نتیجه را نشان می‌دهد و اگر ایرادی باشد می‌گوید چه چیزی را اصلاح کنید.</li>
+                <li>وقتی DNS درست شد، پشتیبانی نیکو خودکار خبردار می‌شود و اتصال نهایی و گواهی امنیتی SSL را انجام می‌دهد. نتیجه در همین صفحه و پیام بله اعلام می‌شود.</li>
+            </ol>
+
+            <h6 class="mb-2">DNS دامنه من کجاست؟</h6>
+            <details>
+                <summary>دامنه ir. که از ایرنیک (nic.ir) یا نمایندگی‌ها خریده‌ام</summary>
+                <p class="small mb-2">ایرنیک فقط ثبت‌کننده دامنه است و پنل رکورد DNS ندارد؛ در پنل ایرنیک برای هر دامنه فقط «سرورهای نام» (DNS Servers) تعیین می‌شود. رکوردها را باید در همان سرویسی بسازید که این سرورها مال آن است:</p>
+                <ul class="small">
+                    <li>اگر دامنه را از یک نمایندگی (شرکت‌های فروش دامنه و هاست) خریده‌اید، معمولاً سرورهای نام مال همان شرکت است؛ در پنل آن‌ها بخش «مدیریت DNS» را باز کنید.</li>
+                    <li>اگر هیچ سرویس DNS ندارید، ساده‌ترین راه ابر آروان است: در آروان ثبت‌نام و دامنه را اضافه کنید، دو سرور نامی را که آروان می‌دهد در پنل ایرنیک (بخش «تغییر سرورهای نام») جایگزین کنید و رکوردهای جدول را در بخش DNS آروان بسازید.</li>
+                </ul>
+            </details>
+            <details>
+                <summary>دامنه com، net و دیگر دامنه‌های بین‌المللی</summary>
+                <p class="small mb-0">وارد پنل فروشنده دامنه شوید، دامنه را انتخاب کنید و دنبال یکی از این عنوان‌ها بگردید: «مدیریت DNS»، <span dir="ltr">DNS Management</span>، <span dir="ltr">Zone Editor</span>، <span dir="ltr">Advanced DNS</span>. رکوردهای جدول را همان‌جا بسازید.</p>
+            </details>
+            <details>
+                <summary>دامنه را به ابر آروان یا کلادفلر وصل کرده‌ام</summary>
+                <ul class="small mb-0">
+                    <li>رکوردها را در بخش DNS همان سرویس بسازید.</li>
+                    <li>تا وقتی دامنه «فعال» نشده، پروکسی را خاموش بگذارید (در کلادفلر ابر خاکستری <span dir="ltr">DNS only</span>، در آروان ابر خاموش) تا بررسی خودکار و صدور SSL درست انجام شود.</li>
+                    <li>بعد از فعال شدن اگر خواستید پروکسی را روشن کنید و حالت SSL را روی <span dir="ltr">Full</span> بگذارید (نه <span dir="ltr">Flexible</span>).</li>
+                </ul>
+            </details>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0"><i class="bi bi-search"></i> وضعیت دامنه</h5>
+                @if (domain != null && state != DomainState.Active && !isDemo)
+                {
+                    using (Html.BeginForm("DomainRecheck", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "dm-no-print" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-sm btn-outline-primary" type="submit"><i class="bi bi-arrow-clockwise"></i> بررسی دوباره</button>
+                    }
+                }
+            </div>
+            @if (domain == null)
+            {
+                <p class="small text-muted mb-0">هنوز دامنه‌ای ثبت نکرده‌اید. بعد از ثبت، اینجا می‌بینید دامنه به کجا اشاره می‌کند و چه چیزی باید اصلاح شود.</p>
+            }
+            else if (check == null)
+            {
+                <p class="small text-muted mb-0">هنوز بررسی نشده است؛ «بررسی دوباره» را بزنید.</p>
+            }
+            else
+            {
+                <ul class="dm-check small mb-2">
+                    <li>
+                        <i class="bi @(check.RootOk ? "bi-check-circle-fill" : "bi-x-circle")"></i>
+                        <span><b dir="ltr">@check.Domain</b> → @if (check.RootIps.Count == 0) {<span>رکوردی پیدا نشد</span>} else {<code dir="ltr">@string.Join(", ", check.RootIps)</code>}@(check.ViaProxy ? " (از پشت CDN)" : "")</span>
+                    </li>
+                    <li>
+                        <i class="bi @(check.WwwOk ? "bi-check-circle-fill" : check.WwwIps.Count == 0 ? "bi-dash-circle" : "bi-x-circle")"></i>
+                        <span><b dir="ltr">www.@check.Domain</b> → @if (check.WwwIps.Count == 0) {<span>رکوردی پیدا نشد</span>} else {<code dir="ltr">@string.Join(", ", check.WwwIps)</code>}</span>
+                    </li>
+                </ul>
+                if (check.Problems.Any())
+                {
+                    <div class="small fw-bold mb-1">چه چیزی را اصلاح کنید:</div>
+                    <ul class="small mb-2">
+                        @foreach (var p in check.Problems) { <li>@Html.Raw(System.Text.RegularExpressions.Regex.Replace(HttpUtility.HtmlEncode(p), @"\b\d{1,3}(\.\d{1,3}){3}\b", "<code dir=\"ltr\">$0</code>"))</li> }
+                    </ul>
+                }
+                <div class="small text-muted">آخرین بررسی: @check.CheckedAt.ToShamsiText() ساعت @check.CheckedAt.ToString("HH:mm").ToFaDigits()@if (!string.IsNullOrEmpty(serverIp)) {<text> · IP درست: <code dir="ltr">@serverIp</code></text>}</div>
+            }
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-people"></i> چه کسی چه کاری انجام می‌دهد؟</h5>
+            <div class="dm-roles">
+                <div class="dm-role">
+                    <h6><i class="bi bi-person-check"></i> کارهای شما</h6>
+                    <ul>
+                        <li>خرید دامنه و تمدید به‌موقع آن</li>
+                        <li>ثبت دامنه در همین صفحه</li>
+                        <li>ساخت دو رکورد DNS</li>
+                    </ul>
+                </div>
+                <div class="dm-role">
+                    <h6><i class="bi bi-headset"></i> کارهای پشتیبانی نیکو</h6>
+                    <ul>
+                        <li>اتصال دامنه به سرور</li>
+                        <li>صدور و تمدید خودکار گواهی SSL</li>
+                        <li>با درست شدن DNS خودکار خبردار می‌شود</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌ها</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">تا وقتی دامنه فعال نشده، @site با آدرس رایگان کار می‌کند و چیزی از دست نمی‌رود.</li>
+                <li class="mb-1">اگر دامنه منقضی شود، @site روی آن باز نمی‌شود؛ تاریخ انقضا را در پنل خرید دامنه یادداشت کنید.</li>
+                <li class="mb-1">برای عوض کردن دامنه، دامنه تازه را جایگزین کنید؛ مراحل از نو شروع می‌شود و پشتیبانی خبردار می‌شود.</li>
+                <li>هر جا گیر کردید، از دکمه «کمک از پشتیبانی» تیکت بفرستید و تصویر صفحه DNS را پیوست کنید.</li>
+            </ul>
+        </div>
+
+        @if (state == DomainState.Active)
+        {
+            <div class="panel-card mb-3">
+                <h5 class="mb-2"><i class="bi bi-stars"></i> بعد از فعال شدن</h5>
+                <ul class="small mb-0">
+                    <li class="mb-1">دامنه را در سرچ کنسول گوگل ثبت و نقشه سایت را معرفی کنید؛ راهنما در <a href="@Url.Action("SeoGuide","ShopAdmin", new { company })">سئو و گوگل</a>.</li>
+                    @if (kind.IsShop)
+                    {
+                        <li class="mb-1">اگر به ترب وصل هستید، آدرس API روی دامنه تازه را از <a href="@Url.Action("Torob","ShopAdmin", new { company })">اتصال به ترب</a> در ترب جایگزین کنید.</li>
+                    }
+                    <li>آدرس تازه را در شبکه‌های اجتماعی، کارت ویزیت و تبلیغات خود بگذارید.</li>
+                </ul>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = document.getElementById(btn.getAttribute('data-copy')).textContent.trim();
+      var done = function () { btn.innerHTML = '<i class="bi bi-check2"></i>'; setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+    });
+  });
+  document.getElementById('dmPrint').addEventListener('click', function () {
+    document.querySelectorAll('.dm-guide details').forEach(function (d) { d.open = true; });
+    window.print();
+  });
+})();
+</script>

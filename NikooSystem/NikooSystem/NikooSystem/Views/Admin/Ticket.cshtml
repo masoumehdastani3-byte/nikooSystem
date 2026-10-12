@@ -1,0 +1,157 @@
+@model NikooSystem.Models.TicketPageVm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var t = Model.Ticket;
+    var store = Model.Store;
+    ViewBag.Title = "تیکت #" + t.Id.ToFa();
+    Func<DateTime, string> at = d => d.ToShamsiText() + " ساعت " + d.ToString("HH:mm").ToFaDigits();
+}
+<link href="@Url.Asset("~/Content/support.css")" rel="stylesheet" />
+<div class="sp" style="--sp-accent:#4f46e5">
+    <div class="adm-head">
+        <div>
+            <h1>@t.Subject</h1>
+            <p>تیکت #@t.Id.ToFa() · @SupportLabels.Category(t.Category) · از «@Model.StoreName»</p>
+        </div>
+        <div class="adm-head-actions">
+            <span class="sp-pill @SupportLabels.StatusTone(t.Status)">@SupportLabels.Status(t.Status, true)</span>
+            <a class="btn btn-link" href="@Url.Action("Tickets", "Admin")">بازگشت</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="adm-card">
+                <div class="sp-thread">
+                    @foreach (var m in Model.Messages)
+                    {
+                        <div class="sp-msg @(m.FromSupport ? "is-mine is-support" : "is-theirs")">
+                            <span class="sp-avatar"><i class="bi @(m.FromSupport ? "bi-headset" : "bi-shop")"></i></span>
+                            <div class="sp-bubble">
+                                <div class="sp-meta">
+                                    <strong>@(string.IsNullOrEmpty(m.AuthorName) ? (m.FromSupport ? "پشتیبانی" : Model.StoreName) : m.AuthorName)</strong>
+                                    @if (m.FromSupport) { <span>(پشتیبانی)</span> }
+                                    <span>@at(m.CreatedAt)</span>
+                                    @if (m.Via == NikooSystem.Models.TicketVia.Bale) { <span class="sp-via"><i class="bi bi-phone"></i> از بله</span> }
+                                </div>
+                                @if (!string.IsNullOrEmpty(m.Body))
+                                {
+                                    <div class="sp-body">@m.Body</div>
+                                }
+                                @if (m.ImageList.Length > 0)
+                                {
+                                    <div class="sp-images">
+                                        @foreach (var img in m.ImageList)
+                                        {
+                                            var src = Url.Action("TicketImage", "Admin", new { id = m.Id, name = img });
+                                            <a class="sp-image" href="@src" target="_blank" rel="noopener"><img src="@src" alt="تصویر پیوست" loading="lazy" /></a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="adm-card sp-reply">
+                @using (Html.BeginForm("AnswerTicket", "Admin", new { id = t.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <label class="adm-card-title d-block" for="answerBody">پاسخ پشتیبانی</label>
+                    <textarea class="form-control" id="answerBody" name="body" maxlength="4000" placeholder="سلام، وقت بخیر…"></textarea>
+                    @Html.Partial("_SupportUpload")
+                    <div class="sp-reply-foot">
+                        <span class="sp-reply-hint">
+                            @if (Model.BotReady && Model.BaleRecipients > 0)
+                            {
+                                <i class="bi bi-check2-all text-success"></i> @:پاسخ در پنل مشتری و در بله او (@Model.BaleRecipients.ToFa() حساب) فرستاده می‌شود.
+                            }
+                            else
+                            {
+                                <i class="bi bi-info-circle"></i> @:مشتری بله را وصل نکرده است؛ پاسخ را در پنل خود می‌بیند.
+                            }
+                        </span>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-primary" type="submit" name="close" value="true"><i class="bi bi-lock"></i> پاسخ و بستن</button>
+                            <button class="btn btn-primary" type="submit"><i class="bi bi-reply"></i> ارسال پاسخ</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="adm-card">
+                <div class="adm-card-title">مدیریت تیکت</div>
+                @using (Html.BeginForm("SetTicketStatus", "Admin", new { id = t.Id }, FormMethod.Post, new { @class = "mb-3" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <label class="form-label small text-muted" for="status">وضعیت</label>
+                    <div class="input-group">
+                        <select class="form-select" id="status" name="status">
+                            @foreach (NikooSystem.Models.TicketStatus s in Enum.GetValues(typeof(NikooSystem.Models.TicketStatus)))
+                            {
+                                <option value="@s" @(s == t.Status ? "selected" : null)>@SupportLabels.Status(s, true)</option>
+                            }
+                        </select>
+                        <button class="btn btn-outline-secondary" type="submit">ثبت</button>
+                    </div>
+                }
+                @using (Html.BeginForm("SetTicketPriority", "Admin", new { id = t.Id }, FormMethod.Post, new { @class = "mb-3" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <label class="form-label small text-muted" for="priority">اولویت</label>
+                    <div class="input-group">
+                        <select class="form-select" id="priority" name="priority">
+                            @foreach (var p in SupportLabels.Priorities)
+                            {
+                                <option value="@p.Key" @(p.Key == t.Priority ? "selected" : null)>@p.Value</option>
+                            }
+                        </select>
+                        <button class="btn btn-outline-secondary" type="submit">ثبت</button>
+                    </div>
+                }
+                <dl class="sp-facts">
+                    <dt>ثبت</dt><dd>@at(t.CreatedAt)</dd>
+                    <dt>آخرین پیام</dt><dd>@at(t.UpdatedAt)</dd>
+                    <dt>تعداد پیام</dt><dd>@t.MessageCount.ToFa()</dd>
+                    @if (t.ClosedAt.HasValue) { <dt>بسته شد</dt><dd>@at(t.ClosedAt.Value)</dd> }
+                </dl>
+                <hr />
+                @Html.PostButton("DeleteTicket", new { id = t.Id }, "حذف تیکت", "btn btn-outline-danger btn-sm", "این تیکت و همه پیام‌هایش حذف شود؟")
+            </div>
+
+            <div class="adm-card">
+                <div class="adm-card-title">سایت مشتری</div>
+                <dl class="sp-facts">
+                    <dt>نام</dt><dd>@Model.StoreName</dd>
+                    <dt>کد</dt><dd dir="ltr" class="text-end">@t.CompanyCode</dd>
+                    @if (store != null)
+                    {
+                        <dt>مالک</dt><dd>@(string.IsNullOrEmpty(store.OwnerName) ? "-" : store.OwnerName)</dd>
+                        if (!string.IsNullOrEmpty(store.OwnerMobile))
+                        {
+                            <dt>موبایل</dt><dd dir="ltr" class="text-end"><a href="tel:@store.OwnerMobile">@store.OwnerMobile</a></dd>
+                        }
+                        if (!string.IsNullOrEmpty(store.OwnerEmail))
+                        {
+                            <dt>ایمیل</dt><dd dir="ltr" class="text-end"><a href="mailto:@store.OwnerEmail">@store.OwnerEmail</a></dd>
+                        }
+                        <dt>وضعیت</dt><dd>@Html.Partial("_StoreStatus", store)</dd>
+                    }
+                    <dt>بله</dt><dd>@(Model.BaleRecipients > 0 ? Model.BaleRecipients.ToFa() + " حساب وصل" : "وصل نیست")</dd>
+                </dl>
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    @if (store != null)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="@Url.Action("Store", "Admin", new { id = t.CompanyCode })"><i class="bi bi-shop"></i> پرونده سایت</a>
+                    }
+                    <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Index", "Shop", new { company = t.CompanyCode })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+                    <a class="btn btn-outline-secondary btn-sm" href="@Url.Action("Tickets", "Admin", new { company = t.CompanyCode, state = "all" })"><i class="bi bi-clock-history"></i> تیکت‌های دیگر</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="@Url.Asset("~/Content/support.js")" defer></script>

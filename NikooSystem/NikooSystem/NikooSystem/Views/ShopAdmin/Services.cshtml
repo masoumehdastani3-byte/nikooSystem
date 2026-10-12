@@ -1,0 +1,49 @@
+﻿@model PagedList<StoreService>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "خدمات و تعرفه‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+}
+@Html.PageHeader("خدمات و تعرفه‌ها", "خدمت جدید", "EditService")
+<div class="panel-card">
+    @Html.GridToolbar("جستجوی عنوان خدمت…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>خدمت</th><th>مدت</th><th>هزینه</th><th>متخصصان</th><th>وضعیت</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    var names = s.StaffIds == null || s.StaffIds.Count == 0
+                        ? "همه متخصصان"
+                        : string.Join("، ", staff.Where(p => s.StaffIds.Contains(p.Id)).Select(p => p.Name));
+                    <tr>
+                        <td>
+                            <a class="fw-bold text-decoration-none" href="@Url.Action("EditService","ShopAdmin", new { company, id = s.Id })">@s.Title</a>
+                            @if (s.IsSample) { <span class="badge bg-light text-muted">نمونه</span> }
+                        </td>
+                        <td>@BookingTime.Duration(s.DurationMinutes)</td>
+                        <td>@(s.Price > 0 ? s.Price.ToToman() : "رایگان")</td>
+                        <td class="small">@names</td>
+                        <td>
+                            @if (s.IsActive) { <span class="badge bg-success">فعال</span> }
+                            else { <span class="badge bg-secondary">غیرفعال</span> }
+                        </td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Book", "Shop", new { company, serviceId = s.Id }), "bi-box-arrow-up-left", "صفحه رزرو این خدمت", "is-view", true)
+                            @Html.EditLink("EditService", s.Id)
+                            @Html.DeleteButton("DeleteService", s.Id, "خدمت «" + s.Title + "» حذف شود؟ نوبت‌های گرفته‌شده باقی می‌مانند.")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-clipboard-plus fs-3 d-block mb-1"></i>هنوز خدمتی تعریف نکرده‌اید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

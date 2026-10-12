@@ -1,0 +1,150 @@
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "رزرو نوبت";
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var services = (List<StoreService>)ViewBag.Services;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var deposits = (Dictionary<int, long>)ViewBag.Deposits;
+    var serviceId = (int?)ViewBag.ServiceId;
+    var staffId = (int?)ViewBag.StaffId;
+    if (serviceId.HasValue && services.All(s => s.Id != serviceId.Value)) { serviceId = null; }
+    if (staffId.HasValue && staff.All(p => p.Id != staffId.Value)) { staffId = null; }
+    if (!serviceId.HasValue && services.Count == 1) { serviceId = services[0].Id; }
+}
+<section class="bk-book">
+    <div class="container">
+        <div class="bk-book-head">
+            <h1><i class="bi bi-calendar-plus"></i> رزرو نوبت</h1>
+            <a class="hs-more" href="@Url.Action("Track","Shop", new { company })">قبلاً نوبت گرفته‌اید؟ پیگیری نوبت <i class="bi bi-arrow-left"></i></a>
+        </div>
+
+        @if (!services.Any())
+        {
+            <div class="cat-empty">
+                <i class="bi bi-calendar-x"></i>
+                <h3>فعلاً نوبت‌دهی آنلاین فعال نیست</h3>
+                <p>برای گرفتن نوبت با شماره <span dir="ltr">@settings.Phone</span> تماس بگیرید.</p>
+            </div>
+        }
+        else
+        {
+            using (Html.BeginForm("Book", "Shop", new { company }, FormMethod.Post, new { id = "bkForm", @class = "bk-wizard" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="cn-hp" aria-hidden="true">
+                    <label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+                </div>
+                <input type="hidden" name="date" id="bkDate" />
+                <input type="hidden" name="time" id="bkTime" />
+                <div class="row g-4">
+                    <div class="col-lg-8">
+                        <div class="bk-step" id="stepService">
+                            <div class="bk-step-title"><span>۱</span> چه خدمتی لازم دارید؟</div>
+                            <div class="bk-choices">
+                                @foreach (var s in services)
+                                {
+                                    <label class="bk-choice">
+                                        <input type="radio" name="serviceId" value="@s.Id" @(serviceId == s.Id ? "checked" : "")
+                                               data-title="@s.Title" data-duration="@BookingTime.Duration(s.DurationMinutes)"
+                                               data-price="@(s.Price > 0 ? s.Price.ToToman() : "رایگان")"
+                                               data-deposit="@(deposits[s.Id] > 0 ? deposits[s.Id].ToToman() : "")"
+                                               data-staff="@(string.Join(",", s.StaffIds ?? new List<int>()))" />
+                                        <span class="bk-choice-box">
+                                            <strong>@s.Title</strong>
+                                            <small><i class="bi bi-clock"></i> @BookingTime.Duration(s.DurationMinutes) · @(s.Price > 0 ? s.Price.ToToman() : "رایگان")</small>
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="bk-step" id="stepStaff">
+                            <div class="bk-step-title"><span>۲</span> نزد چه کسی؟</div>
+                            <div class="bk-choices bk-choices-staff">
+                                <label class="bk-choice">
+                                    <input type="radio" name="staffId" value="" @(staffId.HasValue ? "" : "checked") data-name="اولین متخصص آزاد" />
+                                    <span class="bk-choice-box bk-choice-any">
+                                        <span class="bk-avatar"><i class="bi bi-people"></i></span>
+                                        <span><strong>فرقی نمی‌کند</strong><small>اولین زمان خالی همه متخصصان</small></span>
+                                    </span>
+                                </label>
+                                @foreach (var p in staff)
+                                {
+                                    <label class="bk-choice" data-staff-option="@p.Id">
+                                        <input type="radio" name="staffId" value="@p.Id" @(staffId == p.Id ? "checked" : "") data-name="@p.Name" />
+                                        <span class="bk-choice-box">
+                                            @if (!string.IsNullOrWhiteSpace(p.PhotoUrl))
+                                            {
+                                                <img class="bk-avatar" src="@p.PhotoUrl" alt="" />
+                                            }
+                                            else
+                                            {
+                                                <span class="bk-avatar"><i class="bi bi-person"></i></span>
+                                            }
+                                            <span><strong>@p.Name</strong><small>@p.Title</small></span>
+                                        </span>
+                                    </label>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="bk-step" id="stepTime">
+                            <div class="bk-step-title"><span>۳</span> چه روز و ساعتی؟</div>
+                            <div class="bk-days" id="bkDays" data-url="@Url.Action("BookingDays","Shop", new { company })">
+                                <div class="bk-muted">اول خدمت را انتخاب کنید.</div>
+                            </div>
+                            <div class="bk-slots" id="bkSlots" data-url="@Url.Action("BookingSlots","Shop", new { company })"></div>
+                        </div>
+
+                        <div class="bk-step" id="stepInfo">
+                            <div class="bk-step-title"><span>۴</span> مشخصات شما</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bkName">نام و نام خانوادگی *</label>
+                                    <input class="form-control" id="bkName" name="customerName" maxlength="80" required autocomplete="name" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bkMobile">شماره موبایل *</label>
+                                    <input class="form-control" id="bkMobile" name="customerMobile" dir="ltr" maxlength="14" required inputmode="tel" autocomplete="tel" placeholder="09121234567" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="bkEmail">ایمیل (اختیاری)</label>
+                                    <input class="form-control" id="bkEmail" name="customerEmail" type="email" dir="ltr" maxlength="120" autocomplete="email" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label" for="bkNotes">توضیحات (اختیاری)</label>
+                                    <textarea class="form-control" id="bkNotes" name="notes" rows="2" maxlength="1000" placeholder="مثلاً علت مراجعه یا درخواست خاص"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-4">
+                        <aside class="bk-summary">
+                            <h2>خلاصه نوبت</h2>
+                            <dl>
+                                <dt>خدمت</dt><dd id="sumService">—</dd>
+                                <dt>متخصص</dt><dd id="sumStaff">—</dd>
+                                <dt>زمان</dt><dd id="sumWhen">—</dd>
+                                <dt>مدت</dt><dd id="sumDuration">—</dd>
+                                <dt>هزینه</dt><dd id="sumPrice">—</dd>
+                                <dt class="bk-deposit-row" hidden>بیعانه آنلاین</dt><dd class="bk-deposit-row" id="sumDeposit" hidden>—</dd>
+                            </dl>
+                            @if (!string.IsNullOrWhiteSpace(settings.BookingNotice))
+                            {
+                                <div class="bk-notice"><i class="bi bi-info-circle"></i> @settings.BookingNotice</div>
+                            }
+                            <button class="btn-wm w-100 bk-btn-lg" type="submit" id="bkSubmit" disabled><i class="bi bi-check2-circle"></i> <span>ثبت نوبت</span></button>
+                            <div class="small text-muted mt-2 text-center" id="bkHint">خدمت، روز و ساعت را انتخاب کنید.</div>
+                        </aside>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</section>
+
+@section scripts {
+<script src="@Url.Asset("~/Content/booking.js")"></script>
+}

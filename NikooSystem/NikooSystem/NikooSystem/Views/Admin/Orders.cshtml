@@ -1,38 +1,50 @@
-@model List<NikooSystem.Models.Order>
-@using NikooSystem.Helpers
+@model PagedList<NikooSystem.Models.Order>
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.Title = "سفارشات";
+    var statuses = Enum.GetValues(typeof(NikooSystem.Models.OrderStatus)).Cast<NikooSystem.Models.OrderStatus>()
+        .ToDictionary(s => s.ToString(), s => s.StatusText());
 }
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">سفارشات خرید</h2>
-    <div class="btn-group">
-        <a class="btn btn-sm btn-outline-secondary @(ViewBag.Status==null?"active":"")" href="@Url.Action("Orders","Admin")">همه</a>
-        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Orders","Admin", new { status = "Paid" })">پرداخت‌شده</a>
-        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Orders","Admin", new { status = "PendingPayment" })">در انتظار</a>
-        <a class="btn btn-sm btn-outline-secondary" href="@Url.Action("Orders","Admin", new { status = "Failed" })">ناموفق</a>
+<div class="adm-head">
+    <div>
+        <h1>سفارش‌ها</h1>
+        <p>خرید محصولات سایت و پرداخت اشتراک فروشگاه‌های آزمایشی</p>
     </div>
 </div>
-<div class="card border-0 shadow-sm">
+<div class="adm-card">
+    @Html.GridToolbar("جستجو در شماره، مشتری، موبایل یا محصول...", new GridSelect("status", "همه وضعیت‌ها", statuses))
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
                 <tr>
-                    <th>شماره</th><th>تاریخ</th><th>مشتری</th><th>موبایل</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th></th>
+                    @Html.SortHeader("number", "شماره")
+                    @Html.SortHeader("created", "تاریخ")
+                    @Html.SortHeader("customer", "مشتری")
+                    <th>موبایل</th>
+                    <th>محصول</th>
+                    @Html.SortHeader("amount", "مبلغ")
+                    <th>وضعیت</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
             @foreach (var o in Model)
             {
                 <tr>
-                    <td>@o.OrderNumber</td>
-                    <td>@o.CreatedAt.ToString("yyyy/MM/dd HH:mm")</td>
+                    <td class="adm-ltr">@o.OrderNumber</td>
+                    <td>@o.CreatedAt.ToShamsi() @o.CreatedAt.ToString("HH:mm")</td>
                     <td>@o.CustomerName</td>
-                    <td>@o.CustomerMobile</td>
-                    <td>@o.ProductTitle</td>
+                    <td class="adm-ltr">@o.CustomerMobile</td>
+                    <td>
+                        @o.ProductTitle
+                        @if (!string.IsNullOrEmpty(o.CompanyCode))
+                        {
+                            <a class="adm-chip is-blue text-decoration-none" href="@Url.Action("Store","Admin", new { id = o.CompanyCode })" title="اشتراک فروشگاه"><i class="bi bi-shop"></i> @o.CompanyCode</a>
+                        }
+                    </td>
                     <td>@o.Amount.ToToman()</td>
                     <td><span class="badge @o.Status.StatusBadgeClass()">@o.Status.StatusText()</span></td>
-                    <td><a href="@Url.Action("OrderDetails","Admin", new { id = o.Id })">جزئیات</a></td>
+                    <td class="row-actions">@Html.IconLink(Url.Action("OrderDetails", "Admin", new { id = o.Id }), "bi-eye", "جزئیات سفارش", "is-view")</td>
                 </tr>
             }
             @if (!Model.Any())
@@ -42,4 +54,5 @@
             </tbody>
         </table>
     </div>
+    @Html.Pager(Model)
 </div>

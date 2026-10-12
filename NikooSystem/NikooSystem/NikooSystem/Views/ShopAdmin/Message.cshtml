@@ -1,0 +1,35 @@
+@model StoreContactMessage
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "پیام " + Model.FullName;
+    var company = (string)ViewBag.CompanyCode;
+    var subject = string.IsNullOrEmpty(Model.Subject) ? "پاسخ به پیام شما" : "پاسخ: " + Model.Subject;
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">@(string.IsNullOrEmpty(Model.Subject) ? "پیام بدون موضوع" : Model.Subject)</h2>
+    <a class="btn-outline-store" href="@Url.Action("Messages", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> همه پیام‌ها</a>
+</div>
+<div class="panel-card">
+    <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+        <div>
+            <strong>@Model.FullName</strong>
+            <div class="small text-muted">@Model.CreatedAt.ToShamsi()</div>
+        </div>
+        <div class="row-actions">
+            @if (!string.IsNullOrEmpty(Model.Email))
+            {
+                @Html.IconLink("mailto:" + Model.Email + "?subject=" + Uri.EscapeDataString(subject), "bi-reply", "پاسخ با ایمیل " + Model.Email, "is-edit")
+            }
+            @if (!string.IsNullOrEmpty(Model.Mobile))
+            {
+                @Html.IconLink("tel:" + Model.Mobile, "bi-telephone", "تماس با " + Model.Mobile, "is-ok")
+            }
+            @Html.DeleteButton("DeleteMessage", Model.Id, "این پیام حذف شود؟")
+        </div>
+    </div>
+    <dl class="row small">
+        @if (!string.IsNullOrEmpty(Model.Mobile)) { <dt class="col-sm-2">موبایل</dt><dd class="col-sm-10" dir="ltr" style="text-align:right">@Model.Mobile</dd> }
+        @if (!string.IsNullOrEmpty(Model.Email)) { <dt class="col-sm-2">ایمیل</dt><dd class="col-sm-10" dir="ltr" style="text-align:right">@Model.Email</dd> }
+    </dl>
+    <div class="p-3 rounded bg-light" style="white-space:pre-line">@Model.Message</div>
+</div>

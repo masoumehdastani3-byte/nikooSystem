@@ -1,0 +1,70 @@
+@model PagedList<StorePostComment>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "نظرات خوانندگان";
+    var company = (string)ViewBag.CompanyCode;
+    var posts = (Dictionary<int, StorePost>)ViewBag.Posts;
+}
+@Html.PageHeader("نظرات خوانندگان")
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در متن نظر، نام یا ایمیل…",
+        new GridSelect("state", "همه نظرها", new Dictionary<string, string> { ["pending"] = "در انتظار تأیید", ["approved"] = "منتشرشده" }))
+    <div class="comment-list">
+        @foreach (var c in Model)
+        {
+            StorePost post;
+            posts.TryGetValue(c.PostId, out post);
+            <div class="comment-row @(c.IsApproved ? "" : "is-pending")">
+                <div class="d-flex justify-content-between align-items-start gap-2 flex-wrap">
+                    <div>
+                        <strong>@c.AuthorName</strong>
+                        @if (!string.IsNullOrEmpty(c.AuthorEmail)) { <span class="small text-muted" dir="ltr">&lt;@c.AuthorEmail&gt;</span> }
+                        @if (!c.IsApproved) { <span class="badge bg-warning text-dark">در انتظار تأیید</span> }
+                        <div class="small text-muted">
+                            @c.CreatedAt.ToShamsi() ·
+                            @if (post != null)
+                            {
+                                <a href="@Url.RouteUrl("ShopPost", new { company, slug = post.Slug })#comments" target="_blank" rel="noopener">@post.Title</a>
+                            }
+                            else
+                            {
+                                <span>مطلب حذف‌شده</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="row-actions">
+                        @if (c.IsApproved)
+                        {
+                            @Html.IconPost("ToggleComment", new { id = c.Id, approved = false }, "bi-eye-slash", "مخفی کردن", "is-toggle")
+                        }
+                        else
+                        {
+                            @Html.IconPost("ToggleComment", new { id = c.Id, approved = true }, "bi-check2-circle", "تأیید و انتشار", "is-ok")
+                        }
+                        <button type="button" class="icon-btn is-edit" title="پاسخ" aria-label="پاسخ" data-bs-toggle="collapse" data-bs-target="#reply-@c.Id"><i class="bi bi-reply"></i></button>
+                        @Html.DeleteButton("DeleteComment", c.Id, "این نظر حذف شود؟")
+                    </div>
+                </div>
+                <p class="mt-2 mb-1" style="white-space:pre-line">@c.Body</p>
+                @if (!string.IsNullOrEmpty(c.AdminReply))
+                {
+                    <div class="comment-reply"><i class="bi bi-reply-fill"></i> <strong>پاسخ تحریریه:</strong> @c.AdminReply</div>
+                }
+                <div class="collapse mt-2" id="reply-@c.Id">
+                    @using (Html.BeginForm("ReplyComment", "ShopAdmin", new { company }, FormMethod.Post))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@c.Id" />
+                        <textarea class="form-control mb-2" name="reply" rows="2" maxlength="2000" placeholder="پاسخ شما زیر نظر نمایش داده می‌شود؛ خالی بگذارید تا پاسخ حذف شود">@c.AdminReply</textarea>
+                        <button class="btn-store-sm" type="submit"><i class="bi bi-reply"></i> ثبت پاسخ</button>
+                    }
+                </div>
+            </div>
+        }
+        @if (Model.Count == 0)
+        {
+            <div class="text-center text-muted py-5"><i class="bi bi-chat-left-text fs-2 d-block mb-2"></i>نظری پیدا نشد.</div>
+        }
+    </div>
+    @Html.Pager(Model)
+</div>

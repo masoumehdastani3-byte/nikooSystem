@@ -1,9 +1,9 @@
-@model NikooSystem.Models.Store.StoreAttributeDef
+@model StoreAttributeDef
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = Model.Id > 0 ? "ویرایش خصوصیت" : "خصوصیت جدید";
     var company = (string)ViewBag.CompanyCode;
-    var cats = (IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories;
+    var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
     var selected = new HashSet<int>(Model.CategoryIds ?? new List<int>());
 }
 <h2 class="mb-3">@ViewBag.Title</h2>
@@ -23,25 +23,30 @@
         </div>
         <div class="col-md-8"><label class="form-label">گزینه‌ها (با کاما برای نوع انتخابی)</label>@Html.TextBoxFor(m => m.Options, new { @class = "form-control", placeholder = "S,M,L" })</div>
         <div class="col-md-4"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
-        <div class="col-12 form-check"><label><input type="checkbox" name="IsFilterable" value="true" @(Model.IsFilterable?"checked":"") /> قابل فیلتر در فروشگاه</label><input type="hidden" name="IsFilterable" value="false" /></div>
+        <div class="col-12 form-check">@Html.BoolField("IsFilterable", Model.IsFilterable, "قابل فیلتر در فروشگاه")</div>
         <div class="col-12">
             <label class="form-label">اتصال به گروه‌های کالا</label>
-            <div class="border rounded p-3" style="max-height:220px;overflow:auto;">
-                <div class="text-muted small mb-2">اگر هیچ گروهی انتخاب نشود، خصوصیت برای همه گروه‌ها نمایش داده می‌شود.</div>
-                @foreach (var c in cats.OrderBy(x => x.SortOrder))
-                {
-                    <div class="form-check">
-                        <label class="form-check-label">
-                            <input class="form-check-input" type="checkbox" name="categoryIds" value="@c.Id" @(selected.Contains(c.Id) ? "checked" : null) />
-                            @(c.ParentId.HasValue ? "— " : "")@c.Title
-                        </label>
-                    </div>
-                }
+            <div class="text-muted small mb-2">اگر هیچ گروهی انتخاب نشود، خصوصیت برای همه گروه‌ها نمایش داده می‌شود.</div>
+            <div class="qm-field is-block">
+                <div class="border rounded p-3" style="max-height:220px;overflow:auto;" data-qm="categories" data-qm-name="categoryIds"
+                     data-qm-empty="هنوز گروهی ندارید؛ با دکمه کناری گروه بسازید.">
+                    @foreach (var c in cats)
+                    {
+                        <div class="form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" name="categoryIds" value="@c.Id" @(selected.Contains(c.Id) ? "checked" : null) />
+                                @c.TreeTitle()
+                            </label>
+                        </div>
+                    }
+                    @if (!cats.Any())
+                    {
+                        <span class="text-muted small">هنوز گروهی ندارید؛ با دکمه کناری گروه بسازید.</span>
+                    }
+                </div>
+                @Html.QuickManage("categories", "گروه‌ها")
             </div>
         </div>
-        <div class="col-12">
-            <button class="btn-store" type="submit">ذخیره</button>
-            <a class="btn-outline-store" href="@Url.Action("Attributes","ShopAdmin", new { company })">بازگشت</a>
-        </div>
+        <div class="col-12">@Html.FormActions("Attributes")</div>
     </div>
 }

@@ -1,0 +1,195 @@
+@model StorePost
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var category = ViewBag.Category as StoreCategory;
+    var comments = (ViewBag.Comments as IEnumerable<StorePostComment>)?.ToList() ?? new List<StorePostComment>();
+    var related = (ViewBag.Related as IEnumerable<StorePost>)?.ToList() ?? new List<StorePost>();
+    var popular = (ViewBag.Popular as IEnumerable<StorePost>)?.ToList() ?? new List<StorePost>();
+    var shareUrl = (string)ViewBag.ShareUrl;
+    var shareText = Uri.EscapeDataString(Model.Title);
+    var shareLink = Uri.EscapeDataString(shareUrl);
+    ViewBag.Title = Model.Title;
+}
+
+<article class="cn-article">
+    <div class="container">
+        <div class="cn-layout">
+            <div class="cn-main">
+                <nav class="cat-breadcrumb" aria-label="مسیر">
+                    <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
+                    <i class="bi bi-chevron-left"></i>
+                    <a href="@Url.Action("Blog","Shop", new { company })">مطالب</a>
+                    @if (category != null)
+                    {
+                        <i class="bi bi-chevron-left"></i>
+                        <a href="@Url.Action("Blog","Shop", new { company, categoryId = category.Id })">@category.Title</a>
+                    }
+                </nav>
+
+                <header class="cn-article-head">
+                    @if (!string.IsNullOrWhiteSpace(Model.Kicker))
+                    {
+                        <div class="cn-kicker">@Model.Kicker</div>
+                    }
+                    <h1>@Model.Title</h1>
+                    @if (!string.IsNullOrWhiteSpace(Model.Summary))
+                    {
+                        <p class="cn-lead">@Model.Summary</p>
+                    }
+                    <div class="cn-meta">
+                        @if (!string.IsNullOrWhiteSpace(Model.Author))
+                        {
+                            <span><i class="bi bi-person"></i> @Model.Author</span>
+                        }
+                        <span><i class="bi bi-calendar3"></i> @Model.PublishedAt.ToShamsiText() · @Model.PublishedAt.ToString("HH:mm").ToFaDigits()</span>
+                        <span><i class="bi bi-eye"></i> @Model.ViewCount.ToFa() بازدید</span>
+                        @if (Model.AllowComments)
+                        {
+                            <a href="#comments"><i class="bi bi-chat-dots"></i> @comments.Count.ToFa() نظر</a>
+                        }
+                    </div>
+                </header>
+
+                @if (!string.IsNullOrWhiteSpace(Model.CoverImageUrl))
+                {
+                    <figure class="cn-cover"><img src="@Model.CoverImageUrl" alt="@Model.Title" /></figure>
+                }
+
+                <div class="cn-body">@Html.Raw(Model.BodyHtml)</div>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Source))
+                {
+                    <p class="cn-source"><i class="bi bi-link-45deg"></i> منبع: @Model.Source</p>
+                }
+
+                <div class="cn-article-foot">
+                    @if (Model.TagList().Any())
+                    {
+                        <div class="cn-tags">
+                            <i class="bi bi-tags"></i>
+                            @foreach (var tag in Model.TagList())
+                            {
+                                <a href="@Url.Action("Blog","Shop", new { company, tag })">@tag</a>
+                            }
+                        </div>
+                    }
+                    <div class="cn-share">
+                        <span>اشتراک‌گذاری:</span>
+                        <a href="https://t.me/share/url?url=@shareLink&text=@shareText" target="_blank" rel="noopener" title="تلگرام"><i class="bi bi-telegram"></i></a>
+                        <a href="https://wa.me/?text=@(shareText)%20@(shareLink)" target="_blank" rel="noopener" title="واتساپ"><i class="bi bi-whatsapp"></i></a>
+                        <a href="https://twitter.com/intent/tweet?url=@shareLink&text=@shareText" target="_blank" rel="noopener" title="توییتر"><i class="bi bi-twitter"></i></a>
+                        <a href="https://www.linkedin.com/sharing/share-offsite/?url=@shareLink" target="_blank" rel="noopener" title="لینکدین"><i class="bi bi-linkedin"></i></a>
+                        <button type="button" data-copy="@shareUrl" title="کپی لینک"><i class="bi bi-link-45deg"></i></button>
+                    </div>
+                </div>
+
+                @if (related.Any())
+                {
+                    <section class="cn-related">
+                        <h2 class="cn-block-title">مطالب مرتبط</h2>
+                        <div class="cn-grid cn-grid-4">
+                            @foreach (var p in related)
+                            {
+                                @Html.Partial("_PostCard", p, new ViewDataDictionary(ViewData) { { "compact", true } })
+                            }
+                        </div>
+                    </section>
+                }
+
+                @if (Model.AllowComments)
+                {
+                    <section class="cn-comments" id="comments">
+                        <h2 class="cn-block-title">نظرات خوانندگان <small>(@comments.Count.ToFa())</small></h2>
+                        @if (!comments.Any())
+                        {
+                            <p class="text-muted">هنوز نظری ثبت نشده؛ اولین نفر باشید.</p>
+                        }
+                        @foreach (var c in comments)
+                        {
+                            <div class="cn-comment">
+                                <div class="cn-comment-head">
+                                    <strong><i class="bi bi-person-circle"></i> @c.AuthorName</strong>
+                                    <span>@c.CreatedAt.ToShamsiText()</span>
+                                </div>
+                                <p>@c.Body</p>
+                                @if (!string.IsNullOrWhiteSpace(c.AdminReply))
+                                {
+                                    <div class="cn-comment-reply">
+                                        <strong><i class="bi bi-reply"></i> پاسخ @settings.StoreName</strong>
+                                        <p>@c.AdminReply</p>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        <div class="cn-comment-form">
+                            <h3>نظر شما</h3>
+                            @using (Html.BeginForm("AddComment", "Shop", new { company }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="postId" value="@Model.Id" />
+                                <div class="cn-hp" aria-hidden="true">
+                                    <label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">نام *</label>
+                                        <input class="form-control" name="authorName" maxlength="80" required />
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">ایمیل (نمایش داده نمی‌شود)</label>
+                                        <input class="form-control" type="email" name="authorEmail" maxlength="120" dir="ltr" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label">متن نظر *</label>
+                                        <textarea class="form-control" name="body" rows="4" maxlength="2000" required></textarea>
+                                    </div>
+                                </div>
+                                if (settings.ModerateComments)
+                                {
+                                    <p class="small text-muted mt-2 mb-0"><i class="bi bi-info-circle"></i> نظرها پس از تأیید تحریریه منتشر می‌شوند.</p>
+                                }
+                                <button class="btn-wm mt-3" type="submit"><i class="bi bi-chat-dots"></i> ارسال نظر</button>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+
+            <aside class="cn-aside">
+                @if (popular.Any())
+                {
+                    <div class="cn-box">
+                        <h3><i class="bi bi-graph-up"></i> پربازدیدترین‌ها</h3>
+                        <ol class="cn-ranked">
+                            @foreach (var p in popular)
+                            {
+                                <li><a href="@Url.RouteUrl("ShopPost", new { company, slug = p.Slug })">@p.Title</a></li>
+                            }
+                        </ol>
+                    </div>
+                }
+                <div class="cn-box cn-box-cta">
+                    <h3><i class="bi bi-rss"></i> همیشه به‌روز باشید</h3>
+                    <p>آخرین مطالب را در نرم‌افزار خبرخوان خود دنبال کنید.</p>
+                    <a class="btn-wm w-100" href="@Url.Action("Rss","Shop", new { company })">خوراک RSS</a>
+                </div>
+            </aside>
+        </div>
+    </div>
+</article>
+
+@section scripts {
+<script>
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('[data-copy]');
+  if (!btn || !navigator.clipboard) return;
+  navigator.clipboard.writeText(btn.getAttribute('data-copy')).then(function () {
+    btn.classList.add('is-copied');
+    setTimeout(function () { btn.classList.remove('is-copied'); }, 1500);
+  });
+});
+</script>
+}

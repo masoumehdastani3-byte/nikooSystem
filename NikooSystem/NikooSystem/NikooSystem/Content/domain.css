@@ -1,0 +1,64 @@
+/* Connecting a custom domain: the «دامنه اختصاصی» guide of the store panel and «دامنه‌های مشتریان» of Nikoo's panel. */
+
+.dm-steps { list-style: none; padding: 0; margin: 0 0 1rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; counter-reset: dm; }
+.dm-step {
+    position: relative; padding: .8rem .75rem .75rem; border-radius: 14px;
+    background: #fff; border: 1px solid #e5e7eb; text-align: center; font-size: .85rem; color: #6b7280;
+}
+.dm-step .dm-dot {
+    width: 34px; height: 34px; margin: 0 auto .4rem; border-radius: 50%;
+    display: grid; place-items: center; font-size: 1rem; background: #f1f5f9; color: #64748b;
+}
+.dm-step strong { display: block; color: #1f2937; font-size: .9rem; margin-bottom: .15rem; }
+.dm-step .dm-who { display: inline-block; margin-top: .3rem; padding: .05rem .5rem; border-radius: 999px; background: #f1f5f9; font-size: .72rem; }
+.dm-step.is-done { border-color: #b7e4c7; background: #f3fbf6; }
+.dm-step.is-done .dm-dot { background: #198754; color: #fff; }
+.dm-step.is-current { border-color: #f59e0b; box-shadow: 0 6px 18px rgba(245, 158, 11, .15); }
+.dm-step.is-current .dm-dot { background: #f59e0b; color: #fff; }
+.dm-step.is-support.is-current { border-color: #3b82f6; box-shadow: 0 6px 18px rgba(59, 130, 246, .15); }
+.dm-step.is-support.is-current .dm-dot { background: #3b82f6; }
+@media (max-width: 767px) { .dm-steps { grid-template-columns: repeat(2, 1fr); } }
+
+.dm-status { display: flex; gap: .85rem; align-items: flex-start; padding: 1rem 1.1rem; border-radius: 14px; border: 1px solid #e5e7eb; background: #fff; margin-bottom: 1rem; }
+.dm-status > i { font-size: 1.8rem; line-height: 1; }
+.dm-status.is-dns { border-color: #fcd9a0; background: #fffaf0; }
+.dm-status.is-dns > i { color: #d97706; }
+.dm-status.is-support { border-color: #bfdbfe; background: #f5f9ff; }
+.dm-status.is-support > i { color: #2563eb; }
+.dm-status.is-active { border-color: #b7e4c7; background: #f3fbf6; }
+.dm-status.is-active > i { color: #198754; }
+
+.dm-records td, .dm-records th { vertical-align: middle; }
+.dm-records code { font-size: .95rem; }
+.dm-copy { border: 0; background: transparent; color: #6b7280; padding: 0 .3rem; }
+.dm-copy:hover { color: #111827; }
+
+.dm-check { list-style: none; padding: 0; margin: 0; }
+.dm-check li { display: flex; gap: .5rem; align-items: baseline; padding: .3rem 0; }
+.dm-check .bi-check-circle-fill { color: #198754; }
+.dm-check .bi-x-circle { color: #dc2626; }
+.dm-check .bi-dash-circle { color: #9ca3af; }
+
+.dm-roles { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.dm-role { border-radius: 12px; padding: .85rem 1rem; background: #f8fafc; border: 1px solid #e5e7eb; }
+.dm-role h6 { margin-bottom: .4rem; }
+.dm-role ul { margin: 0; padding-inline-start: 1.1rem; font-size: .88rem; }
+@media (max-width: 575px) { .dm-roles { grid-template-columns: 1fr; } }
+
+.dm-guide details { border: 1px solid #e5e7eb; border-radius: 12px; padding: .6rem .9rem; margin-bottom: .5rem; background: #fff; }
+.dm-guide summary { font-weight: 700; cursor: pointer; }
+.dm-guide details[open] summary { margin-bottom: .5rem; }
+.dm-guide ol, .dm-guide ul { margin-bottom: 0; }
+
+.dm-cmd { direction: ltr; text-align: left; font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace; background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: .6rem .8rem; font-size: .82rem; white-space: pre-wrap; word-break: break-all; margin: .35rem 0 .6rem; }
+
+.dm-print-only { display: none; }
+@media print {
+    .admin-side, .adm-side, .adm-top, .trial-banner, .storage-banner, .tut-launch, .dm-no-print, .alert-dismissible { display: none !important; }
+    .admin-shell, .adm-shell { display: block !important; }
+    .admin-main, .adm-main { padding: 0 !important; margin: 0 !important; width: 100% !important; }
+    .dm-print-only { display: block; }
+    .panel-card, .dm-guide details { break-inside: avoid; box-shadow: none !important; }
+    .dm-guide details > *:not(summary) { display: block !important; }
+    body { background: #fff !important; }
+}

@@ -1,22 +1,20 @@
-@model NikooSystem.Models.Store.StoreProduct
-@using NikooSystem.Helpers
+@model StoreProduct
 @{
     var company = (string)ViewBag.CompanyCode;
     var p = Model;
-    var images = (p.Images ?? new List<NikooSystem.Models.Store.StoreProductImage>()).OrderBy(i => i.SortOrder).ToList();
+    var images = (p.Images ?? new List<StoreProductImage>()).OrderBy(i => i.SortOrder).ToList();
     var img = images.FirstOrDefault();
     var hoverImg = images.Skip(1).FirstOrDefault();
-    var reviews = NikooSystem.Services.TenantStore.GetProductReviews(company, p.Id);
-    var rating = reviews.Any() ? reviews.Average(r => r.Rating) : 0;
-    var onSale = p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price;
-    var outOfStock = p.Stock <= 0;
+    var rating = StoreRatings.For(company).Of(p.Id);
+    var onSale = p.IsOnSale();
+    var digital = p.IsDigital();
+    var outOfStock = !digital && p.Stock <= 0;
     var url = Url.Action("Product", "Shop", new { company, slug = p.Slug });
 }
-<article class="wm-product @(outOfStock ? "is-out" : "")">
+<article class="wm-product @(outOfStock ? "is-out" : "") @(digital ? "is-digital" : "")">
     @if (onSale && !outOfStock)
     {
-        var off = (int)Math.Round(100.0 * (p.CompareAtPrice.Value - p.Price) / p.CompareAtPrice.Value);
-        <span class="wm-badge">٪@off تخفیف</span>
+        <span class="wm-badge">٪@p.DiscountPercent() تخفیف</span>
     }
     @if (outOfStock)
     {
@@ -28,23 +26,31 @@
         {
             <img class="alt" src="@(hoverImg.ThumbUrl ?? hoverImg.LargeUrl)" alt="" loading="lazy" aria-hidden="true" />
         }
+        @if (digital)
+        {
+            <span class="wm-type"><i class="bi @p.ProductType.TypeIcon()"></i> @p.ProductType.TypeText()</span>
+        }
     </a>
     <div class="body">
         <h3><a href="@url">@p.Title</a></h3>
-        @if (!string.IsNullOrWhiteSpace(p.ShortDescription))
+        @if (digital && !string.IsNullOrWhiteSpace(p.Author))
+        {
+            <div class="wm-meta"><i class="bi bi-person"></i> @p.Author</div>
+        }
+        else if (!string.IsNullOrWhiteSpace(p.ShortDescription))
         {
             <div class="wm-meta">@p.ShortDescription</div>
         }
-        @if (rating > 0)
+        @if (rating.Count > 0)
         {
-            <div class="wm-rating"><i class="bi bi-star-fill"></i> @rating.ToString("0.0") <span class="wm-rating-count">(@reviews.Count)</span></div>
+            <div class="wm-rating"><i class="bi bi-star-fill"></i> @rating.Average.ToString("0.0") <span class="wm-rating-count">(@rating.Count)</span></div>
         }
         <div class="wm-price">
             @if (onSale)
             {
                 <del>@p.CompareAtPrice.Value.ToToman()</del>
             }
-            @p.Price.ToToman()
+            @(p.Price == 0 ? "رایگان" : p.Price.ToToman())
         </div>
         @if (outOfStock)
         {
@@ -57,7 +63,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="productId" value="@p.Id" />
                 <input type="hidden" name="quantity" value="1" />
-                <button class="btn-wm-cart" type="submit"><i class="bi bi-bag"></i> <span>افزودن به سبد</span></button>
+                <button class="btn-wm-cart" type="submit"><i class="bi @(digital ? "bi-cart-plus" : "bi-bag")"></i> <span>@(digital ? "خرید" : "افزودن به سبد")</span></button>
             }
         }
     </div>

@@ -1,30 +1,31 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreProduct>
-@using NikooSystem.Models.Store
+@model PagedList<StoreProduct>
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var query = (CatalogQuery)ViewBag.Query;
     var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).OrderBy(c => c.SortOrder).ToList();
     var counts = (Dictionary<int, int>)ViewBag.CategoryCounts;
     var category = ViewBag.Category as StoreCategory;
-    int? categoryId = ViewBag.CategoryId as int?;
+    int? categoryId = category?.Id;
     var collection = ViewBag.Collection as StoreCollection;
-    var q = ViewBag.Q as string;
-    var sort = (ViewBag.Sort as string) ?? "newest";
-    long? minPrice = ViewBag.MinPrice as long?;
-    long? maxPrice = ViewBag.MaxPrice as long?;
-    var inStock = (bool)ViewBag.InStock;
-    var onSale = (bool)ViewBag.OnSale;
-    var page = (int)ViewBag.Page;
-    var totalPages = (int)ViewBag.TotalPages;
-    var totalCount = (int)ViewBag.TotalCount;
+    var q = query.Q;
+    var sort = string.IsNullOrEmpty(query.Sort) ? "newest" : query.Sort;
+    long? minPrice = query.MinPrice;
+    long? maxPrice = query.MaxPrice;
+    var inStock = query.InStock;
+    var onSale = query.OnSale;
+    var type = query.Type;
+    var totalCount = Model.TotalCount;
     var fa = System.Globalization.CultureInfo.GetCultureInfo("fa-IR");
+    var allLabel = kind.IsDigital ? "همه دوره‌ها و کتاب‌ها" : "همه محصولات";
 
-    ViewBag.Title = collection != null ? collection.Title : category != null ? category.Title : "همه محصولات";
+    ViewBag.Title = collection != null ? collection.Title : category != null ? category.Title : type.HasValue ? type.Value.TypeText() : allLabel;
     ViewBag.MetaDescription = collection != null && !string.IsNullOrWhiteSpace(collection.Description)
         ? collection.Description
         : collection != null || category != null
             ? "خرید " + ViewBag.Title + " از " + ((StoreSettings)ViewBag.Settings).StoreName
-            : "همه محصولات " + ((StoreSettings)ViewBag.Settings).StoreName;
+            : allLabel + " " + ((StoreSettings)ViewBag.Settings).StoreName;
 
     var sorts = new[]
     {
@@ -35,24 +36,26 @@
         new { Id = "price_desc", Title = "گران‌ترین" },
         new { Id = "rating", Title = "بیشترین امتیاز" }
     };
-    var hasFilters = categoryId.HasValue || collection != null || !string.IsNullOrWhiteSpace(q) || minPrice.HasValue || maxPrice.HasValue || inStock || onSale;
+    var hasFilters = categoryId.HasValue || collection != null || !string.IsNullOrWhiteSpace(q) || minPrice.HasValue || maxPrice.HasValue || inStock || onSale || type.HasValue;
     var roots = cats.Where(c => c.ParentId == null).ToList();
 }
 @functions {
     /// <summary>آدرس همین صفحه با فیلترهای فعلی؛ مقدار null یک فیلتر را حذف می‌کند</summary>
     string CatalogUrl(object overrides)
     {
+        var query = (CatalogQuery)ViewBag.Query;
         var values = new System.Web.Routing.RouteValueDictionary
         {
             { "company", ViewBag.CompanyCode },
-            { "categoryId", ViewBag.CategoryId },
-            { "collectionId", ViewBag.CollectionId },
-            { "q", ViewBag.Q },
-            { "sort", ViewBag.Sort },
-            { "minPrice", ViewBag.MinPrice },
-            { "maxPrice", ViewBag.MaxPrice },
-            { "inStock", (bool)ViewBag.InStock ? (object)true : null },
-            { "onSale", (bool)ViewBag.OnSale ? (object)true : null },
+            { "categoryId", ViewBag.Category == null ? null : (object)((StoreCategory)ViewBag.Category).Id },
+            { "collectionId", ViewBag.Collection == null ? null : (object)((StoreCollection)ViewBag.Collection).Id },
+            { "q", query.Q },
+            { "sort", query.Sort },
+            { "minPrice", query.MinPrice },
+            { "maxPrice", query.MaxPrice },
+            { "inStock", query.InStock ? (object)true : null },
+            { "onSale", query.OnSale ? (object)true : null },
+            { "type", query.Type },
             { "previewTemplate", ViewBag.PreviewTemplate }
         };
         foreach (var kv in new System.Web.Routing.RouteValueDictionary(overrides))
@@ -76,13 +79,13 @@
             <i class="bi bi-chevron-left"></i>
             @if (category != null || collection != null)
             {
-                <a href="@CatalogUrl(new { categoryId = (int?)null, collectionId = (int?)null })">محصولات</a>
+                <a href="@CatalogUrl(new { categoryId = (int?)null, collectionId = (int?)null })">@kind.ItemsLabel</a>
                 <i class="bi bi-chevron-left"></i>
                 <span>@ViewBag.Title</span>
             }
             else
             {
-                <span>محصولات</span>
+                <span>@kind.ItemsLabel</span>
             }
         </nav>
         <h1>@ViewBag.Title</h1>
@@ -90,7 +93,7 @@
         {
             <p class="cat-hero-desc">@collection.Description</p>
         }
-        <p>@totalCount.ToString("N0", fa) محصول@(string.IsNullOrWhiteSpace(q) ? "" : " برای «" + q + "»")</p>
+        <p>@totalCount.ToString("N0", fa) مورد@(string.IsNullOrWhiteSpace(q) ? "" : " برای «" + q + "»")</p>
     </div>
 </div>
 
@@ -112,14 +115,29 @@
                     <div class="cat-block">
                         <div class="cat-search">
                             <i class="bi bi-search"></i>
-                            <input type="search" name="q" value="@q" placeholder="جستجو در محصولات..." />
+                            <input type="search" name="q" value="@q" placeholder="@(kind.IsDigital ? "جستجو در عنوان، نویسنده یا مدرس..." : "جستجو در محصولات...")" />
                         </div>
                     </div>
+
+                    @if (kind.IsDigital)
+                    {
+                        <div class="cat-block">
+                            <h3>نوع</h3>
+                            <ul class="cat-tree">
+                                <li><a class="@(type == null ? "active" : "")" href="@CatalogUrl(new { type = (StoreProductType?)null })">همه</a></li>
+                                @foreach (var t in kind.ProductTypes())
+                                {
+                                    <li><a class="@(type == t ? "active" : "")" href="@CatalogUrl(new { type = t })"><i class="bi @t.TypeIcon()"></i> @t.TypeText()</a></li>
+                                }
+                            </ul>
+                            @if (type.HasValue) { <input type="hidden" name="type" value="@type" /> }
+                        </div>
+                    }
 
                     <div class="cat-block">
                         <h3>دسته‌بندی</h3>
                         <ul class="cat-tree">
-                            <li><a class="@(categoryId == null ? "active" : "")" href="@CatalogUrl(new { categoryId = (int?)null })">همه محصولات</a></li>
+                            <li><a class="@(categoryId == null ? "active" : "")" href="@CatalogUrl(new { categoryId = (int?)null })">@allLabel</a></li>
                             @foreach (var root in roots)
                             {
                                 var children = cats.Where(c => c.ParentId == root.Id).ToList();
@@ -155,10 +173,13 @@
                     </div>
 
                     <div class="cat-block">
-                        <label class="cat-switch">
-                            <input type="checkbox" name="inStock" value="true" @(inStock ? "checked" : null) />
-                            <span>فقط کالاهای موجود</span>
-                        </label>
+                        @if (kind.IsShop)
+                        {
+                            <label class="cat-switch">
+                                <input type="checkbox" name="inStock" value="true" @(inStock ? "checked" : null) />
+                                <span>فقط کالاهای موجود</span>
+                            </label>
+                        }
                         <label class="cat-switch">
                             <input type="checkbox" name="onSale" value="true" @(onSale ? "checked" : null) />
                             <span>فقط تخفیف‌دار</span>
@@ -199,6 +220,10 @@
                         {
                             <a href="@CatalogUrl(new { collectionId = (int?)null })"><i class="bi bi-tag"></i> @collection.Title <i class="bi bi-x"></i></a>
                         }
+                        @if (type.HasValue)
+                        {
+                            <a href="@CatalogUrl(new { type = (StoreProductType?)null })">@type.Value.TypeText() <i class="bi bi-x"></i></a>
+                        }
                         @if (category != null)
                         {
                             <a href="@CatalogUrl(new { categoryId = (int?)null })">@category.Title <i class="bi bi-x"></i></a>
@@ -228,45 +253,21 @@
 
                 @if (Model.Any())
                 {
-                    <div class="cat-grid">
-                        @foreach (var p in Model)
-                        {
-                            @Html.Partial("_StoreProductCard", p)
-                        }
-                    </div>
-
-                    if (totalPages > 1)
+                    if (Model.Page > 1)
                     {
-                        <nav class="cat-pager" aria-label="صفحه‌بندی">
-                            @if (page > 1)
-                            {
-                                <a href="@CatalogUrl(new { page = page - 1 })" aria-label="قبلی"><i class="bi bi-chevron-right"></i></a>
-                            }
-                            @for (var i = 1; i <= totalPages; i++)
-                            {
-                                if (i == 1 || i == totalPages || Math.Abs(i - page) <= 2)
-                                {
-                                    <a class="@(i == page ? "active" : "")" href="@CatalogUrl(new { page = i })">@i.ToString(fa)</a>
-                                }
-                                else if (Math.Abs(i - page) == 3)
-                                {
-                                    <span>…</span>
-                                }
-                            }
-                            @if (page < totalPages)
-                            {
-                                <a href="@CatalogUrl(new { page = page + 1 })" aria-label="بعدی"><i class="bi bi-chevron-left"></i></a>
-                            }
-                        </nav>
+                        <a class="infinite-prev" href="@CatalogUrl(new { page = (int?)null })"><i class="bi bi-arrow-up"></i> از ابتدای فهرست</a>
                     }
+                    <div class="cat-grid" data-infinite>
+                        @Html.Partial("_CatalogItems", Model)
+                    </div>
                 }
                 else
                 {
                     <div class="cat-empty">
                         <i class="bi bi-search"></i>
-                        <h3>محصولی با این مشخصات پیدا نشد</h3>
+                        <h3>موردی با این مشخصات پیدا نشد</h3>
                         <p>فیلترها را تغییر دهید یا عبارت دیگری جستجو کنید.</p>
-                        <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company, previewTemplate = ViewBag.PreviewTemplate })">مشاهده همه محصولات</a>
+                        <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company, previewTemplate = ViewBag.PreviewTemplate })">@allLabel</a>
                     </div>
                 }
             </div>
@@ -275,6 +276,7 @@
 </section>
 
 @section scripts {
+<script src="@Url.Asset("~/Content/infinite-scroll.js")"></script>
 <script>
 (function () {
   document.querySelectorAll('[data-cat-toggle]').forEach(function (el) {

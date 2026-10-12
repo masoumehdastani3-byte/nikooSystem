@@ -1,12 +1,14 @@
-@using NikooSystem.Helpers
-@using NikooSystem.Models.Store
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = "تسویه حساب";
     var company = (string)ViewBag.CompanyCode;
-    var cart = (IEnumerable<StoreCartItem>)ViewBag.Cart;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var cart = ((IEnumerable<StoreCartItem>)ViewBag.Cart).ToList();
     var customer = ViewBag.Customer as StoreCustomer;
-    var total = cart.Sum(x => x.UnitPrice * x.Quantity);
+    var hasPhysical = ViewBag.HasPhysical as bool? == true;
+    var shipping = (long)(ViewBag.Shipping ?? 0L);
+    var subtotal = cart.Sum(x => x.UnitPrice * x.Quantity);
+    var total = subtotal + shipping;
 }
 <section class="py-4">
     <div class="container">
@@ -18,12 +20,21 @@
                     @foreach (var item in cart)
                     {
                         <div class="d-flex justify-content-between mb-2">
-                            <span>@item.Title × @item.Quantity</span>
+                            <span>@item.Title @(item.Quantity > 1 ? "× " + item.Quantity.ToFa() : "")</span>
                             <strong>@((item.UnitPrice * item.Quantity).ToToman())</strong>
                         </div>
                     }
                     <hr />
+                    <div class="d-flex justify-content-between mb-2"><span>جمع جزء</span><span>@subtotal.ToToman()</span></div>
+                    @if (hasPhysical)
+                    {
+                        <div class="d-flex justify-content-between mb-2"><span>هزینه ارسال</span><span>@(shipping == 0 ? "رایگان" : shipping.ToToman())</span></div>
+                    }
                     <div class="d-flex justify-content-between"><span>مبلغ قابل پرداخت</span><strong class="price">@total.ToToman()</strong></div>
+                    @if (!hasPhysical)
+                    {
+                        <p class="small text-muted mt-3 mb-0"><i class="bi bi-lightning-charge"></i> پس از پرداخت، موارد خریداری‌شده بلافاصله در «کتابخانه من» در دسترس است.</p>
+                    }
                 </div>
             </div>
             <div class="col-lg-7">
@@ -33,23 +44,26 @@
                         @Html.AntiForgeryToken()
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label">نام و نام خانوادگی</label>
+                                <label class="form-label">نام و نام خانوادگی *</label>
                                 <input class="form-control" name="customerName" value="@(customer?.FullName)" required />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">موبایل</label>
-                                <input class="form-control" name="customerMobile" value="@(customer?.Mobile)" placeholder="09121234567" required />
+                                <label class="form-label">موبایل *</label>
+                                <input class="form-control" name="customerMobile" value="@(customer?.Mobile)" placeholder="09121234567" dir="ltr" required />
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">ایمیل</label>
-                                <input class="form-control" name="customerEmail" value="@(customer?.Email)" type="email" />
+                                <input class="form-control" name="customerEmail" value="@(customer?.Email)" type="email" dir="ltr" />
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">آدرس</label>
-                                <input class="form-control" name="customerAddress" value="@(customer?.Address)" />
-                            </div>
+                            @if (hasPhysical)
+                            {
+                                <div class="col-12">
+                                    <label class="form-label">آدرس کامل و کد پستی *</label>
+                                    <textarea class="form-control" name="customerAddress" rows="3" required>@(customer?.Address)</textarea>
+                                </div>
+                            }
                             <div class="col-12">
-                                <button class="btn-store" type="submit"><i class="bi bi-credit-card"></i> پرداخت آنلاین</button>
+                                <button class="btn-store" type="submit"><i class="bi bi-credit-card"></i> @(settings.EnablePayment ? "پرداخت آنلاین" : "ثبت سفارش")</button>
                             </div>
                         </div>
                     }

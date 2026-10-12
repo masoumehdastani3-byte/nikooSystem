@@ -1,0 +1,172 @@
+/* Floating template switcher of the demo sites (Views/Shared/_DemoTemplateBar). Independent of the store's theme. */
+.ds-root {
+  position: fixed;
+  left: 18px;
+  bottom: 18px;
+  z-index: 1050;
+  direction: rtl;
+  font-family: 'Far_Yekan', Tahoma, sans-serif;
+  color: #0f172a;
+}
+.ds-root[hidden],
+.ds-panel[hidden] { display: none; }
+
+.ds-toggle {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .55rem .9rem .55rem .7rem;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(120deg, #4f46e5, #7c3aed);
+  color: #fff;
+  box-shadow: 0 12px 30px -8px rgba(79, 70, 229, .65);
+  cursor: pointer;
+  font: inherit;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.ds-toggle:hover { transform: translateY(-2px); box-shadow: 0 16px 34px -8px rgba(79, 70, 229, .75); }
+.ds-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .18);
+  font-size: 1.05rem;
+}
+.ds-label { display: flex; flex-direction: column; text-align: right; line-height: 1.35; }
+.ds-label small { font-size: .7rem; opacity: .8; }
+.ds-label strong { font-size: .88rem; }
+.ds-caret { font-size: .8rem; transition: transform .2s ease; }
+.ds-root.is-open .ds-caret { transform: rotate(180deg); }
+
+/* first visit in the session: a soft pulse so the button is noticed */
+.ds-root.is-new .ds-toggle { animation: ds-pulse 1.6s ease-out 3; }
+@keyframes ds-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, .55), 0 12px 30px -8px rgba(79, 70, 229, .65); }
+  100% { box-shadow: 0 0 0 18px rgba(124, 58, 237, 0), 0 12px 30px -8px rgba(79, 70, 229, .65); }
+}
+
+.ds-panel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 12px);
+  width: 360px;
+  max-height: min(560px, calc(100vh - 120px));
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  box-shadow: 0 30px 60px -20px rgba(15, 23, 42, .45);
+  overflow: hidden;
+}
+.ds-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .9rem 1rem .7rem;
+  border-bottom: 1px solid #eef2f7;
+}
+.ds-head strong { display: block; font-size: .95rem; }
+.ds-head small { display: block; color: #64748b; font-size: .75rem; margin-top: .15rem; }
+.ds-close {
+  border: 0;
+  background: #f1f5f9;
+  color: #475569;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.ds-close:hover { background: #e2e8f0; }
+
+.ds-list { overflow-y: auto; padding: .5rem; }
+.ds-item {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .55rem .6rem;
+  border-radius: 12px;
+  border: 1.5px solid transparent;
+  color: inherit;
+  text-decoration: none;
+  transition: background .15s ease, border-color .15s ease;
+}
+.ds-item:hover { background: #f8fafc; color: inherit; }
+.ds-item.is-active { border-color: #7c3aed; background: #f5f3ff; }
+.ds-thumb {
+  width: 52px;
+  height: 40px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+}
+.ds-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.ds-name { font-weight: 700; font-size: .88rem; }
+.ds-text small {
+  color: #64748b;
+  font-size: .72rem;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ds-badge {
+  font-style: normal;
+  font-size: .65rem;
+  font-weight: 600;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 999px;
+  padding: .05rem .45rem;
+  margin-right: .25rem;
+  vertical-align: middle;
+}
+.ds-check { color: #7c3aed; font-size: 1.15rem; }
+
+.ds-foot {
+  display: flex;
+  gap: .5rem;
+  padding: .75rem 1rem .9rem;
+  border-top: 1px solid #eef2f7;
+  background: #fafafa;
+}
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  padding: .5rem .8rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: .8rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ds-btn:hover { background: #f1f5f9; color: #0f172a; }
+.ds-btn-primary {
+  flex: 1;
+  border: 0;
+  background: linear-gradient(120deg, #4f46e5, #7c3aed);
+  color: #fff;
+  font-weight: 700;
+  white-space: normal;
+}
+.ds-btn-primary:hover { color: #fff; background: linear-gradient(120deg, #4338ca, #6d28d9); }
+
+@media (max-width: 575.98px) {
+  .ds-root { left: 12px; bottom: 12px; }
+  .ds-label small { display: none; }
+  .ds-panel { width: calc(100vw - 24px); }
+}
+/* above the sticky buy bar of the product page on phones */
+@media (max-width: 991.98px) {
+  body:has(.pd-sticky) .ds-root { bottom: 84px; }
+}

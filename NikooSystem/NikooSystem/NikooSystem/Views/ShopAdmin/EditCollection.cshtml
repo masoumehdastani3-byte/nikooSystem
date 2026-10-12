@@ -1,10 +1,10 @@
-@model NikooSystem.Models.Store.StoreCollection
+@model StoreCollection
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = Model.Id > 0 ? "ویرایش برچسب" : "برچسب جدید";
     var company = (string)ViewBag.CompanyCode;
-    var products = (List<NikooSystem.Models.Store.StoreProduct>)ViewBag.Products;
-    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+    var products = (List<StoreProduct>)ViewBag.Products;
+    var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
     var onHome = (bool)ViewBag.OnHome;
 }
 <h2 class="mb-3">@ViewBag.Title</h2>
@@ -76,8 +76,7 @@
     </div>
 
     <div class="mt-3">
-        <button class="btn-store" type="submit">ذخیره برچسب</button>
-        <a class="btn-outline-store" href="@Url.Action("Collections","ShopAdmin", new { company })">بازگشت</a>
+        @Html.FormActions("Collections", "ذخیره برچسب")
     </div>
 }
 @section scripts {

@@ -1,0 +1,81 @@
+@model PagedList<NikooSystem.Models.Store.TenantInfo>
+@using NikooSystem.Helpers
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "فروشگاه‌ها";
+    var statuses = new Dictionary<string, string>
+    {
+        { "trial", "آزمایشی فعال" },
+        { "expired", "آزمایشی منقضی" },
+        { "paid", "اشتراک فعال" },
+        { "renew", "نیازمند تمدید (۲ هفته)" },
+        { "closed", "بسته‌شده به‌خاطر عدم تمدید" },
+        { "inactive", "تعلیق‌شده" },
+        { "demo", "سایت‌های دمو" }
+    };
+    var types = StoreTypes.All.ToDictionary(t => t.Id, t => t.Name);
+}
+<div class="adm-head">
+    <div>
+        <h1>فروشگاه‌ها و سایت‌های مشتریان</h1>
+        <p>همه سایت‌هایی که با ثبت‌نام رایگان ساخته شده‌اند، به‌همراه سایت‌های دمو</p>
+    </div>
+    <div class="adm-head-actions">
+        @Html.PostButton("PurgeExpiredStores", null, "حذف آزمایشی‌های منقضی", "btn btn-outline-danger", "همه فروشگاه‌های آزمایشی منقضی و داده‌هایشان حذف شوند؟")
+    </div>
+</div>
+<div class="adm-card">
+    @Html.GridToolbar("جستجو در کد، نام، مالک، موبایل یا دامنه...", new GridSelect("status", "همه وضعیت‌ها", statuses), new GridSelect("type", "همه انواع", types))
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    @Html.SortHeader("name", "فروشگاه")
+                    @Html.SortHeader("code", "کد")
+                    <th>نوع</th>
+                    <th>مالک</th>
+                    @Html.SortHeader("created", "ساخته‌شده")
+                    @Html.SortHeader("trial", "پایان آزمایشی / اشتراک")
+                    <th>وضعیت</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var t in Model)
+            {
+                var type = StoreTypes.Get(t.StoreType);
+                <tr>
+                    <td>
+                        <a class="fw-bold text-decoration-none" href="@Url.Action("Store","Admin", new { id = t.CompanyCode })">@t.Name</a>
+                        @if (!string.IsNullOrWhiteSpace(t.CustomDomain))
+                        {
+                            <div class="small text-muted" dir="ltr">@t.CustomDomain</div>
+                        }
+                    </td>
+                    <td class="adm-ltr"><code>@t.CompanyCode</code></td>
+                    <td><i class="bi @type.Icon text-muted"></i> @type.Name</td>
+                    <td>
+                        @(string.IsNullOrEmpty(t.OwnerName) ? "-" : t.OwnerName)
+                        @if (!string.IsNullOrEmpty(t.OwnerMobile))
+                        {
+                            <div class="small text-muted" dir="ltr">@t.OwnerMobile</div>
+                        }
+                    </td>
+                    <td>@t.CreatedAt.ToShamsi()</td>
+                    <td>@(t.IsPaid && t.SubscriptionEndsAt.HasValue ? t.SubscriptionEndsAt.Value.ToShamsi() : t.TrialEndsAt.HasValue && !t.IsPaid ? t.TrialEndsAt.Value.ToShamsi() : "-")</td>
+                    <td>@Html.Partial("_StoreStatus", t)</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("Store", "Admin", new { id = t.CompanyCode }), "bi-gear", "مدیریت فروشگاه", "is-edit")
+                        @Html.IconLink(Url.Action("Index", "Shop", new { company = t.CompanyCode }), "bi-box-arrow-up-left", "مشاهده سایت", "is-view", true)
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">فروشگاهی یافت نشد</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

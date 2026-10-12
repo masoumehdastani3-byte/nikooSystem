@@ -1,0 +1,161 @@
+@model StoreSettings
+@using NikooSystem.Controllers
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اینماد";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var site = kind.SiteNoun;
+    var company = (string)ViewBag.CompanyCode;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var domain = (string)ViewBag.Domain;
+    var domainState = (DomainState)ViewBag.DomainState;
+    var checks = (List<EnamadCheck>)ViewBag.Checks;
+    var required = checks.Where(c => !c.Optional).ToList();
+    var ready = required.All(c => c.Ok);
+    var ticketUrl = Url.Action("NewTicket", "ShopAdmin", new { company, subject = "اینماد" });
+}
+<link href="@Url.Asset("~/Content/domain.css")" rel="stylesheet" />
+
+<div class="dm-print-only mb-3">
+    <h3 class="mb-1">راهنمای گرفتن اینماد برای @Model.StoreName</h3>
+    <div class="small text-muted">کد شرکت @company · @DateTime.Now.ToShamsiText()</div>
+</div>
+
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">اینماد (نماد اعتماد الکترونیکی)</h2>
+        <p class="text-muted small mb-0">
+            <a href="https://enamad.ir" target="_blank" rel="noopener">اینماد</a> نشان می‌دهد صاحب @site شناخته‌شده است؛ خریدار به آن اعتماد می‌کند و درگاه‌های پرداخت و ترب هم معمولاً آن را می‌خواهند.
+            همه کارهای این صفحه را خودتان انجام می‌دهید: @site را آماده کنید، در enamad.ir ثبت‌نام کنید، مالکیت دامنه را از همین صفحه تأیید کنید و در پایان کد نماد را اینجا بگذارید.
+        </p>
+    </div>
+    <div class="d-flex gap-2 dm-no-print">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="dmPrint"><i class="bi bi-printer"></i> چاپ یا ذخیره PDF راهنما</button>
+        @if (!isDemo)
+        {
+            <a class="btn btn-outline-secondary btn-sm" href="@ticketUrl"><i class="bi bi-headset"></i> کمک از پشتیبانی</a>
+        }
+    </div>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info dm-no-print"><i class="bi bi-info-circle"></i> این @site نمایشی است و اینماد ثبت نمی‌کند؛ راهنما را ببینید و در @site خودتان از همین صفحه استفاده کنید.</div>
+}
+else if (domain == null)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        اینماد برای آدرس رایگان نیکو صادر نمی‌شود؛ اول
+        <a href="@Url.Action("Domain","ShopAdmin", new { company })">دامنه اختصاصی</a>
+        @(domainState == DomainState.None ? "را وصل کنید" : "را کامل کنید (اتصال آن در جریان است)").
+        فایل‌ها و کدهای تأیید را از همین حالا می‌توانید ثبت کنید؛ بعد از فعال شدن دامنه، روی آن هم در دسترس‌اند.
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.VerifyHomeTitle))
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-type"></i> عنوان صفحه اول موقتاً «<b>@Model.VerifyHomeTitle</b>» است. بعد از تأیید مالکیت در اینماد، آن را از بخش «تأیید مالکیت دامنه» حذف کنید تا عنوان همیشگی برای گوگل برگردد.
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card mb-3">
+            <h5 class="mb-1"><i class="bi bi-clipboard-check"></i> آماده بودن @site</h5>
+            <p class="small text-muted">
+                @(ready ? "همه موارد لازم آماده است؛ می‌توانید در اینماد ثبت‌نام کنید." : "کارشناس اینماد سایت را باز می‌کند و این موارد را می‌بیند؛ پیش از ثبت درخواست آن‌ها را کامل کنید.")
+            </p>
+            <ul class="list-unstyled mb-0">
+                @foreach (var c in checks)
+                {
+                    <li class="mb-2">
+                        <i class="bi @(c.Ok ? "bi-check-circle-fill text-success" : c.Optional ? "bi-info-circle-fill text-secondary" : "bi-exclamation-circle-fill text-warning")"></i>
+                        <strong>@c.Title@(c.Optional ? " (پیشنهادی)" : ""):</strong>
+                        @c.Text
+                        @if (c.Action != null)
+                        {
+                            <a class="dm-no-print" href="@Url.Action(c.Action, "ShopAdmin", new { company })">@c.LinkText</a>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> گرفتن اینماد قدم‌به‌قدم</h5>
+            <ol class="mb-0">
+                <li class="mb-2"><strong>آماده‌سازی:</strong> موارد بالا را کامل کنید. دامنه باید به نام خودتان (یا شرکتتان) ثبت شده باشد؛ برای دامنه ir، صاحب شناسه ایرنیک دامنه باید همان کسی باشد که در اینماد ثبت‌نام می‌کند.</li>
+                <li class="mb-2"><strong>ثبت‌نام:</strong> در <a href="https://enamad.ir" target="_blank" rel="noopener">enamad.ir</a> با کد ملی و شماره موبایلی که به نام خودتان است حساب بسازید و اطلاعات هویتی را کامل کنید.</li>
+                <li class="mb-2"><strong>ثبت دامنه:</strong> در پنل اینماد دامنه <b dir="ltr">@(domain ?? "yourdomain.ir")</b> را اضافه کنید و اطلاعات کسب‌وکار، نشانی، کد پستی، تلفن و ایمیل را همان‌طور وارد کنید که در @site نوشته‌اید.</li>
+                <li class="mb-2"><strong>تأیید مالکیت دامنه:</strong> اینماد یکی از روش‌ها را از شما می‌خواهد: گذاشتن یک فایل در ریشه سایت، یک کد در عنوان صفحه اول یا یک متاتگ. هر کدام را که خواست، از بخش «تأیید مالکیت دامنه» همین صفحه انجام دهید و در پنل اینماد دکمه بررسی یا تأیید را بزنید.</li>
+                <li class="mb-2"><strong>بررسی اینماد:</strong> کارشناس اینماد اطلاعات و سایت را بررسی می‌کند؛ ممکن است تماس بگیرد یا برای تأیید نشانی کدی بفرستد. پیام‌های پنل اینماد را دنبال کنید.</li>
+                <li class="mb-2"><strong>نصب نماد:</strong> بعد از صدور، در پنل اینماد «کد نماد» یا «دریافت کد» را کپی کنید و در بخش «نماد اعتماد در فوتر» همین صفحه بچسبانید.</li>
+                <li><strong>پایان:</strong> عنوان موقت (اگر گذاشته بودید) را حذف کنید؛ فایل و متاتگ را نگه دارید، چون اینماد گاهی دوباره بررسی می‌کند. اینماد معمولاً سالانه تمدید می‌شود.</li>
+            </ol>
+        </div>
+
+        @Html.Partial("_SiteVerification", new SiteVerificationVm
+        {
+            Site = Model,
+            Controller = "ShopAdmin",
+            Route = new { company },
+            Files = (List<RootFile>)ViewBag.Files,
+            SiteRoot = (string)ViewBag.SiteRoot,
+            Domain = domain,
+            UsualTitle = (string)ViewBag.UsualTitle,
+            Disabled = isDemo,
+            CardClass = "panel-card",
+            ButtonClass = "btn-store",
+            FreeAddressNote = true
+        })
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-people"></i> چه کسی چه کاری انجام می‌دهد؟</h5>
+            <div class="dm-roles">
+                <div class="dm-role">
+                    <h6><i class="bi bi-person"></i> کارهای شما</h6>
+                    <ul>
+                        <li>ثبت‌نام و پرونده در enamad.ir</li>
+                        <li>کامل کردن اطلاعات @site</li>
+                        <li>تأیید مالکیت از همین صفحه</li>
+                        <li>چسباندن کد نماد</li>
+                    </ul>
+                </div>
+                <div class="dm-role">
+                    <h6><i class="bi bi-headset"></i> کارهای پشتیبانی نیکو</h6>
+                    <ul>
+                        <li>اتصال دامنه و گواهی SSL (<a href="@Url.Action("Domain","ShopAdmin", new { company })">دامنه اختصاصی</a>؛ خودکار خبردار می‌شود)</li>
+                        <li>برای اینماد کار دیگری لازم نیست</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌ها</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">نشانی، تلفن و ایمیل @site باید دقیقاً همان باشد که در اینماد ثبت می‌کنید؛ اختلاف، رایج‌ترین دلیل رد درخواست است.</li>
+                <li class="mb-1">تا تأیید اینماد، دامنه را عوض نکنید و @site را نبندید؛ کارشناس ممکن است چند بار سر بزند.</li>
+                <li class="mb-1">لینک «باز کردن» کنار هر فایل همان آدرسی است که اینماد بررسی می‌کند؛ اگر متن فایل را نشان داد، کار درست است.</li>
+                <li class="mb-1">نماد در فوتر با کد خود اینماد ساخته می‌شود و فقط شناسه و کد آن خوانده می‌شود؛ پس کد دیگری به @site اضافه نمی‌شود.</li>
+                <li>همین بخش «تأیید مالکیت دامنه» برای سرویس‌های دیگر (مثلاً فایل HTML تأیید گوگل یا ساماندهی) هم کار می‌کند.</li>
+            </ul>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-question-circle"></i> اینماد چه فایده‌ای دارد؟</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">خریدار با دیدن نماد و کلیک روی آن، مشخصات صاحب @site را در سایت اینماد می‌بیند و راحت‌تر خرید می‌کند.</li>
+                <li class="mb-1">بیشتر درگاه‌های پرداخت (مثل زرین‌پال) و سایت‌هایی مثل ترب برای پذیرش، اینماد می‌خواهند.</li>
+                <li>اگر @site خرید آنلاین ندارد، اینماد اجباری نیست اما اعتماد بازدیدکننده را بیشتر می‌کند.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@Html.Partial("_SiteVerificationScript")

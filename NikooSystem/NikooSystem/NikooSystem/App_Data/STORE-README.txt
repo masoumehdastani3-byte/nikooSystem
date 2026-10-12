@@ -19,12 +19,12 @@
 - سفارش‌ها و پروفایل + سبد خرید در فروشگاه عمومی
 
 ## داده هر مستأجر
-`App_Data/Tenants/{CompanyCode}/`
-- settings.json, products.json, categories.json, attributes.json
-- menus.json, pages.json, gallery.json, customers.json, orders.json
+در دیتابیس `nikoo` (بخش «دیتابیس» در `README.txt`)؛ همه جدول‌های فروشگاه ستون `CompanyCode` دارند:
+- `StoreSettings`, `Products`, `Categories`, `AttributeDefs`, `Collections`
+- `MenuItems`, `Pages`, `GalleryItems`, `Customers`, `Orders`, `Reviews`, `Carts`
 
-رجیستری مستأجرها: `App_Data/tenants.json`  
-فیلد `CustomDomain` را برای دامنه مشتری پر کنید (مثلاً `shop.mysite.ir`).
+رجیستری مستأجرها: جدول `Tenants`  
+ستون `CustomDomain` را برای دامنه مشتری پر کنید (مثلاً `shop.mysite.ir`).
 
 ## تصاویر
 آپلودها در `Uploads/{CompanyCode}/thumbs` و `Uploads/{CompanyCode}/large` ذخیره می‌شوند.

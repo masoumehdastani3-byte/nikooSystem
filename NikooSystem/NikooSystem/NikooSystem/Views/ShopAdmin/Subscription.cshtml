@@ -1,0 +1,219 @@
+@model NikooSystem.Models.Store.TenantInfo
+@using NikooSystem.Models
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اشتراک و تمدید";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var company = (string)ViewBag.CompanyCode;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var plans = (List<SubscriptionPlan>)ViewBag.Plans;
+    var renewFrom = (DateTime)ViewBag.RenewFrom;
+    var payments = (List<Order>)ViewBag.Payments;
+    var onTrial = Model.IsTrial && !Model.IsPaid;
+    var hasPeriod = Model.IsPaid && Model.SubscriptionEndsAt.HasValue;
+    var state = Model.IsSubscriptionLocked() ? "is-closed" : Model.IsSubscriptionExpired() ? "is-expired" : Model.IsRenewalDue() || onTrial ? "is-due" : "is-ok";
+    var elapsed = 0.0;
+    if (hasPeriod)
+    {
+        var start = Model.SubscriptionEndsAt.Value.AddMonths(-Math.Max(1, Model.SubscriptionMonths));
+        elapsed = Math.Max(0, Math.Min(100, (DateTime.Now - start).TotalMinutes * 100 / (Model.SubscriptionEndsAt.Value - start).TotalMinutes));
+    }
+    var buyText = onTrial ? "پرداخت و فعال‌سازی" : "پرداخت و تمدید";
+}
+<link href="@Url.Asset("~/Content/subscription.css")" rel="stylesheet" />
+<div class="mb-3">
+    <h2 class="mb-1">اشتراک و تمدید</h2>
+    <p class="text-muted small mb-0">اشتراک @kind.SiteNoun را برای سه ماه، شش ماه یا یک سال پرداخت کنید و پیش از پایان هر دوره تمدیدش کنید؛ هرچه دوره بلندتر، تخفیف بیشتر.</p>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این @kind.SiteNoun نمونه (دمو) است و اشتراک ندارد؛ در @kind.SiteNoun خودتان همین صفحه را برای پرداخت و تمدید اشتراک دارید.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card sub-status @state mb-3">
+            @if (onTrial)
+            {
+                <div class="sub-head">
+                    <i class="bi bi-hourglass-split"></i>
+                    <div>
+                        <div class="small text-muted">وضعیت</div>
+                        <div class="sub-big">دوره آزمایشی · @Model.TrialDaysLeft().ToFa() روز مانده</div>
+                    </div>
+                </div>
+                <p class="small mb-0">دوره آزمایشی @Model.TrialEndsAt.Value.ToShamsiText() تمام می‌شود. اگر تا آن روز اشتراک را پرداخت نکنید، @kind.SiteNoun و همه اطلاعاتش حذف می‌شود. <strong>روزهای باقی‌مانده آزمایشی هم به اشتراک شما اضافه می‌شود</strong>؛ پس همین حالا پرداخت کنید، چیزی از دست نمی‌دهید.</p>
+            }
+            else if (hasPeriod)
+            {
+                <div class="sub-head">
+                    <i class="bi @(Model.IsSubscriptionLocked() ? "bi-lock" : Model.IsSubscriptionExpired() ? "bi-hourglass-bottom" : "bi-patch-check")"></i>
+                    <div>
+                        <div class="small text-muted">اشتراک @Subscriptions.PeriodName(Model.SubscriptionMonths)</div>
+                        <div class="sub-big">
+                            @if (Model.IsSubscriptionLocked())
+                            {
+                                @:@kind.SiteNoun شما بسته است
+                            }
+                            else if (Model.IsSubscriptionExpired())
+                            {
+                                @:اشتراک تمام شده است
+                            }
+                            else
+                            {
+                                @:فعال تا @Model.SubscriptionEndsAt.Value.ToShamsiText()
+                            }
+                        </div>
+                    </div>
+                    @if (!Model.IsSubscriptionExpired())
+                    {
+                        <div class="sub-days"><b>@Model.SubscriptionDaysLeft().ToFa()</b> روز مانده</div>
+                    }
+                </div>
+                <div class="sub-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@((int)elapsed)" aria-label="بخش گذشته از دوره اشتراک">
+                    <span style="width:@elapsed.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                </div>
+                if (Model.IsSubscriptionLocked())
+                {
+                    <div class="alert alert-danger mb-0"><i class="bi bi-lock"></i> اشتراک از @Model.SubscriptionEndsAt.Value.ToShamsiText() تمام شده و چون تمدید نشد، @kind.SiteNoun از @Model.ClosesAt().Value.ToShamsiText() برای بازدیدکنندگان بسته است. <strong>همه اطلاعات شما محفوظ است</strong> و با پرداخت یکی از دوره‌های زیر، @kind.SiteNoun همان لحظه دوباره باز می‌شود.</div>
+                }
+                else if (Model.IsSubscriptionExpired())
+                {
+                    <div class="alert alert-danger mb-0"><i class="bi bi-exclamation-octagon"></i> اشتراک @Model.SubscriptionEndsAt.Value.ToShamsiText() تمام شد. @kind.SiteNoun فقط <strong>@Model.GraceDaysLeft().ToFa() روز دیگر</strong> (تا @Model.ClosesAt().Value.ToShamsiText()) باز می‌ماند؛ پس از آن تا تمدید اشتراک برای بازدیدکنندگان بسته می‌شود.</div>
+                }
+                else if (Model.IsRenewalDue())
+                {
+                    <div class="alert alert-warning mb-0"><i class="bi bi-arrow-repeat"></i> اشتراک شما رو به پایان است. همین حالا تمدید کنید؛ دوره تازه از پایان دوره فعلی شروع می‌شود و روزهای باقی‌مانده از بین نمی‌رود.</div>
+                }
+                else
+                {
+                    <div class="alert alert-success mb-0"><i class="bi bi-check2-circle"></i> اشتراک شما فعال است. هر زمان بخواهید می‌توانید زودتر تمدید کنید؛ دوره تازه به انتهای دوره فعلی اضافه می‌شود.</div>
+                }
+            }
+            else
+            {
+                <div class="sub-head">
+                    <i class="bi bi-patch-check"></i>
+                    <div class="sub-big">اشتراک ندارد</div>
+                </div>
+            }
+        </div>
+
+        <div class="panel-card mb-3" id="plans">
+            <h5 class="mb-1"><i class="bi bi-calendar-check"></i> @(onTrial ? "انتخاب دوره اشتراک" : "تمدید اشتراک")</h5>
+            <p class="small text-muted mb-3">دوره تازه از @(renewFrom > DateTime.Now.AddMinutes(1) ? renewFrom.ToShamsiText() + " (پایان دوره فعلی)" : "امروز") شروع می‌شود.</p>
+            @if (!plans.Any())
+            {
+                <div class="alert alert-warning mb-0">قیمت اشتراک این نوع @kind.SiteNoun هنوز تعیین نشده است؛ از <a href="@Url.Action("Support", "ShopAdmin", new { company })">پشتیبانی نیکو</a> بپرسید.</div>
+            }
+            else
+            {
+                <div class="storage-packages sub-plans">
+                    @foreach (var p in plans)
+                    {
+                        <div class="storage-package @(p.Months == 12 ? "is-popular" : null)">
+                            @if (p.Months == 12)
+                            {
+                                <span class="storage-tag">به‌صرفه‌ترین</span>
+                            }
+                            <div class="size"><i class="bi bi-calendar3"></i> @Subscriptions.PeriodName(p.Months)</div>
+                            <div class="price">@p.Price.ToToman()</div>
+                            <div class="small text-muted">ماهی @p.PerMonth.ToToman()</div>
+                            @if (p.DiscountPercent > 0)
+                            {
+                                <div class="small"><del class="text-muted">@p.FullPrice.ToToman()</del> <span class="badge bg-success">@p.DiscountPercent.ToFa()٪ تخفیف</span></div>
+                            }
+                            else
+                            {
+                                <div class="small text-muted">&nbsp;</div>
+                            }
+                            <div class="sub-until small">تا @renewFrom.AddMonths(p.Months).ToShamsiText()</div>
+                            @using (Html.BeginForm("RenewSubscription", "ShopAdmin", new { company }, FormMethod.Post))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="months" value="@p.Months" />
+                                <button class="btn-store w-100 mt-2" type="submit" @(isDemo ? "disabled" : null)><i class="bi bi-credit-card"></i> @buyText</button>
+                            }
+                        </div>
+                    }
+                </div>
+                <p class="small text-muted mt-3 mb-0"><i class="bi bi-shield-check"></i> پرداخت از درگاه امن زرین‌پال انجام می‌شود و پس از بازگشت از درگاه، تاریخ پایان اشتراک همان لحظه به‌روز می‌شود.</p>
+            }
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-clock-history"></i> سابقه پرداخت اشتراک</h5>
+            <div class="table-responsive">
+                <table class="table align-middle small mb-0">
+                    <thead><tr><th>تاریخ</th><th>دوره</th><th>مبلغ</th><th>وضعیت</th><th>اعتبار تا</th></tr></thead>
+                    <tbody>
+                        @foreach (var o in payments)
+                        {
+                            var paid = o.Status == OrderStatus.Paid || o.Status == OrderStatus.Processing || o.Status == OrderStatus.Completed;
+                            <tr>
+                                <td class="text-nowrap">@((o.PaidAt ?? o.CreatedAt).ToShamsiText())</td>
+                                <td class="text-nowrap">@(o.Months > 0 ? Subscriptions.PeriodName(o.Months) : o.ProductTitle)</td>
+                                <td class="text-nowrap">@(o.Amount > 0 ? o.Amount.ToToman() : "رایگان")</td>
+                                <td>
+                                    @if (paid)
+                                    {
+                                        <span class="badge bg-success">@(o.Amount > 0 ? "پرداخت شد" : "ثبت شد")</span>
+                                    }
+                                    else if (o.Status == OrderStatus.PendingPayment)
+                                    {
+                                        <span class="badge bg-secondary">پرداخت نشده</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">ناموفق</span>
+                                    }
+                                </td>
+                                <td class="text-nowrap">@(o.SubscriptionEndsAt.HasValue ? o.SubscriptionEndsAt.Value.ToShamsiText() : "—")</td>
+                            </tr>
+                        }
+                        @if (!payments.Any())
+                        {
+                            <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-credit-card fs-3 d-block mb-1"></i>هنوز پرداختی برای اشتراک ثبت نشده است.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> تمدید اشتراک چطور است؟</h5>
+            <ol class="small mb-0">
+                <li class="mb-2">یکی از دوره‌های سه‌ماهه، شش‌ماهه یا یک‌ساله را انتخاب کنید و «@buyText» را بزنید.</li>
+                <li class="mb-2">در درگاه زرین‌پال پرداخت کنید؛ پس از پرداخت خودکار به همین صفحه برمی‌گردید.</li>
+                <li class="mb-2">تاریخ پایان اشتراک همان لحظه جلو می‌رود. دوره تازه به انتهای دوره فعلی اضافه می‌شود؛ پس زودتر تمدید کردن هیچ روزی را هدر نمی‌دهد.</li>
+                <li>رسید پرداخت در «سابقه پرداخت اشتراک» همین صفحه می‌ماند.</li>
+            </ol>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-bell"></i> اگر یادم برود تمدید کنم؟</h5>
+            <ul class="sub-timeline small mb-0">
+                <li><b>@TenantInfo.RenewalNoticeDays.ToFa() روز مانده:</b> بالای همه صفحه‌های پنل یادآوری تمدید نمایش داده می‌شود.</li>
+                <li><b>۷ روز مانده:</b> اگر <a href="@Url.Action("Notifications", "ShopAdmin", new { company })">اطلاع‌رسانی بله</a> را وصل کرده باشید، یادآوری در بله هم می‌رسد.</li>
+                <li><b>روز پایان:</b> @kind.SiteNoun تا @TenantInfo.RenewalGraceDays.ToFa() روز دیگر باز می‌ماند تا فرصت تمدید داشته باشید.</li>
+                <li><b>پس از آن:</b> بازدیدکنندگان صفحه «موقتاً در دسترس نیست» را می‌بینند و پنل فقط همین صفحه و پشتیبانی را نشان می‌دهد. <strong>هیچ اطلاعاتی پاک نمی‌شود</strong> و با تمدید، @kind.SiteNoun همان لحظه دوباره باز می‌شود.</li>
+            </ul>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌ها</h5>
+            <ul class="small mb-0">
+                @foreach (var p in plans.Where(p => p.DiscountPercent > 0))
+                {
+                    <li class="mb-1">اشتراک @Subscriptions.PeriodName(p.Months) @p.DiscountPercent.ToFa()٪ ارزان‌تر از تمدید سه‌ماهه پشت سر هم است (@((p.FullPrice - p.Price).ToToman()) صرفه‌جویی).</li>
+                }
+                <li class="mb-1">فضای ذخیره‌سازی خریداری‌شده جدا از اشتراک است و با تمدید یا تمام شدن اشتراک کم نمی‌شود.</li>
+                <li>برای پرداخت کارت‌به‌کارت یا فاکتور رسمی، از <a href="@Url.Action("Support", "ShopAdmin", new { company })">پشتیبانی نیکو</a> تیکت بفرستید.</li>
+            </ul>
+        </div>
+    </div>
+</div>

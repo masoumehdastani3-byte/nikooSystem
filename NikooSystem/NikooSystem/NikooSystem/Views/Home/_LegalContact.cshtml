@@ -1,0 +1,30 @@
+@{
+    var site = NikooSystem.Services.SiteContentStore.Settings;
+}
+<div class="inner-card legal-contact mt-4">
+    <h2><i class="bi bi-headset"></i> مشخصات و راه‌های ارتباط با @site.SiteName</h2>
+    <ul>
+        @if (!string.IsNullOrWhiteSpace(site.Address))
+        {
+            <li><i class="bi bi-geo-alt"></i> <strong>نشانی:</strong> @site.Address.Replace("\r", "").Replace("\n", "، ")@(string.IsNullOrWhiteSpace(site.PostalCode) ? "" : "، کد پستی ")<span dir="ltr">@site.PostalCode</span></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(site.Phone))
+        {
+            <li><i class="bi bi-telephone"></i> <strong>تلفن:</strong> <a href="tel:@site.Phone.Replace("-", "").Replace(" ", "")" dir="ltr">@site.Phone</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(site.Email))
+        {
+            <li><i class="bi bi-envelope"></i> <strong>ایمیل:</strong> <a href="mailto:@site.Email">@site.Email</a></li>
+        }
+        @if (!string.IsNullOrWhiteSpace(site.WorkingHours))
+        {
+            <li><i class="bi bi-clock"></i> <strong>ساعات پاسخگویی:</strong> @site.WorkingHours</li>
+        }
+        <li><i class="bi bi-chat-dots"></i> <strong>فرم تماس:</strong> <a href="@Url.Action("Contact","Home")">صفحه تماس با ما</a> · مشتریان سایت‌ها: تیکت «پشتیبانی نیکو» در پنل مدیریت</li>
+    </ul>
+    <p class="small text-muted mb-0">
+        <a href="@Url.Action("Terms","Home")">قوانین و مقررات</a> ·
+        <a href="@Url.Action("Privacy","Home")">حریم خصوصی</a> ·
+        <a href="@Url.Action("BuyGuide","Home")">راهنمای خرید</a>
+    </p>
+</div>

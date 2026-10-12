@@ -1,0 +1,26 @@
+@model NikooSystem.Models.VisitReport
+@{
+    var days = Model.Days.Skip(Model.Days.Count - 14).ToList();
+    var max = Math.Max(1, days.Max(d => d.Views));
+    var url = ViewData["VisitsUrl"] as string;
+}
+<div class="vs-mini">
+    <div class="vs-mini-head">
+        <h5><i class="bi bi-bar-chart-line"></i> @(Model.Title ?? "بازدید سایت")</h5>
+        @if (url != null) { <a href="@url">گزارش کامل <i class="bi bi-arrow-left"></i></a> }
+    </div>
+    <div class="vs-mini-body">
+        <div class="vs-mini-nums">
+            <div><span>امروز</span><strong>@Model.Today.Views.ToFa()</strong><small>@Model.Today.Visitors.ToFa() بازدیدکننده</small></div>
+            <div><span>@Model.ThisMonth.Label</span><strong>@Model.ThisMonth.Views.ToFa()</strong><small>@Model.ThisMonth.Visitors.ToFa() بازدیدکننده</small></div>
+        </div>
+        <div class="vs-chart is-mini" role="img" aria-label="بازدید ۱۴ روز اخیر">
+            @foreach (var d in days)
+            {
+                <div class="vs-col @(d.Start == DateTime.Today ? "is-now" : null)" title="@d.Label: @d.Views.ToFa() بازدید، @d.Visitors.ToFa() بازدیدکننده">
+                    <b style="height:@(d.Views * 100 / max)%"><i style="height:@(d.Views == 0 ? 0 : d.Visitors * 100 / d.Views)%"></i></b>
+                </div>
+            }
+        </div>
+    </div>
+</div>

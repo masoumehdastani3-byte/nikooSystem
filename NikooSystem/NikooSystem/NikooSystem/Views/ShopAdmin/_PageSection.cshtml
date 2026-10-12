@@ -1,12 +1,11 @@
-@model NikooSystem.Models.Store.StoreHomeSection
-@using NikooSystem.Helpers
-@using NikooSystem.Models.Store
+@model StoreHomeSection
 @{
     var type = HomeSections.Type(Model.Type);
     var company = (string)ViewBag.CompanyCode;
     var collections = (List<StoreCollection>)ViewBag.Collections;
     var cats = (List<StoreCategory>)ViewBag.Categories;
     var editable = type.HasTitle || type.IsCustom;
+    var kind = (SiteKindInfo)ViewBag.Kind;
 }
 <li class="ls-item @(Model.IsVisible ? "" : "is-hidden")" data-id="@Model.Id" data-type="@Model.Type">
     <div class="ls-row">
@@ -64,33 +63,58 @@
                     </div>
                     <div class="col-md-4" data-when="collection">
                         <label class="form-label">برچسب</label>
-                        @if (collections.Any())
-                        {
-                            <select class="form-select" data-field="CollectionId" data-type="int">
+                        <div class="qm-field">
+                            <select class="form-select" data-field="CollectionId" data-type="int" data-qm="collections" aria-label="برچسب">
                                 <option value="">— انتخاب کنید —</option>
                                 @foreach (var c in collections)
                                 {
                                     <option value="@c.Id" @(Model.CollectionId == c.Id ? "selected" : "")>@c.Title@(c.IsActive ? "" : " (غیرفعال)")</option>
                                 }
                             </select>
-                        }
-                        else
-                        {
-                            <div class="small text-muted pt-2">
-                                هنوز برچسبی ندارید —
-                                <a href="@Url.Action("EditCollection","ShopAdmin", new { company })">ساخت برچسب</a>
-                            </div>
-                        }
+                            @Html.QuickManage("collections", "برچسب‌ها")
+                        </div>
                     </div>
                     <div class="col-md-4" data-when="category">
                         <label class="form-label">گروه کالا</label>
-                        <select class="form-select" data-field="CategoryId" data-type="int">
-                            <option value="">— انتخاب کنید —</option>
-                            @foreach (var c in cats)
+                        <div class="qm-field">
+                            <select class="form-select" data-field="CategoryId" data-type="int" data-qm="categories" aria-label="گروه کالا">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach (var c in cats)
+                                {
+                                    <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@c.TreeTitle()</option>
+                                }
+                            </select>
+                            @Html.QuickManage("categories", "گروه‌ها")
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">تعداد</label>
+                        <input class="form-control" type="number" min="1" max="@HomeSections.MaxProductsPerSection" data-field="Count" data-type="int" value="@Model.Count" />
+                    </div>
+                }
+                @if (type.Id == "posts")
+                {
+                    <div class="col-md-5">
+                        <label class="form-label">کدام مطالب نمایش داده شوند؟</label>
+                        <select class="form-select" data-field="Source" data-source>
+                            @foreach (var s in HomeSections.PostSources)
                             {
-                                <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@(c.ParentId.HasValue ? "— " : "")@c.Title</option>
+                                <option value="@s.Key" @(Model.Source == s.Key ? "selected" : "")>@s.Value</option>
                             }
                         </select>
+                    </div>
+                    <div class="col-md-5" data-when="category">
+                        <label class="form-label">سرویس / دسته</label>
+                        <div class="qm-field">
+                            <select class="form-select" data-field="CategoryId" data-type="int" data-qm="categories" aria-label="سرویس / دسته">
+                                <option value="">— انتخاب کنید —</option>
+                                @foreach (var c in cats)
+                                {
+                                    <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@c.TreeTitle()</option>
+                                }
+                            </select>
+                            @Html.QuickManage("categories", "سرویس‌ها و دسته‌ها")
+                        </div>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">تعداد</label>
@@ -108,15 +132,27 @@
                         <div class="input-group">
                             <select class="form-select ls-link-pick" data-link-pick aria-label="انتخاب سریع لینک">
                                 <option value="">انتخاب سریع…</option>
-                                <option value="@Url.Action("Catalog","Shop", new { company })">همه محصولات</option>
-                                <option value="@Url.Action("Catalog","Shop", new { company, onSale = true })">کالاهای تخفیف‌دار</option>
-                                @foreach (var c in collections)
+                                @if (kind.IsContent)
                                 {
-                                    <option value="@Url.Action("Catalog","Shop", new { company, collectionId = c.Id })">برچسب: @c.Title</option>
+                                    <option value="@Url.Action("Blog","Shop", new { company })">همه مطالب</option>
+                                    <option value="@Url.Action("Contact","Shop", new { company })">تماس با ما</option>
+                                    foreach (var c in cats)
+                                    {
+                                        <option value="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">سرویس: @c.Title</option>
+                                    }
                                 }
-                                @foreach (var c in cats)
+                                else
                                 {
-                                    <option value="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">گروه: @c.Title</option>
+                                    <option value="@Url.Action("Catalog","Shop", new { company })">همه محصولات</option>
+                                    <option value="@Url.Action("Catalog","Shop", new { company, onSale = true })">کالاهای تخفیف‌دار</option>
+                                    foreach (var c in collections)
+                                    {
+                                        <option value="@Url.Action("Catalog","Shop", new { company, collectionId = c.Id })">برچسب: @c.Title</option>
+                                    }
+                                    foreach (var c in cats)
+                                    {
+                                        <option value="@Url.Action("Catalog","Shop", new { company, categoryId = c.Id })">گروه: @c.Title</option>
+                                    }
                                 }
                             </select>
                             <input class="form-control" data-field="LinkUrl" value="@Model.LinkUrl" dir="ltr" placeholder="/Shop/... یا https://..." />
@@ -134,6 +170,31 @@
                                 <button type="button" class="btn btn-link text-danger p-0" data-clear-image>حذف تصویر</button>
                             </div>
                         }
+                    </div>
+                }
+                @if (type.HasButton)
+                {
+                    <div class="col-md-6">
+                        <label class="form-label">متن زیر عنوان (اختیاری)</label>
+                        <input class="form-control" data-field="Subtitle" value="@Model.Subtitle" maxlength="200" placeholder="خالی = متن پیش‌فرض" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">متن دکمه (اختیاری)</label>
+                        <input class="form-control" data-field="ButtonText" value="@Model.ButtonText" maxlength="40"
+                               placeholder="@(kind.IsContent ? "خالی = درخواست مشاوره" : "خالی = ثبت‌نام رایگان")" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">دکمه به کجا برود؟ (اختیاری)</label>
+                        <input class="form-control" data-field="LinkUrl" value="@Model.LinkUrl" dir="ltr"
+                               placeholder="@(kind.IsContent ? "خالی = صفحه تماس با ما" : "خالی = صفحه ثبت‌نام مشتری")" />
+                    </div>
+                }
+                @if (type.ItemsHint != null)
+                {
+                    <div class="col-12">
+                        <label class="form-label">ردیف‌ها</label>
+                        <textarea class="form-control" data-field="Items" rows="5" maxlength="5000" placeholder="@type.ItemsSample">@Model.Items</textarea>
+                        <div class="form-text">@type.ItemsHint حداکثر @HomeSections.MaxItems.ToString().ToFaDigits() ردیف.</div>
                     </div>
                 }
             </div>

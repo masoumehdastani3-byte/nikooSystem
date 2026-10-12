@@ -1,39 +1,52 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreAttributeDef>
+@model PagedList<StoreAttributeDef>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "خصوصیات محصول";
-    var company = (string)ViewBag.CompanyCode;
-    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+    var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
+    var inputTypes = new Dictionary<string, string> { ["text"] = "متن", ["number"] = "عدد", ["select"] = "انتخابی" };
 }
-<div class="d-flex justify-content-between mb-3">
-    <h2>خصوصیات محصول</h2>
-    <a class="btn-store" href="@Url.Action("EditAttribute","ShopAdmin", new { company })">خصوصیت جدید</a>
-</div>
+@Html.PageHeader("خصوصیات محصول", "خصوصیت جدید", "EditAttribute")
 <div class="panel-card">
-    <table class="table">
-        <thead><tr><th>نام</th><th>نوع</th><th>گروه‌های مرتبط</th><th>فیلتر</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var a in Model)
-        {
-            var linked = (a.CategoryIds == null || !a.CategoryIds.Any())
-                ? "همه گروه‌ها"
-                : string.Join("، ", a.CategoryIds.Where(id => cats.ContainsKey(id)).Select(id => cats[id]));
-            <tr>
-                <td>@a.Name</td>
-                <td>@a.InputType</td>
-                <td>@linked</td>
-                <td>@(a.IsFilterable ? "بله" : "خیر")</td>
-                <td class="text-nowrap">
-                    <a href="@Url.Action("EditAttribute","ShopAdmin", new { company, id = a.Id })">ویرایش</a>
-                    @using (Html.BeginForm("DeleteAttribute", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@a.Id" />
-                        <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                    }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @Html.GridToolbar("جستجو در نام یا گزینه‌ها…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("name", "نام")
+                    @Html.SortHeader("type", "نوع")
+                    <th>گروه‌های مرتبط</th>
+                    <th>فیلتر</th>
+                    @Html.SortHeader("sort", "ترتیب")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    var linked = (a.CategoryIds == null || !a.CategoryIds.Any())
+                        ? "همه گروه‌ها"
+                        : string.Join("، ", a.CategoryIds.Where(id => cats.ContainsKey(id)).Select(id => cats[id]));
+                    <tr>
+                        <td>
+                            @a.Name
+                            @if (a.InputType == "select" && !string.IsNullOrEmpty(a.Options)) { <div class="small text-muted">@a.Options</div> }
+                        </td>
+                        <td>@(inputTypes.ContainsKey(a.InputType ?? "") ? inputTypes[a.InputType] : a.InputType)</td>
+                        <td class="small">@linked</td>
+                        <td>@(a.IsFilterable ? "بله" : "خیر")</td>
+                        <td>@a.SortOrder</td>
+                        <td class="row-actions">
+                            @Html.EditLink("EditAttribute", a.Id)
+                            @Html.DeleteButton("DeleteAttribute", a.Id, "خصوصیت «" + a.Name + "» حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-sliders fs-3 d-block mb-1"></i>خصوصیتی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

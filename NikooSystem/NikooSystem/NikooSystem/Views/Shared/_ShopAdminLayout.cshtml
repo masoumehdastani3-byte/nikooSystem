@@ -1,10 +1,113 @@
-@{
-    var settings = (NikooSystem.Models.Store.StoreSettings)ViewBag.Settings;
+﻿@{
+    var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
-    var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
+    var tenant = ViewBag.Tenant as TenantInfo;
     var onTrial = tenant != null && tenant.IsTrial && !tenant.IsPaid;
-    var subscriptionProductId = onTrial ? NikooSystem.Services.TenantProvisioningService.SubscriptionProductId(tenant.StoreType) : null;
-    var tutorial = NikooSystem.Services.TutorialService.Get(ViewContext.RouteData.Values["action"] as string);
+    var renewalDue = tenant != null && tenant.IsRenewalDue();
+    var subscriptionUrl = Url.Action("Subscription", "ShopAdmin", new { company });
+    var action = ViewContext.RouteData.Values["action"] as string;
+    var onSubscriptionPage = string.Equals(action, "Subscription", StringComparison.OrdinalIgnoreCase);
+    var tutorial = NikooSystem.Services.TutorialService.Get(action);
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var unreadMessages = NikooSystem.Services.TenantStore.CountUnreadMessages(company);
+    var pendingComments = kind.IsContent ? NikooSystem.Services.TenantStore.CountPendingComments(company) : 0;
+    var storage = NikooSystem.Services.StorageQuota.Usage(company);
+    var storageUrl = Url.Action("Storage", "ShopAdmin", new { company });
+    var onStoragePage = string.Equals(action, "Storage", StringComparison.OrdinalIgnoreCase);
+
+    // A group with a single item is shown as a plain link.
+    var nav = new List<NavGroup>();
+    NavGroup group = null;
+    Action<string, string> section = (title, icon) => nav.Add(group = new NavGroup { Title = title, Icon = icon });
+    Action<string, string, string, int, string[]> add = (a, icon, text, badge, also) =>
+        group.Items.Add(new NavItem { Action = a, Icon = icon, Text = text, Badge = badge, Also = also ?? new string[0], Active = IsActive(action, a, also) });
+
+    section(null, null);
+    add("Index", "bi-speedometer2", "داشبورد", 0, null);
+    add("Visits", "bi-bar-chart-line", "آمار بازدید", 0, null);
+    if (kind.IsContent)
+    {
+        section("محتوا", "bi-journal-text");
+        add("Posts", "bi-newspaper", "خبرها و مقاله‌ها", 0, new[] { "EditPost" });
+        add("Categories", "bi-diagram-3", "سرویس‌ها و دسته‌ها", 0, new[] { "EditCategory" });
+        add("Comments", "bi-chat-left-text", "نظرات خوانندگان", pendingComments, null);
+        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
+    }
+    else if (kind.IsBooking)
+    {
+        section("نوبت‌دهی", "bi-calendar-week");
+        add("Calendar", "bi-calendar-week", "تقویم نوبت‌ها", 0, null);
+        add("Appointments", "bi-card-checklist", "فهرست نوبت‌ها", NikooSystem.Services.TenantStore.CountAppointmentsToday(company), new[] { "AppointmentDetails", "NewAppointment" });
+        add("Services", "bi-clipboard-check", "خدمات و تعرفه‌ها", 0, new[] { "EditService" });
+        add("Staff", "bi-person-badge", "متخصصان و ساعت کاری", 0, new[] { "EditStaff" });
+        add("TimeOff", "bi-calendar-x", "تعطیلی و مرخصی", 0, null);
+        section(null, null);
+        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
+    }
+    else
+    {
+        section(kind.ItemsLabel, kind.IsDigital ? "bi-easel" : "bi-box-seam");
+        add("Products", kind.IsDigital ? "bi-easel" : "bi-box", "فهرست " + kind.ItemsLabel, 0, new[] { "EditProduct" });
+        add("Categories", "bi-diagram-3", "گروه‌ها", 0, new[] { "EditCategory" });
+        add("Collections", "bi-tags", "برچسب‌های ویژه", 0, new[] { "EditCollection" });
+        add("Attributes", "bi-list-check", "خصوصیات", 0, new[] { "EditAttribute" });
+        section("فروش و مشتریان", "bi-cart-check");
+        add("Orders", "bi-receipt", "سفارش‌ها", 0, new[] { "OrderDetails" });
+        add("Customers", kind.IsDigital ? "bi-camera-video" : "bi-people", kind.IsDigital ? "دانشجویان و خریداران" : "مشتریان", 0, null);
+        add("Reviews", "bi-chat-dots", "نظرات", 0, null);
+        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
+    }
+    section("ظاهر سایت", "bi-palette");
+    add("PageLayout", "bi-layout-text-window-reverse", "چیدمان صفحات", 0, null);
+    add("Menus", "bi-menu-button-wide", "منوها", 0, new[] { "EditMenu" });
+    add("Pages", "bi-file-earmark-text", "صفحات", 0, new[] { "EditPage" });
+    add("Gallery", "bi-images", "گالری", 0, null);
+    section("بازاریابی و اتصال‌ها", "bi-megaphone");
+    add("SeoGuide", "bi-google", "سئو و گوگل", 0, null);
+    if (kind.IsShop)
+    {
+        add("Torob", "bi-graph-up", "اتصال به ترب", 0, null);
+    }
+    add("Enamad", "bi-patch-check", "اینماد", 0, null);
+    add("Notifications", "bi-bell", "اطلاع‌رسانی بله", 0, null);
+    section("تنظیمات", "bi-sliders");
+    add("Settings", "bi-gear", "اطلاعات " + kind.SiteNoun, 0, null);
+    add("Domain", "bi-globe", "دامنه اختصاصی", 0, null);
+    add("Setup", "bi-stars", "راه‌اندازی سریع", 0, null);
+    add("Storage", "bi-hdd", "فضای ذخیره‌سازی", storage.IsFull ? 1 : 0, null);
+    add("Subscription", "bi-credit-card", "اشتراک و تمدید", renewalDue ? 1 : 0, null);
+    section(null, null);
+    add("Support", "bi-headset", "پشتیبانی نیکو", NikooSystem.Services.SupportDesk.CountUnreadForStore(company), new[] { "Ticket", "NewTicket" });
+}
+@functions {
+    public class NavItem
+    {
+        public string Action, Icon, Text;
+        public int Badge;
+        public string[] Also;
+        public bool Active;
+    }
+
+    public class NavGroup
+    {
+        public string Title, Icon;
+        public List<NavItem> Items = new List<NavItem>();
+        public bool Active => Items.Any(i => i.Active);
+        public int Badge => Items.Sum(i => i.Badge);
+    }
+
+    static bool IsActive(string current, string action, string[] also)
+    {
+        return string.Equals(current, action, StringComparison.OrdinalIgnoreCase)
+            || (also != null && also.Any(a => string.Equals(current, a, StringComparison.OrdinalIgnoreCase)));
+    }
+}
+@helper NavLink(NavItem item, string company)
+{
+    <a href="@Url.Action(item.Action, "ShopAdmin", new { company })" class="@(item.Active ? "active" : null)" @(item.Active ? Html.Raw("aria-current=\"page\"") : null)>
+        <i class="bi @item.Icon"></i> @item.Text
+        @if (item.Badge > 0) { <span class="side-badge">@item.Badge</span> }
+    </a>
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -12,62 +115,133 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewBag.Title - مدیریت @settings.StoreName</title>
-    <link href="~/Assets/css/style.css" rel="stylesheet" />
+    <meta name="robots" content="noindex, nofollow" />
+    <link href="@Url.Asset("~/Assets/css/style.css")" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
-    <link href="~/Content/storefront.css" rel="stylesheet" />
-    <link href="~/Content/admin-table.css" rel="stylesheet" />
-    <link href="~/Content/admin-pages.css" rel="stylesheet" />
-    @if (tutorial != null) { <link href="~/Content/tutorial.css" rel="stylesheet" /> }
+    <link href="@Url.Asset("~/Content/storefront.css")" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/admin-table.css")" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/admin-pages.css")" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/storage.css")" rel="stylesheet" />
+    @if (tutorial != null) { <link href="@Url.Asset("~/Content/tutorial.css")" rel="stylesheet" /> }
     <style>body{font-family:'Far_Yekan',Tahoma,sans-serif!important}</style>
 </head>
-<body>
+<body data-storage-free="@storage.FreeBytes" data-storage-full="@(storage.IsFull ? "1" : "0")" data-storage-url="@storageUrl">
 <div class="admin-shell">
     <aside class="admin-side">
-        <div class="mb-4 px-2">
-            <strong>@settings.StoreName</strong>
-            <div class="small opacity-75">کد شرکت: @company</div>
+        <div class="side-head">
+            <div class="side-store">
+                <strong>@settings.StoreName</strong>
+                <div class="small opacity-75">کد شرکت: @company · <i class="bi @kind.Icon"></i> @kind.Name</div>
+            </div>
+            <button type="button" class="side-toggle" data-bs-toggle="collapse" data-bs-target="#sideNav" aria-controls="sideNav" aria-expanded="false" aria-label="منوی پنل">
+                <i class="bi bi-list"></i>
+                @{ var totalBadge = nav.Sum(g => g.Badge); }
+                @if (totalBadge > 0) { <span class="side-badge">@totalBadge</span> }
+            </button>
         </div>
-        <a href="@Url.Action("Index","ShopAdmin", new { company })"><i class="bi bi-speedometer2"></i> داشبورد</a>
-        <a href="@Url.Action("Setup","ShopAdmin", new { company })"><i class="bi bi-magic"></i> راه‌اندازی سریع</a>
-        <a href="@Url.Action("Settings","ShopAdmin", new { company })"><i class="bi bi-shop"></i> اطلاعات فروشگاه</a>
-        <a href="@Url.Action("PageLayout","ShopAdmin", new { company })"><i class="bi bi-layout-text-window-reverse"></i> چیدمان صفحات</a>
-        <a href="@Url.Action("Products","ShopAdmin", new { company })"><i class="bi bi-box"></i> محصولات</a>
-        <a href="@Url.Action("Categories","ShopAdmin", new { company })"><i class="bi bi-diagram-3"></i> گروه‌ها</a>
-        <a href="@Url.Action("Collections","ShopAdmin", new { company })"><i class="bi bi-tags"></i> برچسب‌های ویژه</a>
-        <a href="@Url.Action("Attributes","ShopAdmin", new { company })"><i class="bi bi-list-check"></i> خصوصیات</a>
-        <a href="@Url.Action("Menus","ShopAdmin", new { company })"><i class="bi bi-menu-button-wide"></i> منوها</a>
-        <a href="@Url.Action("Pages","ShopAdmin", new { company })"><i class="bi bi-file-earmark-text"></i> صفحات</a>
-        <a href="@Url.Action("Gallery","ShopAdmin", new { company })"><i class="bi bi-images"></i> گالری</a>
-        <a href="@Url.Action("Reviews","ShopAdmin", new { company })"><i class="bi bi-chat-dots"></i> نظرات</a>
-        <a href="@Url.Action("Orders","ShopAdmin", new { company })"><i class="bi bi-receipt"></i> سفارش‌ها</a>
-        <a href="@Url.Action("Customers","ShopAdmin", new { company })"><i class="bi bi-people"></i> مشتریان</a>
-        <hr class="border-secondary" />
-        <a href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده سایت</a>
-        <a href="@Url.Action("Logout","ShopAdmin", new { company })"><i class="bi bi-box-arrow-right"></i> خروج</a>
+        <nav class="side-nav collapse" id="sideNav" aria-label="منوی پنل مدیریت">
+            @foreach (var g in nav)
+            {
+                if (g.Title == null || g.Items.Count == 1)
+                {
+                    foreach (var item in g.Items) { @NavLink(item, company) }
+                    continue;
+                }
+                <details class="side-group" @(g.Active ? "open" : null)>
+                    <summary class="@(g.Active ? "has-active" : null)">
+                        <i class="bi @g.Icon"></i> <span class="grow">@g.Title</span>
+                        @if (g.Badge > 0) { <span class="side-badge">@g.Badge</span> }
+                        <i class="bi bi-chevron-down side-caret"></i>
+                    </summary>
+                    <div class="side-sub">
+                        @foreach (var item in g.Items) { @NavLink(item, company) }
+                    </div>
+                </details>
+            }
+            <hr class="border-secondary" />
+            <a href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده سایت</a>
+            <a href="@Url.Action("Logout","ShopAdmin", new { company })"><i class="bi bi-box-arrow-right"></i> خروج</a>
+        </nav>
     </aside>
     <main class="admin-main">
-        @if (onTrial)
+        @if (onTrial && !onSubscriptionPage)
         {
-            <link href="~/Content/onboarding.css" rel="stylesheet" />
+            <link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
             <div class="trial-banner">
                 <i class="bi bi-hourglass-split"></i>
                 <div class="grow">
-                    <strong>دوره آزمایشی: @tenant.TrialDaysLeft() روز باقی مانده</strong>
-                    <div class="small text-muted">اگر تا پایان این مدت اشتراک را پرداخت نکنید، فروشگاه و همه اطلاعات آن حذف می‌شود.</div>
+                    <strong>دوره آزمایشی: @tenant.TrialDaysLeft().ToFa() روز باقی مانده</strong>
+                    <div class="small text-muted">اگر تا پایان این مدت اشتراک را پرداخت نکنید، @kind.SiteNoun و همه اطلاعات آن حذف می‌شود. اشتراک سه‌ماهه، شش‌ماهه یا یک‌ساله است.</div>
                 </div>
-                @if (subscriptionProductId.HasValue)
-                {
-                    <a class="btn btn-warning btn-sm" href="@Url.Action("Buy","Checkout", new { productId = subscriptionProductId.Value, company })">پرداخت و فعال‌سازی دائمی</a>
-                }
+                <a class="btn btn-warning btn-sm" href="@subscriptionUrl"><i class="bi bi-credit-card"></i> پرداخت اشتراک</a>
             </div>
         }
-        @if (TempData["Ok"] != null) { <div class="alert alert-success">@TempData["Ok"]</div> }
-        @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+        @if (renewalDue && !onSubscriptionPage)
+        {
+            var expired = tenant.IsSubscriptionExpired();
+            <div class="storage-banner @(expired ? "is-full" : "is-near")" role="alert">
+                <i class="bi @(expired ? "bi-exclamation-octagon" : "bi-arrow-repeat")"></i>
+                <div class="grow">
+                    @if (expired)
+                    {
+                        <strong>اشتراک @kind.SiteNoun شما تمام شده است</strong>
+                        <div class="small">@kind.SiteNoun فقط @tenant.GraceDaysLeft().ToFa() روز دیگر (تا @tenant.ClosesAt().Value.ToShamsiText()) باز می‌ماند و پس از آن تا تمدید اشتراک برای بازدیدکنندگان بسته می‌شود؛ اطلاعات شما پاک نمی‌شود.</div>
+                    }
+                    else
+                    {
+                        <strong>اشتراک شما @tenant.SubscriptionDaysLeft().ToFa() روز دیگر تمام می‌شود</strong>
+                        <div class="small">پایان اشتراک: @tenant.SubscriptionEndsAt.Value.ToShamsiText(). با تمدید از همین حالا، دوره تازه به انتهای دوره فعلی اضافه می‌شود.</div>
+                    }
+                </div>
+                <a class="btn @(expired ? "btn-danger" : "btn-warning") btn-sm" href="@subscriptionUrl"><i class="bi bi-credit-card"></i> تمدید اشتراک</a>
+            </div>
+        }
+        @if (!onStoragePage && (storage.IsFull || storage.IsNearlyFull))
+        {
+            <div class="storage-banner @(storage.IsFull ? "is-full" : "is-near")" role="alert">
+                <i class="bi @(storage.IsFull ? "bi-exclamation-octagon" : "bi-hdd")"></i>
+                <div class="grow">
+                    @if (storage.IsFull)
+                    {
+                        <strong>فضای سایت شما پر شده است</strong>
+                        <div class="small">@NikooSystem.Services.StorageQuota.Format(storage.UsedBytes) از @NikooSystem.Services.StorageQuota.Format(storage.QuotaBytes) استفاده شده؛ تا حجم بیشتری نخرید نمی‌توانید تصویر یا فایل تازه‌ای بارگذاری کنید.</div>
+                    }
+                    else
+                    {
+                        <strong>@storage.Percent.ToFa()٪ فضای سایت شما پر شده است</strong>
+                        <div class="small">فقط @NikooSystem.Services.StorageQuota.Format(storage.FreeBytes) جای خالی مانده؛ پیش از پر شدن، حجم بیشتر بخرید یا فایل‌های بی‌استفاده را پاک کنید.</div>
+                    }
+                </div>
+                <a class="btn @(storage.IsFull ? "btn-danger" : "btn-warning") btn-sm" href="@storageUrl"><i class="bi bi-cart-plus"></i> خرید حجم بیشتر</a>
+            </div>
+        }
+        @Html.FlashMessages()
         @RenderBody()
     </main>
 </div>
-<script src="~/Content/admin-table.js"></script>
+<div class="modal fade" id="storageFullModal" tabindex="-1" aria-labelledby="storageFullTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content storage-modal">
+            <div class="modal-body text-center p-4">
+                <div class="storage-modal-icon"><i class="bi bi-hdd-stack"></i></div>
+                <h5 id="storageFullTitle" class="mb-2">فضای کافی ندارید</h5>
+                <p class="text-muted mb-1" data-storage-message>فضای سایت شما پر شده است و دیگر نمی‌توانید تصویر یا فایل بارگذاری کنید.</p>
+                <p class="small text-muted mb-3">با خرید حجم بیشتر، بارگذاری بلافاصله دوباره باز می‌شود.</p>
+                <div class="d-flex gap-2 justify-content-center flex-wrap">
+                    <a class="btn btn-primary" href="@storageUrl"><i class="bi bi-cart-plus"></i> خرید حجم بیشتر</a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">بستن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/Assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="@Url.Asset("~/Content/storage-guard.js")"></script>
+@if (Html.UsesQuickManage())
+{
+    @Html.Partial("_QuickManage")
+}
 @RenderSection("scripts", required: false)
 @if (tutorial != null)
 {
@@ -75,7 +249,7 @@
         <i class="bi bi-play-circle-fill"></i> آموزش این صفحه
     </button>
     <script type="application/json" id="tutData">@Html.Raw(tutorial.TourJson)</script>
-    <script src="~/Content/tutorial.js"></script>
+    <script src="@Url.Asset("~/Content/tutorial.js")"></script>
 }
 </body>
 </html>

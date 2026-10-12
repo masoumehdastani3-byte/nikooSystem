@@ -1,0 +1,19 @@
+@model string
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var links = new List<Tuple<string, string, string>>();
+    if (kind.IsDigital)
+    {
+        links.Add(Tuple.Create("Library", "bi-collection-play", "کتابخانه من"));
+    }
+    links.Add(Tuple.Create("Orders", "bi-receipt", "سفارش‌ها"));
+    links.Add(Tuple.Create("Profile", "bi-person", "پروفایل"));
+}
+<nav class="account-nav">
+    @foreach (var l in links)
+    {
+        <a class="@(l.Item1 == Model ? "active" : "")" href="@Url.Action(l.Item1, "ShopAccount", new { company })"><i class="bi @l.Item2"></i> @l.Item3</a>
+    }
+    <a class="account-nav-out" href="@Url.Action("Logout","ShopAccount", new { company })"><i class="bi bi-box-arrow-left"></i> خروج</a>
+</nav>

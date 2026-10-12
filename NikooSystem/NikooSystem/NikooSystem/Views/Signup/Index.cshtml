@@ -1,18 +1,18 @@
-@model NikooSystem.Models.Store.StoreSignupVm
+@model StoreSignupVm
 @{
     ViewBag.Title = "ساخت فروشگاه رایگان";
     var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
     var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
     var codeSuffix = string.IsNullOrEmpty(rootDomain) ? null : "." + rootDomain;
 }
-<link href="~/Content/onboarding.css" rel="stylesheet" />
+<link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
 <main id="main" class="ob-page">
     <div class="container">
         <div class="row g-4">
             <div class="col-lg-7">
                 <div class="ob-card">
-                    <h1>فروشگاه آنلاین خودت را بساز</h1>
-                    <p class="ob-sub">بدون نیاز به برنامه‌نویس و پشتیبان؛ @trialDays روز رایگان امتحان کن، اگر راضی بودی اشتراک را پرداخت کن.</p>
+                    <h1>فروشگاه، آکادمی یا سایت خبری خودت را بساز</h1>
+                    <p class="ob-sub">بدون نیاز به برنامه‌نویس و پشتیبان؛ @trialDays روز رایگان امتحان کن، اگر راضی بودی اشتراک سه‌ماهه، شش‌ماهه یا یک‌ساله را پرداخت کن.</p>
 
                     @using (Html.BeginForm("Index", "Signup", FormMethod.Post, new { id = "signupForm", novalidate = "novalidate" }))
                     {
@@ -24,19 +24,53 @@
                             @Html.TextBoxFor(m => m.Website, new { tabindex = "-1", autocomplete = "off" })
                         </div>
 
-                        <div class="mb-4">
-                            <span class="ob-label">۱. فروشگاهت چه چیزی می‌فروشد؟</span>
-                            <div class="ob-types">
-                                @foreach (var t in NikooSystem.Helpers.StoreTypes.All)
-                                {
-                                    var active = Model.StoreType == t.Id;
-                                    <label class="ob-type @(active ? "active" : "")">
-                                        <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
-                                        <i class="bi @t.Icon"></i>
-                                        <div><strong>@t.Name</strong><span>@t.Description</span></div>
-                                    </label>
-                                }
+                        if (!string.IsNullOrEmpty(Model.Template))
+                        {
+                            var chosenTemplate = StoreTemplates.Get(Model.Template);
+                            @Html.HiddenFor(m => m.Template)
+                            <div class="alert alert-info d-flex align-items-center gap-2 mb-4 py-2 small">
+                                <span class="d-inline-block rounded-circle flex-shrink-0" style="width:16px;height:16px;background:@chosenTemplate.PrimaryColor"></span>
+                                <span>قالب انتخابی شما: <strong>@chosenTemplate.Name</strong>؛ سایت با همین قالب ساخته می‌شود (اگر نوع سایتی انتخاب کنید که این قالب را ندارد، قالب پیش‌فرض آن نوع گذاشته می‌شود).</span>
                             </div>
+                        }
+
+                        <div class="mb-4">
+                            <span class="ob-label">۱. چه نوع سایتی می‌خواهید؟</span>
+                            @foreach (var kind in SiteKinds.All)
+                            {
+                                <div class="ob-kind">
+                                    <div class="ob-kind-head">
+                                        <i class="bi @kind.Icon"></i>
+                                        <div>
+                                            <strong>@kind.Name</strong>
+                                            <span>@kind.Description</span>
+                                        </div>
+                                    </div>
+                                    <ul class="ob-kind-features">
+                                        @foreach (var f in kind.Features)
+                                        {
+                                            <li><i class="bi bi-check2"></i> @f</li>
+                                        }
+                                    </ul>
+                                    <div class="ob-kind-modules">
+                                        @foreach (var m in PlatformModules.For(kind).Where(m => m.Highlight))
+                                        {
+                                            <span><i class="bi @m.Icon"></i> @m.Name</span>
+                                        }
+                                    </div>
+                                    <div class="ob-types">
+                                        @foreach (var t in StoreTypes.OfKind(kind.Id))
+                                        {
+                                            var active = Model.StoreType == t.Id;
+                                            <label class="ob-type @(active ? "active" : "")">
+                                                <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
+                                                <i class="bi @t.Icon"></i>
+                                                <div><strong>@t.Name</strong><span>@t.Description</span></div>
+                                            </label>
+                                        }
+                                    </div>
+                                </div>
+                            }
                             <div class="ob-help">نگران نباش؛ بعداً همه‌چیز از جمله قالب و دسته‌بندی‌ها قابل تغییر است.</div>
                         </div>
 
@@ -90,7 +124,7 @@
                             <div class="col-12 form-check ms-1">
                                 @Html.CheckBoxFor(m => m.AcceptTerms, new { @class = "form-check-input" })
                                 <label class="form-check-label" for="AcceptTerms">
-                                    <a href="@Url.Action("Terms","Home")" target="_blank">شرایط استفاده</a> را خواندم و می‌پذیرم
+                                    <a href="@Url.Action("Terms","Home")" target="_blank">قوانین و مقررات</a> و <a href="@Url.Action("Privacy","Home")" target="_blank">حریم خصوصی</a> را خواندم و می‌پذیرم
                                 </label>
                                 @Html.ValidationMessageFor(m => m.AcceptTerms, "", new { @class = "text-danger small d-block" })
                             </div>
@@ -114,10 +148,13 @@
                         <li><i class="bi bi-signpost-split"></i><div><strong>راهنمای قدم‌به‌قدم</strong><span>لوگو، رنگ، اولین محصول، درگاه پرداخت و دامنه را در چند دقیقه تنظیم می‌کنید</span></div></li>
                         <li><i class="bi bi-palette"></i><div><strong>ظاهر دلخواه</strong><span>چند قالب آماده، رنگ‌ها، منوها و صفحات قابل تغییر</span></div></li>
                         <li><i class="bi bi-credit-card"></i><div><strong>درگاه پرداخت خودتان</strong><span>پول فروش مستقیم به حساب زرین‌پال شما واریز می‌شود</span></div></li>
-                        <li><i class="bi bi-globe"></i><div><strong>دامنه اختصاصی</strong><span>دامنه خودتان را از داخل پنل وصل کنید</span></div></li>
+                        <li><i class="bi bi-globe"></i><div><strong>دامنه اختصاصی</strong><span>دامنه خودتان را با راهنمای پنل وصل کنید؛ گواهی SSL را پشتیبانی نیکو فعال می‌کند</span></div></li>
+                        <li><i class="bi bi-google"></i><div><strong>دیده شدن در گوگل و ترب</strong><span>سئوی خودکار همه صفحات و اتصال کالاهای فروشگاه به ترب با API رسمی</span></div></li>
+                        <li><i class="bi bi-bell"></i><div><strong>خبر فوری در بله</strong><span>هر سفارش، نوبت یا پیام تازه همان لحظه در اپلیکیشن بله</span></div></li>
                     </ul>
                     <div class="alert alert-warning small mb-0">
                         دوره آزمایشی @trialDays روزه است. اگر تا پایان آن اشتراک را پرداخت نکنید، فروشگاه و همه اطلاعاتش حذف می‌شود.
+                        بعد از آن، اشتراک را هر سه ماه، شش ماه یا سالی یک‌بار از داخل پنل تمدید می‌کنید.
                     </div>
                 </div>
             </div>

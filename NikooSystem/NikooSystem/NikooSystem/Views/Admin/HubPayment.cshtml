@@ -1,0 +1,51 @@
+@model NikooSystem.Models.HubPayment
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "جزئیات تراکنش";
+    var app = ViewBag.App as NikooSystem.Models.PaymentClient;
+}
+<div class="adm-head">
+    <div>
+        <h1>تراکنش #@Model.Id.ToFa() <span class="badge @Model.Status.HubStatusBadge() fs-6">@Model.Status.HubStatusText()</span></h1>
+        <p>@(app?.Name ?? Model.AppId) · @Model.CreatedAt.ToShamsiText() ساعت @Model.CreatedAt.ToString("HH:mm")</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-link" href="@Url.Action("HubPayments","Admin")">بازگشت</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">پرداخت</div>
+            <dl class="adm-dl">
+                <dt>مبلغ</dt><dd>@Model.Amount.ToToman()</dd>
+                <dt>توضیح</dt><dd>@(Model.Description ?? "-")</dd>
+                <dt>شناسه سفارش مقصد</dt><dd class="adm-ltr">@(Model.ExternalRef ?? "-")</dd>
+                <dt>کد پیگیری بانک</dt><dd class="adm-ltr">@(Model.RefId?.ToString() ?? "-")</dd>
+                <dt>Authority</dt><dd class="adm-ltr small">@(Model.Authority ?? "-")</dd>
+                <dt>پیام درگاه</dt><dd>@(Model.PaymentMessage ?? "-")</dd>
+                <dt>زمان پرداخت</dt><dd>@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsiText() + " " + Model.PaidAt.Value.ToString("HH:mm") : "-")</dd>
+                <dt>مهلت پرداخت</dt><dd>@Model.ExpiresAt.ToShamsiText() @Model.ExpiresAt.ToString("HH:mm")</dd>
+            </dl>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="adm-card">
+            <div class="adm-card-title">مشتری</div>
+            <dl class="adm-dl">
+                <dt>نام</dt><dd>@(Model.CustomerName ?? "-")</dd>
+                <dt>موبایل</dt><dd class="adm-ltr">@(Model.CustomerMobile ?? "-")</dd>
+                <dt>ایمیل</dt><dd class="adm-ltr">@(Model.CustomerEmail ?? "-")</dd>
+            </dl>
+        </div>
+        <div class="adm-card">
+            <div class="adm-card-title">اتصال به اپلیکیشن</div>
+            <dl class="adm-dl">
+                <dt>توکن</dt><dd><div class="adm-code">@Model.Token</div></dd>
+                <dt>آدرس بازگشت</dt><dd><div class="adm-code">@(Model.ReturnUrl ?? "-")</div></dd>
+                <dt>آدرس اطلاع‌رسانی</dt><dd><div class="adm-code">@(Model.NotifyUrl ?? "-")</div></dd>
+                <dt>اطلاع‌رسانی</dt><dd>@(string.IsNullOrEmpty(Model.NotifyUrl) ? "تنظیم نشده" : Model.NotifySent ? "ارسال شد" : "ارسال نشده")</dd>
+            </dl>
+        </div>
+    </div>
+</div>

@@ -1,38 +1,54 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreOrder>
-@using NikooSystem.Helpers
+@model PagedList<StoreOrder>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "سفارش‌ها";
     var company = (string)ViewBag.CompanyCode;
+    var statuses = Enum.GetValues(typeof(StoreOrderStatus)).Cast<StoreOrderStatus>();
 }
-<h2 class="mb-3">سفارش‌ها</h2>
+@Html.PageHeader("سفارش‌ها")
 <div class="panel-card">
-<table class="table">
-    <thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th>تغییر وضعیت</th></tr></thead>
-    <tbody>
-    @foreach (var o in Model)
-    {
-        <tr>
-            <td>@o.OrderNumber</td>
-            <td>@o.CustomerName<br /><small>@o.CustomerMobile</small></td>
-            <td>@o.Amount.ToToman()</td>
-            <td>@o.Status</td>
-            <td>
-                @using (Html.BeginForm("UpdateOrderStatus", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-1" }))
+    @Html.GridToolbar("شماره سفارش، نام، موبایل یا کد رهگیری…",
+        new GridSelect("status", "همه وضعیت‌ها", GridHtml.Options(statuses, s => s, s => s.StatusText())))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("number", "شماره")
+                    @Html.SortHeader("customer", "مشتری")
+                    <th>اقلام</th>
+                    @Html.SortHeader("amount", "مبلغ")
+                    @Html.SortHeader("status", "وضعیت")
+                    @Html.SortHeader("date", "تاریخ")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
                 {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@o.Id" />
-                    <select class="form-select form-select-sm" name="status">
-                        @foreach (NikooSystem.Models.Store.StoreOrderStatus s in Enum.GetValues(typeof(NikooSystem.Models.Store.StoreOrderStatus)))
-                        {
-                            <option value="@s" @(o.Status == s ? "selected" : "")>@s</option>
-                        }
-                    </select>
-                    <button class="btn btn-sm btn-dark" type="submit">OK</button>
+                    <tr>
+                        <td><a href="@Url.Action("OrderDetails", "ShopAdmin", new { company, id = o.Id })" class="fw-bold text-decoration-none">@o.OrderNumber</a></td>
+                        <td>@o.CustomerName<div class="small text-muted" dir="ltr">@o.CustomerMobile</div></td>
+                        <td class="small">
+                            @o.Items.Sum(i => i.Quantity) قلم
+                            @if (o.IsDigitalOnly()) { <span class="badge bg-info-subtle text-info-emphasis">دیجیتال</span> }
+                        </td>
+                        <td>@o.Amount.ToToman()</td>
+                        <td>
+                            @Html.StatusBadge(o.Status)
+                            @if (!string.IsNullOrEmpty(o.TrackingCode)) { <div class="small text-muted" title="کد رهگیری"><i class="bi bi-truck"></i> @o.TrackingCode</div> }
+                        </td>
+                        <td class="small text-muted">@o.CreatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("OrderDetails", "ShopAdmin", new { company, id = o.Id }), "bi-receipt", "جزئیات و تغییر وضعیت", "is-view")
+                        </td>
+                    </tr>
                 }
-            </td>
-        </tr>
-    }
-    </tbody>
-</table>
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-bag fs-3 d-block mb-1"></i>سفارشی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

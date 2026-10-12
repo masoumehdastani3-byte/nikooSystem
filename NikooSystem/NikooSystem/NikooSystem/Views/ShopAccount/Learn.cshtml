@@ -1,0 +1,162 @@
+@model StoreProduct
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+    var owned = ViewBag.Owned as bool? == true;
+    var lesson = ViewBag.Lesson as StoreLesson;
+    var file = ViewBag.File as StoreProductFile;
+    var lessons = Model.Lessons ?? new List<StoreLesson>();
+    var index = lesson == null ? -1 : lessons.IndexOf(lesson);
+    var prev = index > 0 ? lessons[index - 1] : null;
+    var next = index >= 0 && index < lessons.Count - 1 ? lessons[index + 1] : null;
+    var mediaUrl = file == null ? null : Url.Action("Media", "ShopAccount", new { company, id = Model.Id, file = file.Id });
+    var contentType = file?.ContentType ?? "";
+    var embed = lesson == null ? null : EmbedUrl(lesson.VideoUrl);
+    ViewBag.Title = lesson == null ? Model.Title : lesson.Title + " - " + Model.Title;
+}
+@functions {
+    /// <summary>Player address of a YouTube or Aparat page; null for other links, which open in a new tab.</summary>
+    static string EmbedUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        var m = System.Text.RegularExpressions.Regex.Match(url, @"(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]{6,20})");
+        if (m.Success) return "https://www.youtube.com/embed/" + m.Groups[1].Value;
+        m = System.Text.RegularExpressions.Regex.Match(url, @"aparat\.com/v/(\w{3,20})");
+        if (m.Success) return "https://www.aparat.com/video/video/embed/videohash/" + m.Groups[1].Value + "/vt/frame";
+        return null;
+    }
+}
+
+<section class="learn-page py-4">
+    <div class="container">
+        <nav class="cat-breadcrumb" aria-label="مسیر">
+            @if (owned)
+            {
+                <a href="@Url.Action("Library","ShopAccount", new { company })">کتابخانه من</a>
+            }
+            else
+            {
+                <a href="@Url.Action("Product","Shop", new { company, slug = Model.Slug })">@Model.Title</a>
+            }
+            <i class="bi bi-chevron-left"></i>
+            <span>@Model.Title</span>
+        </nav>
+
+        @if (!owned)
+        {
+            <div class="learn-buy">
+                <span><i class="bi bi-unlock"></i> در حال تماشای جلسه رایگان هستید. برای دسترسی به همه @lessons.Count.ToFa() جلسه، دوره را تهیه کنید.</span>
+                <a class="btn-wm" href="@Url.Action("Product","Shop", new { company, slug = Model.Slug })">تهیه دوره</a>
+            </div>
+        }
+
+        <div class="learn-layout">
+            <div class="learn-main">
+                @if (lesson == null)
+                {
+                    <div class="cat-empty">
+                        <i class="bi bi-camera-video"></i>
+                        <h3>هنوز جلسه‌ای برای این دوره منتشر نشده است</h3>
+                        <p>به‌زودی جلسه‌ها اضافه می‌شوند.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="learn-player">
+                        @if (mediaUrl != null && contentType.StartsWith("video/"))
+                        {
+                            <video controls preload="metadata" controlsList="nodownload" src="@mediaUrl"></video>
+                        }
+                        else if (mediaUrl != null && contentType.StartsWith("audio/"))
+                        {
+                            <div class="learn-audio"><i class="bi bi-music-note-beamed"></i><audio controls preload="metadata" src="@mediaUrl"></audio></div>
+                        }
+                        else if (mediaUrl != null && contentType == "application/pdf")
+                        {
+                            <iframe src="@mediaUrl" title="@lesson.Title"></iframe>
+                        }
+                        else if (embed != null)
+                        {
+                            <iframe src="@embed" title="@lesson.Title" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+                        }
+                        else if (mediaUrl != null)
+                        {
+                            <div class="learn-file">
+                                <i class="bi bi-file-earmark-arrow-down"></i>
+                                <a class="btn-wm" href="@Url.Action("Media","ShopAccount", new { company, id = Model.Id, file = file.Id, download = true })">دانلود فایل این جلسه (@file.Size.ToFileSize())</a>
+                            </div>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(lesson.VideoUrl))
+                        {
+                            <div class="learn-file">
+                                <i class="bi bi-box-arrow-up-left"></i>
+                                <a class="btn-wm" href="@lesson.VideoUrl" target="_blank" rel="noopener">مشاهده جلسه</a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="learn-file"><i class="bi bi-hourglass"></i> <span>محتوای این جلسه هنوز بارگذاری نشده است.</span></div>
+                        }
+                    </div>
+
+                    <div class="learn-head">
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(lesson.Section)) { <div class="cn-kicker">@lesson.Section</div> }
+                            <h1>@lesson.Title</h1>
+                            @if (!string.IsNullOrWhiteSpace(lesson.Duration)) { <span class="text-muted small"><i class="bi bi-clock"></i> @lesson.Duration.ToFaDigits()</span> }
+                        </div>
+                        <div class="learn-steps">
+                            @if (prev != null)
+                            {
+                                <a class="btn-outline-store" href="@Url.Action("Learn","ShopAccount", new { company, id = Model.Id, lesson = prev.Id })"><i class="bi bi-chevron-right"></i> جلسه قبل</a>
+                            }
+                            @if (next != null)
+                            {
+                                <a class="btn-store" href="@Url.Action("Learn","ShopAccount", new { company, id = Model.Id, lesson = next.Id })">جلسه بعد <i class="bi bi-chevron-left"></i></a>
+                            }
+                        </div>
+                    </div>
+                    if (!string.IsNullOrWhiteSpace(lesson.Summary))
+                    {
+                        <p class="learn-summary">@lesson.Summary</p>
+                    }
+                    if (mediaUrl != null && owned && (contentType.StartsWith("video/") || contentType.StartsWith("audio/") || contentType == "application/pdf"))
+                    {
+                        <a class="small" href="@Url.Action("Media","ShopAccount", new { company, id = Model.Id, file = file.Id, download = true })"><i class="bi bi-download"></i> دانلود فایل جلسه</a>
+                    }
+                }
+            </div>
+
+            <aside class="learn-side">
+                <h2><i class="bi bi-list-ol"></i> سرفصل‌ها</h2>
+                @foreach (var group in lessons.Select((l, i) => new { Lesson = l, Number = i + 1 }).GroupBy(x => x.Lesson.Section ?? ""))
+                {
+                    if (!string.IsNullOrWhiteSpace(group.Key))
+                    {
+                        <h3>@group.Key</h3>
+                    }
+                    <ol>
+                        @foreach (var x in group)
+                        {
+                            var open = owned || x.Lesson.IsFree;
+                            <li class="@(lesson != null && x.Lesson.Id == lesson.Id ? "is-current" : "") @(open ? "" : "is-locked")">
+                                @if (open)
+                                {
+                                    <a href="@Url.Action("Learn","ShopAccount", new { company, id = Model.Id, lesson = x.Lesson.Id })">
+                                        <span class="pd-lesson-no">@x.Number.ToFa()</span> @x.Lesson.Title
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span><span class="pd-lesson-no">@x.Number.ToFa()</span> @x.Lesson.Title</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(x.Lesson.Duration)) { <small>@x.Lesson.Duration.ToFaDigits()</small> }
+                                <i class="bi @(open ? "bi-play-circle" : "bi-lock")"></i>
+                            </li>
+                        }
+                    </ol>
+                }
+            </aside>
+        </div>
+    </div>
+</section>

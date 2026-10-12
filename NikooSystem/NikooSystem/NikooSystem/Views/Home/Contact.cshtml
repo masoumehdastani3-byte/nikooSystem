@@ -2,6 +2,7 @@
 @{
     ViewBag.Title = "تماس با ما";
     ViewBag.Nav = "contact";
+    var site = NikooSystem.Services.SiteContentStore.Settings;
 }
 <main id="main">
     <div class="page-hero">
@@ -12,21 +13,36 @@
     </div>
     <section class="contact">
         <div class="container">
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success">@TempData["Success"]</div>
-            }
+            @Html.FlashMessages()
             <div class="row gy-4">
                 <div class="col-lg-5">
-                    <div class="info-box mb-3"><i class="bi bi-geo-alt"></i><h3>آدرس</h3><p>تهران، نارمک، فرجام شرقی</p></div>
-                    <div class="info-box mb-3"><i class="bi bi-telephone"></i><h3>تلفن</h3><p>۰۲۱-۷۷۰۰۰۰۰۰</p></div>
-                    <div class="info-box"><i class="bi bi-envelope"></i><h3>ایمیل</h3><p>info@nikoooo.ir</p></div>
+                    @if (!string.IsNullOrWhiteSpace(site.Address))
+                    {
+                        <div class="info-box mb-3"><i class="bi bi-geo-alt"></i><h3>آدرس</h3><p>@Html.Lines(site.Address)@if (!string.IsNullOrWhiteSpace(site.PostalCode)) {<br /><span>کد پستی: <span dir="ltr">@site.PostalCode</span></span>}</p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(site.Phone))
+                    {
+                        <div class="info-box mb-3"><i class="bi bi-telephone"></i><h3>تلفن</h3><p><a href="tel:@site.Phone.Replace("-", "").Replace(" ", "")" dir="ltr">@site.Phone</a></p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(site.Email))
+                    {
+                        <div class="info-box mb-3"><i class="bi bi-envelope"></i><h3>ایمیل</h3><p><a href="mailto:@site.Email">@site.Email</a></p></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(site.WorkingHours))
+                    {
+                        <div class="info-box"><i class="bi bi-clock"></i><h3>ساعات پاسخگویی</h3><p>@site.WorkingHours</p></div>
+                    }
                 </div>
                 <div class="col-lg-7">
                     <div class="inner-card">
                         @using (Html.BeginForm("Contact", "Home", FormMethod.Post))
                         {
                             @Html.AntiForgeryToken()
+                            @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+                            <div class="d-none" aria-hidden="true">
+                                <label for="Website">وب‌سایت</label>
+                                @Html.TextBoxFor(m => m.Website, new { tabindex = "-1", autocomplete = "off" })
+                            </div>
                             <div class="row gy-3">
                                 <div class="col-md-6">
                                     @Html.LabelFor(m => m.Name)
@@ -35,10 +51,15 @@
                                 </div>
                                 <div class="col-md-6">
                                     @Html.LabelFor(m => m.Email)
-                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", placeholder = "ایمیل" })
+                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", placeholder = "ایمیل", dir = "ltr" })
                                     @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
                                 </div>
-                                <div class="col-12">
+                                <div class="col-md-6">
+                                    @Html.LabelFor(m => m.Phone)
+                                    @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", placeholder = "مثلاً 09121234567", dir = "ltr", inputmode = "tel" })
+                                    @Html.ValidationMessageFor(m => m.Phone, "", new { @class = "text-danger" })
+                                </div>
+                                <div class="col-md-6">
                                     @Html.LabelFor(m => m.Subject)
                                     @Html.TextBoxFor(m => m.Subject, new { @class = "form-control", placeholder = "موضوع" })
                                     @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger" })

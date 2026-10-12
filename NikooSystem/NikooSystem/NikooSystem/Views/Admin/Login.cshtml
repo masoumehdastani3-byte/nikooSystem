@@ -4,23 +4,27 @@
     ViewBag.Title = "ورود به پنل";
 }
 <div class="login-wrap">
-    <h3 class="mb-1 text-center">ورود مدیر</h3>
-    <p class="text-muted text-center mb-4">پنل مدیریت نیکو سیستم آفرین</p>
-    @using (Html.BeginForm("Login", "Admin", FormMethod.Post))
+    <img class="login-logo" src="~/Assets/img/logo.png" alt="" />
+    <h3 class="mb-1 text-center">ورود به پنل</h3>
+    <p class="text-muted text-center mb-4">مدیریت سایت @NikooSystem.Services.SiteContentStore.Settings.SiteName</p>
+    @using (Html.BeginForm("Login", "Admin", new { returnUrl = Request.QueryString["returnUrl"] }, FormMethod.Post))
     {
         @Html.AntiForgeryToken()
         @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
         <div class="mb-3">
-            @Html.LabelFor(m => m.Username)
-            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", autofocus = "autofocus" })
-            @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger" })
+            @Html.LabelFor(m => m.Username, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", dir = "ltr", autofocus = "autofocus", autocomplete = "username" })
+            @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger small" })
         </div>
         <div class="mb-3">
-            @Html.LabelFor(m => m.Password)
-            @Html.PasswordFor(m => m.Password, new { @class = "form-control" })
-            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+            @Html.LabelFor(m => m.Password, new { @class = "form-label" })
+            @Html.PasswordFor(m => m.Password, new { @class = "form-control", dir = "ltr", autocomplete = "current-password" })
+            @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
         </div>
         <button type="submit" class="btn btn-primary w-100">ورود</button>
     }
-    <p class="small text-muted mt-3 mb-0 text-center">پیش‌فرض: admin / Admin@123</p>
+    @if (NikooSystem.Services.SiteContentStore.UsesDefaultPassword)
+    {
+        <p class="small text-muted mt-3 mb-0 text-center">پیش‌فرض: admin / Admin@@123 — بعد از ورود از «نام کاربری و رمز» عوضش کنید.</p>
+    }
 </div>

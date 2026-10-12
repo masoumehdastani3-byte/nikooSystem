@@ -1,0 +1,14 @@
+@model IPagedList
+@* Marker after the items of a page: infinite-scroll.js loads the next page when it scrolls into view; without script it is a plain link. *@
+@if (Model.HasNext)
+{
+    var next = Html.QueryUrl(new Dictionary<string, object> { ["page"] = Model.Page + 1 });
+    <div class="infinite-next" data-next="@next">
+        <a class="btn-wm-outline" href="@next">نمایش بیشتر <i class="bi bi-chevron-down"></i></a>
+        <span class="infinite-loading" hidden><span class="spinner-border spinner-border-sm"></span> در حال بارگذاری…</span>
+    </div>
+}
+else if (Model.Page > 1)
+{
+    <div class="infinite-end">همه موارد نمایش داده شد <i class="bi bi-check2-circle"></i></div>
+}

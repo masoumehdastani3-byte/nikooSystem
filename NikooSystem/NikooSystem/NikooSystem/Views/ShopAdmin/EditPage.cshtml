@@ -1,4 +1,4 @@
-@model NikooSystem.Models.Store.StorePage
+@model StorePage
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = Model.Id > 0 ? "ویرایش صفحه" : "صفحه جدید";
@@ -36,6 +36,18 @@
                 منتشر شود
             </label>
             <input type="hidden" name="IsPublished" value="false" />
+        </div>
+        <div class="col-12">
+            <h5><i class="bi bi-google"></i> نمایش در گوگل</h5>
+            @{ var storeName = ((StoreSettings)ViewBag.Settings).StoreName; }
+            @Html.Partial("_SeoFields", new SeoFieldsVm
+            {
+                Title = Model.SeoTitle,
+                Description = Model.SeoDescription,
+                AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "عنوان صفحه" : Model.Title, storeName),
+                AutoDescription = Model.Id > 0 ? SeoPages.PageDescription(Model, storeName) : "از ابتدای متن صفحه ساخته می‌شود",
+                Url = Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Slug) ? Html.Seo().Url(Url.RouteUrl("ShopPage", new { company, slug = Model.Slug })) : null
+            })
         </div>
         <div class="col-12 d-flex gap-2">
             <button class="btn-store" type="submit">ذخیره صفحه</button>

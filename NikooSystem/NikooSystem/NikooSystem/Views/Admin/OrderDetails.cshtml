@@ -1,49 +1,80 @@
 @model NikooSystem.Models.Order
-@using NikooSystem.Helpers
 @using NikooSystem.Models
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.Title = "جزئیات سفارش";
+    var store = ViewBag.Store as NikooSystem.Models.Store.TenantInfo;
 }
-<h2 class="mb-3">سفارش @Model.OrderNumber</h2>
+<div class="adm-head">
+    <div>
+        <h1>سفارش <span dir="ltr">@Model.OrderNumber</span> @Html.StatusBadge(Model.Status)</h1>
+        <p>@Model.CreatedAt.ToShamsiText() ساعت @Model.CreatedAt.ToString("HH:mm")</p>
+    </div>
+    <a class="btn btn-link" href="@Url.Action("Orders","Admin")">بازگشت</a>
+</div>
 <div class="row g-3">
     <div class="col-lg-7">
-        <div class="card border-0 shadow-sm p-4">
-            <h5>اطلاعات مشتری</h5>
-            <dl class="row mb-0">
-                <dt class="col-sm-4">نام</dt><dd class="col-sm-8">@Model.CustomerName</dd>
-                <dt class="col-sm-4">موبایل</dt><dd class="col-sm-8">@Model.CustomerMobile</dd>
-                <dt class="col-sm-4">ایمیل</dt><dd class="col-sm-8">@Model.CustomerEmail</dd>
-                <dt class="col-sm-4">آدرس</dt><dd class="col-sm-8">@(Model.CustomerAddress ?? "-")</dd>
-                <dt class="col-sm-4">توضیحات</dt><dd class="col-sm-8">@(Model.Notes ?? "-")</dd>
+        <div class="adm-card">
+            <div class="adm-card-title">مشتری</div>
+            <dl class="adm-dl">
+                <dt>نام</dt><dd>@Model.CustomerName</dd>
+                <dt>موبایل</dt><dd class="adm-ltr"><a href="tel:@Model.CustomerMobile">@Model.CustomerMobile</a></dd>
+                <dt>ایمیل</dt><dd class="adm-ltr"><a href="mailto:@Model.CustomerEmail">@Model.CustomerEmail</a></dd>
+                <dt>آدرس</dt><dd>@(Model.CustomerAddress ?? "-")</dd>
+                <dt>توضیحات</dt><dd>@(Model.Notes ?? "-")</dd>
             </dl>
-            <hr />
-            <h5>اطلاعات پرداخت</h5>
-            <dl class="row mb-0">
-                <dt class="col-sm-4">محصول</dt><dd class="col-sm-8">@Model.ProductTitle</dd>
-                <dt class="col-sm-4">مبلغ</dt><dd class="col-sm-8">@Model.Amount.ToToman()</dd>
-                <dt class="col-sm-4">Authority</dt><dd class="col-sm-8">@(Model.Authority ?? "-")</dd>
-                <dt class="col-sm-4">کد پیگیری</dt><dd class="col-sm-8">@(Model.RefId?.ToString() ?? "-")</dd>
-                <dt class="col-sm-4">پیام</dt><dd class="col-sm-8">@(Model.PaymentMessage ?? "-")</dd>
-                <dt class="col-sm-4">وضعیت</dt><dd class="col-sm-8"><span class="badge @Model.Status.StatusBadgeClass()">@Model.Status.StatusText()</span></dd>
+        </div>
+        <div class="adm-card">
+            <div class="adm-card-title">پرداخت</div>
+            <dl class="adm-dl">
+                <dt>محصول</dt><dd><a href="@Url.Action("EditProduct","Admin", new { id = Model.ProductId })">@Model.ProductTitle</a></dd>
+                <dt>مبلغ</dt><dd>@Model.Amount.ToToman()</dd>
+                <dt>کد پیگیری</dt><dd class="adm-ltr">@(Model.RefId?.ToString() ?? "-")</dd>
+                <dt>Authority</dt><dd class="adm-ltr small">@(Model.Authority ?? "-")</dd>
+                <dt>پیام درگاه</dt><dd>@(Model.PaymentMessage ?? "-")</dd>
+                <dt>زمان پرداخت</dt><dd>@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsiText() + " " + Model.PaidAt.Value.ToString("HH:mm") : "-")</dd>
             </dl>
         </div>
     </div>
     <div class="col-lg-5">
-        <div class="card border-0 shadow-sm p-4">
-            <h5>تغییر وضعیت</h5>
+        @if (!string.IsNullOrEmpty(Model.CompanyCode))
+        {
+            <div class="adm-card">
+                <div class="adm-card-title">اشتراک فروشگاه</div>
+                @if (store == null)
+                {
+                    <p class="text-muted small mb-0">فروشگاه <code>@Model.CompanyCode</code> دیگر وجود ندارد.</p>
+                }
+                else
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="fw-bold" href="@Url.Action("Store","Admin", new { id = store.CompanyCode })">@store.Name</a>
+                        @Html.Partial("_StoreStatus", store)
+                    </div>
+                    if (Model.SubscriptionEndsAt.HasValue)
+                    {
+                        <p class="small text-muted mt-2 mb-0">اشتراک @NikooSystem.Services.Subscriptions.PeriodName(Model.Months) این سفارش ثبت شده و سایت تا @Model.SubscriptionEndsAt.Value.ToShamsiText() فعال است.</p>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mt-2 mb-0">با پرداخت این سفارش، @NikooSystem.Services.Subscriptions.PeriodLength(Model.Months > 0 ? Model.Months : 3) به اشتراک سایت اضافه می‌شود؛ اگر وضعیت را دستی «پرداخت شده» کنید، اشتراک هم تمدید می‌شود.</p>
+                    }
+                }
+            </div>
+        }
+        <div class="adm-card">
+            <div class="adm-card-title">تغییر وضعیت</div>
             @using (Html.BeginForm("UpdateOrderStatus", "Admin", FormMethod.Post))
             {
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <select name="status" class="form-select mb-3">
+                <select name="status" class="form-select mb-3" aria-label="وضعیت سفارش">
                     @foreach (OrderStatus s in Enum.GetValues(typeof(OrderStatus)))
                     {
                         <option value="@s" @(Model.Status == s ? "selected" : null)>@s.StatusText()</option>
                     }
                 </select>
                 <button type="submit" class="btn btn-primary">به‌روزرسانی</button>
-                <a href="@Url.Action("Orders","Admin")" class="btn btn-link">بازگشت</a>
             }
         </div>
     </div>

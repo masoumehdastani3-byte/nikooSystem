@@ -2,19 +2,25 @@
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "داشبورد";
     var company = (string)ViewBag.CompanyCode;
-    var checklist = (List<NikooSystem.Models.Store.SetupChecklistItem>)ViewBag.Checklist;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var checklist = (List<SetupChecklistItem>)ViewBag.Checklist;
     var required = checklist.Where(c => !c.Optional).ToList();
     var doneCount = required.Count(c => c.Done);
     var percent = required.Count == 0 ? 100 : doneCount * 100 / required.Count;
+    var unread = (int)ViewBag.UnreadMessages;
 }
-<link href="~/Content/onboarding.css" rel="stylesheet" />
-<h2 class="mb-4">داشبورد</h2>
+<link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+    <h2 class="mb-0">داشبورد</h2>
+    <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+</div>
 
 @if (checklist.Any(c => !c.Done))
 {
     <div class="panel-card ob-checklist mb-4">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">آماده‌سازی فروشگاه برای فروش</h5>
+            <h5 class="mb-0">آماده‌سازی @(kind.IsContent ? "سایت برای انتشار" : kind.IsBooking ? "سایت برای نوبت‌دهی" : "فروشگاه برای فروش")</h5>
             <span class="small text-muted">@doneCount از @required.Count مرحله</span>
         </div>
         <div class="progress"><div class="progress-bar bg-success" style="width:@(percent)%"></div></div>
@@ -36,26 +42,180 @@
         </ul>
     </div>
 }
-<div class="row g-3 mb-4">
-    <div class="col-md-4"><div class="panel-card"><div class="text-muted">محصولات</div><div class="fs-3 fw-bold">@ViewBag.ProductCount</div></div></div>
-    <div class="col-md-4"><div class="panel-card"><div class="text-muted">سفارش‌ها</div><div class="fs-3 fw-bold">@ViewBag.OrderCount</div></div></div>
-    <div class="col-md-4"><div class="panel-card"><div class="text-muted">مشتریان</div><div class="fs-3 fw-bold">@ViewBag.CustomerCount</div></div></div>
+
+<div class="mb-4">
+    @Html.Partial("_VisitMini", (NikooSystem.Models.VisitReport)ViewBag.Visits,
+        new ViewDataDictionary { { "VisitsUrl", Url.Action("Visits", "ShopAdmin", new { company }) } })
 </div>
-<div class="panel-card">
-    <h5>آخرین سفارش‌ها</h5>
-    <table class="table">
-        <thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
-        <tbody>
-        @foreach (var o in (IEnumerable<NikooSystem.Models.Store.StoreOrder>)ViewBag.RecentOrders)
+
+@if (kind.IsContent)
+{
+    var latest = (List<StorePost>)ViewBag.LatestPosts;
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">@StatCard("bi-newspaper", "مطالب", ((int)ViewBag.PostCount).ToFa(), Url.Action("Posts", "ShopAdmin", new { company }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-bar-chart", "بازدید مطالب", ((int)ViewBag.PostViews).ToFa(), null)</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-chat-left-text", "نظرهای در انتظار", ((int)ViewBag.PendingComments).ToFa(), Url.Action("Comments", "ShopAdmin", new { company, state = "pending" }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-envelope", "پیام خوانده‌نشده", unread.ToFa(), Url.Action("Messages", "ShopAdmin", new { company, state = "unread" }))</div>
+    </div>
+    <div class="panel-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">آخرین مطالب</h5>
+            <a class="btn-store-sm" href="@Url.Action("EditPost","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> مطلب جدید</a>
+        </div>
+        <table class="table align-middle">
+            <thead><tr><th>تیتر</th><th>بازدید</th><th>انتشار</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var p in latest)
+                {
+                    <tr>
+                        <td>@p.Title @if (!p.IsLive()) { <span class="badge bg-secondary">منتشر نشده</span> }</td>
+                        <td>@p.ViewCount</td>
+                        <td class="small text-muted">@p.PublishedAt.ToShamsi()</td>
+                        <td class="row-actions">@Html.EditLink("EditPost", p.Id)</td>
+                    </tr>
+                }
+                @if (!latest.Any())
+                {
+                    <tr class="admin-empty-row"><td colspan="4">هنوز مطلبی منتشر نکرده‌اید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else if (kind.IsBooking)
+{
+    var agenda = (List<StoreAppointment>)ViewBag.TodayAgenda;
+    var now = DateTime.Now;
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">@StatCard("bi-calendar-day", "نوبت‌های امروز", ((int)ViewBag.TodayCount).ToFa(), Url.Action("Appointments", "ShopAdmin", new { company, when = "today" }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-calendar-week", "هفت روز آینده", ((int)ViewBag.WeekCount).ToFa(), Url.Action("Calendar", "ShopAdmin", new { company }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-cash-stack", "درآمد این ماه", ((long)ViewBag.MonthRevenue).ToToman(), null)</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-person-x", "عدم مراجعه این ماه", ((int)ViewBag.MonthNoShows).ToFa(), Url.Action("Appointments", "ShopAdmin", new { company, status = AppointmentStatus.NoShow }))</div>
+    </div>
+    if (unread > 0)
+    {
+        <div class="alert alert-info d-flex align-items-center gap-2">
+            <i class="bi bi-envelope-open"></i>
+            <span>@unread.ToFa() پیام خوانده‌نشده از فرم تماس دارید.</span>
+            <a class="ms-auto" href="@Url.Action("Messages","ShopAdmin", new { company, state = "unread" })">مشاهده</a>
+        </div>
+    }
+    <div class="panel-card">
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+            <h5 class="mb-0">برنامه امروز <small class="text-muted fw-normal">@BookingTime.DayNames[BookingTime.DayOf(DateTime.Today)] @DateTime.Today.ToShamsiText()</small></h5>
+            <div class="d-flex gap-2">
+                <a class="btn-store-sm" href="@Url.Action("NewAppointment","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> نوبت جدید</a>
+                <a class="btn-outline-store btn-sm" href="@Url.Action("Calendar","ShopAdmin", new { company })"><i class="bi bi-calendar-week"></i> تقویم</a>
+            </div>
+        </div>
+        <table class="table align-middle">
+            <thead><tr><th>ساعت</th><th>مراجع</th><th>خدمت</th><th>متخصص</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var a in agenda)
+                {
+                    <tr class="@(a.EndAt < now && a.Status == AppointmentStatus.Confirmed ? "table-warning" : "")">
+                        <td class="fw-bold">@BookingTime.Clock(a.StartAt)</td>
+                        <td>@a.CustomerName<div class="small text-muted" dir="ltr">@a.CustomerMobile</div></td>
+                        <td>@a.ServiceTitle</td>
+                        <td>@a.StaffName</td>
+                        <td><span class="badge @a.Status.StatusBadgeClass()">@a.Status.StatusText()</span></td>
+                        <td class="row-actions">
+                            @if (a.Status == AppointmentStatus.Confirmed)
+                            {
+                                @Html.IconPost("SetAppointmentStatus", new { id = a.Id, status = AppointmentStatus.Completed, back = "Index" }, "bi-check2-circle", "انجام شد", "is-view")
+                                @Html.IconPost("SetAppointmentStatus", new { id = a.Id, status = AppointmentStatus.NoShow, back = "Index" }, "bi-person-x", "مراجعه نکرد", "is-delete")
+                            }
+                            @Html.IconLink(Url.Action("AppointmentDetails", "ShopAdmin", new { company, id = a.Id }), "bi-card-text", "جزئیات", "is-edit")
+                        </td>
+                    </tr>
+                }
+                @if (!agenda.Any())
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-calendar-check fs-3 d-block mb-1"></i>امروز نوبتی ندارید.</td></tr>
+                }
+            </tbody>
+        </table>
+        @if (agenda.Any(a => a.EndAt < now && a.Status == AppointmentStatus.Confirmed))
         {
-            <tr>
-                <td>@o.OrderNumber</td>
-                <td>@o.CustomerName</td>
-                <td>@o.Amount.ToString("N0")</td>
-                <td>@o.Status</td>
-            </tr>
+            <div class="small text-muted"><i class="bi bi-info-circle"></i> ردیف‌های زرد گذشته‌اند؛ «انجام شد» یا «مراجعه نکرد» را بزنید تا درآمد و آمار درست باشد.</div>
         }
-        </tbody>
-    </table>
-    <a class="btn-store-sm" href="@Url.Action("Index","Shop", new { company })" target="_blank">مشاهده فروشگاه عمومی</a>
-</div>
+    </div>
+}
+else
+{
+    var recent = (List<StoreOrder>)ViewBag.RecentOrders;
+    var lowStock = (List<StoreProduct>)ViewBag.LowStock;
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">@StatCard(kind.IsDigital ? "bi-easel" : "bi-box", kind.ItemsLabel, ((int)ViewBag.ProductCount).ToFa(), Url.Action("Products", "ShopAdmin", new { company }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-receipt", "سفارش‌ها", ((int)ViewBag.OrderCount).ToFa(), Url.Action("Orders", "ShopAdmin", new { company }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-cash-stack", "فروش", ((long)ViewBag.Revenue).ToToman(), null)</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-people", kind.IsDigital ? "دانشجویان و خریداران" : "مشتریان", ((int)ViewBag.CustomerCount).ToFa(), Url.Action("Customers", "ShopAdmin", new { company }))</div>
+    </div>
+    if (unread > 0)
+    {
+        <div class="alert alert-info d-flex align-items-center gap-2">
+            <i class="bi bi-envelope-open"></i>
+            <span>@unread.ToFa() پیام خوانده‌نشده از فرم تماس دارید.</span>
+            <a class="ms-auto" href="@Url.Action("Messages","ShopAdmin", new { company, state = "unread" })">مشاهده</a>
+        </div>
+    }
+    <div class="row g-3">
+        <div class="@(lowStock.Any() ? "col-lg-8" : "col-12")">
+            <div class="panel-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">آخرین سفارش‌ها</h5>
+                    <a class="small" href="@Url.Action("Orders","ShopAdmin", new { company })">همه سفارش‌ها</a>
+                </div>
+                <table class="table align-middle">
+                    <thead><tr><th>شماره</th><th>مشتری</th><th>مبلغ</th><th>وضعیت</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var o in recent)
+                        {
+                            <tr>
+                                <td>@o.OrderNumber</td>
+                                <td>@o.CustomerName</td>
+                                <td>@o.Amount.ToToman()</td>
+                                <td>@Html.StatusBadge(o.Status)</td>
+                                <td class="row-actions">@Html.IconLink(Url.Action("OrderDetails", "ShopAdmin", new { company, id = o.Id }), "bi-receipt", "جزئیات سفارش", "is-view")</td>
+                            </tr>
+                        }
+                        @if (!recent.Any())
+                        {
+                            <tr class="admin-empty-row"><td colspan="5">هنوز سفارشی ثبت نشده است.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (lowStock.Any())
+        {
+            <div class="col-lg-4">
+                <div class="panel-card h-100">
+                    <h5 class="mb-2"><i class="bi bi-exclamation-triangle text-warning"></i> موجودی رو به اتمام</h5>
+                    <ul class="list-unstyled mb-2">
+                        @foreach (var p in lowStock)
+                        {
+                            <li class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                <a href="@Url.Action("EditProduct","ShopAdmin", new { company, id = p.Id })">@p.Title</a>
+                                <span class="badge @(p.Stock <= 0 ? "bg-danger" : "bg-warning text-dark")">@(p.Stock <= 0 ? "ناموجود" : p.Stock.ToFa())</span>
+                            </li>
+                        }
+                    </ul>
+                    <a class="small" href="@Url.Action("Products","ShopAdmin", new { company, status = "lowstock" })">همه کالاهای رو به اتمام</a>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@helper StatCard(string icon, string label, string value, string url)
+{
+    <div class="panel-card stat-card h-100">
+        <i class="bi @icon"></i>
+        <div>
+            <div class="text-muted small">@label</div>
+            <div class="fs-4 fw-bold">@value</div>
+        </div>
+        @if (url != null) { <a class="stretched-link" href="@url" aria-label="@label"></a> }
+    </div>
+}

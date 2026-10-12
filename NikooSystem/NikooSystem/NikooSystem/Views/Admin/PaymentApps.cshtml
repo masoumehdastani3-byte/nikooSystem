@@ -1,0 +1,54 @@
+@model List<NikooSystem.Models.PaymentClient>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "اپلیکیشن‌های درگاه";
+    var stats = (Dictionary<string, NikooSystem.Models.HubAppStats>)ViewBag.Stats;
+}
+<div class="adm-head">
+    <div>
+        <h1>اپلیکیشن‌های درگاه پرداخت مرکزی</h1>
+        <p>پروژه‌هایی که از طریق درگاه نیکو سیستم (زرین‌پال سایت) پرداخت می‌گیرند. <a href="@Url.Action("Guide","Pay")" target="_blank" rel="noopener">راهنمای اتصال</a></p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@Url.Action("EditPaymentApp","Admin")"><i class="bi bi-plus-lg"></i> اپلیکیشن جدید</a>
+    </div>
+</div>
+<div class="adm-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>نام</th><th>شناسه (AppId)</th><th>دامنه‌های مجاز بازگشت</th><th>تراکنش‌ها</th><th>جمع پرداخت موفق</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var c in Model)
+            {
+                NikooSystem.Models.HubAppStats s;
+                stats.TryGetValue(c.AppId, out s);
+                <tr>
+                    <td class="fw-bold">@c.Name</td>
+                    <td class="adm-ltr"><code>@c.AppId</code></td>
+                    <td class="adm-ltr small">
+                        @if (c.AllowedReturnHosts == null || c.AllowedReturnHosts.Length == 0)
+                        {
+                            <span class="adm-chip is-orange">همه دامنه‌ها</span>
+                        }
+                        else
+                        {
+                            @(string.Join(", ", c.AllowedReturnHosts))
+                        }
+                    </td>
+                    <td>@((s?.PaidCount ?? 0).ToFa()) موفق از @((s?.Count ?? 0).ToFa())</td>
+                    <td>@((s?.PaidAmount ?? 0).ToToman())</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("HubPayments", "Admin", new { app = c.AppId }), "bi-list-ul", "تراکنش‌های این اپلیکیشن", "is-view")
+                        @Html.IconLink(Url.Action("EditPaymentApp", "Admin", new { id = c.AppId }), "bi-pencil-square", "ویرایش", "is-edit")
+                        @Html.IconPost("DeletePaymentApp", new { id = c.AppId }, "bi-trash", "حذف", "is-delete", "اپلیکیشن «" + c.Name + "» حذف شود؟ پروژه‌ای که از آن استفاده می‌کند دیگر نمی‌تواند پرداخت بگیرد.")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="6" class="text-center text-muted py-4">اپلیکیشنی ثبت نشده است</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

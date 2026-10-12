@@ -10,7 +10,7 @@ namespace YourApp.Controllers
 {
     /// <summary>
     /// نمونه استفاده از هاب پرداخت nikoooo.ir در پروژه دیگر.
-    /// مقادیر AppId / ApiKey را از payment-clients.json بگیرید.
+    /// مقادیر AppId / ApiKey را از جدول PaymentClients دیتابیس nikoo بگیرید.
     /// </summary>
     public class SampleNikooooPaymentController : Controller
     {

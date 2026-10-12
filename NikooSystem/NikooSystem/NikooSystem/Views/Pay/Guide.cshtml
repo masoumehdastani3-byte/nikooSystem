@@ -14,15 +14,11 @@
         <div class="container" style="max-width:900px;">
             <div class="checkout-box mb-4">
                 <h5 class="mb-3">۱) ثبت کلاینت</h5>
-                <p class="text-muted">در سرور nikoooo.ir فایل <code>App_Data/payment-clients.json</code> را ویرایش کنید:</p>
-<pre class="bg-light p-3 rounded" style="direction:ltr;text-align:left;white-space:pre-wrap;">[
-  {
-    "AppId": "my-shop",
-    "ApiKey": "your-secret-key",
-    "Name": "فروشگاه من",
-    "AllowedReturnHosts": [ "myshop.ir", "localhost" ]
-  }
-]</pre>
+                <p class="text-muted">در سرور nikoooo.ir یک ردیف به جدول <code>PaymentClients</code> دیتابیس <code>nikoo</code> و دامنه‌های مجاز بازگشت را به <code>PaymentClientHosts</code> اضافه کنید:</p>
+<pre class="bg-light p-3 rounded" style="direction:ltr;text-align:left;white-space:pre-wrap;">INSERT INTO PaymentClients (AppId, ApiKey, Name) VALUES (N'my-shop', N'your-secret-key', N'فروشگاه من');
+INSERT INTO PaymentClientHosts (AppId, Position, Host) VALUES
+  (N'my-shop', 0, N'myshop.ir'),
+  (N'my-shop', 1, N'localhost');</pre>
             </div>
 
             <div class="checkout-box mb-4">

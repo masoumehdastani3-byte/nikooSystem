@@ -12,7 +12,11 @@ namespace NikooSystem.Filters
 
         protected override void HandleUnauthorizedRequest(AuthorizationContext filterContext)
         {
-            filterContext.Result = new RedirectResult("~/Admin/Login");
+            var request = filterContext.HttpContext.Request;
+            var url = "~/Admin/Login";
+            if (request.HttpMethod == "GET" && !request.IsAjaxRequest())
+                url += "?returnUrl=" + HttpUtility.UrlEncode(request.RawUrl);
+            filterContext.Result = new RedirectResult(url);
         }
     }
 }

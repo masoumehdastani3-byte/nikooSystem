@@ -1,9 +1,12 @@
 ﻿@model List<NikooSystem.Models.Product>
-@using NikooSystem.Helpers
 @{
     ViewBag.Title = "خانه";
     ViewBag.Nav = "home";
-    var storeDemos = Model.Where(p => !string.IsNullOrEmpty(p.DemoSlug)).Take(4).ToList();
+    var storeDemos = Model.Where(p => !string.IsNullOrEmpty(p.DemoSlug)).Take(6).ToList();
+    var site = NikooSystem.Services.SiteContentStore.Settings;
+    var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
+    var faqs = (ViewBag.Faqs as List<NikooSystem.Models.SiteFaq>) ?? new List<NikooSystem.Models.SiteFaq>();
+    var testimonials = (ViewBag.Testimonials as List<NikooSystem.Models.SiteTestimonial>) ?? new List<NikooSystem.Models.SiteTestimonial>();
 }
 
 <section class="lf-hero">
@@ -11,12 +14,15 @@
     <div class="container">
         <div class="row align-items-center g-4 lf-hero-row">
             <div class="col-lg-6 lf-hero-copy">
-                <p class="lf-eyebrow">نیکو سیستم آفرین</p>
-                <h1>فروشگاه آنلاین خودت را در چند دقیقه بساز</h1>
-                <p class="lf-hero-lead">
-                    بدون برنامه‌نویس و بدون پشتیبان: نوع فروشگاه را انتخاب کن، لوگو و محصولاتت را اضافه کن،
-                    درگاه پرداخت و دامنه خودت را وصل کن. @NikooSystem.Services.TenantProvisioningService.TrialDays روز رایگان امتحان کن.
-                </p>
+                @if (!string.IsNullOrWhiteSpace(site.HeroEyebrow))
+                {
+                    <p class="lf-eyebrow">@site.HeroEyebrow</p>
+                }
+                <h1>@site.HeroTitle</h1>
+                @if (!string.IsNullOrWhiteSpace(site.HeroLead))
+                {
+                    <p class="lf-hero-lead">@site.HeroLead.Replace("{TrialDays}", trialDays.ToString())</p>
+                }
                 <div class="lf-hero-cta">
                     <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">
                         <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
@@ -76,10 +82,10 @@
     <div class="container">
         <div class="lf-stores-head">
             <div>
-                <h2><i class="bi bi-shop-window"></i> فروشگاه‌های آنلاین آماده</h2>
-                <p>دموهای واقعی را ببینید و همان تجربه را برای کسب‌وکار خود سفارش دهید.</p>
+                <h2><i class="bi bi-shop-window"></i> @site.StoresTitle</h2>
+                <p>@site.StoresSubtitle</p>
             </div>
-            <a class="lf-btn lf-btn-primary" href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })">
+            <a class="lf-btn lf-btn-primary" href="@Url.Action("Index","Products")">
                 مشاهده همه دموها <i class="bi bi-arrow-left"></i>
             </a>
         </div>
@@ -98,7 +104,7 @@
                         <h3>@p.Title</h3>
                         <p>@p.ShortDescription</p>
                         <div class="lf-store-foot">
-                            <span class="lf-price">@p.Price.ToToman()</span>
+                            <span class="lf-price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>
                             <a class="lf-link-demo" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">
                                 مشاهده دمو <i class="bi bi-arrow-left"></i>
                             </a>
@@ -135,6 +141,16 @@
     </div>
 </section>
 
+<section id="modules" class="lf-modules">
+    <div class="container">
+        <header class="lf-section-head">
+            <h2>ماژول‌ها و امکانات</h2>
+            <p>محصولات @site.SiteName این ماژول‌ها را آماده و فعال دارند</p>
+        </header>
+        @Html.Partial("_ModuleGrid", PlatformModules.All, new ViewDataDictionary { ["ShowOnly"] = true })
+    </div>
+</section>
+
 <section id="steps" class="lf-steps">
     <div class="container">
         <header class="lf-section-head">
@@ -152,7 +168,7 @@
                     <div class="lf-step"><span>۳</span><div><strong>انتخاب قالب</strong><em>ظاهر و رنگ‌ها را با یک کلیک عوض کنید</em></div></div>
                     <div class="lf-step"><span>۴</span><div><strong>افزودن محصولات</strong><em>عکس، قیمت و موجودی را وارد کنید</em></div></div>
                     <div class="lf-step"><span>۵</span><div><strong>درگاه و دامنه</strong><em>زرین‌پال و دامنه خودتان را وصل کنید</em></div></div>
-                    <div class="lf-step"><span>۶</span><div><strong>فعال‌سازی دائمی</strong><em>پیش از پایان دوره آزمایشی اشتراک را پرداخت کنید</em></div></div>
+                    <div class="lf-step"><span>۶</span><div><strong>اشتراک دلخواه</strong><em>سه‌ماهه، شش‌ماهه یا یک‌ساله؛ تمدید آنلاین از داخل پنل</em></div></div>
                 </div>
             </div>
         </div>
@@ -165,28 +181,28 @@
             <div class="lf-stats-grid">
                 <div class="lf-stat">
                     <i class="bi bi-emoji-smile"></i>
-                    <strong><span data-purecounter-start="0" data-purecounter-end="98" data-purecounter-duration="1" class="purecounter"></span>%</strong>
+                    <strong><span data-purecounter-start="0" data-purecounter-end="@site.StatSatisfaction" data-purecounter-duration="1" class="purecounter"></span>%</strong>
                     <span>رضایت مشتریان</span>
                 </div>
                 <div class="lf-stat">
                     <i class="bi bi-shop"></i>
-                    <strong>+<span data-purecounter-start="0" data-purecounter-end="100" data-purecounter-duration="1" class="purecounter"></span></strong>
+                    <strong>+<span data-purecounter-start="0" data-purecounter-end="@site.StatDemos" data-purecounter-duration="1" class="purecounter"></span></strong>
                     <span>دموی فروشگاه</span>
                 </div>
                 <div class="lf-stat">
                     <i class="bi bi-people"></i>
-                    <strong>+<span data-purecounter-start="0" data-purecounter-end="500" data-purecounter-duration="1" class="purecounter"></span></strong>
+                    <strong>+<span data-purecounter-start="0" data-purecounter-end="@site.StatCustomers" data-purecounter-duration="1" class="purecounter"></span></strong>
                     <span>مشتری راضی</span>
                 </div>
                 <div class="lf-stat">
                     <i class="bi bi-headset"></i>
-                    <strong>+<span data-purecounter-start="0" data-purecounter-end="1500" data-purecounter-duration="1" class="purecounter"></span></strong>
+                    <strong>+<span data-purecounter-start="0" data-purecounter-end="@site.StatSupportHours" data-purecounter-duration="1" class="purecounter"></span></strong>
                     <span>ساعت پشتیبانی</span>
                 </div>
             </div>
             <aside class="lf-stats-cta">
                 <h3>آماده شروع هستید؟</h3>
-                <p>فروشگاهت را همین حالا بساز و @NikooSystem.Services.TenantProvisioningService.TrialDays روز رایگان امتحانش کن.</p>
+                <p>فروشگاهت را همین حالا بساز و @trialDays روز رایگان امتحانش کن.</p>
                 <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">
                     ساخت فروشگاه رایگان <i class="bi bi-arrow-left"></i>
                 </a>
@@ -194,3 +210,69 @@
         </div>
     </div>
 </section>
+
+@if (testimonials.Any())
+{
+    <section id="testimonials" class="lf-testimonials">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>مشتریان ما چه می‌گویند</h2>
+                <p>تجربه صاحبان فروشگاه‌هایی که با @site.SiteName شروع کردند</p>
+            </header>
+            <div class="row g-4">
+                @foreach (var t in testimonials)
+                {
+                    <div class="col-md-6 col-lg-4">
+                        <figure class="lf-quote">
+                            <div class="lf-quote-stars" aria-label="امتیاز @t.Rating از ۵">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <i class="bi @(i <= t.Rating ? "bi-star-fill" : "bi-star")"></i>
+                                }
+                            </div>
+                            <blockquote>@t.Text</blockquote>
+                            <figcaption>
+                                @if (!string.IsNullOrEmpty(t.ImageUrl))
+                                {
+                                    <img src="@t.ImageUrl" alt="" />
+                                }
+                                else
+                                {
+                                    <span class="lf-quote-avatar">@t.Name.Substring(0, 1)</span>
+                                }
+                                <span>
+                                    <strong>@t.Name</strong>
+                                    <em>@t.Role</em>
+                                </span>
+                            </figcaption>
+                        </figure>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (faqs.Any())
+{
+    <section id="faq" class="lf-faq">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>سوالات متداول</h2>
+                <p>پاسخ سوال‌هایی که بیشتر از ما می‌پرسند</p>
+            </header>
+            <div class="lf-faq-list">
+                @foreach (var f in faqs)
+                {
+                    <details class="lf-faq-item">
+                        <summary>@f.Question <i class="bi bi-chevron-down"></i></summary>
+                        <div class="lf-faq-answer">@Html.TextBlocks(f.Answer)</div>
+                    </details>
+                }
+            </div>
+            <p class="text-center mt-4 mb-0">
+                جواب سوالتان را پیدا نکردید؟ <a href="@Url.Action("Contact","Home")">با ما تماس بگیرید</a>
+            </p>
+        </div>
+    </section>
+}

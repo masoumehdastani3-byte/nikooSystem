@@ -34,15 +34,13 @@ ASP.NET MVC 5 (.NET Framework 4.8)
 5. اختیاری: وب‌هوک `notifyUrl` هم صدا زده می‌شود
 
 ### ۱) ثبت کلاینت
-فایل `App_Data/payment-clients.json`:
+یک ردیف در جدول `PaymentClients` دیتابیس `nikoo` و دامنه‌های مجاز بازگشت در `PaymentClientHosts`:
 
-```json
-{
-  "AppId": "my-shop",
-  "ApiKey": "your-secret-key",
-  "Name": "فروشگاه من",
-  "AllowedReturnHosts": [ "myshop.ir", "localhost" ]
-}
+```sql
+INSERT INTO PaymentClients (AppId, ApiKey, Name) VALUES (N'my-shop', N'your-secret-key', N'فروشگاه من');
+INSERT INTO PaymentClientHosts (AppId, Position, Host) VALUES
+  (N'my-shop', 0, N'myshop.ir'),
+  (N'my-shop', 1, N'localhost');
 ```
 
 ### ۲) ساخت پرداخت
@@ -112,4 +110,22 @@ ASP.NET MVC 5 (.NET Framework 4.8)
 - هاب پرداخت قابل‌استفاده در پروژه‌های دیگر
 - پنل ادمین: محصولات، سفارشات، داشبورد
 
-داده محصولات، سفارشات و پرداخت‌های هاب در `App_Data/*.json` ذخیره می‌شود.
+## دیتابیس
+همه داده‌ها (فروشگاه‌ها، تنظیمات و چیدمان صفحات، محصولات، گروه‌ها، منوها، صفحات، گالری، مشتریان، سفارش‌ها،
+نظرات، سبد خرید، محصولات و سفارش‌های سایت اصلی، کلاینت‌ها و پرداخت‌های هاب، آموزش‌های پنل) در دیتابیس
+SQL Server به نام `nikoo` ذخیره می‌شود. هیچ داده‌ای در فایل JSON نگه‌داری نمی‌شود.
+
+- رشته اتصال: `connectionStrings` → `Nikoo` در `Web.config` (پیش‌فرض: `(localdb)\MSSQLLocalDB`)
+- دیتابیس و جدول‌ها در اولین اجرا خودکار ساخته می‌شوند (کاربر اتصال باید اجازه `CREATE DATABASE` داشته باشد،
+  یا دیتابیس خالی `nikoo` را از قبل بسازید). ساختار جدول‌ها در `Services/Data/NikooTables.cs` تعریف شده است.
+- هر فیلد مدل یک ستون جداست و هر فهرست یک جدول فرزند با ستون `Position` (ترتیب) و کلید خارجی به جدول اصلی
+  (حذف آبشاری). مثلاً: `ProductImages`، `ProductAttributes`، `ProductCollections`، `OrderItems`، `CartItems`،
+  `StoreHomeSections`، `PaymentClientHosts`، `AttributeDefCategories`، `TutorialSteps`.
+- اگر به مدلی فیلد تازه اضافه شود، ستونش در اجرای بعدی خودکار اضافه می‌شود.
+- سبد خرید: جدول‌های `Carts` و `CartItems`؛ شناسه سبد در کوکی `nikoo_cart` است و سبدهای قدیمی‌تر از ۳۰ روز پاک می‌شوند.
+- آموزش‌های پنل: جدول‌های `Tutorials`، `TutorialViews`، `TutorialSteps` و `TutorialVideos`. فایل
+  `App_Data/Seed/tutorials.sql` (ساخته‌شده با `tools/tutorials/export-tutorials.ps1`) هر بار که محتوایش عوض شود
+  در شروع سایت اجرا می‌شود؛ خود ویدئوها در `Content/tutorials/videos` روی دیسک هستند.
+- اگر روی سروری هنوز فایل‌های نسخه‌های قبلی (`App_Data/*.json`، `App_Data/Tenants/*`، `Content/tutorials/*.json`)
+  باشد، در اولین اجرا یک‌بار به دیتابیس منتقل می‌شوند و بعد از آن می‌توان آن‌ها را حذف کرد.
+- تصاویر همچنان در پوشه `Uploads` روی دیسک هستند و فقط آدرسشان در دیتابیس ذخیره می‌شود.

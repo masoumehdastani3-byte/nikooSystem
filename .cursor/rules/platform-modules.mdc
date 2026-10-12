@@ -1,0 +1,23 @@
+---
+description: Every new feature of Nikoo's sites must be advertised on the main site (modules list, FAQ, guides)
+alwaysApply: true
+---
+
+# Advertise every new feature
+
+The owner's standing instruction: «هر امکانی که اضافه می‌شود در توضیحات سایت بنویس که محصولات ما این ماژول‌ها را دارند».
+When you add a feature that customers' sites get (a module, an integration, a panel tool), also do the following in the same change:
+
+1. Add or update an entry in `NikooSystem/NikooSystem/NikooSystem/Helpers/PlatformModules.cs`. One list feeds the landing page
+   (`#modules`), every product page (`Products/Details`), the signup page badges (`Highlight = true`) and the `featureList`
+   of the products' JSON-LD.
+   - `Kinds` = the `SiteKinds` that have it (null = all), and `Only` = a short Persian note such as «فروشگاه‌های کالا».
+   - Use an icon that exists in the local Bootstrap Icons (`Assets/vendor/bootstrap-icons/bootstrap-icons.css` is an old version;
+     `bi-graph-up-arrow` and `bi-filetype-json`, for example, are missing).
+2. If it is something buyers ask about, add a FAQ through a `NikooSchema.RunOnce` step that inserts it only when the
+   question is missing (see `SiteContentStore.ApplyModuleFaqs`). Never overwrite FAQs the owner has edited.
+3. If the kind's own feature list changes, update `SiteKinds.Features` (shown on signup and product pages).
+4. If the feature needs setup by the owner, give it a panel page with a short step-by-step guide (like `ShopAdmin/Torob`,
+   `ShopAdmin/SeoGuide`, `Admin/SeoGuide`) and a menu entry, rather than a bare settings field.
+
+Write all of these texts in Persian, in the same tone as the existing entries.

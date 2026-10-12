@@ -1,0 +1,73 @@
+@model PagedList<StoreAppointment>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "فهرست نوبت‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var services = (List<StoreService>)ViewBag.Services;
+    var statuses = Enum.GetValues(typeof(AppointmentStatus)).Cast<AppointmentStatus>();
+    var whens = new[] { new { Id = "today", Text = "امروز" }, new { Id = "upcoming", Text = "پیش رو" }, new { Id = "past", Text = "گذشته" } };
+    var now = DateTime.Now;
+}
+@Html.PageHeader("فهرست نوبت‌ها", "نوبت جدید", "NewAppointment")
+<div class="panel-card">
+    @Html.GridToolbar("کد پیگیری، نام، موبایل، خدمت یا متخصص…",
+        new GridSelect("when", "همه زمان‌ها", GridHtml.Options(whens, w => w.Id, w => w.Text)),
+        new GridSelect("status", "همه وضعیت‌ها", GridHtml.Options(statuses, s => s, s => s.StatusText())),
+        new GridSelect("staffId", "همه متخصصان", GridHtml.Options(staff, p => p.Id, p => p.Name)),
+        new GridSelect("serviceId", "همه خدمات", GridHtml.Options(services, s => s.Id, s => s.Title)))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("when", "زمان")
+                    @Html.SortHeader("customer", "مراجع")
+                    @Html.SortHeader("service", "خدمت")
+                    @Html.SortHeader("staff", "متخصص")
+                    @Html.SortHeader("price", "هزینه")
+                    <th>وضعیت</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr class="@(a.EndAt < now && a.Status == AppointmentStatus.Confirmed ? "table-warning" : "")">
+                        <td>
+                            <a class="fw-bold text-decoration-none" href="@Url.Action("AppointmentDetails","ShopAdmin", new { company, id = a.Id })">@BookingTime.DayNames[BookingTime.DayOf(a.StartAt)] @a.StartAt.ToShamsi()</a>
+                            <div class="small text-muted">ساعت @BookingTime.Clock(a.StartAt) · <span dir="ltr">@a.Code</span></div>
+                        </td>
+                        <td>@a.CustomerName<div class="small text-muted" dir="ltr">@a.CustomerMobile</div></td>
+                        <td>@a.ServiceTitle</td>
+                        <td>@a.StaffName</td>
+                        <td>
+                            @(a.Price > 0 ? a.Price.ToToman() : "رایگان")
+                            @if (a.PaidAmount > 0) { <div class="small text-success">بیعانه: @a.PaidAmount.ToToman()</div> }
+                        </td>
+                        <td>
+                            <span class="badge @a.Status.StatusBadgeClass()">@a.Status.StatusText()</span>
+                            @if (a.Source == "admin") { <div class="small text-muted">ثبت توسط شما</div> }
+                        </td>
+                        <td class="row-actions">
+                            @if (a.Status == AppointmentStatus.Confirmed)
+                            {
+                                @Html.IconPost("SetAppointmentStatus", new { id = a.Id, status = AppointmentStatus.Completed }, "bi-check2-circle", "انجام شد", "is-view")
+                                @Html.IconPost("SetAppointmentStatus", new { id = a.Id, status = AppointmentStatus.NoShow }, "bi-person-x", "مراجعه نکرد", "is-delete")
+                                if (a.StartAt > now)
+                                {
+                                    @Html.IconPost("SetAppointmentStatus", new { id = a.Id, status = AppointmentStatus.Cancelled }, "bi-x-circle", "لغو نوبت", "is-delete", "این نوبت لغو شود؟ زمان آن برای دیگران آزاد می‌شود.")
+                                }
+                            }
+                            @Html.IconLink(Url.Action("AppointmentDetails", "ShopAdmin", new { company, id = a.Id }), "bi-card-text", "جزئیات", "is-edit")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-calendar-x fs-3 d-block mb-1"></i>نوبتی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

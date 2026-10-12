@@ -1,0 +1,26 @@
+﻿@model StoreService
+@{
+    var company = (string)ViewBag.CompanyCode;
+}
+<article class="bk-service">
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img class="bk-service-img" src="@Model.ImageUrl" alt="" loading="lazy" />
+    }
+    else
+    {
+        <span class="bk-service-icon"><i class="bi bi-clipboard-check"></i></span>
+    }
+    <div class="bk-service-body">
+        <h3>@Model.Title</h3>
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <p>@Model.Description</p>
+        }
+        <div class="bk-service-meta">
+            <span><i class="bi bi-clock"></i> @BookingTime.Duration(Model.DurationMinutes)</span>
+            <span class="bk-price">@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</span>
+        </div>
+    </div>
+    <a class="btn-wm bk-service-cta" href="@Url.Action("Book","Shop", new { company, serviceId = Model.Id })"><i class="bi bi-calendar-plus"></i> رزرو</a>
+</article>

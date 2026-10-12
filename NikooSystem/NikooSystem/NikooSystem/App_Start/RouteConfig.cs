@@ -9,6 +9,12 @@ namespace NikooSystem
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            routes.MapRoute(name: "SeoRobots", url: "robots.txt", defaults: new { controller = "Seo", action = "Robots" });
+            routes.MapRoute(name: "SeoSitemap", url: "sitemap.xml", defaults: new { controller = "Seo", action = "Sitemap" });
+            routes.MapRoute(name: "SeoSitemapPages", url: "sitemap/pages", defaults: new { controller = "Seo", action = "Pages" });
+            routes.MapRoute(name: "SeoStoreRobots", url: "Shop/{company}/robots.txt", defaults: new { controller = "Seo", action = "StoreRobots" });
+            routes.MapRoute(name: "SeoStoreSitemap", url: "Shop/{company}/sitemap.xml", defaults: new { controller = "Seo", action = "StoreSitemap" });
+
             routes.MapRoute(
                 name: "PayStart",
                 url: "Pay/Start/{token}",
@@ -49,6 +55,12 @@ namespace NikooSystem
                 name: "ShopPage",
                 url: "Shop/{company}/Page/{slug}",
                 defaults: new { controller = "Shop", action = "Page" }
+            );
+
+            routes.MapRoute(
+                name: "ShopPost",
+                url: "Shop/{company}/Post/{slug}",
+                defaults: new { controller = "Shop", action = "Post" }
             );
 
             routes.MapRoute(

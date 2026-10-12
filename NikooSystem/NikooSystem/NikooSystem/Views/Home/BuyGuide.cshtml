@@ -1,0 +1,113 @@
+@model List<NikooSystem.Models.Product>
+@using NikooSystem.Services
+@{
+    ViewBag.Title = "راهنمای خرید و پرداخت";
+    ViewBag.Nav = "buyguide";
+    var site = SiteContentStore.Settings;
+    var trialDays = (int)ViewBag.TrialDays;
+    var sites = Model.Where(p => !string.IsNullOrEmpty(p.DemoSlug)).ToList();
+    var others = Model.Where(p => string.IsNullOrEmpty(p.DemoSlug)).ToList();
+}
+<main id="main">
+    <div class="page-hero">
+        <div class="container">
+            <h1>راهنمای خرید و پرداخت</h1>
+            <p class="text-muted mb-0">از انتخاب محصول تا پرداخت، فعال شدن و پیگیری؛ قدم‌به‌قدم.</p>
+        </div>
+    </div>
+    <section>
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="inner-card h-100 legal-text">
+                        <h2><i class="bi bi-rocket-takeoff"></i> ساخت سایت و خرید اشتراک</h2>
+                        <ol class="buy-steps">
+                            <li><strong>انتخاب نوع سایت:</strong> در <a href="@Url.Action("Index","Products")">محصولات</a> دموی هر سایت را ببینید و امکانات و قیمت آن را مقایسه کنید.</li>
+                            <li><strong>ثبت‌نام رایگان:</strong> روی «ساخت رایگان» بزنید، نام، موبایل و ایمیل را وارد کنید و <a href="@Url.Action("Terms","Home")">قوانین و مقررات</a> را بپذیرید. سایت شما همان لحظه با محتوای نمونه ساخته می‌شود.</li>
+                            <li><strong>@trialDays.ToFa() روز امتحان رایگان:</strong> همه امکانات را بدون پرداخت امتحان کنید؛ محصولات، لوگو و اطلاعات خودتان را وارد کنید.</li>
+                            <li><strong>انتخاب اشتراک:</strong> در پنل مدیریت، صفحه «اشتراک و تمدید»، دوره سه‌ماهه، شش‌ماهه (@Subscriptions.SixMonthDiscount.ToFa()٪ تخفیف) یا یک‌ساله (@Subscriptions.YearlyDiscount.ToFa()٪ تخفیف) را انتخاب کنید.</li>
+                            <li><strong>پرداخت آنلاین:</strong> به درگاه پرداخت امن منتقل می‌شوید و با هر کارت بانکی عضو شتاب پرداخت می‌کنید. اطلاعات کارت فقط در صفحه بانک وارد می‌شود.</li>
+                            <li><strong>فعال شدن فوری:</strong> پس از پرداخت موفق، اشتراک بلافاصله فعال می‌شود و تاریخ پایان و کد پیگیری در پنل نمایش داده می‌شود.</li>
+                            <li><strong>تمدید:</strong> دو هفته پیش از پایان، یادآوری می‌گیرید. هر زمان تمدید کنید، دوره تازه به انتهای دوره فعلی اضافه می‌شود.</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="inner-card h-100 legal-text">
+                        <h2><i class="bi bi-cart-check"></i> سفارش محصولات آماده</h2>
+                        <ol class="buy-steps">
+                            <li><strong>انتخاب محصول:</strong> در صفحه محصول، شرح، قیمت و نحوه تحویل را بخوانید.</li>
+                            <li><strong>ثبت سفارش:</strong> روی دکمه سفارش بزنید و نام، موبایل و ایمیل خود را وارد کنید.</li>
+                            <li><strong>پرداخت:</strong> مبلغ نهایی پیش از پرداخت نمایش داده می‌شود؛ در درگاه بانک با کارت عضو شتاب پرداخت کنید.</li>
+                            <li><strong>کد پیگیری:</strong> پس از پرداخت موفق، شماره سفارش و کد پیگیری نمایش داده می‌شود؛ آن را نگه دارید.</li>
+                            <li><strong>تحویل:</strong> کارشناس ما حداکثر ظرف دو روز کاری برای راه‌اندازی، لایسنس یا تحویل سورس با شما تماس می‌گیرد.</li>
+                        </ol>
+                        <h2 class="mt-4"><i class="bi bi-hdd"></i> فضای ذخیره‌سازی اضافه</h2>
+                        <p>هر سایت فضای رایگان دارد. اگر بیشتر لازم شد، از صفحه «فضای ذخیره‌سازی» پنل یک بسته را آنلاین می‌خرید که بلافاصله و به‌صورت دائمی اضافه می‌شود.</p>
+                    </div>
+                </div>
+            </div>
+
+            @if (sites.Any() || others.Any())
+            {
+                <div class="inner-card mt-4 legal-text">
+                    <h2><i class="bi bi-tags"></i> قیمت‌ها</h2>
+                    <div class="table-responsive">
+                        <table class="table align-middle buy-prices">
+                            <thead>
+                                <tr><th>محصول</th><th>سه‌ماهه</th><th>شش‌ماهه</th><th>یک‌ساله</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in sites)
+                                {
+                                    var plans = Subscriptions.Plans(p);
+                                    <tr>
+                                        <td><a href="@Url.Action("Details","Products", new { id = p.Id })">@p.Title</a></td>
+                                        @foreach (var plan in plans)
+                                        {
+                                            <td class="text-nowrap">@plan.Price.ToToman()</td>
+                                        }
+                                    </tr>
+                                }
+                                @foreach (var p in others)
+                                {
+                                    <tr>
+                                        <td><a href="@Url.Action("Details","Products", new { id = p.Id })">@p.Title</a></td>
+                                        <td colspan="3">@p.Price.ToToman() <span class="text-muted small">(یک‌بار)</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="small text-muted mb-0">همه قیمت‌ها به تومان است. دوره آزمایشی @trialDays.ToFa() روزه رایگان است و پیش از پرداخت، هیچ مبلغی گرفته نمی‌شود.</p>
+                </div>
+            }
+
+            <div class="row g-4 mt-0">
+                <div class="col-lg-6">
+                    <div class="inner-card h-100 legal-text">
+                        <h2><i class="bi bi-credit-card"></i> اگر پرداخت ناموفق بود</h2>
+                        <ul>
+                            <li>اگر مبلغ از حساب کم شد ولی پیام ناموفق دیدید، نگران نباشید؛ بانک معمولاً تا ۷۲ ساعت آن را به حساب شما برمی‌گرداند.</li>
+                            <li>اگر پس از ۷۲ ساعت برنگشت، یا پرداخت موفق بود ولی اشتراک فعال نشد، کد پیگیری را از راه تیکت پنل یا <a href="@Url.Action("Contact","Home")">تماس با ما</a> بفرستید تا بررسی شود.</li>
+                            <li>اگر پرداخت تکراری انجام شد، مبلغ اضافه به‌طور کامل بازگردانده می‌شود.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="inner-card h-100 legal-text">
+                        <h2><i class="bi bi-arrow-counterclockwise"></i> انصراف و بازگشت وجه</h2>
+                        <ul>
+                            <li>تا ۷ روز پس از پرداخت نخستین اشتراک می‌توانید انصراف دهید؛ مبلغ پس از کسر سهم روزهای استفاده‌شده بازگردانده می‌شود.</li>
+                            <li>برای محصولات آماده، پیش از شروع تحویل مبلغ کامل بازگردانده می‌شود.</li>
+                            <li>مبلغ تأییدشده حداکثر ظرف ۷ روز کاری به کارت یا شماره شبای به نام پرداخت‌کننده واریز می‌شود.</li>
+                        </ul>
+                        <p class="mb-0">شرایط کامل در بخش «انصراف و بازگشت وجه» صفحه <a href="@Url.Action("Terms","Home")">قوانین و مقررات</a> آمده است.</p>
+                    </div>
+                </div>
+            </div>
+
+            @Html.Partial("_LegalContact")
+        </div>
+    </section>
+</main>

@@ -50,7 +50,7 @@
     var title = field(li, 'Title');
     var titleText = title ? title.value.trim() : '';
     var text = summary.getAttribute('data-hint');
-    if (li.dataset.type === 'products') {
+    if (li.dataset.type === 'products' || li.dataset.type === 'posts') {
       var detail = selectedText(source);
       if (source && source.value === 'collection') detail += ': ' + (selectedText(field(li, 'CollectionId')) || 'انتخاب نشده');
       if (source && source.value === 'category') detail += ': ' + (selectedText(field(li, 'CategoryId')) || 'انتخاب نشده');
@@ -191,6 +191,7 @@
         if (s.Type === 'banner' && !s.Title) problem = { li: li, msg: 'برای بنر تبلیغاتی یک عنوان بنویسید (یا آن را مخفی کنید).' };
         else if (s.Type === 'products' && s.Source === 'collection' && !s.CollectionId) problem = { li: li, msg: 'برای ردیف محصولات، برچسب را انتخاب کنید.' };
         else if (s.Type === 'products' && s.Source === 'category' && !s.CategoryId) problem = { li: li, msg: 'برای ردیف محصولات، گروه کالا را انتخاب کنید.' };
+        else if (s.Type === 'posts' && s.Source === 'category' && !s.CategoryId) problem = { li: li, msg: 'برای ردیف مطالب، دسته را انتخاب کنید.' };
       }
       sections.push(s);
     });

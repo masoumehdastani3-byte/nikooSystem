@@ -1,29 +1,32 @@
-@model NikooSystem.Models.Store.StoreSettings
+@model StoreSettings
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "راه‌اندازی فروشگاه";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var site = kind.SiteNoun;
+    ViewBag.Title = "راه‌اندازی " + site;
     var company = (string)ViewBag.CompanyCode;
     var step = (int)ViewBag.Step;
-    var tenant = ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo;
-    var categories = (List<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories;
+    var tenant = ViewBag.Tenant as TenantInfo;
+    var categories = (List<StoreCategory>)ViewBag.Categories;
     var sampleCount = (int)ViewBag.SampleCount;
-    var realCount = (int)ViewBag.RealProductCount;
+    var realCount = (int)ViewBag.RealCount;
     var storeUrl = (string)ViewBag.StoreUrl;
     var serverIp = NikooSystem.Services.TenantProvisioningService.ServerIp;
     var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
-    var steps = new[] { "نام و لوگو", "ظاهر فروشگاه", "اولین محصول", "درگاه پرداخت", "آدرس سایت" };
+    var firstItem = kind.IsContent ? "اولین مطلب" : kind.IsBooking ? "خدمات" : kind.IsDigital ? "اولین دوره یا کتاب" : "اولین محصول";
+    var steps = new[] { "نام و لوگو", "ظاهر " + site, firstItem, kind.IsContent ? "نظرات و تماس" : "درگاه پرداخت", "آدرس سایت" };
 }
-<link href="~/Content/storefront-themes.css" rel="stylesheet" />
-<link href="~/Content/onboarding.css" rel="stylesheet" />
+<link href="@Url.Asset("~/Content/storefront-themes.css")" rel="stylesheet" />
+<link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
 
 @if ((bool)ViewBag.Welcome)
 {
     <div class="alert alert-success">
-        <strong>فروشگاه شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده فروش کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
+        <strong>@site شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده @(kind.IsContent ? "انتشار" : kind.IsBooking ? "نوبت‌دهی" : "فروش") کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
     </div>
 }
 
-<h2 class="mb-3">راه‌اندازی فروشگاه</h2>
+<h2 class="mb-3">راه‌اندازی @site</h2>
 
 <nav class="ob-stepper">
     @for (var i = 1; i <= steps.Length; i++)
@@ -41,16 +44,16 @@
     using (Html.BeginForm("SetupInfo", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         @Html.AntiForgeryToken()
-        <h5>فروشگاه شما چه نامی دارد؟</h5>
+        <h5>@site شما چه نامی دارد؟</h5>
         <p class="text-muted small">این اطلاعات در بالای سایت، فوتر و صفحه «تماس با ما» نمایش داده می‌شود.</p>
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">نام فروشگاه</label>
+                <label class="form-label">نام @site</label>
                 <input class="form-control" name="storeName" value="@Model.StoreName" required />
             </div>
             <div class="col-md-6">
                 <label class="form-label">شعار کوتاه (اختیاری)</label>
-                <input class="form-control" name="tagline" value="@Model.Tagline" placeholder="مثلاً: پوشاک باکیفیت با قیمت مناسب" />
+                <input class="form-control" name="tagline" value="@Model.Tagline" placeholder="@(kind.IsContent ? "مثلاً: خبر دقیق، تحلیل عمیق" : kind.IsBooking ? "مثلاً: نوبت آنلاین، بدون انتظار" : kind.IsDigital ? "مثلاً: یادگیری از بهترین مدرسان" : "مثلاً: پوشاک باکیفیت با قیمت مناسب")" />
             </div>
             <div class="col-md-6">
                 <label class="form-label">تلفن تماس</label>
@@ -69,7 +72,7 @@
                     }
                     <input class="form-control" style="max-width:360px" type="file" name="logoFile" accept=".png,.jpg,.jpeg,.gif" />
                 </div>
-                <div class="form-text">بهتر است PNG با پس‌زمینه شفاف باشد. اگر لوگو ندارید، نام فروشگاه به‌جای آن نمایش داده می‌شود.</div>
+                <div class="form-text">بهتر است PNG با پس‌زمینه شفاف باشد. اگر لوگو ندارید، نام @site به‌جای آن نمایش داده می‌شود.</div>
             </div>
         </div>
         <div class="ob-actions">
@@ -83,7 +86,7 @@ else if (step == 2)
     using (Html.BeginForm("SetupLook", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         @Html.AntiForgeryToken()
-        <h5>ظاهر فروشگاه را انتخاب کنید</h5>
+        <h5>ظاهر @site را انتخاب کنید</h5>
         <p class="text-muted small mb-1">روی یک قالب کلیک کنید؛ رنگ‌ها خودکار تنظیم می‌شوند و در صورت تمایل می‌توانید تغییرشان دهید.</p>
         <div class="mb-3">
             @Html.Partial("_TemplatePicker", Model.LayoutStyle)
@@ -119,58 +122,53 @@ else if (step == 2)
         </div>
     }
 }
-else if (step == 3)
+else if (step == 3 && kind.IsContent)
 {
-    using (Html.BeginForm("SetupProduct", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    using (Html.BeginForm("SetupPost", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
     {
         @Html.AntiForgeryToken()
-        <h5>اولین محصولتان را اضافه کنید</h5>
+        <h5>اولین مطلبتان را منتشر کنید</h5>
         <p class="text-muted small">
             @if (realCount > 0)
             {
-                <span>تا الان @realCount محصول اضافه کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
+                <span>تا الان @realCount مطلب منتشر کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
             }
             else
             {
-                <span>فقط عنوان، قیمت و یک عکس کافی است؛ جزئیات بیشتر را بعداً از بخش «محصولات» اضافه کنید.</span>
+                <span>تیتر، خلاصه و یک تصویر کافی است؛ متن کامل را بعداً از بخش «خبرها و مقاله‌ها» با ویرایشگر کامل بنویسید.</span>
             }
         </p>
         <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label">عنوان محصول</label>
-                <input class="form-control" name="title" placeholder="مثلاً: کفش اسپرت مردانه" />
+            <div class="col-md-8">
+                <label class="form-label">تیتر</label>
+                <input class="form-control" name="title" placeholder="مثلاً: آغاز به کار نسخه جدید سایت" />
             </div>
-            <div class="col-md-3">
-                <label class="form-label">قیمت (تومان)</label>
-                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">موجودی</label>
-                <input class="form-control" name="stock" type="number" min="0" value="10" dir="ltr" />
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">گروه</label>
-                <select class="form-select" name="categoryId">
-                    @foreach (var c in categories)
-                    {
-                        <option value="@c.Id">@c.Title</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label">عکس محصول</label>
-                <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg,.gif" />
+            <div class="col-md-4">
+                <label class="form-label" for="setupCategory">سرویس / دسته</label>
+                <div class="qm-field">
+                    <select class="form-select" name="categoryId" id="setupCategory" data-qm="categories">
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c.Id">@c.TreeTitle()</option>
+                        }
+                    </select>
+                    @Html.QuickManage("categories", "سرویس‌ها و دسته‌ها")
+                </div>
             </div>
             <div class="col-12">
-                <label class="form-label">توضیح کوتاه</label>
-                <input class="form-control" name="shortDescription" />
+                <label class="form-label">خلاصه (لید)</label>
+                <textarea class="form-control" name="summary" rows="3"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">تصویر شاخص</label>
+                <input class="form-control" type="file" name="coverFile" accept=".png,.jpg,.jpeg,.gif" />
             </div>
             @if (sampleCount > 0)
             {
                 <div class="col-12 form-check ms-1">
                     <input class="form-check-input" type="checkbox" name="removeSamples" value="true" id="removeSamples" />
                     <input type="hidden" name="removeSamples" value="false" />
-                    <label class="form-check-label" for="removeSamples">@sampleCount محصول نمونه را از فروشگاه حذف کن</label>
+                    <label class="form-check-label" for="removeSamples">@sampleCount مطلب نمونه را از سایت حذف کن</label>
                 </div>
             }
         </div>
@@ -183,14 +181,187 @@ else if (step == 3)
         </div>
     }
 }
+else if (step == 3 && kind.IsBooking)
+{
+    using (Html.BeginForm("SetupService", "ShopAdmin", new { company }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <h5>چه خدمتی نوبت می‌دهید؟</h5>
+        <p class="text-muted small">
+            @if (realCount > 0)
+            {
+                <span>تا الان @realCount خدمت تعریف کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
+            }
+            else
+            {
+                <span>عنوان، مدت و هزینه کافی است؛ توضیح، تصویر و متخصصان هر خدمت را بعداً از بخش «خدمات و تعرفه‌ها» تنظیم کنید.</span>
+            }
+        </p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">عنوان خدمت</label>
+                <input class="form-control" name="title" maxlength="150" placeholder="مثلاً: ویزیت عمومی، کوتاهی مو، جلسه مشاوره" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">مدت (دقیقه)</label>
+                <input class="form-control" name="durationMinutes" type="number" min="5" max="480" step="5" value="@Model.BookingSlotMinutes" dir="ltr" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">هزینه (تومان)</label>
+                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
+            </div>
+            @if (sampleCount > 0)
+            {
+                <div class="col-12 form-check ms-1">
+                    <input class="form-check-input" type="checkbox" name="removeSamples" value="true" id="removeSamples" />
+                    <input type="hidden" name="removeSamples" value="false" />
+                    <label class="form-check-label" for="removeSamples">خدمات و متخصصان نمونه را حذف کن</label>
+                </div>
+            }
+        </div>
+        <div class="alert alert-light border small mt-3 mb-0">
+            <i class="bi bi-person-badge"></i> نوبت‌ها از روی ساعت کاری متخصصان ساخته می‌شوند. پس از این مرحله، از
+            <a href="@Url.Action("Staff","ShopAdmin", new { company })">متخصصان و ساعت کاری</a> افراد واقعی و روزهای کاری‌شان را وارد کنید.
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 2 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Setup", new { company, step = 4 })">رد شدن</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
+else if (step == 3)
+{
+    using (Html.BeginForm("SetupProduct", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        <h5>@firstItem را اضافه کنید</h5>
+        <p class="text-muted small">
+            @if (realCount > 0)
+            {
+                <span>تا الان @realCount مورد اضافه کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
+            }
+            else if (kind.IsDigital)
+            {
+                <span>عنوان، قیمت و تصویر جلد کافی است؛ فایل‌ها و جلسه‌ها را بعداً از صفحه ویرایش آن بارگذاری کنید.</span>
+            }
+            else
+            {
+                <span>فقط عنوان، قیمت و یک عکس کافی است؛ جزئیات بیشتر را بعداً از بخش «محصولات» اضافه کنید.</span>
+            }
+        </p>
+        <div class="row g-3">
+            @if (kind.IsDigital)
+            {
+                <div class="col-12">
+                    <div class="type-cards">
+                        @foreach (var t in kind.ProductTypes())
+                        {
+                            <label class="type-card">
+                                <input type="radio" name="productType" value="@t" @(t == StoreProductType.Course ? "checked" : "") />
+                                <span><i class="bi @t.TypeIcon()"></i> @t.TypeText()</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            }
+            <div class="col-md-6">
+                <label class="form-label">عنوان</label>
+                <input class="form-control" name="title" placeholder="@(kind.IsDigital ? "مثلاً: دوره جامع پایتون" : "مثلاً: کفش اسپرت مردانه")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">قیمت (تومان)</label>
+                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
+            </div>
+            @if (kind.IsDigital)
+            {
+                <div class="col-md-3">
+                    <label class="form-label">نویسنده / مدرس</label>
+                    <input class="form-control" name="author" />
+                </div>
+            }
+            else
+            {
+                <div class="col-md-3">
+                    <label class="form-label">موجودی</label>
+                    <input class="form-control" name="stock" type="number" min="0" value="10" dir="ltr" />
+                </div>
+            }
+            <div class="col-md-6">
+                <label class="form-label" for="setupCategory">گروه</label>
+                <div class="qm-field">
+                    <select class="form-select" name="categoryId" id="setupCategory" data-qm="categories">
+                        @foreach (var c in categories)
+                        {
+                            <option value="@c.Id">@c.TreeTitle()</option>
+                        }
+                    </select>
+                    @Html.QuickManage("categories", "گروه‌ها")
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">@(kind.IsDigital ? "تصویر جلد" : "عکس محصول")</label>
+                <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg,.gif" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">توضیح کوتاه</label>
+                <input class="form-control" name="shortDescription" />
+            </div>
+            @if (sampleCount > 0)
+            {
+                <div class="col-12 form-check ms-1">
+                    <input class="form-check-input" type="checkbox" name="removeSamples" value="true" id="removeSamples" />
+                    <input type="hidden" name="removeSamples" value="false" />
+                    <label class="form-check-label" for="removeSamples">@sampleCount مورد نمونه را از فروشگاه حذف کن</label>
+                </div>
+            }
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 2 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Setup", new { company, step = 4 })">رد شدن</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
+else if (step == 4 && kind.IsContent)
+{
+    using (Html.BeginForm("SetupEngagement", "ShopAdmin", new { company }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <h5>ارتباط با مخاطبان</h5>
+        <p class="text-muted small">خوانندگان زیر هر مطلب نظر می‌دهند و از صفحه «تماس با ما» برایتان پیام می‌فرستند؛ همه در پنل مدیریت جمع می‌شوند.</p>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">ایمیل عمومی برای تماس</label>
+                <input class="form-control" name="email" type="email" dir="ltr" value="@Model.Email" />
+            </div>
+            <div class="col-12 form-check ms-1">
+                <input class="form-check-input" type="checkbox" name="moderateComments" value="true" id="moderateComments" @(Model.ModerateComments ? "checked" : null) />
+                <input type="hidden" name="moderateComments" value="false" />
+                <label class="form-check-label" for="moderateComments">نظرها پیش از نمایش، توسط من تأیید شوند (پیشنهاد می‌شود)</label>
+            </div>
+        </div>
+        <div class="ob-actions">
+            <a href="@Url.Action("Setup", new { company, step = 3 })">بازگشت</a>
+            <div class="d-flex gap-2">
+                <a class="btn btn-outline-secondary" href="@Url.Action("Setup", new { company, step = 5 })">رد شدن</a>
+                <button class="btn-store" type="submit">ذخیره و ادامه <i class="bi bi-arrow-left"></i></button>
+            </div>
+        </div>
+    }
+}
 else if (step == 4)
 {
     var hasMerchant = NikooSystem.Services.TenantProvisioningService.HasValidMerchant(Model);
     using (Html.BeginForm("SetupPayment", "ShopAdmin", new { company }, FormMethod.Post))
     {
         @Html.AntiForgeryToken()
-        <h5>دریافت پول از مشتری (درگاه زرین‌پال)</h5>
-        <p class="text-muted small">مبلغ هر سفارش مستقیم به حساب زرین‌پال خودتان واریز می‌شود.</p>
+        <h5>@(kind.IsBooking ? "بیعانه آنلاین نوبت (درگاه زرین‌پال)" : "دریافت پول از مشتری (درگاه زرین‌پال)")</h5>
+        <p class="text-muted small">@(kind.IsBooking ? "مراجع هنگام رزرو بخشی از هزینه را آنلاین می‌پردازد؛ مبلغ مستقیم به حساب زرین‌پال خودتان واریز می‌شود." : "مبلغ هر سفارش مستقیم به حساب زرین‌پال خودتان واریز می‌شود.")</p>
         <ol class="small mb-3">
             <li>در <a href="https://www.zarinpal.com" target="_blank" rel="noopener">zarinpal.com</a> ثبت‌نام کنید و احراز هویت را کامل کنید.</li>
             <li>در پنل زرین‌پال یک «درگاه پرداخت» برای آدرس فروشگاهتان بسازید.</li>
@@ -206,9 +377,31 @@ else if (step == 4)
                 <input type="hidden" name="enablePayment" value="false" />
                 <label class="form-check-label" for="enablePayment">پرداخت آنلاین فعال باشد</label>
             </div>
+            @if (kind.IsBooking)
+            {
+                <div class="col-md-4">
+                    <label class="form-label">درصد بیعانه از هزینه هر خدمت</label>
+                    <div class="input-group">
+                        <input class="form-control" name="depositPercent" type="number" min="0" max="100" value="@Model.BookingDepositPercent" dir="ltr" />
+                        <span class="input-group-text">٪</span>
+                    </div>
+                    <div class="form-text">۰ یعنی بدون بیعانه؛ ۱۰۰ یعنی پرداخت کامل هنگام رزرو.</div>
+                </div>
+            }
         </div>
         <div class="alert alert-light border small mt-3 mb-0">
-            هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، سفارش‌ها بدون پرداخت ثبت می‌شوند و در بخش «سفارش‌ها» می‌بینید.
+            @if (kind.IsBooking)
+            {
+                <span>هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، نوبت‌ها بدون بیعانه ثبت و بلافاصله تأیید می‌شوند.</span>
+            }
+            else
+            {
+                <span>هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، سفارش‌ها بدون پرداخت ثبت می‌شوند و در بخش «سفارش‌ها» می‌بینید.</span>
+            }
+            @if (kind.IsDigital)
+            {
+                <span>در این حالت خریدار پس از تأیید سفارش توسط شما (تغییر وضعیت به «پرداخت شده») به فایل‌ها دسترسی پیدا می‌کند.</span>
+            }
         </div>
         <div class="ob-actions">
             <a href="@Url.Action("Setup", new { company, step = 3 })">بازگشت</a>
@@ -224,12 +417,12 @@ else
     using (Html.BeginForm("SetupDomain", "ShopAdmin", new { company }, FormMethod.Post))
     {
         @Html.AntiForgeryToken()
-        <h5>آدرس فروشگاه شما</h5>
-        <p>فروشگاه شما همین حالا از این آدرس در دسترس است:</p>
+        <h5>آدرس @site شما</h5>
+        <p>@site شما همین حالا از این آدرس در دسترس است:</p>
         <p><a class="fs-5" dir="ltr" href="@storeUrl" target="_blank">@storeUrl</a></p>
         <hr />
         <h6>دامنه اختصاصی (اختیاری)</h6>
-        <p class="text-muted small">اگر دامنه دارید (مثلاً myshop.ir) آن را وارد کنید. اگر ندارید، این بخش را خالی بگذارید و بعداً از «اطلاعات فروشگاه» اضافه کنید.</p>
+        <p class="text-muted small">اگر دامنه دارید (مثلاً myshop.ir) آن را وارد کنید. اگر ندارید، این بخش را خالی بگذارید و بعداً از صفحه «دامنه اختصاصی» اضافه کنید.</p>
         <div class="row g-3">
             <div class="col-md-6">
                 <input class="form-control" name="customDomain" dir="ltr" value="@(tenant?.CustomDomain)" placeholder="myshop.ir" />
@@ -250,8 +443,9 @@ else
                 {
                     <li>یک رکورد <code>A</code> برای <code>www</code> با مقدار <code>@serverIp</code> بسازید.</li>
                 }
-                <li>تغییرات DNS معمولاً بین چند دقیقه تا ۲۴ ساعت طول می‌کشد.</li>
+                <li>تغییرات DNS معمولاً بین چند دقیقه تا ۲۴ ساعت طول می‌کشد. وقتی درست شد، پشتیبانی نیکو خودکار خبردار می‌شود و گواهی SSL را فعال می‌کند.</li>
             </ul>
+            <a class="d-inline-block mt-2" href="@Url.Action("Domain", new { company })"><i class="bi bi-list-ol"></i> راهنمای کامل اتصال دامنه و بررسی وضعیت آن</a>
         </div>
         <div class="ob-actions">
             <a href="@Url.Action("Setup", new { company, step = 4 })">بازگشت</a>

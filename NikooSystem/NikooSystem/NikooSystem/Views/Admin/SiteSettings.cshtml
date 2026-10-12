@@ -1,0 +1,251 @@
+@model NikooSystem.Models.SiteSettings
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "تنظیمات و متن‌های سایت";
+    var configTrial = System.Configuration.ConfigurationManager.AppSettings["Trial.Days"] ?? "7";
+}
+<div class="adm-head">
+    <div>
+        <h1>تنظیمات و متن‌های سایت</h1>
+        <p>هر تغییری بلافاصله بعد از ذخیره روی سایت اصلی اعمال می‌شود. <a href="@Url.Action("Index","Home")" target="_blank" rel="noopener">مشاهده سایت</a></p>
+    </div>
+</div>
+@using (Html.BeginForm("SiteSettings", "Admin", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <div class="adm-card h-100">
+                <div class="adm-section-title"><i class="bi bi-globe2"></i> عمومی</div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.SiteName, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.SiteName, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.SiteName, "", new { @class = "text-danger small" })
+                    <div class="form-text">در سربرگ، فوتر و عنوان صفحه‌ها نمایش داده می‌شود.</div>
+                </div>
+
+                <div class="adm-section-title"><i class="bi bi-google"></i> نمایش در گوگل (صفحه اصلی)</div>
+                <div class="mb-3">
+                    @Html.Partial("_SeoFields", new NikooSystem.Helpers.SeoFieldsVm
+                    {
+                        Title = Model.SeoTitle,
+                        Description = Model.MetaDescription,
+                        DescriptionName = "MetaDescription",
+                        AutoTitle = NikooSystem.Helpers.SeoPages.SiteHomeTitle(new NikooSystem.Models.SiteSettings { SiteName = Model.SiteName }),
+                        AutoDescription = "توضیح کوتاه سایت",
+                        Url = NikooSystem.Helpers.Seo.SiteUrl(Request) + "/"
+                    })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.GoogleVerification, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.GoogleVerification, new { @class = "form-control", dir = "ltr", placeholder = "<meta name=\"google-site-verification\" content=\"...\" />" })
+                    @Html.ValidationMessageFor(m => m.GoogleVerification, "", new { @class = "text-danger small" })
+                    <div class="form-text">
+                        در <a href="https://search.google.com/search-console" target="_blank" rel="noopener">گوگل سرچ کنسول</a> روش «HTML tag» را انتخاب کنید و تگ یا فقط کد آن را اینجا بچسبانید.
+                        سپس نقشه سایت <code dir="ltr">@(NikooSystem.Helpers.Seo.SiteUrl(Request))/sitemap.xml</code> را در همان‌جا ثبت کنید.
+                        مراحل کامل در <a href="@Url.Action("SeoGuide","Admin")">راهنمای سئو</a>.
+                    </div>
+                </div>
+
+                <div class="adm-section-title"><i class="bi bi-telephone"></i> اطلاعات تماس</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Phone, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", dir = "ltr" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.Email, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", dir = "ltr" })
+                        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-8">
+                        @Html.LabelFor(m => m.Address, new { @class = "form-label" })
+                        @Html.TextAreaFor(m => m.Address, 2, 1, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-4">
+                        @Html.LabelFor(m => m.PostalCode, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.PostalCode, new { @class = "form-control", dir = "ltr", inputmode = "numeric", maxlength = "11", placeholder = "1234567890" })
+                        @Html.ValidationMessageFor(m => m.PostalCode, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(m => m.WorkingHours, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.WorkingHours, new { @class = "form-control", placeholder = "مثلاً شنبه تا پنجشنبه، ۹ تا ۱۷" })
+                    </div>
+                </div>
+                <div class="form-text mt-2">
+                    در صفحه «تماس با ما»، «درباره ما»، قوانین و فوتر استفاده می‌شوند.
+                    برای <a href="@Url.Action("Enamad","Admin")">اینماد</a> باید دقیقاً با نشانی، کد پستی، تلفن و ایمیلی یکی باشند که در enamad.ir ثبت می‌کنید.
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="adm-card h-100">
+                <div class="adm-section-title"><i class="bi bi-house"></i> صفحه اصلی</div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.HeroEyebrow, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.HeroEyebrow, new { @class = "form-control" })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.HeroTitle, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.HeroTitle, new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.HeroTitle, "", new { @class = "text-danger small" })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.HeroLead, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.HeroLead, 3, 1, new { @class = "form-control" })
+                    <div class="form-text"><code>{TrialDays}</code> با تعداد روزهای دوره آزمایشی جایگزین می‌شود.</div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.StoresTitle, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.StoresTitle, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.StoresSubtitle, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.StoresSubtitle, new { @class = "form-control" })
+                    </div>
+                </div>
+                <label class="form-label">آمار نوار پایین صفحه</label>
+                <div class="row g-2 mb-3">
+                    <div class="col-6 col-md-3">
+                        @Html.TextBoxFor(m => m.StatSatisfaction, new { @class = "form-control", type = "number", min = "0", max = "100", aria_label = "درصد رضایت" })
+                        <div class="form-text">٪ رضایت</div>
+                        @Html.ValidationMessageFor(m => m.StatSatisfaction, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-6 col-md-3">
+                        @Html.TextBoxFor(m => m.StatDemos, new { @class = "form-control", type = "number", min = "0", aria_label = "دموی فروشگاه" })
+                        <div class="form-text">دموی فروشگاه</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        @Html.TextBoxFor(m => m.StatCustomers, new { @class = "form-control", type = "number", min = "0", aria_label = "مشتری راضی" })
+                        <div class="form-text">مشتری راضی</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        @Html.TextBoxFor(m => m.StatSupportHours, new { @class = "form-control", type = "number", min = "0", aria_label = "ساعت پشتیبانی" })
+                        <div class="form-text">ساعت پشتیبانی</div>
+                    </div>
+                </div>
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.ShowFaq, new { @class = "form-check-input" })
+                    @Html.LabelFor(m => m.ShowFaq, new { @class = "form-check-label" })
+                    <a class="small ms-1" href="@Url.Action("Faqs","Admin")">ویرایش سوال‌ها</a>
+                </div>
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.ShowTestimonials, new { @class = "form-check-input" })
+                    @Html.LabelFor(m => m.ShowTestimonials, new { @class = "form-check-label" })
+                    <a class="small ms-1" href="@Url.Action("Testimonials","Admin")">ویرایش نظرها</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="adm-card h-100">
+                <div class="adm-section-title"><i class="bi bi-share"></i> شبکه‌های اجتماعی</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.InstagramUrl, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.InstagramUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://instagram.com/..." })
+                        @Html.ValidationMessageFor(m => m.InstagramUrl, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.TelegramUrl, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.TelegramUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://t.me/..." })
+                        @Html.ValidationMessageFor(m => m.TelegramUrl, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.WhatsAppUrl, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.WhatsAppUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://wa.me/98912..." })
+                        @Html.ValidationMessageFor(m => m.WhatsAppUrl, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.LinkedInUrl, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.LinkedInUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://linkedin.com/..." })
+                        @Html.ValidationMessageFor(m => m.LinkedInUrl, "", new { @class = "text-danger small" })
+                    </div>
+                </div>
+                <div class="form-text mt-2">لینک‌های خالی در سایت نمایش داده نمی‌شوند.</div>
+
+                <div class="adm-section-title mt-4"><i class="bi bi-layout-text-window-reverse"></i> فوتر</div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.FooterAbout, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.FooterAbout, 2, 1, new { @class = "form-control" })
+                </div>
+                <div class="form-check mb-2">
+                    @Html.CheckBoxFor(m => m.ShowCharity, new { @class = "form-check-input" })
+                    @Html.LabelFor(m => m.ShowCharity, new { @class = "form-check-label" })
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.CharityTitle, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.CharityTitle, new { @class = "form-control" })
+                    </div>
+                    <div class="col-md-6">
+                        @Html.LabelFor(m => m.CharityUrl, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.CharityUrl, new { @class = "form-control", dir = "ltr" })
+                        @Html.ValidationMessageFor(m => m.CharityUrl, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-12">
+                        @Html.LabelFor(m => m.CharityText, new { @class = "form-label" })
+                        @Html.TextAreaFor(m => m.CharityText, 3, 1, new { @class = "form-control" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="adm-card h-100">
+                <div class="adm-section-title"><i class="bi bi-file-earmark-text"></i> صفحات قانونی</div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.TermsText, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.TermsText, 12, 1, new { @class = "form-control" })
+                    <div class="form-text"><a href="@Url.Action("Terms","Home")" target="_blank" rel="noopener">مشاهده صفحه</a></div>
+                </div>
+                <div class="mb-2">
+                    @Html.LabelFor(m => m.PrivacyText, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.PrivacyText, 8, 1, new { @class = "form-control" })
+                    <div class="form-text"><a href="@Url.Action("Privacy","Home")" target="_blank" rel="noopener">مشاهده صفحه</a></div>
+                </div>
+                <div class="form-text">
+                    هر خط یک پاراگراف است؛ خط‌هایی که با <code>-</code> شروع شوند فهرست و خط‌هایی که با <code>##</code> شروع شوند عنوان بخش می‌شوند (عنوان‌ها در فهرست کنار صفحه قوانین می‌آیند).
+                    اینماد بخش‌های «انصراف و بازگشت وجه»، «رسیدگی به شکایات» و شیوه تحویل خدمت را در قوانین بررسی می‌کند.
+                </div>
+
+                <div class="adm-section-title mt-4"><i class="bi bi-hourglass-split"></i> ساخت فروشگاه رایگان</div>
+                <div class="row g-3 align-items-end">
+                    <div class="col-sm-5">
+                        @Html.LabelFor(m => m.TrialDays, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.TrialDays, new { @class = "form-control", type = "number", min = "0", max = "365" })
+                        @Html.ValidationMessageFor(m => m.TrialDays, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-sm-7">
+                        <div class="form-text">۰ یعنی مقدار فایل تنظیمات (@configTrial روز). روی فروشگاه‌هایی که از قبل ساخته شده‌اند اثری ندارد.</div>
+                    </div>
+                </div>
+
+                <div class="adm-section-title mt-4"><i class="bi bi-hdd"></i> فضای ذخیره‌سازی سایت‌ها</div>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        @Html.LabelFor(m => m.StorageBaseMb, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.StorageBaseMb, new { @class = "form-control", type = "number", min = "0" })
+                        @Html.ValidationMessageFor(m => m.StorageBaseMb, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-sm-6">
+                        @Html.LabelFor(m => m.StoragePricePerGb, new { @class = "form-label" })
+                        @Html.TextBoxFor(m => m.StoragePricePerGb, new { @class = "form-control", type = "number", min = "0", step = "1000" })
+                        @Html.ValidationMessageFor(m => m.StoragePricePerGb, "", new { @class = "text-danger small" })
+                    </div>
+                </div>
+                <div class="form-text">
+                    هر سایت این مقدار فضا را رایگان دارد و بیشتر از آن را از صفحه «فضای ذخیره‌سازی» پنل خودش می‌خرد (بسته‌های ۱، ۵، ۲۰ و ۵۰ گیگابایتی با ۰ تا ۳۰٪ تخفیف).
+                    ۰ یعنی مقدار پیش‌فرض: @NikooSystem.Services.StorageQuota.DefaultBaseMb.ToFa() مگابایت و @NikooSystem.Services.StorageQuota.DefaultPricePerGb.ToToman() برای هر گیگابایت.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="adm-card mt-3 d-flex align-items-center gap-3" style="position:sticky;bottom:1rem;z-index:5">
+        <button class="btn btn-primary px-4" type="submit"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
+        <span class="text-muted small">آخرین ذخیره: @Model.UpdatedAt.ToShamsiText() ساعت @Model.UpdatedAt.ToString("HH:mm")</span>
+    </div>
+}

@@ -1,0 +1,78 @@
+@model StoreService
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش خدمت" : "خدمت جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var selected = Model.StaffIds ?? new List<int>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Services","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+
+@using (Html.BeginForm("EditService", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3">
+        <div class="col-md-6">
+            <label class="form-label" for="Title">عنوان خدمت</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً ویزیت عمومی" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="DurationMinutes">مدت (دقیقه)</label>
+            @Html.TextBoxFor(m => m.DurationMinutes, new { @class = "form-control", type = "number", min = "5", max = "480", step = "5", dir = "ltr" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Price">هزینه (تومان)</label>
+            @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+            <div class="form-text">۰ یعنی رایگان.</div>
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="Description">توضیح کوتاه</label>
+            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", maxlength = "1000" })
+        </div>
+        <div class="col-12">
+            <label class="form-label d-block">چه کسانی این خدمت را ارائه می‌دهند؟</label>
+            @if (staff.Any())
+            {
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (var p in staff)
+                    {
+                        <label class="form-check">
+                            <input class="form-check-input" type="checkbox" name="StaffIds" value="@p.Id" @(selected.Contains(p.Id) ? "checked" : "") />
+                            <span class="form-check-label">@p.Name @if (!p.IsActive) { <small class="text-muted">(غیرفعال)</small> }</span>
+                        </label>
+                    }
+                </div>
+                <div class="form-text">هیچ‌کدام را نزنید تا همه متخصصان این خدمت را ارائه دهند.</div>
+            }
+            else
+            {
+                <div class="small text-muted">هنوز متخصصی ندارید؛ <a href="@Url.Action("EditStaff","ShopAdmin", new { company })">اولین متخصص را اضافه کنید</a>.</div>
+            }
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">تصویر (اختیاری)</label>
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <img src="@Model.ImageUrl" alt="" style="width:120px;height:68px;object-fit:cover;border-radius:8px" />
+                    <label class="small"><input type="checkbox" name="removeImage" value="true" /> حذف تصویر</label>
+                </div>
+            }
+            <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg,.gif" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="SortOrder">ترتیب نمایش</label>
+            @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال (قابل رزرو آنلاین)")
+        </div>
+        <div class="col-12 d-flex gap-2">
+            @Html.FormActions("Services")
+        </div>
+    </div>
+}

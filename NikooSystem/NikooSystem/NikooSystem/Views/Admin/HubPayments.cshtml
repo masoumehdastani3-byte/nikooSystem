@@ -1,0 +1,61 @@
+@model PagedList<NikooSystem.Models.HubPayment>
+@using NikooSystem.Models
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "تراکنش‌های درگاه";
+    var apps = (List<PaymentClient>)ViewBag.Apps;
+    var appNames = apps.ToDictionary(a => a.AppId, a => a.Name, StringComparer.OrdinalIgnoreCase);
+    var statuses = Enum.GetValues(typeof(HubPaymentStatus)).Cast<HubPaymentStatus>().ToDictionary(s => s.ToString(), s => s.HubStatusText());
+}
+<div class="adm-head">
+    <div>
+        <h1>تراکنش‌های درگاه پرداخت مرکزی</h1>
+        <p>پرداخت‌هایی که اپلیکیشن‌های متصل از طریق این سایت گرفته‌اند</p>
+    </div>
+</div>
+<div class="adm-card">
+    @Html.GridToolbar("جستجو در توکن، شناسه سفارش، مشتری یا موبایل...", new GridSelect("app", "همه اپلیکیشن‌ها", appNames), new GridSelect("status", "همه وضعیت‌ها", statuses))
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    @Html.SortHeader("created", "تاریخ")
+                    @Html.SortHeader("app", "اپلیکیشن")
+                    <th>شناسه سفارش</th>
+                    <th>مشتری</th>
+                    @Html.SortHeader("amount", "مبلغ")
+                    <th>کد پیگیری</th>
+                    <th>وضعیت</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @foreach (var p in Model)
+            {
+                string appName;
+                <tr>
+                    <td>@p.CreatedAt.ToShamsi() @p.CreatedAt.ToString("HH:mm")</td>
+                    <td>@(appNames.TryGetValue(p.AppId ?? "", out appName) ? appName : p.AppId)</td>
+                    <td class="adm-ltr small">@(p.ExternalRef ?? "-")</td>
+                    <td>
+                        @(p.CustomerName ?? "-")
+                        @if (!string.IsNullOrEmpty(p.CustomerMobile))
+                        {
+                            <div class="small text-muted" dir="ltr">@p.CustomerMobile</div>
+                        }
+                    </td>
+                    <td>@p.Amount.ToToman()</td>
+                    <td class="adm-ltr">@(p.RefId?.ToString() ?? "-")</td>
+                    <td><span class="badge @p.Status.HubStatusBadge()">@p.Status.HubStatusText()</span></td>
+                    <td class="row-actions">@Html.IconLink(Url.Action("HubPayment", "Admin", new { id = p.Id }), "bi-eye", "جزئیات تراکنش", "is-view")</td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center text-muted py-4">تراکنشی یافت نشد</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

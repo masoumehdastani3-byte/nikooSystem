@@ -1,39 +1,88 @@
-@model NikooSystem.Models.Store.StoreProduct
+@using Newtonsoft.Json
+@using NikooSystem.Services
+@model StoreProduct
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Id > 0 ? "ویرایش محصول" : "محصول جدید";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var noun = kind.IsDigital ? "دوره یا کتاب" : "محصول";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش " + noun : noun + " جدید";
     var company = (string)ViewBag.CompanyCode;
-    var cats = (IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories;
-    var attrs = (IEnumerable<NikooSystem.Models.Store.StoreAttributeDef>)ViewBag.AttributeDefs;
-    var tags = ((IEnumerable<NikooSystem.Models.Store.StoreCollection>)ViewBag.Collections)?.ToList() ?? new List<NikooSystem.Models.Store.StoreCollection>();
+    var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
+    var attrs = (IEnumerable<StoreAttributeDef>)ViewBag.AttributeDefs;
+    var tags = ((IEnumerable<StoreCollection>)ViewBag.Collections)?.ToList() ?? new List<StoreCollection>();
     var productTags = Model.CollectionIds ?? new List<int>();
+    var safeJson = new JsonSerializerSettings { StringEscapeHandling = StringEscapeHandling.EscapeHtml };
 }
-<h2 class="mb-3">@ViewBag.Title</h2>
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <div class="d-flex gap-2">
+        @if (Model.Id > 0)
+        {
+            <a class="btn-outline-store" href="@Url.Action("Product","Shop", new { company, slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده در سایت</a>
+        }
+        <a class="btn-outline-store" href="@Url.Action("Products","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت</a>
+    </div>
+</div>
 @using (Html.BeginForm("EditProduct", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "productForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
     <input type="hidden" name="removeImageIds" id="removeImageIds" value="" />
     <div class="panel-card row g-3">
-        <div class="col-md-8"><label class="form-label">عنوان</label>@Html.TextBoxFor(m => m.Title, new { @class = "form-control" })</div>
-        <div class="col-md-4"><label class="form-label">اسلاگ</label>@Html.TextBoxFor(m => m.Slug, new { @class = "form-control" })</div>
+        @if (kind.IsDigital)
+        {
+            <div class="col-12">
+                <label class="form-label">نوع</label>
+                <div class="type-cards">
+                    @foreach (var t in kind.ProductTypes())
+                    {
+                        <label class="type-card">
+                            <input type="radio" name="ProductType" value="@t" @(Model.ProductType == t ? "checked" : "") />
+                            <span><i class="bi @t.TypeIcon()"></i> @t.TypeText()</span>
+                        </label>
+                    }
+                </div>
+            </div>
+        }
+        <div class="col-md-8"><label class="form-label">عنوان</label>@Html.TextBoxFor(m => m.Title, new { @class = "form-control", required = "required" })</div>
+        <div class="col-md-4"><label class="form-label">اسلاگ</label>@Html.TextBoxFor(m => m.Slug, new { @class = "form-control", dir = "ltr" })</div>
         <div class="col-md-4">
-            <label class="form-label">گروه</label>
-            <select class="form-select" name="CategoryId" id="CategoryId">
-                @foreach (var c in cats)
-                {
-                    <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@(c.ParentId.HasValue ? "— " : "")@c.Title</option>
-                }
-            </select>
+            <label class="form-label" for="CategoryId">گروه</label>
+            <div class="qm-field">
+                <select class="form-select" name="CategoryId" id="CategoryId" data-qm="categories">
+                    @foreach (var c in cats)
+                    {
+                        <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@c.TreeTitle()</option>
+                    }
+                </select>
+                @Html.QuickManage("categories", "گروه‌ها")
+            </div>
             <div class="form-text">خصوصیات بر اساس گروه کالا فیلتر می‌شوند.</div>
         </div>
-        <div class="col-md-4"><label class="form-label">قیمت (تومان)</label>@Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number" })</div>
-        <div class="col-md-4"><label class="form-label">موجودی</label>@Html.TextBoxFor(m => m.Stock, new { @class = "form-control", type = "number" })</div>
+        <div class="col-md-4"><label class="form-label">قیمت (تومان)</label>@Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0" })</div>
+        <div class="col-md-4">
+            <label class="form-label">قیمت قبل از تخفیف (اختیاری)</label>
+            <input class="form-control" type="number" min="0" name="CompareAtPrice" value="@Model.CompareAtPrice" />
+            <div class="form-text">اگر بیشتر از قیمت باشد، خط خورده و با درصد تخفیف نمایش داده می‌شود.</div>
+        </div>
+        @if (kind.IsShop)
+        {
+            <div class="col-md-4"><label class="form-label">موجودی انبار</label>@Html.TextBoxFor(m => m.Stock, new { @class = "form-control", type = "number", min = "0" })</div>
+            <div class="col-md-4"><label class="form-label">کد کالا (SKU)</label>@Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr" })</div>
+        }
+        @if (kind.IsDigital)
+        {
+            <div class="col-md-4"><label class="form-label">نویسنده / مدرس</label>@Html.TextBoxFor(m => m.Author, new { @class = "form-control", maxlength = "120" })</div>
+            <div class="col-md-8">
+                <label class="form-label">ویدیو یا فایل معرفی (لینک عمومی، اختیاری)</label>
+                @Html.TextBoxFor(m => m.PreviewUrl, new { @class = "form-control", dir = "ltr", placeholder = "https://…" })
+            </div>
+        }
         <div class="col-12"><label class="form-label">توضیح کوتاه</label>@Html.TextBoxFor(m => m.ShortDescription, new { @class = "form-control" })</div>
         <div class="col-12"><label class="form-label">توضیحات</label>@Html.TextAreaFor(m => m.Description, 4, 1, new { @class = "form-control" })</div>
 
         <div class="col-12">
-            <h5>گالری تصاویر محصول</h5>
+            <h5>تصاویر</h5>
             <p class="text-muted small">چند تصویر را همزمان انتخاب کنید. نسخه کوچک و بزرگ ساخته می‌شود و در صفحه جزئیات نمایش داده می‌شود.</p>
             <input class="form-control" type="file" name="imageFiles" accept="image/*" multiple />
             @if (Model.Images != null && Model.Images.Any())
@@ -41,22 +90,37 @@
                 <div class="d-flex flex-wrap gap-2 mt-3" id="galleryPreview">
                     @foreach (var img in Model.Images.OrderBy(i => i.SortOrder))
                     {
-                        <div class="position-relative border rounded p-1" data-img-id="@img.Id" style="width:110px;">
-                            <img src="@(img.ThumbUrl ?? img.LargeUrl)" class="w-100 rounded" style="height:90px;object-fit:cover;" alt="" />
-                            <button type="button" class="btn btn-sm btn-danger w-100 mt-1" onclick="markRemove('@img.Id', this)">حذف</button>
+                        <div class="image-chip" data-img-id="@img.Id">
+                            <img src="@(img.ThumbUrl ?? img.LargeUrl)" alt="" />
+                            <button type="button" class="icon-btn is-delete" title="حذف تصویر" aria-label="حذف تصویر" onclick="markRemove('@img.Id', this)"><i class="bi bi-trash"></i></button>
                         </div>
                     }
                 </div>
             }
         </div>
 
-        <div class="col-md-3 form-check mt-4 pt-3"><label><input type="checkbox" name="IsActive" value="true" @(Model.IsActive?"checked":"") /> فعال</label><input type="hidden" name="IsActive" value="false" /></div>
-        <div class="col-md-3 form-check mt-4 pt-3"><label><input type="checkbox" name="IsFeatured" value="true" @(Model.IsFeatured?"checked":"") /> ویژه</label><input type="hidden" name="IsFeatured" value="false" /></div>
+        <div class="col-md-3 form-check mt-4 pt-3">@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
+        <div class="col-md-3 form-check mt-4 pt-3">@Html.BoolField("IsFeatured", Model.IsFeatured, "ویژه")</div>
+
+        @if (kind.IsDigital)
+        {
+            <div class="col-12" id="lessonsBox" @(Model.ProductType == StoreProductType.Course ? null : Html.Raw("hidden"))>
+                <h5>سرفصل‌ها و جلسه‌ها</h5>
+                <p class="text-muted small mb-2">
+                    برای هر جلسه یکی از فایل‌های بارگذاری‌شده (پنل پایین) یا یک لینک ویدیو انتخاب کنید.
+                    جلسه‌های «پیش‌نمایش رایگان» را همه می‌بینند و بقیه فقط برای خریداران باز می‌شوند.
+                </p>
+                <div id="lessons"></div>
+                <button type="button" class="btn-outline-store btn-sm mt-2" onclick="addLesson()"><i class="bi bi-plus-lg"></i> جلسه جدید</button>
+                <input type="hidden" name="lessonsJson" id="lessonsJson" />
+            </div>
+        }
+
         <div class="col-12">
             <h5>برچسب‌های ویژه</h5>
-            @if (tags.Any())
-            {
-                <div class="d-flex flex-wrap gap-2">
+            <div class="qm-field is-block">
+                <div class="d-flex flex-wrap gap-2" data-qm="collections" data-qm-render="tags" data-qm-name="CollectionIds"
+                     data-qm-empty="هنوز برچسبی ندارید؛ با دکمه کناری برچسب بسازید.">
                     @foreach (var t in tags)
                     {
                         <label class="tag-check">
@@ -64,19 +128,17 @@
                             <span><i class="bi bi-tag"></i> @t.Title@(t.IsActive ? "" : " (غیرفعال)")</span>
                         </label>
                     }
+                    @if (!tags.Any())
+                    {
+                        <span class="text-muted small">هنوز برچسبی ندارید؛ با دکمه کناری برچسب بسازید.</span>
+                    }
                 </div>
-                <div class="form-text">کالا در ردیف‌های صفحه اول و صفحه هر برچسب نمایش داده می‌شود.</div>
-            }
-            else
-            {
-                <div class="text-muted small">
-                    هنوز برچسبی ندارید. با برچسب‌ها می‌توانید کالاهایی مثل «ویژه روز دختر» را در صفحه اول جدا نمایش دهید —
-                    <a href="@Url.Action("EditCollection","ShopAdmin", new { company })">ساخت برچسب</a>
-                </div>
-            }
+                @Html.QuickManage("collections", "برچسب‌ها")
+            </div>
+            <div class="form-text">با برچسب‌ها مجموعه‌هایی مثل «ویژه روز دختر» را در ردیف‌های صفحه اول و صفحه هر برچسب جدا نمایش دهید.</div>
         </div>
         <div class="col-12">
-            <h5>خصوصیات محصول (مرتبط با گروه)</h5>
+            <h5>خصوصیات (مرتبط با گروه)</h5>
             <div id="attrs">
                 @foreach (var def in attrs)
                 {
@@ -84,16 +146,18 @@
                     <div class="row g-2 mb-2 attr-row" data-id="@def.Id" data-name="@def.Name">
                         <div class="col-md-4"><label class="form-label">@def.Name</label></div>
                         <div class="col-md-8">
-                            @if (def.InputType == "select" && !string.IsNullOrEmpty(def.Options))
+                            @if (def.InputType == "select")
                             {
-                                <select class="form-select attr-val">
-                                    <option value="">—</option>
-                                    @foreach (var opt in def.Options.Split(','))
-                                    {
-                                        var o = opt.Trim();
-                                        <option value="@o" @(val == o ? "selected" : "")>@o</option>
-                                    }
-                                </select>
+                                <div class="qm-field">
+                                    <select class="form-select attr-val" data-qm="attr-@def.Id" aria-label="@def.Name">
+                                        <option value="">—</option>
+                                        @foreach (var o in (def.Options ?? "").Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).Distinct())
+                                        {
+                                            <option value="@o" @(val == o ? "selected" : "")>@o</option>
+                                        }
+                                    </select>
+                                    @Html.QuickManage("attr-" + def.Id, "مقدارهای «" + def.Name + "»")
+                                </div>
                             }
                             else
                             {
@@ -110,11 +174,73 @@
             <input type="hidden" name="attrJson" id="attrJson" />
         </div>
         <div class="col-12">
-            <button class="btn-store" type="submit" onclick="packAttrs()">ذخیره محصول</button>
-            <a class="btn-outline-store" href="@Url.Action("Products","ShopAdmin", new { company })">بازگشت</a>
+            <h5><i class="bi bi-google"></i> نمایش در گوگل</h5>
+            @{ var storeName = ((StoreSettings)ViewBag.Settings).StoreName; }
+            @Html.Partial("_SeoFields", new SeoFieldsVm
+            {
+                Title = Model.SeoTitle,
+                Description = Model.SeoDescription,
+                AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "عنوان " + noun : Model.Title, storeName),
+                AutoDescription = Model.Id > 0 ? SeoPages.ProductDescription(Model, storeName) : "از توضیح کوتاه ساخته می‌شود",
+                Url = Model.Id > 0 ? Html.Seo().Url(Url.RouteUrl("ShopProduct", new { company, slug = Model.Slug })) : null
+            })
+        </div>
+        <div class="col-12">
+            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
         </div>
     </div>
 }
+
+@if (kind.IsDigital)
+{
+    <div class="panel-card mt-3" id="files">
+        <h5><i class="bi bi-shield-lock"></i> فایل‌های محافظت‌شده</h5>
+        <p class="text-muted small">
+            کتاب (PDF/EPUB)، ویدیو و صوت جلسه‌ها یا فایل فشرده. این فایل‌ها آدرس عمومی ندارند و فقط خریدار بعد از پرداخت
+            از «کتابخانه من» به آن‌ها دسترسی دارد. حداکثر حجم هر فایل: @DigitalFileService.FormatSize(DigitalFileService.MaxBytes)
+            — قالب‌های مجاز: <span dir="ltr">@DigitalFileService.AllowedList</span>
+        </p>
+        @if (Model.Id == 0)
+        {
+            <div class="alert alert-info mb-0">ابتدا اطلاعات را ذخیره کنید، سپس فایل‌ها را بارگذاری کنید.</div>
+        }
+        else
+        {
+            if (Model.Files.Any())
+            {
+                <table class="table align-middle">
+                    <thead><tr><th>عنوان</th><th>فایل</th><th>حجم</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var f in Model.Files)
+                        {
+                            <tr>
+                                <td><i class="bi @(DigitalFileService.IsVideo(f) ? "bi-film" : DigitalFileService.IsAudio(f) ? "bi-music-note-beamed" : "bi-file-earmark")"></i> @f.Title</td>
+                                <td class="small text-muted" dir="ltr">@f.FileName</td>
+                                <td class="small">@DigitalFileService.FormatSize(f.Size)</td>
+                                <td class="row-actions">
+                                    @Html.IconLink(Url.Action("ProductFile", "ShopAdmin", new { company, id = Model.Id, fileId = f.Id }), "bi-play-circle", "پیش‌نمایش", "is-view", true)
+                                    @Html.IconPost("DeleteProductFile", new { id = Model.Id, fileId = f.Id }, "bi-trash", "حذف فایل", "is-delete", "فایل «" + f.Title + "» حذف شود؟ جلسه‌هایی که به آن وصل‌اند بدون فایل می‌مانند.")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            using (Html.BeginForm("UploadProductFile", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "uploadForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4"><label class="form-label">عنوان فایل</label><input class="form-control" name="title" placeholder="مثلاً جلسه ۱ — معرفی" /></div>
+                    <div class="col-md-5"><label class="form-label">فایل</label><input class="form-control" type="file" name="file" required accept="@DigitalFileService.AcceptAttribute" /></div>
+                    <div class="col-md-3"><button class="btn-store w-100" type="submit"><i class="bi bi-cloud-arrow-up"></i> بارگذاری</button></div>
+                </div>
+                <div class="small text-muted mt-2" id="uploadStatus" hidden><span class="spinner-border spinner-border-sm"></span> در حال بارگذاری… لطفاً صفحه را نبندید.</div>
+            }
+        }
+    </div>
+}
+
 <script>
 var removeIds=[];
 function markRemove(id, btn){
@@ -123,14 +249,79 @@ function markRemove(id, btn){
   document.getElementById('removeImageIds').value=removeIds.join(',');
   btn.closest('[data-img-id]').style.opacity='0.35';
   btn.disabled=true;
-  btn.textContent='حذف می‌شود';
 }
-function packAttrs(){
+document.getElementById('productForm').addEventListener('submit', function(){
   var list=[];
   document.querySelectorAll('.attr-row').forEach(function(row){
     var v=row.querySelector('.attr-val').value;
     if(v) list.push({AttributeId:parseInt(row.dataset.id),Name:row.dataset.name,Value:v});
   });
   document.getElementById('attrJson').value=JSON.stringify(list);
-}
+  if (window.packLessons) packLessons();
+});
 </script>
+@if (kind.IsDigital)
+{
+<script>
+(function(){
+  var files = @Html.Raw(JsonConvert.SerializeObject(Model.Files.Select(f => new { f.Id, f.Title }), safeJson));
+  var lessons = @Html.Raw(JsonConvert.SerializeObject(Model.Lessons, safeJson));
+  var box = document.getElementById('lessons');
+
+  function esc(s){ var d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
+  function fileOptions(selected){
+    return '<option value="">بدون فایل</option>' + files.map(function(f){
+      return '<option value="'+esc(f.Id)+'"'+(f.Id===selected?' selected':'')+'>'+esc(f.Title)+'</option>';
+    }).join('');
+  }
+  function row(l){
+    var el=document.createElement('div');
+    el.className='lesson-row';
+    el.dataset.id=l.Id||'';
+    el.innerHTML=
+      '<div class="row g-2">'+
+        '<div class="col-md-3"><input class="form-control form-control-sm" data-f="Section" placeholder="فصل" value="'+esc(l.Section)+'"></div>'+
+        '<div class="col-md-5"><input class="form-control form-control-sm" data-f="Title" placeholder="عنوان جلسه" value="'+esc(l.Title)+'"></div>'+
+        '<div class="col-md-2"><input class="form-control form-control-sm" data-f="Duration" placeholder="مدت (۱۲:۳۰)" value="'+esc(l.Duration)+'"></div>'+
+        '<div class="col-md-2 row-actions">'+
+          '<button type="button" class="icon-btn" title="بالا" aria-label="بالا" data-act="up"><i class="bi bi-arrow-up"></i></button>'+
+          '<button type="button" class="icon-btn" title="پایین" aria-label="پایین" data-act="down"><i class="bi bi-arrow-down"></i></button>'+
+          '<button type="button" class="icon-btn is-delete" title="حذف جلسه" aria-label="حذف جلسه" data-act="remove"><i class="bi bi-trash"></i></button>'+
+        '</div>'+
+        '<div class="col-md-4"><select class="form-select form-select-sm" data-f="FileId">'+fileOptions(l.FileId)+'</select></div>'+
+        '<div class="col-md-5"><input class="form-control form-control-sm" dir="ltr" data-f="VideoUrl" placeholder="یا لینک ویدیو https://…" value="'+esc(l.VideoUrl)+'"></div>'+
+        '<div class="col-md-3"><label class="small"><input type="checkbox" data-f="IsFree"'+(l.IsFree?' checked':'')+'> پیش‌نمایش رایگان</label></div>'+
+        '<div class="col-12"><input class="form-control form-control-sm" data-f="Summary" placeholder="توضیح کوتاه (اختیاری)" value="'+esc(l.Summary)+'"></div>'+
+      '</div>';
+    return el;
+  }
+  window.addLesson=function(){ var el=row({}); box.appendChild(el); el.querySelector('[data-f=Title]').focus(); };
+  box.addEventListener('click', function(e){
+    var btn=e.target.closest('[data-act]'); if(!btn) return;
+    var el=btn.closest('.lesson-row');
+    if(btn.dataset.act==='remove') el.remove();
+    if(btn.dataset.act==='up' && el.previousElementSibling) box.insertBefore(el, el.previousElementSibling);
+    if(btn.dataset.act==='down' && el.nextElementSibling) box.insertBefore(el.nextElementSibling, el);
+  });
+  window.packLessons=function(){
+    var list=[];
+    box.querySelectorAll('.lesson-row').forEach(function(el){
+      var l={Id:el.dataset.id||null};
+      el.querySelectorAll('[data-f]').forEach(function(i){ l[i.dataset.f]= i.type==='checkbox' ? i.checked : i.value; });
+      if(l.Title) list.push(l);
+    });
+    document.getElementById('lessonsJson').value=JSON.stringify(list);
+  };
+  lessons.forEach(function(l){ box.appendChild(row(l)); });
+
+  document.querySelectorAll('input[name=ProductType]').forEach(function(r){
+    r.addEventListener('change', function(){ document.getElementById('lessonsBox').hidden = this.value !== 'Course'; });
+  });
+  var upload=document.getElementById('uploadForm');
+  if(upload) upload.addEventListener('submit', function(){
+    document.getElementById('uploadStatus').hidden=false;
+    upload.querySelector('button[type=submit]').disabled=true;
+  });
+})();
+</script>
+}

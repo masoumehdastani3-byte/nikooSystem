@@ -1,0 +1,65 @@
+@model NikooSystem.Models.SiteTestimonial
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش نظر مشتری" : "نظر جدید";
+}
+<div class="adm-head">
+    <h1>@ViewBag.Title</h1>
+    <a class="btn btn-link" href="@Url.Action("Testimonials","Admin")">بازگشت</a>
+</div>
+<div class="adm-card" style="max-width:860px">
+    @using (Html.BeginForm("EditTestimonial", "Admin", FormMethod.Post, new { enctype = "multipart/form-data" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+        @Html.HiddenFor(m => m.ImageUrl)
+        <div class="row g-3">
+            <div class="col-md-6">
+                @Html.LabelFor(m => m.Name, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.Name, new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-md-6">
+                @Html.LabelFor(m => m.Role, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.Role, new { @class = "form-control", placeholder = "مثلاً مدیر فروشگاه پوشاک آوا" })
+            </div>
+            <div class="col-12">
+                @Html.LabelFor(m => m.Text, new { @class = "form-label" })
+                @Html.TextAreaFor(m => m.Text, 4, 1, new { @class = "form-control" })
+                @Html.ValidationMessageFor(m => m.Text, "", new { @class = "text-danger small" })
+            </div>
+            <div class="col-sm-4">
+                @Html.LabelFor(m => m.Rating, new { @class = "form-label" })
+                <select class="form-select" name="Rating" id="Rating">
+                    @for (var i = 5; i >= 1; i--)
+                    {
+                        <option value="@i" @(Model.Rating == i ? "selected" : null)>@(new string('★', i)) (@i.ToFa())</option>
+                    }
+                </select>
+            </div>
+            <div class="col-sm-4">
+                @Html.LabelFor(m => m.SortOrder, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })
+            </div>
+            <div class="col-sm-4 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                    @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="imageFile">تصویر مشتری یا لوگوی کسب‌وکار (اختیاری)</label>
+                <div class="d-flex flex-wrap align-items-center gap-3">
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img class="admin-thumb" src="@Model.ImageUrl" alt="" style="border-radius:50%" />
+                        <label class="form-check-label small"><input class="form-check-input" type="checkbox" name="removeImage" value="true" /> حذف تصویر</label>
+                    }
+                    <input class="form-control" style="max-width:360px" type="file" id="imageFile" name="imageFile" accept="image/*" />
+                </div>
+                @Html.ValidationMessage("imageFile", "", new { @class = "text-danger small" })
+            </div>
+        </div>
+        <div class="mt-3"><button class="btn btn-primary" type="submit">ذخیره</button></div>
+    }
+</div>

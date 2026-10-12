@@ -1,0 +1,90 @@
+@using System.Web
+@{
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var slug = NikooSystem.Services.TenantStore.DemoBySlug
+        .FirstOrDefault(d => string.Equals(d.Value, company, StringComparison.OrdinalIgnoreCase)).Key;
+    var current = StoreTemplates.Get(settings.LayoutStyle);
+    var saved = StoreTemplates.NormalizeFor(ViewBag.SavedTemplate as string ?? settings.LayoutStyle, kind.Id);
+    var templates = StoreTemplates.ForKind(kind.Id).OrderByDescending(t => t.Id == saved).ToList();
+    Func<string, string> urlFor = id =>
+    {
+        var query = HttpUtility.ParseQueryString(Request.Url.Query);
+        if (id == saved) { query.Remove("previewTemplate"); } else { query["previewTemplate"] = id; }
+        var qs = query.ToString();
+        return Request.Url.AbsolutePath + (qs.Length > 0 ? "?" + qs : "");
+    };
+}
+@if (slug != null && templates.Count > 1)
+{
+    <link href="@Url.Asset("~/Content/demo-switcher.css")" rel="stylesheet" />
+    <div class="ds-root" id="demoSwitcher" hidden>
+        <div class="ds-panel" id="dsPanel" role="dialog" aria-label="قالب‌های این دمو" hidden>
+            <div class="ds-head">
+                <div>
+                    <strong>@templates.Count.ToString().ToFaDigits() قالب برای این دمو</strong>
+                    <small>روی هر قالب بزنید تا همین صفحه با آن باز شود.</small>
+                </div>
+                <button type="button" class="ds-close" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="ds-list">
+                @foreach (var t in templates)
+                {
+                    <a class="ds-item @(t.Id == current.Id ? "is-active" : null)" href="@urlFor(t.Id)" data-no-preview>
+                        <span class="ds-thumb" style="background:@t.PreviewGradient"></span>
+                        <span class="ds-text">
+                            <span class="ds-name">
+                                @t.Name
+                                @if (t.Id == saved) { <em class="ds-badge">پیش‌فرض</em> }
+                            </span>
+                            <small>@t.Description</small>
+                        </span>
+                        @if (t.Id == current.Id) { <i class="bi bi-check2-circle ds-check"></i> }
+                    </a>
+                }
+            </div>
+            <div class="ds-foot">
+                <a class="ds-btn ds-btn-primary" href="@Url.Action("Index","Signup", new { type = slug, template = current.Id })" data-no-preview>
+                    <i class="bi bi-lightning-charge"></i> ساخت سایت با قالب «@current.Name»
+                </a>
+                <a class="ds-btn" href="@Url.Action("Index","Products")" data-no-preview>همه محصولات</a>
+            </div>
+        </div>
+        <button type="button" class="ds-toggle" aria-expanded="false" aria-controls="dsPanel">
+            <i class="bi bi-palette ds-icon"></i>
+            <span class="ds-label">
+                <small>قالب دمو</small>
+                <strong>@current.Name</strong>
+            </span>
+            <i class="bi bi-chevron-up ds-caret"></i>
+        </button>
+    </div>
+    <script>
+    (function () {
+      if (window.top !== window.self) return;
+      var root = document.getElementById('demoSwitcher');
+      var panel = document.getElementById('dsPanel');
+      var toggle = root.querySelector('.ds-toggle');
+      root.hidden = false;
+
+      function setOpen(open) {
+        panel.hidden = !open;
+        root.classList.toggle('is-open', open);
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+
+      toggle.addEventListener('click', function () { setOpen(panel.hidden); });
+      root.querySelector('.ds-close').addEventListener('click', function () { setOpen(false); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+      document.addEventListener('click', function (e) { if (!root.contains(e.target)) setOpen(false); });
+
+      try {
+        if (!sessionStorage.getItem('nikoo-demo-switcher')) {
+          sessionStorage.setItem('nikoo-demo-switcher', '1');
+          root.classList.add('is-new');
+        }
+      } catch (e) { }
+    })();
+    </script>
+}

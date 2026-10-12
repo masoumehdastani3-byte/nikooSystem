@@ -1,10 +1,11 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreCollection>
+@model PagedList<StoreCollection>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "برچسب‌های ویژه";
     var company = (string)ViewBag.CompanyCode;
     var counts = (Dictionary<int, int>)ViewBag.ProductCounts;
     var onHome = (HashSet<int>)ViewBag.OnHome;
+    var searching = !string.IsNullOrEmpty(Request.QueryString["q"]);
 }
 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
     <div>
@@ -14,7 +15,7 @@
     <a class="btn-store" href="@Url.Action("EditCollection","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> برچسب جدید</a>
 </div>
 
-@if (!Model.Any())
+@if (Model.TotalCount == 0 && !searching)
 {
     <div class="panel-card admin-empty">
         <i class="bi bi-tags"></i>
@@ -26,44 +27,55 @@
 else
 {
     <div class="panel-card">
-        <table class="table align-middle">
-            <thead><tr><th>برچسب</th><th>تعداد کالا</th><th>صفحه اول</th><th>وضعیت</th><th></th></tr></thead>
-            <tbody>
-            @foreach (var c in Model)
-            {
-                <tr>
-                    <td>
-                        <strong><i class="bi bi-tag text-muted"></i> @c.Title</strong>
-                        @if (!string.IsNullOrWhiteSpace(c.Description)) { <div class="small text-muted">@c.Description</div> }
-                    </td>
-                    <td>@(counts.ContainsKey(c.Id) ? counts[c.Id] : 0)</td>
-                    <td>
-                        @if (onHome.Contains(c.Id))
-                        {
-                            <span class="adm-pill is-on">نمایش داده می‌شود</span>
-                        }
-                        else
-                        {
-                            <span class="adm-pill">نمایش داده نمی‌شود</span>
-                        }
-                    </td>
-                    <td>@(c.IsActive ? "فعال" : "غیرفعال")</td>
-                    <td class="text-nowrap">
-                        <a href="@Url.Action("EditCollection","ShopAdmin", new { company, id = c.Id })">ویرایش</a>
-                        <span class="text-muted mx-1">|</span>
-                        <a href="@Url.Action("Catalog","Shop", new { company, collectionId = c.Id })" target="_blank">مشاهده در سایت</a>
-                        <span class="text-muted mx-1">|</span>
-                        @using (Html.BeginForm("DeleteCollection", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('این برچسب حذف شود؟ کالاها حذف نمی‌شوند.');" }))
-                        {
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@c.Id" />
-                            <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                        }
-                    </td>
-                </tr>
-            }
-            </tbody>
-        </table>
+        @Html.GridToolbar("جستجو در برچسب‌ها…")
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        @Html.SortHeader("title", "برچسب")
+                        <th>تعداد کالا</th>
+                        <th>صفحه اول</th>
+                        <th>وضعیت</th>
+                        @Html.SortHeader("sort", "ترتیب")
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong><i class="bi bi-tag text-muted"></i> @c.Title</strong>
+                                @if (!string.IsNullOrWhiteSpace(c.Description)) { <div class="small text-muted">@c.Description</div> }
+                            </td>
+                            <td>@(counts.ContainsKey(c.Id) ? counts[c.Id] : 0)</td>
+                            <td>
+                                @if (onHome.Contains(c.Id))
+                                {
+                                    <span class="adm-pill is-on">نمایش داده می‌شود</span>
+                                }
+                                else
+                                {
+                                    <span class="adm-pill">نمایش داده نمی‌شود</span>
+                                }
+                            </td>
+                            <td>@(c.IsActive ? "فعال" : "غیرفعال")</td>
+                            <td>@c.SortOrder</td>
+                            <td class="row-actions">
+                                @Html.IconLink(Url.Action("Catalog", "Shop", new { company, collectionId = c.Id }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                                @Html.EditLink("EditCollection", c.Id)
+                                @Html.DeleteButton("DeleteCollection", c.Id, "این برچسب حذف شود؟ کالاها حذف نمی‌شوند.")
+                            </td>
+                        </tr>
+                    }
+                    @if (Model.Count == 0)
+                    {
+                        <tr class="admin-empty-row"><td colspan="6">برچسبی با این عبارت پیدا نشد.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @Html.Pager(Model)
     </div>
 }
 <p class="small text-muted mt-3">

@@ -1,30 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
 using System.Web;
 using System.Web.Hosting;
-using Newtonsoft.Json;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
+using NikooSystem.Services.Data;
 
 namespace NikooSystem.Services
 {
-    public static class TenantStore
+    /// <summary>
+    /// Access to the stores and their data. This file holds the core (tenants, settings, catalogue, orders);
+    /// paged lists are in TenantStore.Queries.cs and the content-site tables in TenantStore.Content.cs.
+    /// </summary>
+    public static partial class TenantStore
     {
-        private static readonly object RegistryLock = new object();
         private static readonly Dictionary<string, object> TenantLocks = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
-
-        private static string DataRoot
-        {
-            get
-            {
-                var path = HostingEnvironment.MapPath("~/App_Data/Tenants");
-                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-                return path;
-            }
-        }
-
-        private static string RegistryFile => Path.Combine(HostingEnvironment.MapPath("~/App_Data"), "tenants.json");
+        private static readonly HashSet<string> SeededTenants = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         private static object LockFor(string companyCode)
         {
@@ -36,22 +30,9 @@ namespace NikooSystem.Services
             }
         }
 
-        private static string TenantDir(string companyCode)
-        {
-            var dir = Path.Combine(DataRoot, companyCode);
-            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-            return dir;
-        }
-
-        private static string PathOf(string companyCode, string file) => Path.Combine(TenantDir(companyCode), file);
-
         public static List<TenantInfo> GetTenants()
         {
-            lock (RegistryLock)
-            {
-                EnsureSeed();
-                return ReadList<TenantInfo>(RegistryFile);
-            }
+            return NikooDb.List(NikooTables.Tenants, orderBy: "[CreatedAt], [CompanyCode]");
         }
 
         /// <summary>فروشگاه فعال است و دوره آزمایشی‌اش تمام نشده</summary>
@@ -63,8 +44,8 @@ namespace NikooSystem.Services
         public static TenantInfo GetTenant(string companyCode)
         {
             if (string.IsNullOrWhiteSpace(companyCode)) return null;
-            return GetTenants().FirstOrDefault(t =>
-                string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase) && IsLive(t));
+            var tenant = NikooDb.Get(NikooTables.Tenants, NikooDb.Key(companyCode));
+            return IsLive(tenant) ? tenant : null;
         }
 
         public static TenantInfo ResolveByHost(string host)
@@ -91,45 +72,55 @@ namespace NikooSystem.Services
         public static bool CompanyCodeExists(string companyCode)
         {
             if (string.IsNullOrWhiteSpace(companyCode)) return false;
-            return GetTenants().Any(t => string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase))
-                || Directory.Exists(Path.Combine(DataRoot, companyCode));
+            return NikooDb.Exists(NikooTables.Tenants, NikooDb.Key(companyCode))
+                || NikooDb.Exists(NikooTables.Settings, NikooDb.Key(companyCode));
         }
 
         public static void AddTenant(TenantInfo tenant)
         {
-            lock (RegistryLock)
+            try
             {
-                EnsureSeed();
-                var list = ReadList<TenantInfo>(RegistryFile);
-                if (list.Any(t => string.Equals(t.CompanyCode, tenant.CompanyCode, StringComparison.OrdinalIgnoreCase)))
-                    throw new InvalidOperationException("این آدرس فروشگاه قبلاً گرفته شده است.");
-                list.Add(tenant);
-                WriteList(RegistryFile, list);
+                using (var tx = NikooDb.Begin())
+                {
+                    if (NikooDb.Exists(NikooTables.Tenants, NikooDb.Key(tenant.CompanyCode), tx))
+                        throw new InvalidOperationException("این آدرس فروشگاه قبلاً گرفته شده است.");
+                    NikooDb.Insert(NikooTables.Tenants, tenant, tx: tx);
+                    tx.Commit();
+                }
+            }
+            catch (SqlException ex) when (NikooDb.IsDuplicateKey(ex))
+            {
+                throw new InvalidOperationException("این آدرس فروشگاه قبلاً گرفته شده است.");
             }
         }
 
         public static void UpdateTenant(TenantInfo tenant)
         {
-            lock (RegistryLock)
-            {
-                EnsureSeed();
-                var list = ReadList<TenantInfo>(RegistryFile);
-                var idx = list.FindIndex(t => string.Equals(t.CompanyCode, tenant.CompanyCode, StringComparison.OrdinalIgnoreCase));
-                if (idx < 0) return;
-                list[idx] = tenant;
-                WriteList(RegistryFile, list);
-            }
+            NikooDb.Update(NikooTables.Tenants, tenant);
+        }
+
+        /// <summary>
+        /// Writes only the result of a domain check, and only while the domain is still the same, so a slow check doesn't
+        /// overwrite what changed on the store meanwhile (a payment, a new domain).
+        /// </summary>
+        public static void SaveDomainCheck(TenantInfo tenant)
+        {
+            NikooDb.Execute("UPDATE " + NikooDb.Table(NikooTables.Tenants.Name)
+                + " SET [DomainCheck] = @Check, [DomainDnsOkAt] = @DnsOkAt, [DomainRemindedAt] = @RemindedAt"
+                + " WHERE [CompanyCode] = @Code AND [CustomDomain] = @Domain",
+                new Row
+                {
+                    ["Check"] = tenant.DomainCheck,
+                    ["DnsOkAt"] = tenant.DomainDnsOkAt,
+                    ["RemindedAt"] = tenant.DomainRemindedAt,
+                    ["Code"] = tenant.CompanyCode,
+                    ["Domain"] = tenant.CustomDomain ?? ""
+                });
         }
 
         public static void RemoveTenant(string companyCode)
         {
-            lock (RegistryLock)
-            {
-                EnsureSeed();
-                var list = ReadList<TenantInfo>(RegistryFile);
-                if (list.RemoveAll(t => string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase)) > 0)
-                    WriteList(RegistryFile, list);
-            }
+            NikooDb.Delete(NikooTables.Tenants, NikooDb.Key(companyCode));
         }
 
         /// <summary>حذف کامل داده‌ها و فایل‌های آپلودشده فروشگاه</summary>
@@ -138,13 +129,21 @@ namespace NikooSystem.Services
             if (string.IsNullOrWhiteSpace(companyCode)) return;
             lock (LockFor(companyCode))
             {
-                var dir = Path.Combine(DataRoot, companyCode);
-                if (Directory.Exists(dir)) Directory.Delete(dir, true);
+                using (var tx = NikooDb.Begin())
+                {
+                    NikooDb.DeleteScope(NikooTables.StoreScoped, companyCode, tx);
+                    tx.Commit();
+                }
 
-                var uploads = HostingEnvironment.MapPath("~/Uploads/" + companyCode);
-                if (!string.IsNullOrEmpty(uploads) && Directory.Exists(uploads)) Directory.Delete(uploads, true);
+                foreach (var folder in new[] { "~/App_Data/Tenants/", "~/Uploads/", DigitalFileService.Root })
+                {
+                    var dir = HostingEnvironment.MapPath(folder + companyCode);
+                    if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir)) Directory.Delete(dir, true);
+                }
+                StorageQuota.Invalidate(companyCode);
             }
             lock (TenantLocks) TenantLocks.Remove(companyCode);
+            lock (SeededTenants) SeededTenants.Remove(companyCode);
         }
 
         /// <summary>ساخت داده اولیه فروشگاه جدید بر اساس نوع کسب‌وکار</summary>
@@ -152,10 +151,11 @@ namespace NikooSystem.Services
         {
             lock (LockFor(companyCode))
             {
-                if (File.Exists(PathOf(companyCode, "settings.json")))
+                if (NikooDb.Exists(NikooTables.Settings, NikooDb.Key(companyCode)))
                     throw new InvalidOperationException("داده این فروشگاه از قبل وجود دارد.");
                 SeedTenantData(companyCode.ToUpperInvariant(), storeType, customize);
             }
+            lock (SeededTenants) SeededTenants.Add(companyCode);
         }
 
         public static string ResolveCompanyCode(HttpRequestBase request, string routeCompany = null)
@@ -173,337 +173,128 @@ namespace NikooSystem.Services
         public static StoreSettings GetSettings(string companyCode)
         {
             EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadObject<StoreSettings>(PathOf(companyCode, "settings.json"));
+            using (var tx = NikooDb.Begin())
+            {
+                var settings = NikooDb.Get(NikooTables.Settings, NikooDb.Key(companyCode), tx);
+                if (settings != null)
+                    settings.PageLayout = NikooDb.Get(NikooTables.PageLayouts, NikooDb.Key(settings.CompanyCode), tx);
+                return settings;
+            }
         }
 
         public static void SaveSettings(StoreSettings settings)
         {
             lock (LockFor(settings.CompanyCode))
-                WriteObject(PathOf(settings.CompanyCode, "settings.json"), settings);
+            using (var tx = NikooDb.Begin())
+            {
+                WriteSettings(settings, tx);
+                tx.Commit();
+            }
         }
 
-        public static List<StoreCategory> GetCategories(string companyCode)
+        private static void WriteSettings(StoreSettings settings, DbTx tx)
+        {
+            NikooDb.Upsert(NikooTables.Settings, settings, tx: tx);
+            if (settings.PageLayout == null)
+                NikooDb.Delete(NikooTables.PageLayouts, NikooDb.Key(settings.CompanyCode), tx);
+            else
+                NikooDb.Upsert(NikooTables.PageLayouts, settings.PageLayout, settings.CompanyCode, tx);
+        }
+
+        // ---- Generic access to the per-store tables (CompanyCode, Id)
+
+        private static List<T> All<T>(EntityMap<T> map, string companyCode, string orderBy = null) where T : class, new()
         {
             EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreCategory>(PathOf(companyCode, "categories.json")).OrderBy(c => c.SortOrder).ToList();
+            return NikooDb.List(map, companyCode, orderBy);
         }
 
-        public static void SaveCategories(string companyCode, List<StoreCategory> list)
-        {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "categories.json"), list);
-        }
-
-        public static List<StoreAttributeDef> GetAttributeDefs(string companyCode)
+        private static T Find<T>(EntityMap<T> map, string companyCode, int id) where T : class, new()
         {
             EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreAttributeDef>(PathOf(companyCode, "attributes.json")).OrderBy(a => a.SortOrder).ToList();
+            return NikooDb.Get(map, NikooDb.Key(companyCode, id));
         }
 
-        public static void SaveAttributeDefs(string companyCode, List<StoreAttributeDef> list)
+        private static T FindBy<T>(EntityMap<T> map, string companyCode, string column, object value) where T : class, new()
         {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "attributes.json"), list);
-        }
-
-        public static List<StoreProduct> GetProducts(string companyCode)
-        {
+            if (value == null) return null;
             EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreProduct>(PathOf(companyCode, "products.json")).OrderByDescending(p => p.CreatedAt).ToList();
+            var key = NikooDb.Key(companyCode);
+            key[column] = value;
+            return NikooDb.Get(map, key);
         }
 
-        public static StoreProduct GetProduct(string companyCode, int id)
-        {
-            return GetProducts(companyCode).FirstOrDefault(p => p.Id == id);
-        }
-
-        public static StoreProduct GetProductBySlug(string companyCode, string slug)
-        {
-            return GetProducts(companyCode).FirstOrDefault(p =>
-                string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public static void SaveProducts(string companyCode, List<StoreProduct> list)
+        /// <summary>
+        /// Inserts a new row (with the store's next free Id) or rewrites an existing one. <paramref name="prepare"/> runs once the
+        /// Id is known and receives the stored row, or null for a new one, so values the form does not post can be carried over.
+        /// </summary>
+        private static T Save<T>(EntityMap<T> map, string companyCode, T entity, Action<T, T> prepare = null) where T : class, IStoreEntity, new()
         {
             lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "products.json"), list);
-        }
-
-        public static StoreProduct UpsertProduct(string companyCode, StoreProduct product)
-        {
-            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
             {
-                var list = ReadList<StoreProduct>(PathOf(companyCode, "products.json"));
-                if (product.Id <= 0)
-                {
-                    product.Id = list.Any() ? list.Max(x => x.Id) + 1 : 1;
-                    product.CreatedAt = DateTime.Now;
-                    if (string.IsNullOrWhiteSpace(product.Slug))
-                        product.Slug = "p-" + product.Id;
-                    list.Add(product);
-                }
-                else
-                {
-                    product.UpdatedAt = DateTime.Now;
-                    var idx = list.FindIndex(x => x.Id == product.Id);
-                    if (idx >= 0) list[idx] = product;
-                    else list.Add(product);
-                }
-                WriteList(PathOf(companyCode, "products.json"), list);
-                return product;
+                var stored = entity.Id > 0 ? NikooDb.Get(map, NikooDb.Key(companyCode, entity.Id), tx) : null;
+                if (stored == null) entity.Id = NikooDb.NextId(map, companyCode, tx);
+                prepare?.Invoke(entity, stored);
+                NikooDb.Upsert(map, entity, companyCode, tx);
+                tx.Commit();
+                return entity;
             }
         }
 
-        public static bool DeleteProduct(string companyCode, int id)
+        private static bool Update<T>(EntityMap<T> map, string companyCode, T entity) where T : class, new()
         {
             lock (LockFor(companyCode))
+                return NikooDb.Update(map, entity, companyCode);
+        }
+
+        private static bool Remove(TableMap map, string companyCode, int id)
+        {
+            lock (LockFor(companyCode))
+                return NikooDb.Delete(map, NikooDb.Key(companyCode, id));
+        }
+
+        private static int RemoveMany(TableMap map, string companyCode, IEnumerable<int> ids)
+        {
+            var removed = 0;
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
             {
-                var list = ReadList<StoreProduct>(PathOf(companyCode, "products.json"));
-                var removed = list.RemoveAll(x => x.Id == id) > 0;
-                if (removed) WriteList(PathOf(companyCode, "products.json"), list);
-                return removed;
+                foreach (var id in ids.Distinct())
+                    if (NikooDb.Delete(map, NikooDb.Key(companyCode, id), tx)) removed++;
+                tx.Commit();
             }
+            return removed;
         }
 
-        public static List<StoreCollection> GetCollections(string companyCode)
+        /// <summary>Deletes a category or menu item together with everything nested under it.</summary>
+        private static bool RemoveTree<T>(EntityMap<T> map, string companyCode, int id) where T : class, ITreeNode, new()
         {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreCollection>(PathOf(companyCode, "collections.json"))
-                    .OrderBy(c => c.SortOrder).ThenBy(c => c.Id).ToList();
+            var all = All(map, companyCode);
+            if (all.All(n => n.Id != id)) return false;
+            return RemoveMany(map, companyCode, TreeHelper.SubtreeIds(all, id)) > 0;
         }
 
-        public static void SaveCollections(string companyCode, List<StoreCollection> list)
-        {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "collections.json"), list);
-        }
+        // ---- Categories and attributes
 
-        public static List<StoreMenuItem> GetMenus(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreMenuItem>(PathOf(companyCode, "menus.json")).OrderBy(m => m.SortOrder).ToList();
-        }
+        /// <summary>In tree order: each category right after its parent, siblings by their sort order.</summary>
+        public static List<StoreCategory> GetCategories(string companyCode) =>
+            TreeHelper.Flatten(All(NikooTables.Categories, companyCode, "[SortOrder], [Id]")).Select(r => r.Node).ToList();
 
-        public static void SaveMenus(string companyCode, List<StoreMenuItem> list)
-        {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "menus.json"), list);
-        }
+        public static StoreCategory GetCategory(string companyCode, int id) => Find(NikooTables.Categories, companyCode, id);
 
-        public static List<StorePage> GetPages(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StorePage>(PathOf(companyCode, "pages.json")).ToList();
-        }
-
-        public static StorePage GetPageBySlug(string companyCode, string slug)
-        {
-            return GetPages(companyCode).FirstOrDefault(p =>
-                p.IsPublished && string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public static void SavePages(string companyCode, List<StorePage> list)
-        {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "pages.json"), list);
-        }
-
-        public static StorePage UpsertPage(string companyCode, StorePage page)
-        {
-            lock (LockFor(companyCode))
+        public static StoreCategory SaveCategory(string companyCode, StoreCategory category) =>
+            Save(NikooTables.Categories, companyCode, category, (c, stored) =>
             {
-                var list = ReadList<StorePage>(PathOf(companyCode, "pages.json"));
-                page.UpdatedAt = DateTime.Now;
-                if (page.Id <= 0)
-                {
-                    page.Id = list.Any() ? list.Max(x => x.Id) + 1 : 1;
-                    if (string.IsNullOrWhiteSpace(page.Slug))
-                        page.Slug = "page-" + page.Id;
-                    list.Add(page);
-                }
-                else
-                {
-                    var idx = list.FindIndex(x => x.Id == page.Id);
-                    if (idx >= 0) list[idx] = page;
-                    else list.Add(page);
-                }
-                WriteList(PathOf(companyCode, "pages.json"), list);
-                return page;
-            }
-        }
+                if (string.IsNullOrWhiteSpace(c.Slug)) c.Slug = "cat-" + c.Id;
+            });
 
-        public static List<StoreGalleryItem> GetGallery(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreGalleryItem>(PathOf(companyCode, "gallery.json")).OrderBy(g => g.SortOrder).ToList();
-        }
+        public static bool DeleteCategory(string companyCode, int id) => RemoveTree(NikooTables.Categories, companyCode, id);
 
-        public static void SaveGallery(string companyCode, List<StoreGalleryItem> list)
-        {
-            lock (LockFor(companyCode))
-                WriteList(PathOf(companyCode, "gallery.json"), list);
-        }
+        public static List<StoreAttributeDef> GetAttributeDefs(string companyCode) =>
+            All(NikooTables.AttributeDefs, companyCode, "[SortOrder], [Id]");
 
-        public static List<StoreCustomer> GetCustomers(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreCustomer>(PathOf(companyCode, "customers.json"));
-        }
-
-        public static StoreCustomer GetCustomerByMobile(string companyCode, string mobile)
-        {
-            return GetCustomers(companyCode).FirstOrDefault(c =>
-                string.Equals(c.Mobile, mobile, StringComparison.OrdinalIgnoreCase));
-        }
-
-        public static StoreCustomer UpsertCustomer(string companyCode, StoreCustomer customer)
-        {
-            lock (LockFor(companyCode))
-            {
-                var list = ReadList<StoreCustomer>(PathOf(companyCode, "customers.json"));
-                if (customer.Id <= 0)
-                {
-                    customer.Id = list.Any() ? list.Max(x => x.Id) + 1 : 1;
-                    customer.CreatedAt = DateTime.Now;
-                    list.Add(customer);
-                }
-                else
-                {
-                    var idx = list.FindIndex(x => x.Id == customer.Id);
-                    if (idx >= 0) list[idx] = customer;
-                    else list.Add(customer);
-                }
-                WriteList(PathOf(companyCode, "customers.json"), list);
-                return customer;
-            }
-        }
-
-        public static List<StoreOrder> GetOrders(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-                return ReadList<StoreOrder>(PathOf(companyCode, "orders.json")).OrderByDescending(o => o.CreatedAt).ToList();
-        }
-
-        public static StoreOrder GetOrder(string companyCode, int id)
-        {
-            return GetOrders(companyCode).FirstOrDefault(o => o.Id == id);
-        }
-
-        public static StoreOrder AddOrder(string companyCode, StoreOrder order)
-        {
-            lock (LockFor(companyCode))
-            {
-                var list = ReadList<StoreOrder>(PathOf(companyCode, "orders.json"));
-                order.Id = list.Any() ? list.Max(x => x.Id) + 1 : 1;
-                order.OrderNumber = companyCode.ToUpperInvariant() + "-" + DateTime.Now.ToString("yyyyMMdd") + "-" + order.Id.ToString("D4");
-                order.CreatedAt = DateTime.Now;
-                list.Add(order);
-                WriteList(PathOf(companyCode, "orders.json"), list);
-                return order;
-            }
-        }
-
-        public static bool UpdateOrder(string companyCode, StoreOrder order)
-        {
-            lock (LockFor(companyCode))
-            {
-                var list = ReadList<StoreOrder>(PathOf(companyCode, "orders.json"));
-                var idx = list.FindIndex(x => x.Id == order.Id);
-                if (idx < 0) return false;
-                list[idx] = order;
-                WriteList(PathOf(companyCode, "orders.json"), list);
-                return true;
-            }
-        }
-
-        public static bool DeletePage(string companyCode, int id)
-        {
-            lock (LockFor(companyCode))
-            {
-                var list = ReadList<StorePage>(PathOf(companyCode, "pages.json"));
-                var removed = list.RemoveAll(x => x.Id == id) > 0;
-                if (removed) WriteList(PathOf(companyCode, "pages.json"), list);
-                return removed;
-            }
-        }
-
-        public static List<StoreProductReview> GetReviews(string companyCode)
-        {
-            EnsureTenantSeed(companyCode);
-            lock (LockFor(companyCode))
-            {
-                var path = PathOf(companyCode, "reviews.json");
-                if (!File.Exists(path))
-                    WriteList(path, new List<StoreProductReview>());
-                return ReadList<StoreProductReview>(path).OrderByDescending(r => r.CreatedAt).ToList();
-            }
-        }
-
-        public static List<StoreProductReview> GetProductReviews(string companyCode, int productId, bool approvedOnly = true)
-        {
-            var q = GetReviews(companyCode).Where(r => r.ProductId == productId);
-            if (approvedOnly) q = q.Where(r => r.IsApproved);
-            return q.ToList();
-        }
-
-        public static StoreProductReview AddReview(string companyCode, StoreProductReview review)
-        {
-            lock (LockFor(companyCode))
-            {
-                var path = PathOf(companyCode, "reviews.json");
-                var list = ReadList<StoreProductReview>(path);
-                review.Id = list.Any() ? list.Max(x => x.Id) + 1 : 1;
-                review.CreatedAt = DateTime.Now;
-                if (review.Rating < 1) review.Rating = 1;
-                if (review.Rating > 5) review.Rating = 5;
-                list.Add(review);
-                WriteList(path, list);
-                return review;
-            }
-        }
-
-        public static bool UpdateReview(string companyCode, StoreProductReview review)
-        {
-            lock (LockFor(companyCode))
-            {
-                var path = PathOf(companyCode, "reviews.json");
-                var list = ReadList<StoreProductReview>(path);
-                var idx = list.FindIndex(x => x.Id == review.Id);
-                if (idx < 0) return false;
-                list[idx] = review;
-                WriteList(path, list);
-                return true;
-            }
-        }
-
-        public static bool DeleteReview(string companyCode, int id)
-        {
-            lock (LockFor(companyCode))
-            {
-                var path = PathOf(companyCode, "reviews.json");
-                var list = ReadList<StoreProductReview>(path);
-                var removed = list.RemoveAll(x => x.Id == id) > 0;
-                if (removed) WriteList(path, list);
-                return removed;
-            }
-        }
-
-        public static double GetAverageRating(string companyCode, int productId)
-        {
-            var reviews = GetProductReviews(companyCode, productId);
-            if (!reviews.Any()) return 0;
-            return reviews.Average(r => r.Rating);
-        }
+        public static StoreAttributeDef GetAttributeDef(string companyCode, int id) => Find(NikooTables.AttributeDefs, companyCode, id);
 
         public static List<StoreAttributeDef> GetAttributeDefsForCategory(string companyCode, int categoryId)
         {
@@ -512,319 +303,482 @@ namespace NikooSystem.Services
                 .ToList();
         }
 
-        public static string ShopPath(string companyCode, string action = "Index", object id = null)
+        public static StoreAttributeDef SaveAttributeDef(string companyCode, StoreAttributeDef def) =>
+            Save(NikooTables.AttributeDefs, companyCode, def);
+
+        public static bool DeleteAttributeDef(string companyCode, int id) => Remove(NikooTables.AttributeDefs, companyCode, id);
+
+        /// <summary>Products that had <paramref name="oldValue"/> for the attribute get <paramref name="newValue"/> instead.</summary>
+        public static int RenameAttributeValue(string companyCode, int attributeId, string oldValue, string newValue)
         {
-            var path = "/Shop/" + companyCode + "/" + action;
-            if (id != null) path += "/" + id;
-            return path;
+            var parameters = NikooDb.Key(companyCode);
+            parameters["AttributeId"] = attributeId;
+            parameters["Old"] = oldValue;
+            parameters["New"] = newValue;
+            lock (LockFor(companyCode))
+                return NikooDb.Execute("UPDATE " + NikooDb.Table("ProductAttributes") + " SET [Value] = @New"
+                    + " WHERE [CompanyCode] = @CompanyCode AND [AttributeId] = @AttributeId AND [Value] = @Old", parameters);
         }
 
-        private static void EnsureSeed()
-        {
-            if (File.Exists(RegistryFile)) return;
+        // ---- Products
 
-            var tenants = new List<TenantInfo>
+        public static List<StoreProduct> GetProducts(string companyCode) =>
+            All(NikooTables.Products, companyCode, "[CreatedAt] DESC, [Id]");
+
+        public static StoreProduct GetProduct(string companyCode, int id) => Find(NikooTables.Products, companyCode, id);
+
+        public static StoreProduct GetProductBySlug(string companyCode, string slug) =>
+            FindBy(NikooTables.Products, companyCode, "Slug", slug);
+
+        /// <summary>Saves the product's own fields; its view and sales counters are kept as stored.</summary>
+        public static StoreProduct SaveProduct(string companyCode, StoreProduct product) =>
+            Save(NikooTables.Products, companyCode, product, (p, stored) =>
             {
-                new TenantInfo { CompanyCode = "FASHION", Name = "بوتیک مد نیکو", CustomDomain = "", IsActive = true },
-                new TenantInfo { CompanyCode = "GROCERY", Name = "سوپرمارکت آنلاین نیکو", CustomDomain = "", IsActive = true },
-                new TenantInfo { CompanyCode = "DIGITAL", Name = "فروشگاه دیجیتال نیکو", CustomDomain = "", IsActive = true }
-            };
-            WriteList(RegistryFile, tenants);
-            foreach (var t in tenants)
-                EnsureTenantSeed(t.CompanyCode);
+                if (string.IsNullOrWhiteSpace(p.Slug)) p.Slug = "p-" + p.Id;
+                if (p.IsDigital()) p.Stock = 0;
+                if (stored == null)
+                {
+                    p.CreatedAt = DateTime.Now;
+                    return;
+                }
+                p.CreatedAt = stored.CreatedAt;
+                p.ViewCount = stored.ViewCount;
+                p.SoldCount = stored.SoldCount;
+                p.UpdatedAt = DateTime.Now;
+            });
+
+        /// <summary>Deletes the product and its protected files.</summary>
+        public static bool DeleteProduct(string companyCode, int id)
+        {
+            var product = GetProduct(companyCode, id);
+            if (product == null || !Remove(NikooTables.Products, companyCode, id)) return false;
+            foreach (var file in product.Files ?? new List<StoreProductFile>())
+                DigitalFileService.Delete(companyCode, file);
+            return true;
+        }
+
+        public static int DeleteSampleProducts(string companyCode) =>
+            RemoveMany(NikooTables.Products, companyCode, GetProducts(companyCode).Where(p => p.IsSample).Select(p => p.Id));
+
+        public static void CountProductView(string companyCode, int productId)
+        {
+            NikooDb.Increment(NikooTables.Products, NikooDb.Key(companyCode, productId), "ViewCount", 1);
+        }
+
+        // ---- Collections (product tags)
+
+        public static List<StoreCollection> GetCollections(string companyCode) =>
+            All(NikooTables.Collections, companyCode, "[SortOrder], [Id]");
+
+        public static StoreCollection GetCollection(string companyCode, int id) => Find(NikooTables.Collections, companyCode, id);
+
+        /// <summary>Saves the collection and makes exactly <paramref name="productIds"/> carry its tag.</summary>
+        public static StoreCollection SaveCollection(string companyCode, StoreCollection collection, IEnumerable<int> productIds)
+        {
+            Save(NikooTables.Collections, companyCode, collection, (c, stored) =>
+            {
+                c.CreatedAt = stored?.CreatedAt ?? DateTime.Now;
+                if (string.IsNullOrWhiteSpace(c.Slug)) c.Slug = "tag-" + c.Id;
+            });
+            TagProducts(companyCode, collection.Id, new HashSet<int>(productIds ?? Enumerable.Empty<int>()));
+            return collection;
+        }
+
+        public static bool DeleteCollection(string companyCode, int id)
+        {
+            var removed = Remove(NikooTables.Collections, companyCode, id);
+            TagProducts(companyCode, id, new HashSet<int>());
+            return removed;
+        }
+
+        private static void TagProducts(string companyCode, int collectionId, HashSet<int> productIds)
+        {
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                foreach (var p in NikooDb.List(NikooTables.Products, companyCode, tx: tx))
+                {
+                    var tagged = productIds.Contains(p.Id);
+                    if (tagged == p.InCollection(collectionId)) continue;
+                    p.CollectionIds = (p.CollectionIds ?? new List<int>()).Where(x => x != collectionId).ToList();
+                    if (tagged) p.CollectionIds.Add(collectionId);
+                    NikooDb.Update(NikooTables.Products, p, companyCode, tx);
+                }
+                tx.Commit();
+            }
+        }
+
+        // ---- Menus, pages and gallery
+
+        public static List<StoreMenuItem> GetMenus(string companyCode) =>
+            All(NikooTables.MenuItems, companyCode, "[SortOrder], [Id]");
+
+        public static StoreMenuItem GetMenu(string companyCode, int id) => Find(NikooTables.MenuItems, companyCode, id);
+
+        public static StoreMenuItem SaveMenu(string companyCode, StoreMenuItem item) => Save(NikooTables.MenuItems, companyCode, item);
+
+        public static bool DeleteMenu(string companyCode, int id) => RemoveTree(NikooTables.MenuItems, companyCode, id);
+
+        public static List<StorePage> GetPages(string companyCode) => All(NikooTables.Pages, companyCode);
+
+        public static StorePage GetPage(string companyCode, int id) => Find(NikooTables.Pages, companyCode, id);
+
+        public static StorePage GetPageBySlug(string companyCode, string slug)
+        {
+            var page = FindBy(NikooTables.Pages, companyCode, "Slug", slug);
+            return page != null && page.IsPublished ? page : null;
+        }
+
+        public static StorePage SavePage(string companyCode, StorePage page) =>
+            Save(NikooTables.Pages, companyCode, page, (p, stored) =>
+            {
+                p.UpdatedAt = DateTime.Now;
+                if (string.IsNullOrWhiteSpace(p.Slug)) p.Slug = "page-" + p.Id;
+            });
+
+        public static bool DeletePage(string companyCode, int id) => Remove(NikooTables.Pages, companyCode, id);
+
+        public static List<StoreGalleryItem> GetGallery(string companyCode) =>
+            All(NikooTables.GalleryItems, companyCode, "[SortOrder], [Id]");
+
+        /// <summary>Appends the items after the existing ones.</summary>
+        public static void AddGalleryItems(string companyCode, IEnumerable<StoreGalleryItem> items)
+        {
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var sort = NikooDb.List(NikooTables.GalleryItems, companyCode, tx: tx).Select(g => g.SortOrder).DefaultIfEmpty(0).Max();
+                foreach (var item in items)
+                {
+                    item.Id = NikooDb.NextId(NikooTables.GalleryItems, companyCode, tx);
+                    item.SortOrder = ++sort;
+                    NikooDb.Insert(NikooTables.GalleryItems, item, companyCode, tx);
+                }
+                tx.Commit();
+            }
+        }
+
+        public static bool DeleteGalleryItem(string companyCode, int id) => Remove(NikooTables.GalleryItems, companyCode, id);
+
+        // ---- Customers
+
+        public static StoreCustomer GetCustomer(string companyCode, int? id) =>
+            id.HasValue ? Find(NikooTables.Customers, companyCode, id.Value) : null;
+
+        public static StoreCustomer GetCustomerByMobile(string companyCode, string mobile) =>
+            FindBy(NikooTables.Customers, companyCode, "Mobile", mobile);
+
+        public static StoreCustomer SaveCustomer(string companyCode, StoreCustomer customer) =>
+            Save(NikooTables.Customers, companyCode, customer, (c, stored) =>
+            {
+                c.CreatedAt = stored?.CreatedAt ?? DateTime.Now;
+            });
+
+        // ---- Orders
+
+        public static StoreOrder GetOrder(string companyCode, int id) => Find(NikooTables.Orders, companyCode, id);
+
+        public static StoreOrder AddOrder(string companyCode, StoreOrder order)
+        {
+            order.Id = 0;
+            return Save(NikooTables.Orders, companyCode, order, (o, stored) =>
+            {
+                o.CreatedAt = DateTime.Now;
+                o.OrderNumber = companyCode.ToUpperInvariant() + "-" + o.CreatedAt.ToString("yyyyMMdd") + "-" + o.Id.ToString("D4");
+            });
+        }
+
+        public static bool UpdateOrder(string companyCode, StoreOrder order) => Update(NikooTables.Orders, companyCode, order);
+
+        /// <summary>
+        /// Marks a verified order as paid (digital-only orders are completed at once, as there is nothing to ship) and takes its
+        /// items out of stock; false when it was already paid, so a repeated payment callback changes nothing.
+        /// </summary>
+        public static bool MarkOrderPaid(string companyCode, int orderId, long refId, string message)
+        {
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var order = NikooDb.Get(NikooTables.Orders, NikooDb.Key(companyCode, orderId), tx);
+                if (order == null || StoreOrder.Fulfilled.Contains(order.Status)) return false;
+                order.Status = order.IsDigitalOnly() ? StoreOrderStatus.Completed : StoreOrderStatus.Paid;
+                order.RefId = refId;
+                order.PaidAt = DateTime.Now;
+                order.PaymentMessage = message;
+                if (!order.StockDeducted) MoveStock(companyCode, order, +1, tx);
+                NikooDb.Update(NikooTables.Orders, order, companyCode, tx);
+                tx.Commit();
+                return true;
+            }
+        }
+
+        /// <summary>
+        /// Online payment is off: physical orders go to processing (and out of stock) at once; orders with digital items wait
+        /// until the admin confirms the payment, because confirming them gives access to the files.
+        /// </summary>
+        public static void ConfirmOrderWithoutPayment(string companyCode, StoreOrder order)
+        {
+            if (order.Items.Any(i => i.IsDigital))
+            {
+                order.PaymentMessage = "پرداخت آنلاین غیرفعال است؛ پس از تأیید پرداخت توسط فروشنده، دسترسی فعال می‌شود.";
+                UpdateOrder(companyCode, order);
+                return;
+            }
+            SetOrderStatus(companyCode, order.Id, StoreOrderStatus.Processing, order.TrackingCode, order.AdminNote, "پرداخت آنلاین غیرفعال — سفارش ثبت شد.");
+        }
+
+        /// <summary>
+        /// Changes an order's status from the admin panel. Moving into a fulfilled status takes the items out of stock and counts
+        /// the sale; cancelling or failing a fulfilled order puts them back.
+        /// </summary>
+        public static StoreOrder SetOrderStatus(string companyCode, int orderId, StoreOrderStatus status, string trackingCode, string adminNote, string paymentMessage = null)
+        {
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var order = NikooDb.Get(NikooTables.Orders, NikooDb.Key(companyCode, orderId), tx);
+                if (order == null) return null;
+
+                var wasFulfilled = StoreOrder.Fulfilled.Contains(order.Status);
+                var isFulfilled = StoreOrder.Fulfilled.Contains(status);
+                if (!wasFulfilled && isFulfilled && !order.StockDeducted) MoveStock(companyCode, order, +1, tx);
+                else if (wasFulfilled && !isFulfilled && order.StockDeducted) MoveStock(companyCode, order, -1, tx);
+
+                order.Status = status;
+                order.TrackingCode = string.IsNullOrWhiteSpace(trackingCode) ? null : trackingCode.Trim();
+                order.AdminNote = string.IsNullOrWhiteSpace(adminNote) ? null : adminNote.Trim();
+                if (paymentMessage != null) order.PaymentMessage = paymentMessage;
+                NikooDb.Update(NikooTables.Orders, order, companyCode, tx);
+                tx.Commit();
+                return order;
+            }
+        }
+
+        /// <summary><paramref name="direction"/> +1 sells the order's items (stock down, sales up); -1 undoes it.</summary>
+        private static void MoveStock(string companyCode, StoreOrder order, int direction, DbTx tx)
+        {
+            foreach (var item in order.Items ?? new List<StoreOrderItem>())
+            {
+                var key = NikooDb.Key(companyCode, item.ProductId);
+                NikooDb.Increment(NikooTables.Products, key, "SoldCount", direction * item.Quantity, tx);
+                if (item.IsDigital) continue;
+                NikooDb.Execute("UPDATE " + NikooDb.Table(NikooTables.Products.Name)
+                    + " SET [Stock] = CASE WHEN [Stock] - @Amount < 0 THEN 0 ELSE [Stock] - @Amount END"
+                    + " WHERE [CompanyCode] = @CompanyCode AND [Id] = @Id",
+                    new Row(key) { ["Amount"] = direction * item.Quantity }, tx);
+            }
+            order.StockDeducted = direction > 0;
+        }
+
+        // ---- Reviews
+
+        public static StoreProductReview GetReview(string companyCode, int id) => Find(NikooTables.Reviews, companyCode, id);
+
+        public static List<StoreProductReview> GetProductReviews(string companyCode, int productId)
+        {
+            var filter = NikooDb.Key(companyCode);
+            filter["ProductId"] = productId;
+            filter["IsApproved"] = true;
+            return NikooDb.Query(NikooTables.Reviews, filter, "[CreatedAt] DESC, [Id]");
+        }
+
+        /// <summary>Average and count of the approved reviews, per product id.</summary>
+        public static Dictionary<int, ProductRating> GetRatings(string companyCode)
+        {
+            return NikooDb.Select(
+                "SELECT [ProductId], AVG(CAST([Rating] AS FLOAT)), COUNT(*) FROM " + NikooDb.Table(NikooTables.Reviews.Name)
+                + " WHERE [CompanyCode] = @CompanyCode AND [IsApproved] = 1 GROUP BY [ProductId]",
+                NikooDb.Key(companyCode),
+                r => new KeyValuePair<int, ProductRating>(r.GetInt32(0), new ProductRating(r.GetDouble(1), r.GetInt32(2))))
+                .ToDictionary(p => p.Key, p => p.Value);
+        }
+
+        public static StoreProductReview AddReview(string companyCode, StoreProductReview review)
+        {
+            review.Id = 0;
+            review.Rating = Math.Max(1, Math.Min(5, review.Rating));
+            return Save(NikooTables.Reviews, companyCode, review, (r, stored) => r.CreatedAt = DateTime.Now);
+        }
+
+        public static bool UpdateReview(string companyCode, StoreProductReview review) => Update(NikooTables.Reviews, companyCode, review);
+
+        public static bool DeleteReview(string companyCode, int id) => Remove(NikooTables.Reviews, companyCode, id);
+
+        // ---- Seeding
+
+        /// <summary>فروشگاه‌های نمونه، فقط وقتی هیچ فروشگاهی در دیتابیس نیست</summary>
+        internal static void SeedDefaults()
+        {
+            if (NikooDb.Exists(NikooTables.Tenants)) return;
+            AddDemo("FASHION", "بوتیک مد نیکو", "fashion");
+            AddDemo("GROCERY", "سوپرمارکت آنلاین نیکو", "grocery");
+            AddDemo("DIGITAL", "فروشگاه دیجیتال نیکو", "digital");
+        }
+
+        /// <summary>One demo site for each new kind of site (courses, e-books, news, company), next to the existing shop demos.</summary>
+        internal static void SeedKindDemos()
+        {
+            AddDemo("ACADEMY", "آکادمی نیکو", "academy");
+            AddDemo("BOOKS", "کتابخانه نیکو", "ebook");
+            AddDemo("NEWS", "خبرگزاری نیکو", "news");
+            AddDemo("COMPANY", "شرکت نیکو", "corporate");
+        }
+
+        /// <summary>The demo of the booking product, with a week of sample appointments so its calendar is not empty.</summary>
+        internal static void SeedBookingDemo()
+        {
+            if (CompanyCodeExists("CLINIC")) return;
+            AddDemo("CLINIC", "کلینیک نیکو", "clinic");
+            RefreshSampleAppointments("CLINIC");
+        }
+
+        /// <summary>
+        /// Keeps the sample appointments of a demo around the current week: once none of them is upcoming, they are replaced
+        /// by a fresh set from three days ago to four days ahead. Bookings made by visitors are left alone.
+        /// </summary>
+        public static void RefreshSampleAppointments(string code)
+        {
+            var key = NikooDb.Key(code);
+            key["Now"] = DateTime.Now;
+            var upcoming = NikooDb.Column<int>("SELECT COUNT(*) FROM " + Table(NikooTables.Appointments)
+                + " WHERE [CompanyCode] = @CompanyCode AND [IsSample] = 1 AND [StartAt] > @Now", key).FirstOrDefault();
+            if (upcoming > 0) return;
+
+            var services = GetServices(code);
+            var staff = GetStaff(code);
+            var names = new[] { "مهسا رحیمی", "رضا کاظمی", "فاطمه حسینی", "امیر مرادی", "زهرا قاسمی", "حسین نجفی", "مینا اکبری", "علی‌اکبر شریفی" };
+            var today = DateTime.Today;
+            var rows = new List<StoreAppointment>();
+            var n = 0;
+            for (var offset = -3; offset <= 4; offset++)
+            {
+                var day = today.AddDays(offset);
+                foreach (var person in staff)
+                {
+                    var hours = person.HoursOn(BookingTime.DayOf(day)).FirstOrDefault();
+                    var service = services.FirstOrDefault(s => s.OfferedBy(person.Id) && s.StaffIds.Count > 0);
+                    if (hours == null || service == null) continue;
+                    for (var k = 0; k < 2; k++)
+                    {
+                        var start = day.AddMinutes(hours.StartMinute + k * 90);
+                        var past = start < DateTime.Now;
+                        n++;
+                        rows.Add(new StoreAppointment
+                        {
+                            Code = "DEMO" + n.ToString("0000"),
+                            ServiceId = service.Id,
+                            ServiceTitle = service.Title,
+                            StaffId = person.Id,
+                            StaffName = person.Name,
+                            StartAt = start,
+                            EndAt = start.AddMinutes(service.DurationMinutes),
+                            Price = service.Price,
+                            CustomerName = names[n % names.Length],
+                            CustomerMobile = "0912" + (1000000 + n * 7919 % 9000000).ToString("0000000"),
+                            Status = past ? (n % 5 == 0 ? AppointmentStatus.NoShow : AppointmentStatus.Completed) : AppointmentStatus.Confirmed,
+                            Source = n % 3 == 0 ? "admin" : "online",
+                            IsSample = true,
+                            CreatedAt = start.AddDays(-2)
+                        });
+                    }
+                }
+            }
+            lock (LockFor(code))
+            using (var tx = NikooDb.Begin())
+            {
+                var samples = NikooDb.Key(code);
+                samples["IsSample"] = true;
+                NikooDb.Delete(NikooTables.Appointments, samples, tx);
+                foreach (var row in rows)
+                {
+                    row.Id = NikooDb.NextId(NikooTables.Appointments, code, tx);
+                    NikooDb.Insert(NikooTables.Appointments, row, code, tx);
+                }
+                tx.Commit();
+            }
+        }
+
+        private static void AddDemo(string code, string name, string storeType)
+        {
+            if (CompanyCodeExists(code)) return;
+            NikooDb.Insert(NikooTables.Tenants, new TenantInfo { CompanyCode = code, Name = name, StoreType = storeType, CustomDomain = "", IsActive = true });
+            SeedNewTenant(code, storeType, null);
+        }
+
+        /// <summary>انتقال یک‌باره داده‌های قدیمی App_Data (tenants.json و پوشه Tenants) به دیتابیس</summary>
+        internal static void ImportLegacyJson(string appData)
+        {
+            using (var tx = NikooDb.Begin())
+            {
+                foreach (var t in LegacyJsonImport.Read<List<TenantInfo>>(Path.Combine(appData, "tenants.json")) ?? new List<TenantInfo>())
+                {
+                    if (string.IsNullOrWhiteSpace(t.CompanyCode) || NikooDb.Exists(NikooTables.Tenants, NikooDb.Key(t.CompanyCode), tx)) continue;
+                    NikooDb.Insert(NikooTables.Tenants, t, tx: tx);
+                }
+
+                var root = Path.Combine(appData, "Tenants");
+                if (Directory.Exists(root))
+                {
+                    foreach (var dir in Directory.GetDirectories(root))
+                    {
+                        var code = Path.GetFileName(dir);
+                        var settings = LegacyJsonImport.Read<StoreSettings>(Path.Combine(dir, "settings.json"));
+                        if (settings != null && !NikooDb.Exists(NikooTables.Settings, NikooDb.Key(code), tx))
+                        {
+                            settings.CompanyCode = code;
+                            WriteSettings(settings, tx);
+                        }
+
+                        NikooDb.InsertMissing(NikooTables.Categories, code, LegacyJsonImport.Read<List<StoreCategory>>(Path.Combine(dir, "categories.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.AttributeDefs, code, LegacyJsonImport.Read<List<StoreAttributeDef>>(Path.Combine(dir, "attributes.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Products, code, LegacyJsonImport.Read<List<StoreProduct>>(Path.Combine(dir, "products.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Collections, code, LegacyJsonImport.Read<List<StoreCollection>>(Path.Combine(dir, "collections.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.MenuItems, code, LegacyJsonImport.Read<List<StoreMenuItem>>(Path.Combine(dir, "menus.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Pages, code, LegacyJsonImport.Read<List<StorePage>>(Path.Combine(dir, "pages.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.GalleryItems, code, LegacyJsonImport.Read<List<StoreGalleryItem>>(Path.Combine(dir, "gallery.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Customers, code, LegacyJsonImport.Read<List<StoreCustomer>>(Path.Combine(dir, "customers.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Orders, code, LegacyJsonImport.Read<List<StoreOrder>>(Path.Combine(dir, "orders.json")), tx);
+                        NikooDb.InsertMissing(NikooTables.Reviews, code, LegacyJsonImport.Read<List<StoreProductReview>>(Path.Combine(dir, "reviews.json")), tx);
+                    }
+                }
+                tx.Commit();
+            }
         }
 
         public static void EnsureTenantSeed(string companyCode)
         {
             if (string.IsNullOrWhiteSpace(companyCode)) return;
-            var settingsPath = PathOf(companyCode, "settings.json");
-            if (File.Exists(settingsPath)) return;
+            lock (SeededTenants)
+                if (SeededTenants.Contains(companyCode)) return;
 
             lock (LockFor(companyCode))
             {
-                if (File.Exists(settingsPath)) return;
-                SeedTenantData(companyCode.ToUpperInvariant());
+                if (!NikooDb.Exists(NikooTables.Settings, NikooDb.Key(companyCode)))
+                    SeedTenantData(companyCode.ToUpperInvariant());
             }
+            lock (SeededTenants) SeededTenants.Add(companyCode);
         }
 
         private static void SeedTenantData(string code, string storeType = null, Action<StoreSettings> customize = null)
         {
-            StoreSettings settings;
-            List<StoreCategory> cats;
-            List<StoreAttributeDef> attrs;
-            List<StoreProduct> products;
-            List<StoreMenuItem> menus;
-            List<StorePage> pages;
-            List<StoreGalleryItem> gallery;
+            var type = storeType ?? NikooDb.Get(NikooTables.Tenants, NikooDb.Key(code))?.StoreType
+                ?? (code == "FASHION" ? "fashion" : code == "GROCERY" ? "grocery" : "digital");
+            var seed = TenantSeeds.For(code, type, customize);
 
-            var type = storeType ?? (code == "FASHION" ? "fashion" : code == "GROCERY" ? "grocery" : "digital");
-
-            if (type == "general")
+            using (var tx = NikooDb.Begin())
             {
-                settings = BaseSettings(code, "فروشگاه من", "فروشگاه آنلاین", "#222222", "#e5e5e5",
-                    "به فروشگاه ما خوش آمدید", "محصولات منتخب با قیمت مناسب و ارسال سریع", "minimal");
-                cats = new List<StoreCategory>
-                {
-                    new StoreCategory { Id = 1, Title = "محصولات", Slug = "products", SortOrder = 1 },
-                    new StoreCategory { Id = 2, Title = "پیشنهاد ویژه", Slug = "special", SortOrder = 2 }
-                };
-                attrs = new List<StoreAttributeDef>
-                {
-                    new StoreAttributeDef { Id = 1, Name = "رنگ", InputType = "text", IsFilterable = true, SortOrder = 1 },
-                    new StoreAttributeDef { Id = 2, Name = "برند", InputType = "text", IsFilterable = true, SortOrder = 2 }
-                };
-                products = GeneralProducts();
+                WriteSettings(seed.Settings, tx);
+                NikooDb.SyncList(NikooTables.Categories, code, seed.Categories, tx);
+                NikooDb.SyncList(NikooTables.AttributeDefs, code, seed.Attributes, tx);
+                NikooDb.SyncList(NikooTables.Products, code, seed.Products, tx);
+                NikooDb.SyncList(NikooTables.MenuItems, code, seed.Menus, tx);
+                NikooDb.SyncList(NikooTables.Pages, code, seed.Pages, tx);
+                NikooDb.SyncList(NikooTables.GalleryItems, code, seed.Gallery, tx);
+                NikooDb.SyncList(NikooTables.Posts, code, seed.Posts, tx);
+                NikooDb.SyncList(NikooTables.Staff, code, seed.Staff, tx);
+                NikooDb.SyncList(NikooTables.Services, code, seed.Services, tx);
+                tx.Commit();
             }
-            else if (type == "fashion")
-            {
-                settings = BaseSettings(code, "Boutique Mode", "فروشگاه آنلاین پوشاک", "#46d2ad", "#002c3e",
-                    "پوشاک تازه برای فصل جدید", "کالکشن منتخب زنانه و مردانه با ارسال سریع", "fashion");
-                settings.HeroImageUrl = "/Assets/img/portfolio/portfolio-1.jpg";
-                cats = new List<StoreCategory>
-                {
-                    new StoreCategory { Id = 1, Title = "زنانه",Slug = "women", SortOrder = 1 },
-                    new StoreCategory { Id = 2, ParentId = 1, Title = "مانتو", Slug = "manteau", SortOrder = 1 },
-                    new StoreCategory { Id = 3, ParentId = 1, Title = "کفش", Slug = "shoes-w", SortOrder = 2 },
-                    new StoreCategory { Id = 4, Title = "مردانه", Slug = "men", SortOrder = 2 },
-                    new StoreCategory { Id = 5, ParentId = 4, Title = "پیراهن", Slug = "shirts", SortOrder = 1 }
-                };
-                attrs = new List<StoreAttributeDef>
-                {
-                    new StoreAttributeDef { Id = 1, Name = "سایز", InputType = "select", Options = "S,M,L,XL", IsFilterable = true, SortOrder = 1, CategoryIds = new List<int> { 1, 2, 3, 4, 5 } },
-                    new StoreAttributeDef { Id = 2, Name = "رنگ", InputType = "text", IsFilterable = true, SortOrder = 2, CategoryIds = new List<int> { 1, 2, 3, 4, 5 } },
-                    new StoreAttributeDef { Id = 3, Name = "جنس", InputType = "text", SortOrder = 3, CategoryIds = new List<int> { 2, 5 } }
-                };
-                products = FashionProducts();
-            }
-            else if (type == "grocery")
-            {
-                settings = BaseSettings(code, "نیکو مارکت", "فروشگاه ارگانیک تازه", "#6aa84f", "#e8f5d8",
-                    "مواد تازه، زندگی سالم‌تر", "محصولات ارگانیک با تحویل سریع تا درب منزل", "organic");
-                cats = new List<StoreCategory>
-                {
-                    new StoreCategory { Id = 1, Title = "میوه و سبزی",Slug = "produce", SortOrder = 1, Description = "تازه و فصلی" },
-                    new StoreCategory { Id = 2, Title = "لبنیات", Slug = "dairy", SortOrder = 2, Description = "شیر و ماست" },
-                    new StoreCategory { Id = 3, Title = "نان و غلات",Slug = "bakery", SortOrder = 3, Description = "تازه پخته" },
-                    new StoreCategory { Id = 4, Title = "نوشیدنی",Slug = "drinks", SortOrder = 4, Description = "طبیعی و سالم" },
-                    new StoreCategory { Id = 5, Title = "خشکبار",Slug = "nuts", SortOrder = 5, Description = "مغز و حبوبات" }
-                };
-                attrs = new List<StoreAttributeDef>
-                {
-                    new StoreAttributeDef { Id = 1, Name = "وزن", InputType = "text", SortOrder = 1, CategoryIds = new List<int> { 1, 2, 3 } },
-                    new StoreAttributeDef { Id = 2, Name = "برند", InputType = "text", IsFilterable = true, SortOrder = 2, CategoryIds = new List<int> { 1, 2 } }
-                };
-                products = GroceryProducts();
-            }
-            else
-            {
-                settings = BaseSettings(code, "نیکو دیجیتال", "فروشگاه تکنولوژی و گجت", "#4F46E5", "#EEF2FF",
-                    "گجت‌های هوشمند، تجربه بهتر", "هدفون، گجت، نرم‌افزار و لوازم دیجیتال با ارسال سریع", "marketplace");
-                cats = new List<StoreCategory>
-                {
-                    new StoreCategory { Id = 1, Title = "صوتی و هدفون", Slug = "audio", SortOrder = 1, Description = "اسپیکر و هدفون" },
-                    new StoreCategory { Id = 2, Title = "پوشیدنی", Slug = "wearables", SortOrder = 2, Description = "ساعت هوشمند" },
-                    new StoreCategory { Id = 3, Title = "موبایل و لوازم",Slug = "mobile", SortOrder = 3, Description = "جانبی موبایل" },
-                    new StoreCategory { Id = 4, Title = "دوره و نرم‌افزار",Slug = "software", SortOrder = 4, Description = "دانلودی" },
-                    new StoreCategory { Id = 5, Title = "دوربین و تصویر",Slug = "camera", SortOrder = 5, Description = "عکاسی" }
-                };
-                attrs = new List<StoreAttributeDef>
-                {
-                    new StoreAttributeDef { Id = 1, Name = "نوع تحویل", InputType = "select", Options = "فیزیکی,دانلود,لایسنس", IsFilterable = true, SortOrder = 1, CategoryIds = new List<int> { 1, 2, 3, 4, 5 } },
-                    new StoreAttributeDef { Id = 2, Name = "سطح", InputType = "select", Options = "مقدماتی,متوسط,حرفه‌ای", SortOrder = 2, CategoryIds = new List<int> { 4 } }
-                };
-                products = DigitalProducts();
-            }
-
-            customize?.Invoke(settings);
-
-            menus = new List<StoreMenuItem>
-            {
-                new StoreMenuItem { Id = 1, Title = "خانه", Url = "/Shop/" + code, SortOrder = 1, Location = "main" },
-                new StoreMenuItem { Id = 2, Title = "محصولات", Url = "/Shop/" + code + "/Catalog", SortOrder = 2, Location = "main" },
-                new StoreMenuItem { Id = 3, Title = "گالری", Url = "/Shop/" + code + "/Gallery", SortOrder = 3, Location = "main" },
-                new StoreMenuItem { Id = 4, Title = "درباره ما", Url = "/Shop/" + code + "/Page/about", SortOrder = 4, Location = "main", ParentId = null },
-                new StoreMenuItem { Id = 5, ParentId = 4, Title = "تماس با ما", Url = "/Shop/" + code + "/Page/contact", SortOrder = 1, Location = "main" },
-                new StoreMenuItem { Id = 6, Title = "شرایط فروش", Url = "/Shop/" + code + "/Page/terms", SortOrder = 1, Location = "footer" }
-            };
-
-            pages = new List<StorePage>
-            {
-                new StorePage { Id = 1, Title = "درباره ما", Slug = "about", IsPublished = true, BodyHtml = "<p>" + settings.About + "</p><p>این فروشگاه روی پلتفرم نیکو سیستم آفرین اجرا می‌شود و قابل سفارشی‌سازی کامل است.</p>" },
-                new StorePage { Id = 2, Title = "تماس با ما", Slug = "contact", IsPublished = true, BodyHtml = ContactPageHtml(settings) },
-                new StorePage { Id = 3, Title = "شرایط فروش",Slug = "terms", IsPublished = true, BodyHtml = "<p>پس از ثبت سفارش و پرداخت موفق، پیگیری از پنل کاربری امکان‌پذیر است.</p>" }
-            };
-
-            gallery = new List<StoreGalleryItem>
-            {
-                new StoreGalleryItem { Id = 1, Title = "نمای فروشگاه", Album = "فضا", ThumbUrl = "/Assets/img/portfolio/portfolio-1.jpg", LargeUrl = "/Assets/img/portfolio/portfolio-1.jpg", SortOrder = 1 },
-                new StoreGalleryItem { Id = 2, Title = "محصولات منتخب", Album = "محصولات", ThumbUrl = "/Assets/img/portfolio/portfolio-2.jpg", LargeUrl = "/Assets/img/portfolio/portfolio-2.jpg", SortOrder = 2 },
-                new StoreGalleryItem { Id = 3, Title = "تیم ما", Album = "فضا", ThumbUrl = "/Assets/img/portfolio/portfolio-3.jpg", LargeUrl = "/Assets/img/portfolio/portfolio-3.jpg", SortOrder = 3 }
-            };
-
-            WriteObject(PathOf(code, "settings.json"), settings);
-            WriteList(PathOf(code, "categories.json"), cats);
-            WriteList(PathOf(code, "attributes.json"), attrs);
-            WriteList(PathOf(code, "products.json"), products);
-            WriteList(PathOf(code, "menus.json"), menus);
-            WriteList(PathOf(code, "pages.json"), pages);
-            WriteList(PathOf(code, "gallery.json"), gallery);
-            WriteList(PathOf(code, "customers.json"), new List<StoreCustomer>());
-            WriteList(PathOf(code, "orders.json"), new List<StoreOrder>());
-            WriteList(PathOf(code, "reviews.json"), new List<StoreProductReview>());
-        }
-
-        private static StoreSettings BaseSettings(string code, string name, string tagline, string primary, string secondary, string heroTitle, string heroSub, string layoutStyle = "organic")
-        {
-            return new StoreSettings
-            {
-                CompanyCode = code,
-                StoreName = name,
-                Tagline = tagline,
-                About = name + " یک فروشگاه آنلاین واقعی روی پلتفرم نیکو سیستم آفرین است. مالک فروشگاه می‌تواند محصولات، منوها، صفحات و درگاه پرداخت را مدیریت کند.",
-                Phone = "021-77000000",
-                Email = "info@" + code.ToLowerInvariant() + ".nikoooo.ir",
-                Address = "تهران، نارمک",
-                LogoUrl = "/Assets/img/logo.png",
-                PrimaryColor = primary,
-                SecondaryColor = secondary,
-                HeroTitle = heroTitle,
-                HeroSubtitle = heroSub,
-                HeroImageUrl = "/Assets/img/hero-img.png",
-                FooterText = "© " + name + " — قدرت‌گرفته از نیکو سیستم آفرین",
-                LayoutStyle = layoutStyle,
-                AdminUsername = "admin",
-                AdminPasswordHash = PasswordHelper.Hash("Admin@123"),
-                ZarinPalMerchantId = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-                ZarinPalSandbox = true,
-                EnablePayment = true
-            };
-        }
-
-        private static string ContactPageHtml(StoreSettings s)
-        {
-            var html = "";
-            if (!string.IsNullOrWhiteSpace(s.Phone)) html += "<p>تلفن: " + HttpUtility.HtmlEncode(s.Phone) + "</p>";
-            if (!string.IsNullOrWhiteSpace(s.Email)) html += "<p>ایمیل: " + HttpUtility.HtmlEncode(s.Email) + "</p>";
-            if (!string.IsNullOrWhiteSpace(s.Address)) html += "<p>" + HttpUtility.HtmlEncode(s.Address) + "</p>";
-            return html == "" ? "<p>اطلاعات تماس به‌زودی تکمیل می‌شود.</p>" : html;
-        }
-
-        private static List<StoreProduct> GeneralProducts()
-        {
-            return new List<StoreProduct>
-            {
-                P(1, 1, "محصول نمونه اول", "sample-1", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 250000, true, "/Assets/img/portfolio/portfolio-4.jpg",
-                    A(1, "رنگ", "مشکی")),
-                P(2, 1, "محصول نمونه دوم", "sample-2", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 480000, true, "/Assets/img/portfolio/portfolio-5.jpg",
-                    A(1, "رنگ", "سفید")),
-                P(3, 2, "محصول نمونه پیشنهادی", "sample-3", "این یک محصول نمونه است؛ آن را ویرایش یا حذف کنید", 150000, false, "/Assets/img/portfolio/portfolio-6.jpg")
-            };
-        }
-
-        private static List<StoreProduct> FashionProducts()
-        {
-            return new List<StoreProduct>
-            {
-                P(1, 2, "مانتو کتان بهاره", "manteau-spring", "مانتو سبک مناسب فصل بهار", 890000, true, "/Assets/img/portfolio/portfolio-1.jpg",
-                    A(1, "سایز", "M"), A(2, "رنگ", "کرم"), A(3, "جنس", "کتان")),
-                P(2, 3, "کفش اسپرت زنانه", "shoes-sport", "کفش راحت برای استفاده روزانه", 1250000, true, "/Assets/img/portfolio/portfolio-2.jpg",
-                    A(1, "سایز", "38"), A(2, "رنگ", "سفید")),
-                P(3, 5, "پیراهن مردانه رسمی", "shirt-formal", "پیراهن اداری با دوخت تمیز", 780000, false, "/Assets/img/portfolio/portfolio-3.jpg",
-                    A(1, "سایز", "L"), A(2, "رنگ", "آبی"))
-            };
-        }
-
-        private static List<StoreProduct> GroceryProducts()
-        {
-            return new List<StoreProduct>
-            {
-                P(1, 1, "سبد میوه فصل", "seasonal-fruit", "ترکیب میوه‌های تازه فصل", 185000, true, "/Assets/img/portfolio/portfolio-2.jpg",
-                    A(1, "وزن", "۲ کیلو")),
-                P(2, 2, "شیر کم‌چرب ۱ لیتری", "milk-1l", "شیر تازه پاستوریزه", 45000, true, "/Assets/img/portfolio/portfolio-4.jpg",
-                    A(1, "وزن", "۱ لیتر"), A(2, "برند", "نیکو")),
-                P(3, 3, "نان سنگک تازه", "sangak", "پخت روزانه", 28000, true, "/Assets/img/portfolio/portfolio-3.jpg",
-                    A(1, "وزن", "۵۰۰ گرم")),
-                P(4, 4, "آبمیوه طبیعی پرتقال", "orange-juice", "بدون شکر افزوده", 78000, true, "/Assets/img/portfolio/portfolio-5.jpg",
-                    A(1, "وزن", "۱ لیتر"), A(2, "برند", "طبیعی")),
-                P(5, 5, "مغز بادام درختی", "almond", "بسته ۵۰۰ گرمی", 320000, false, "/Assets/img/portfolio/portfolio-6.jpg",
-                    A(1, "وزن", "۵۰۰ گرم")),
-                P(6, 1, "گوجه فرنگی ارگانیک", "tomato-org", "محصول گلخانه‌ای تازه", 62000, true, "/Assets/img/portfolio/portfolio-7.jpg",
-                    A(1, "وزن", "۱ کیلو"))
-            };
-        }
-
-        private static List<StoreProduct> DigitalProducts()
-        {
-            return new List<StoreProduct>
-            {
-                P(1, 1, "هدفون بی‌سیم Pro", "wireless-headphones", "صدای فضایی و نویزکنسلینگ", 2890000, true, "/Assets/img/portfolio/portfolio-1.jpg",
-                    A(1, "نوع تحویل", "فیزیکی"), A(2, "سطح", "حرفه‌ای")),
-                P(2, 2, "ساعت هوشمند Pulse", "smartwatch-pulse", "مانیتورینگ سلامت ۲۴ ساعته", 4590000, true, "/Assets/img/portfolio/portfolio-2.jpg",
-                    A(1, "نوع تحویل", "فیزیکی")),
-                P(3, 3, "قاب مگنتیک آیفون", "magsafe-case", "محافظ سبک با شارژ مگسیف", 690000, true, "/Assets/img/portfolio/portfolio-3.jpg",
-                    A(1, "نوع تحویل", "فیزیکی")),
-                P(4, 4, "دوره طراحی UI با Figma", "figma-course", "آموزش پروژه محور رابط کاربری", 490000, true, "/Assets/img/portfolio/portfolio-4.jpg",
-                    A(1, "نوع تحویل", "دانلود"), A(2, "سطح", "مقدماتی")),
-                P(5, 5, "گیمبال موبایل Mini", "gimbal-mini", "ثبات تصویر حرفه‌ای", 2190000, false, "/Assets/img/portfolio/portfolio-5.jpg",
-                    A(1, "نوع تحویل", "فیزیکی")),
-                P(6, 4, "لایسنس نرم‌افزار حسابداری", "acc-license", "لایسنس یک‌ساله", 890000, true, "/Assets/img/portfolio/portfolio-6.jpg",
-                    A(1, "نوع تحویل", "لایسنس"))
-            };
-        }
-
-        private static StoreProduct P(int id, int catId, string title, string slug, string desc, long price, bool featured, string img, params StoreProductAttribute[] attrs)
-        {
-            return new StoreProduct
-            {
-                Id = id,
-                CategoryId = catId,
-                Title = title,
-                Slug = slug,
-                ShortDescription = desc,
-                Description = desc + " — قابل ویرایش از پنل مدیریت فروشگاه.",
-                Price = price,
-                CompareAtPrice = (long)(price * 1.35),
-                Stock = 50,
-                Sku = "SKU-" + id,
-                IsActive = true,
-                IsFeatured = featured,
-                IsSample = true,
-                SoldCount = id * 7,
-                ViewCount = id * 40,
-                Images = new List<StoreProductImage>
-                {
-                    new StoreProductImage { Id = Guid.NewGuid().ToString("N"), ThumbUrl = img, LargeUrl = img, Alt = title, SortOrder = 1 },
-                    new StoreProductImage { Id = Guid.NewGuid().ToString("N"), ThumbUrl = img, LargeUrl = img, Alt = title + " ۲", SortOrder = 2 }
-                },
-                Attributes = attrs?.ToList() ?? new List<StoreProductAttribute>()
-            };
-        }
-
-        private static StoreProductAttribute A(int id, string name, string value)
-        {
-            return new StoreProductAttribute { AttributeId = id, Name = name, Value = value };
-        }
-
-        private static List<T> ReadList<T>(string path)
-        {
-            if (!File.Exists(path)) return new List<T>();
-            return JsonConvert.DeserializeObject<List<T>>(File.ReadAllText(path)) ?? new List<T>();
-        }
-
-        private static T ReadObject<T>(string path) where T : class
-        {
-            if (!File.Exists(path)) return null;
-            return JsonConvert.DeserializeObject<T>(File.ReadAllText(path));
-        }
-
-        private static void WriteList<T>(string path, List<T> data)
-        {
-            File.WriteAllText(path, JsonConvert.SerializeObject(data, Formatting.Indented));
-        }
-
-        private static void WriteObject<T>(string path, T data)
-        {
-            File.WriteAllText(path, JsonConvert.SerializeObject(data, Formatting.Indented));
         }
     }
 }

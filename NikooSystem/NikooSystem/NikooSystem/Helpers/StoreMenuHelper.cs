@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Web.Mvc;
 using NikooSystem.Models.Store;
 
 namespace NikooSystem.Helpers
@@ -9,8 +8,8 @@ namespace NikooSystem.Helpers
     {
         public static IEnumerable<StoreMenuItem> Roots(IEnumerable<StoreMenuItem> menus, string location = "main")
         {
-            return (menus ?? Enumerable.Empty<StoreMenuItem>())
-                .Where(m => m.IsActive && m.Location == location && m.ParentId == null)
+            return TreeHelper.Roots(menus)
+                .Where(m => m.IsActive && m.Location == location)
                 .OrderBy(m => m.SortOrder);
         }
 

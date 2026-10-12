@@ -51,6 +51,14 @@ namespace NikooSystem.Models
         public bool NotifySent { get; set; }
     }
 
+    public class HubAppStats
+    {
+        public string AppId { get; set; }
+        public int Count { get; set; }
+        public int PaidCount { get; set; }
+        public long PaidAmount { get; set; }
+    }
+
     public class CreatePaymentRequest
     {
         public long Amount { get; set; }

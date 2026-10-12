@@ -2,7 +2,7 @@
   "name": "nikoo-tutorial-recorder",
   "private": true,
   "type": "module",
-  "description": "Records the admin-panel tutorial videos from Content/tutorials/*.json",
+  "description": "Records the admin-panel tutorial videos for the tutorials stored in the nikoo database",
   "scripts": {
     "record": "node record.mjs"
   },

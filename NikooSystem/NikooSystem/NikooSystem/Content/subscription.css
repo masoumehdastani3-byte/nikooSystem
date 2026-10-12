@@ -1,0 +1,54 @@
+/* The site's subscription: the «اشتراک و تمدید» page of the store panel and the page a closed site shows. */
+
+.sub-head { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin-bottom: .75rem; }
+.sub-head > i { font-size: 1.9rem; color: #198754; }
+.sub-big { font-size: 1.35rem; font-weight: 700; color: var(--store-primary, #1b4332); line-height: 1.4; }
+.sub-days { margin-inline-start: auto; text-align: center; font-size: .85rem; color: #6c757d; }
+.sub-days b { display: block; font-size: 1.6rem; line-height: 1.1; color: #198754; }
+
+.sub-status.is-due .sub-head > i, .sub-status.is-due .sub-days b { color: #d97706; }
+.sub-status.is-expired .sub-head > i, .sub-status.is-closed .sub-head > i { color: #dc2626; }
+.sub-status.is-expired, .sub-status.is-closed { border: 1px solid #f5b5b5; }
+
+.sub-bar { height: 10px; border-radius: 999px; background: #e9ecef; overflow: hidden; margin-bottom: .9rem; }
+.sub-bar span { display: block; height: 100%; background: #2d6a4f; border-radius: 999px; }
+.sub-status.is-due .sub-bar span { background: #f59e0b; }
+.sub-status.is-expired .sub-bar span, .sub-status.is-closed .sub-bar span { background: #dc2626; }
+
+.sub-plans { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.sub-until { margin-top: .35rem; color: #495057; }
+
+.sub-timeline { list-style: none; padding: 0; position: relative; }
+.sub-timeline li { position: relative; padding-inline-start: 1.25rem; margin-bottom: .6rem; }
+.sub-timeline li:last-child { margin-bottom: 0; }
+.sub-timeline li::before {
+    content: ""; position: absolute; inset-inline-start: 0; top: .45rem;
+    width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;
+}
+.sub-timeline li:last-child::before { background: #dc2626; }
+
+/* The page a closed site shows to its visitors */
+.store-closed {
+    min-height: 100vh; margin: 0;
+    display: grid; place-items: center;
+    padding: 1.5rem;
+    background: linear-gradient(160deg, #f8fafc, #eef2f7);
+    font-family: 'Far_Yekan', Tahoma, sans-serif;
+    color: #1f2937;
+}
+.store-closed-card {
+    max-width: 460px; width: 100%;
+    background: #fff; border-radius: 22px;
+    padding: 2.25rem 1.75rem;
+    text-align: center;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
+}
+.store-closed-card img { max-height: 64px; max-width: 180px; object-fit: contain; margin-bottom: 1rem; }
+.store-closed-icon {
+    width: 68px; height: 68px; margin: 0 auto 1rem;
+    display: grid; place-items: center;
+    border-radius: 50%; background: #fff4e5; color: #d97706; font-size: 1.9rem;
+}
+.store-closed-card h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: .6rem; }
+.store-closed-card p { color: #6b7280; line-height: 1.9; margin-bottom: .4rem; }
+.store-closed-card .owner { margin-top: 1.25rem; font-size: .85rem; }

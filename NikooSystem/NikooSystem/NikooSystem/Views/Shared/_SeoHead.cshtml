@@ -1,0 +1,70 @@
+@using NikooSystem.Helpers
+@{
+    var seo = Html.Seo();
+    var image = seo.Asset(seo.Image);
+}
+<title>@seo.Title</title>
+@if (!string.IsNullOrEmpty(seo.Description))
+{
+    <meta name="description" content="@seo.Description" />
+}
+<meta name="robots" content="@(seo.NoIndex ? "noindex, follow" : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1")" />
+@if (!seo.NoIndex && !string.IsNullOrEmpty(seo.Canonical))
+{
+    <link rel="canonical" href="@seo.Canonical" />
+}
+@if (!string.IsNullOrEmpty(seo.GoogleVerification))
+{
+    <meta name="google-site-verification" content="@seo.GoogleVerification" />
+}
+<meta property="og:locale" content="fa_IR" />
+<meta property="og:type" content="@seo.Type" />
+<meta property="og:site_name" content="@seo.SiteName" />
+<meta property="og:title" content="@seo.Title" />
+@if (!string.IsNullOrEmpty(seo.Description))
+{
+    <meta property="og:description" content="@seo.Description" />
+}
+@if (!string.IsNullOrEmpty(seo.Canonical))
+{
+    <meta property="og:url" content="@seo.Canonical" />
+}
+@if (image != null)
+{
+    <meta property="og:image" content="@image" />
+    <meta property="og:image:alt" content="@seo.Title" />
+}
+@if (seo.Type == "article")
+{
+    if (seo.PublishedAt.HasValue)
+    {
+        <meta property="article:published_time" content="@SeoPages.Iso(seo.PublishedAt.Value)" />
+    }
+    if (seo.ModifiedAt.HasValue)
+    {
+        <meta property="article:modified_time" content="@SeoPages.Iso(seo.ModifiedAt.Value)" />
+    }
+}
+@if (seo.Price.HasValue)
+{
+    <meta property="product:price:amount" content="@(seo.Price.Value * 10)" />
+    <meta property="product:price:currency" content="IRR" />
+}
+<meta name="twitter:card" content="@(image != null ? "summary_large_image" : "summary")" />
+<meta name="twitter:title" content="@seo.Title" />
+@if (!string.IsNullOrEmpty(seo.Description))
+{
+    <meta name="twitter:description" content="@seo.Description" />
+}
+@if (image != null)
+{
+    <meta name="twitter:image" content="@image" />
+}
+@foreach (var meta in seo.Meta.Where(m => !string.IsNullOrEmpty(m.Value)))
+{
+    <meta name="@meta.Key" content="@meta.Value" />
+}
+@foreach (var schema in seo.Schemas.Where(s => s != null))
+{
+    <script type="application/ld+json">@Html.Raw(Seo.Json(schema))</script>
+}

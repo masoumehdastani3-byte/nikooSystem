@@ -1,0 +1,173 @@
+@model List<NikooSystem.Models.Store.TenantInfo>
+@using NikooSystem.Helpers
+@using NikooSystem.Services
+@using NikooSystem.Models.Store
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "دامنه‌های مشتریان";
+    var ipSetting = ViewBag.ServerIpSetting as string;
+    var ipConfig = (System.Configuration.ConfigurationManager.AppSettings["Platform.ServerIp"] ?? "").Trim();
+    var serverIp = TenantProvisioningService.ServerIp;
+    var rootDomain = TenantProvisioningService.RootDomain;
+    var waitingSupport = Model.Count(t => t.DomainStatus() == DomainState.WaitingSupport);
+    var waitingDns = Model.Count(t => t.DomainStatus() == DomainState.WaitingDns);
+    var active = Model.Count(t => t.DomainStatus() == DomainState.Active);
+}
+<link href="@Url.Asset("~/Content/domain.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>دامنه‌های مشتریان</h1>
+        <p>مشتری دامنه را در پنل خودش ثبت و طبق راهنمای آن DNS را تنظیم می‌کند؛ هر ساعت خودکار بررسی می‌شود و وقتی درست شد، در بله به شما خبر داده می‌شود تا binding و SSL را انجام دهید.</p>
+    </div>
+</div>
+
+@if (string.IsNullOrEmpty(serverIp))
+{
+    <div class="alert alert-danger d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-octagon"></i>
+        <span>IP سرور ثبت نشده است؛ مشتریان در راهنمای اتصال دامنه به‌جای رکورد DNS پیام «از پشتیبانی بپرسید» می‌بینند و بررسی خودکار DNS کار نمی‌کند. IP عمومی سرور را پایین ثبت کنید.</span>
+    </div>
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-4"><div class="stat-card"><i class="bi bi-shield-lock"></i><div><span>منتظر SSL (کار شما)</span><h3>@waitingSupport.ToFa()</h3></div></div></div>
+    <div class="col-sm-4"><div class="stat-card"><i class="bi bi-hourglass-split"></i><div><span>منتظر DNS مشتری</span><h3>@waitingDns.ToFa()</h3></div></div></div>
+    <div class="col-sm-4"><div class="stat-card"><i class="bi bi-check2-circle"></i><div><span>فعال</span><h3>@active.ToFa()</h3></div></div></div>
+</div>
+
+<div class="adm-card">
+    <div class="adm-card-title">دامنه‌ها</div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>فروشگاه</th><th>دامنه</th><th>وضعیت</th><th>آخرین بررسی DNS</th><th>ثبت دامنه</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var t in Model)
+            {
+                var state = t.DomainStatus();
+                var check = CustomDomains.LastCheck(t);
+                var domain = t.CustomDomain.Trim();
+                <tr>
+                    <td><a href="@Url.Action("Store","Admin", new { id = t.CompanyCode })">@t.Name</a><div class="small text-muted"><code>@t.CompanyCode</code></div></td>
+                    <td class="adm-ltr">@domain</td>
+                    <td>
+                        @if (state == DomainState.WaitingSupport)
+                        {
+                            <span class="badge bg-primary">منتظر SSL (پشتیبانی)</span>
+                            <div class="small text-muted">از @t.DomainDnsOkAt.Value.ToShamsiText()</div>
+                        }
+                        else if (state == DomainState.WaitingDns)
+                        {
+                            <span class="badge bg-warning text-dark">منتظر DNS مشتری</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">فعال</span>
+                            <div class="small text-muted">از @t.DomainActivatedAt.Value.ToShamsiText()</div>
+                        }
+                    </td>
+                    <td class="small">
+                        @if (check == null)
+                        {
+                            <span class="text-muted">بررسی نشده</span>
+                        }
+                        else
+                        {
+                            <div><i class="bi @(check.RootOk ? "bi-check-circle-fill text-success" : "bi-x-circle text-danger")"></i> <code class="adm-ltr">@(check.RootIps.Count == 0 ? "—" : string.Join(", ", check.RootIps))</code>@(check.ViaProxy ? " (CDN)" : "")</div>
+                            <div><i class="bi @(check.WwwOk ? "bi-check-circle-fill text-success" : "bi-dash-circle text-muted")"></i> www: <code class="adm-ltr">@(check.WwwIps.Count == 0 ? "—" : string.Join(", ", check.WwwIps))</code></div>
+                            <div class="text-muted">@check.CheckedAt.ToShamsiText() @check.CheckedAt.ToString("HH:mm").ToFaDigits()</div>
+                        }
+                    </td>
+                    <td class="small">@(t.DomainSetAt.HasValue ? t.DomainSetAt.Value.ToShamsiText() : "—")</td>
+                    <td class="text-nowrap">
+                        @Html.PostButton("CheckDomain", new { id = t.CompanyCode }, "بررسی DNS", "btn btn-sm btn-outline-secondary")
+                        @if (state != DomainState.Active)
+                        {
+                            @Html.PostButton("ActivateDomain", new { id = t.CompanyCode }, "فعال‌سازی انجام شد", "btn btn-sm " + (state == DomainState.WaitingSupport ? "btn-primary" : "btn-outline-primary"),
+                                state == DomainState.WaitingSupport ? "binding و SSL دامنه " + domain + " انجام شده و https آن باز می‌شود؟" : "DNS این دامنه هنوز درست نیست. با این حال فعال شود؟")
+                        }
+                    </td>
+                </tr>
+                if (state == DomainState.WaitingSupport)
+                {
+                    var hosts = check != null && check.WwwOk ? domain + ",www." + domain : domain;
+                    <tr class="table-light">
+                        <td colspan="6">
+                            <div class="small fw-bold mb-1"><i class="bi bi-tools"></i> کار پشتیبانی برای @domain</div>
+                            <ol class="small mb-0">
+                                <li>
+                                    اگر سایت در IIS binding بدون نام میزبان (Host name خالی) روی پورت ۸۰ ندارد، binding دامنه را اضافه کنید (نام سایت IIS را جایگزین کنید):
+                                    <div class="dm-cmd">Import-Module WebAdministration
+New-WebBinding -Name "NikooSystem" -Protocol http -Port 80 -HostHeader "@domain"@if (check != null && check.WwwOk) {<text>
+New-WebBinding -Name "NikooSystem" -Protocol http -Port 80 -HostHeader "www.@domain"</text>}</div>
+                                </li>
+                                <li>
+                                    گواهی SSL را با <a href="https://www.win-acme.com" target="_blank" rel="noopener">win-acme</a> صادر کنید (binding https با SNI و تمدید خودکار را خودش می‌سازد؛ شناسه سایت را از IIS بردارید):
+                                    <div class="dm-cmd">wacs.exe --source manual --host @hosts --installation iis --installationsiteid &lt;SiteId&gt;</div>
+                                    @if (check == null || !check.WwwOk)
+                                    {
+                                        <span class="text-muted">www این دامنه هنوز تنظیم نشده و در گواهی نیامده است؛ اگر بعداً تنظیم شد، گواهی را با هر دو نام دوباره صادر کنید.</span>
+                                    }
+                                </li>
+                                <li>آدرس <a href="https://@domain" target="_blank" rel="noopener" class="adm-ltr">https://@domain</a> را باز کنید و مطمئن شوید @t.Name با قفل سبز نمایش داده می‌شود.</li>
+                                <li>دکمه «فعال‌سازی انجام شد» را بزنید؛ مالک در بله و پنل خبردار می‌شود و از این پس آدرس‌های سایتش روی این دامنه ساخته می‌شوند.</li>
+                            </ol>
+                        </td>
+                    </tr>
+                }
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-globe fs-3 d-block mb-1"></i>هنوز هیچ مشتری دامنه‌ای ثبت نکرده است.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="adm-card">
+            <div class="adm-card-title">IP سرور برای مشتریان</div>
+            @using (Html.BeginForm("SaveServerIp", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <label class="form-label" for="serverIp">IP عمومی سرور (IPv4)</label>
+                <div class="d-flex gap-2">
+                    <input class="form-control adm-ltr font-monospace" id="serverIp" name="serverIp" value="@ipSetting" placeholder="185.10.20.30" />
+                    <button class="btn btn-primary text-nowrap" type="submit">ذخیره</button>
+                </div>
+                <div class="form-text">
+                    همین IP در راهنمای مشتریان برای رکورد A نشان داده می‌شود و DNS دامنه‌ها با آن مقایسه می‌شود. اگر سرور چند IP دارد، با ویرگول جدا کنید (اولی به مشتری نشان داده می‌شود).
+                    @if (!string.IsNullOrEmpty(ipConfig))
+                    {
+                        <span>اگر خالی بماند، مقدار Web.config (<span class="adm-ltr">@ipConfig</span>) استفاده می‌شود.</span>
+                    }
+                </div>
+            }
+            <hr />
+            <div class="small">
+                رکورد www مشتریان:
+                @if (string.IsNullOrEmpty(rootDomain))
+                {
+                    <span>رکورد A روی همین IP (برای CNAME روی زیردامنه هر فروشگاه، <code>Platform.RootDomain</code> را در Web.config تنظیم کنید).</span>
+                }
+                else
+                {
+                    <span>CNAME روی <code class="adm-ltr">کد-فروشگاه.@rootDomain</code></span>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="adm-card">
+            <div class="adm-card-title">روال اتصال دامنه</div>
+            <ol class="small mb-0">
+                <li class="mb-1"><b>مشتری:</b> دامنه را در صفحه «دامنه اختصاصی» پنلش ثبت می‌کند و دو رکورد DNS (A برای @@ و www) را طبق راهنما می‌سازد.</li>
+                <li class="mb-1"><b>سیستم:</b> بلافاصله و بعد هر ساعت DNS را بررسی می‌کند (پشت CDN هم با درخواست به <code class="adm-ltr">@CustomDomains.ProbePath</code> روی خود دامنه). اگر یک روز بعد هنوز درست نباشد، یک بار به مشتری یادآوری می‌شود.</li>
+                <li class="mb-1"><b>شما:</b> وقتی DNS درست شد، پیام «اتصال دامنه: نوبت پشتیبانی است» در بله می‌رسد و ردیف دامنه اینجا آبی می‌شود؛ دستورهای همان ردیف را اجرا کنید و «فعال‌سازی انجام شد» را بزنید.</li>
+                <li class="mb-1"><b>تا فعال‌سازی</b> آدرس رایگان فروشگاه به گوگل معرفی می‌شود؛ بعد از آن آدرس‌ها روی <span class="adm-ltr">https://</span> دامنه ساخته می‌شوند.</li>
+                <li><b>حذف یا تعویض دامنه</b> توسط مشتری، اگر قبلاً فعال یا منتظر SSL بوده، در بله خبر داده می‌شود تا binding و گواهی قبلی را حذف کنید.</li>
+            </ol>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,81 @@
+@model List<NikooSystem.Models.DemoTemplateRow>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "قالب دموها";
+}
+<link href="@Url.Asset("~/Content/template-picker.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>قالب دموی محصولات</h1>
+        <p>هر محصول یک سایت دمو دارد؛ این‌جا تعیین کنید هر دمو با کدام قالب باز شود.</p>
+    </div>
+</div>
+
+<div class="adm-card mb-3">
+    <h5 class="mb-2"><i class="bi bi-signpost-2"></i> راهنمای قدم‌به‌قدم</h5>
+    <ol class="mb-0 small lh-lg">
+        <li>روی «تغییر قالب» دموی دلخواه بزنید؛ همه قالب‌های همان نوع سایت با پیش‌نمایش زنده نمایش داده می‌شوند.</li>
+        <li>با «پیش‌نمایش بزرگ» قالب را در دسکتاپ و موبایل ببینید، روی کارت آن بزنید و «ذخیره و اعمال روی دمو» را بزنید.</li>
+        <li>از این به بعد دکمه «مشاهده دمو» در صفحه محصول، دمو را با همین قالب و رنگ‌هایش باز می‌کند.</li>
+        <li>بازدیدکننده‌ها داخل دمو هم دکمه شناور «قالب دمو» را دارند و بدون تغییر دادن انتخاب شما، بقیه قالب‌ها را امتحان می‌کنند و با همان قالب سایتشان را می‌سازند.</li>
+    </ol>
+</div>
+
+<div class="tpl-grid">
+    @foreach (var d in Model)
+    {
+        var demoUrl = Url.Action("Index", "Shop", new { company = d.CompanyCode });
+        <div class="tpl-card demo-card" style="cursor:default">
+            <div class="tpl-thumb" style="--tpl-bg:@d.Template.PreviewGradient">
+                <span class="tpl-loading">در حال بارگذاری پیش‌نمایش…</span>
+                <iframe src="@demoUrl" loading="lazy" tabindex="-1" aria-hidden="true" scrolling="no" title="@d.Type.Name"></iframe>
+            </div>
+            <div class="tpl-meta">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <i class="bi @d.Type.Icon text-primary"></i>
+                    <strong>@d.Type.Name</strong>
+                </div>
+                <div class="d-flex align-items-center gap-2 small mb-1">
+                    <span class="tpl-swatch" style="background:@d.Template.PrimaryColor"></span>
+                    <span class="tpl-swatch" style="background:@d.Template.SecondaryColor"></span>
+                    <span>قالب فعلی: <b>@d.Template.Name</b></span>
+                    <span class="text-muted">(از @d.TemplateCount.ToString().ToFaDigits() قالب)</span>
+                </div>
+                <span class="tpl-desc">
+                    @if (d.Products.Any())
+                    {
+                        <text>محصول: </text>
+                        for (var i = 0; i < d.Products.Count; i++)
+                        {
+                            var p = d.Products[i];
+                            <a href="@Url.Action("EditProduct","Admin", new { id = p.Id })">@p.Title</a>@(i < d.Products.Count - 1 ? "، " : "")
+                        }
+                    }
+                    else
+                    {
+                        <text>هنوز محصولی به این دمو وصل نیست.</text>
+                    }
+                </span>
+                <div class="d-flex gap-2 mt-2">
+                    <a class="btn btn-sm btn-primary flex-fill" href="@Url.Action("DemoTemplate","Admin", new { slug = d.Slug })"><i class="bi bi-palette"></i> تغییر قالب</a>
+                    <a class="btn btn-sm btn-outline-secondary flex-fill" href="@demoUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده دمو</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<script>
+(function () {
+  var cards = document.querySelectorAll('.demo-card');
+  function fit(card) {
+    var thumb = card.querySelector('.tpl-thumb');
+    thumb.style.setProperty('--tpl-scale', thumb.clientWidth / 1280);
+  }
+  cards.forEach(function (card) {
+    fit(card);
+    card.querySelector('iframe').addEventListener('load', function () { card.classList.add('loaded'); });
+  });
+  window.addEventListener('resize', function () { cards.forEach(fit); });
+})();
+</script>

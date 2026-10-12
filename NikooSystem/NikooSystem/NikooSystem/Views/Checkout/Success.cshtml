@@ -1,5 +1,4 @@
 ﻿@model NikooSystem.Models.Order
-@using NikooSystem.Helpers
 @{
     ViewBag.Title = "پرداخت موفق";
     ViewBag.Nav = "products";
@@ -11,7 +10,7 @@
             <h1>پرداخت با موفقیت انجام شد</h1>
             @if (!string.IsNullOrEmpty(Model.CompanyCode))
             {
-                <p class="text-muted">فروشگاه شما از حالت آزمایشی خارج شد و به‌صورت دائمی فعال است.</p>
+                <p class="text-muted">اشتراک سایت شما ثبت شد@(Model.SubscriptionEndsAt.HasValue ? " و تا " + Model.SubscriptionEndsAt.Value.ToShamsiText() + " فعال است" : "").</p>
                 <a class="btn-primary-shop" href="@Url.Action("Index","ShopAdmin", new { company = Model.CompanyCode })">ورود به پنل فروشگاه</a>
             }
             else

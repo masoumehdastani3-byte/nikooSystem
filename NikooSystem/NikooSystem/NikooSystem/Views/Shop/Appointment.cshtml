@@ -1,0 +1,73 @@
+@model StoreAppointment
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "نوبت " + Model.Code;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var staff = ViewBag.Staff as StoreStaff;
+    var canCancel = (bool)ViewBag.CanCancel;
+    var active = Model.Status == AppointmentStatus.Confirmed || Model.Status == AppointmentStatus.PendingPayment;
+}
+<section class="bk-book">
+    <div class="container">
+        <div class="bk-ticket @(active ? "" : "is-closed")">
+            <div class="bk-ticket-head">
+                <div>
+                    <div class="small opacity-75">کد پیگیری</div>
+                    <div class="bk-code" dir="ltr">@Model.Code</div>
+                </div>
+                <span class="badge @Model.Status.StatusBadgeClass()">@Model.Status.StatusText()</span>
+            </div>
+            <div class="bk-ticket-when">
+                <i class="bi bi-calendar-event"></i>
+                <div>
+                    <strong>@BookingTime.DayNames[BookingTime.DayOf(Model.StartAt)] @Model.StartAt.ToShamsiText()</strong>
+                    <span>ساعت @BookingTime.Clock(Model.StartAt) تا @BookingTime.Clock(Model.EndAt)</span>
+                </div>
+            </div>
+            <dl class="bk-ticket-list">
+                <dt>خدمت</dt><dd>@Model.ServiceTitle</dd>
+                <dt>متخصص</dt>
+                <dd>
+                    @Model.StaffName
+                    @if (staff != null && !string.IsNullOrWhiteSpace(staff.Title)) { <small class="text-muted">— @staff.Title</small> }
+                </dd>
+                <dt>نام</dt><dd>@Model.CustomerName</dd>
+                <dt>موبایل</dt><dd dir="ltr" class="text-end">@Model.CustomerMobile</dd>
+                <dt>هزینه</dt><dd>@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</dd>
+                @if (Model.PaidAmount > 0)
+                {
+                    <dt>پرداخت‌شده</dt><dd>@Model.PaidAmount.ToToman() @if (Model.RefId.HasValue) { <small class="text-muted">(کد رهگیری @Model.RefId)</small> }</dd>
+                }
+                @if (!string.IsNullOrWhiteSpace(settings.Address))
+                {
+                    <dt>نشانی</dt><dd>@settings.Address</dd>
+                }
+            </dl>
+            @if (active && !string.IsNullOrWhiteSpace(settings.BookingNotice))
+            {
+                <div class="bk-notice"><i class="bi bi-info-circle"></i> @settings.BookingNotice</div>
+            }
+            @if (Model.Status == AppointmentStatus.PendingPayment)
+            {
+                <div class="alert alert-warning small mb-0">پرداخت بیعانه هنوز تأیید نشده است. اگر پرداخت را کامل نکنید، این زمان پس از چند دقیقه آزاد می‌شود.</div>
+            }
+            <div class="bk-ticket-actions">
+                <button type="button" class="bk-btn-ghost" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
+                @if (canCancel)
+                {
+                    using (Html.BeginForm("CancelAppointment", "Shop", new { company, id = Model.Code }, FormMethod.Post, new { onsubmit = "return confirm('این نوبت لغو شود؟');" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle"></i> لغو نوبت</button>
+                    }
+                }
+                else if (active && settings.BookingCancelHours > 0)
+                {
+                    <span class="small text-muted">لغو آنلاین تا @settings.BookingCancelHours.ToString().ToFaDigits() ساعت پیش از نوبت ممکن است؛ برای تغییر تماس بگیرید.</span>
+                }
+                <a class="btn-wm" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> نوبت جدید</a>
+            </div>
+        </div>
+    </div>
+</section>

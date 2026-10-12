@@ -1,21 +1,39 @@
 @{
-    ViewBag.Title = "شرایط استفاده";
-    ViewBag.Nav = "home";
+    ViewBag.Title = "قوانین و مقررات";
+    ViewBag.Nav = "terms";
+    var site = NikooSystem.Services.SiteContentStore.Settings;
+    var headings = NikooSystem.Helpers.SiteHelpers.TextHeadings(site.TermsText);
 }
 <main id="main">
     <div class="page-hero">
-        <div class="container"><h1>شرایط استفاده از خدمات</h1></div>
+        <div class="container">
+            <h1>قوانین و مقررات @site.SiteName</h1>
+            <p class="text-muted mb-0">آخرین به‌روزرسانی: @site.UpdatedAt.ToShamsiText()</p>
+        </div>
     </div>
     <section>
         <div class="container">
-            <div class="inner-card">
-                <p>با ثبت سفارش در نیکو سیستم آفرین، شما تأیید می‌کنید که اطلاعات واردشده صحیح است و محصول نرم‌افزاری مورد نظر را برای استفاده تجاری یا شخصی سفارش می‌دهید.</p>
-                <ul>
-                    <li>پس از پرداخت موفق، سفارش در وضعیت «پرداخت شده» ثبت می‌شود.</li>
-                    <li>تحویل محصول (سورس، لایسنس یا راه‌اندازی) طبق هماهنگی پشتیبانی انجام می‌شود.</li>
-                    <li>بازگشت وجه تنها در صورت عدم امکان ارائه خدمت و طبق سیاست فروش بررسی می‌شود.</li>
-                    <li>کپی‌برداری غیرمجاز از محصولات ممنوع است.</li>
-                </ul>
+            <div class="row g-4">
+                @if (headings.Count > 2)
+                {
+                    <aside class="col-lg-3">
+                        <nav class="inner-card legal-toc" aria-label="فهرست مطالب">
+                            <h2>فهرست</h2>
+                            <ol>
+                                @for (var i = 0; i < headings.Count; i++)
+                                {
+                                    <li><a href="#part-@(i + 1)">@headings[i]</a></li>
+                                }
+                            </ol>
+                        </nav>
+                    </aside>
+                }
+                <div class="@(headings.Count > 2 ? "col-lg-9" : "col-12")">
+                    <article class="inner-card legal-text">
+                        @Html.TextBlocks(site.TermsText)
+                    </article>
+                    @Html.Partial("_LegalContact")
+                </div>
             </div>
         </div>
     </section>

@@ -1,0 +1,33 @@
+@* The popup opened by Html.QuickManage buttons; quick-manage.js fills it from the ShopAdmin Quick* actions. *@
+@{
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="modal fade qm-modal" id="qmModal" tabindex="-1" aria-labelledby="qmTitle" aria-hidden="true"
+     data-list-url="@Url.Action("QuickList", "ShopAdmin", new { company })"
+     data-save-url="@Url.Action("QuickSave", "ShopAdmin", new { company })"
+     data-delete-url="@Url.Action("QuickDelete", "ShopAdmin", new { company })">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="qmTitle"></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <form class="qm-add" autocomplete="off">
+                    @Html.AntiForgeryToken()
+                    <input class="form-control" name="title" maxlength="120" placeholder="نام مورد جدید…" aria-label="نام مورد جدید" required />
+                    <select class="form-select" name="parentId" aria-label="زیرمجموعه‌ی کدام مورد؟" hidden></select>
+                    <button class="btn-store" type="submit"><i class="bi bi-plus-lg"></i> افزودن</button>
+                </form>
+                <div class="qm-hint small text-muted"></div>
+                <div class="qm-msg" role="status" aria-live="polite"></div>
+                <ul class="qm-list"></ul>
+            </div>
+            <div class="modal-footer">
+                <span class="small text-muted me-auto">تغییرات همین حالا ذخیره می‌شوند و فهرست فرم به‌روز می‌شود.</span>
+                <button type="button" class="btn-outline-store" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="@Url.Asset("~/Content/quick-manage.js")"></script>

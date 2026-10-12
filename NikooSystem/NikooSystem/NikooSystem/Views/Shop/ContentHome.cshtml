@@ -1,0 +1,544 @@
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+    var layoutId = template.Layout;
+    var skin = template.IsSkin ? template.Id : null;
+    var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
+    var categories = ((IEnumerable<StoreCategory>)ViewBag.Categories)?.ToList() ?? new List<StoreCategory>();
+    var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
+    var headlines = ((IEnumerable<StorePost>)ViewBag.Headlines)?.ToList() ?? new List<StorePost>();
+    var latest = ((IEnumerable<StorePost>)ViewBag.Latest)?.ToList() ?? new List<StorePost>();
+    var popular = ((IEnumerable<StorePost>)ViewBag.Popular)?.ToList() ?? new List<StorePost>();
+    var topics = (ViewBag.Topics as List<KeyValuePair<StoreCategory, List<StorePost>>>) ?? new List<KeyValuePair<StoreCategory, List<StorePost>>>();
+    var sectionPosts = (ViewBag.SectionPosts as Dictionary<string, List<StorePost>>) ?? new Dictionary<string, List<StorePost>>();
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+    var compact = new ViewDataDictionary(ViewData) { { "compact", true } };
+    ViewBag.Title = "خانه";
+}
+@functions {
+    string PostUrl(StorePost p) => Url.RouteUrl("ShopPost", new { company = (string)ViewBag.CompanyCode, slug = p.Slug });
+}
+
+@foreach (var sec in sections)
+{
+    if (sec.Type == "hero" && skin == "agency")
+    {
+        var heroStat = HomeSections.ItemsOf(sections.FirstOrDefault(s => s.Type == "stats")?.Items, 2).FirstOrDefault();
+        var services = categories.OrderBy(c => c.SortOrder).ToList();
+        <section class="ag-hero">
+            <div class="container">
+                <div class="ag-hero-grid">
+                    <div class="ag-hero-copy">
+                        <span class="ag-kicker"><i></i> @(string.IsNullOrWhiteSpace(settings.Tagline) ? template.Kicker : settings.Tagline)</span>
+                        <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                        @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle)) { <p>@settings.HeroSubtitle</p> }
+                        <div class="cn-hero-actions">
+                            <a class="btn-wm" href="@Url.Action("Contact","Shop", new { company })"><i class="bi bi-arrow-up-left"></i> شروع پروژه</a>
+                            <a class="cn-btn-ghost" href="@Url.Action("Gallery","Shop", new { company })"><i class="bi bi-play-circle"></i> نمونه‌کارها</a>
+                        </div>
+                        @if (services.Any())
+                        {
+                            <div class="ag-hero-tags">
+                                @foreach (var c in services.Take(4))
+                                {
+                                    <a href="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">@c.Title</a>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="ag-hero-media">
+                        <img src="@heroImg" alt="@settings.StoreName" />
+                        @if (heroStat != null)
+                        {
+                            <span class="ag-float ag-float-stat"><strong>@heroStat[0]</strong> @heroStat[1]</span>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                        {
+                            <a class="ag-float ag-float-call" href="tel:@settings.Phone.Trim()"><i class="bi bi-headset"></i> <span>مشاوره رایگان<b dir="ltr">@settings.Phone</b></span></a>
+                        }
+                    </div>
+                </div>
+            </div>
+            @if (services.Any())
+            {
+                var rounds = Math.Max(4, (int)Math.Ceiling(24.0 / services.Count));
+                rounds += rounds % 2;
+                <div class="ag-marquee" aria-hidden="true">
+                    <div class="ag-marquee-track">
+                        @for (var round = 0; round < rounds; round++)
+                        {
+                            foreach (var c in services)
+                            {
+                                <span>@c.Title <i class="bi bi-asterisk"></i></span>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+    else if (sec.Type == "hero" && skin == "industrial")
+    {
+        <section class="cn-hero is-corporate ind-hero" style="--cn-hero:url('@heroImg')">
+            <div class="container">
+                <div class="ind-hero-grid">
+                    <div class="cn-hero-copy">
+                        <div class="ind-kicker">@(string.IsNullOrWhiteSpace(settings.Tagline) ? template.Kicker : settings.Tagline)</div>
+                        <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                        @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle)) { <p>@settings.HeroSubtitle</p> }
+                        <div class="cn-hero-actions">
+                            <a class="btn-wm" href="@Url.Action("Contact","Shop", new { company })"><i class="bi bi-clipboard-check"></i> درخواست استعلام قیمت</a>
+                            <a class="cn-btn-ghost" href="#sec-services">خدمات ما <i class="bi bi-arrow-down"></i></a>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                    {
+                        <div class="ind-hero-box">
+                            <i class="bi bi-telephone-outbound"></i>
+                            <strong>مشاوره و بازدید رایگان</strong>
+                            <span>کارشناسان ما برای بررسی پروژه و برآورد هزینه آماده‌اند.</span>
+                            <a href="tel:@settings.Phone.Trim()" dir="ltr">@settings.Phone</a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "hero")
+    {
+        <section class="cn-hero @(layoutId == "corporate" ? "is-corporate" : "")" style="--cn-hero:url('@heroImg')">
+            <div class="container">
+                <div class="cn-hero-copy">
+                    @if (!string.IsNullOrWhiteSpace(settings.Tagline))
+                    {
+                        <div class="cn-kicker">@settings.Tagline</div>
+                    }
+                    <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                    @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))
+                    {
+                        <p>@settings.HeroSubtitle</p>
+                    }
+                    <div class="cn-hero-actions">
+                        @if (layoutId == "corporate")
+                        {
+                            <a class="btn-wm" href="@Url.Action("Contact","Shop", new { company })"><i class="bi bi-telephone"></i> درخواست مشاوره</a>
+                            <a class="cn-btn-ghost" href="@Url.Action("Page","Shop", new { company, slug = "about" })">درباره ما</a>
+                        }
+                        else
+                        {
+                            <a class="btn-wm" href="@Url.Action("Blog","Shop", new { company })"><i class="bi bi-newspaper"></i> آخرین مطالب</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "headline" && headlines.Any() && skin == "daily")
+    {
+        var lead = headlines.First();
+        <section class="cn-section dl-front">
+            <div class="container">
+                @if (!string.IsNullOrWhiteSpace(sec.Title)) { <h2 class="cn-block-title">@sec.Title</h2> }
+                <div class="dl-front-grid @(popular.Any() ? "has-popular" : "")">
+                    <article class="dl-lead">
+                        <a href="@PostUrl(lead)"><img src="@(lead.CoverImageUrl ?? heroImg)" alt="@lead.Title" /></a>
+                        @if (!string.IsNullOrWhiteSpace(lead.Kicker)) { <span class="cn-kicker">@lead.Kicker</span> }
+                        <h2><a href="@PostUrl(lead)">@lead.Title</a></h2>
+                        @if (!string.IsNullOrWhiteSpace(lead.Summary)) { <p>@lead.Summary</p> }
+                        <span class="cn-meta">
+                            @if (!string.IsNullOrWhiteSpace(lead.Author)) { <span><i class="bi bi-person"></i> @lead.Author</span> }
+                            <span><i class="bi bi-clock"></i> @lead.PublishedAt.ToShamsiText()</span>
+                        </span>
+                    </article>
+                    <div class="dl-side">
+                        @foreach (var p in headlines.Skip(1))
+                        {
+                            <article class="dl-story">
+                                @if (!string.IsNullOrWhiteSpace(p.Kicker)) { <span class="cn-kicker">@p.Kicker</span> }
+                                <h3><a href="@PostUrl(p)">@p.Title</a></h3>
+                                @if (!string.IsNullOrWhiteSpace(p.Summary)) { <p>@p.Summary</p> }
+                            </article>
+                        }
+                    </div>
+                    @if (popular.Any())
+                    {
+                        <aside class="dl-popular">
+                            <h3>پربازدیدترین‌ها</h3>
+                            <ol class="cn-ranked">
+                                @foreach (var p in popular)
+                                {
+                                    <li><a href="@PostUrl(p)">@p.Title</a></li>
+                                }
+                            </ol>
+                        </aside>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "headline" && headlines.Any() && skin == "pulse")
+    {
+        var lead = headlines.First();
+        <section class="pl-front">
+            <div class="container">
+                <div class="pl-head">
+                    <h2>@(sec.Title ?? "مهم‌ترین خبرهای امروز")</h2>
+                    <a href="@Url.Action("Blog","Shop", new { company })">همه خبرها <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="pl-bento n-@Math.Min(5, headlines.Count)">
+                    <a class="pl-tile is-lead" href="@PostUrl(lead)">
+                        <img src="@(lead.CoverImageUrl ?? heroImg)" alt="" />
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(lead.Kicker)) { <span class="pl-tag">@lead.Kicker</span> }
+                            <h2>@lead.Title</h2>
+                            @if (!string.IsNullOrWhiteSpace(lead.Summary)) { <p>@lead.Summary</p> }
+                            <span class="cn-meta"><span><i class="bi bi-clock"></i> @lead.PublishedAt.ToShamsiText()</span>@if (lead.ViewCount > 0) { <span><i class="bi bi-eye"></i> @lead.ViewCount.ToFa()</span> }</span>
+                        </div>
+                    </a>
+                    @foreach (var p in headlines.Skip(1).Take(4))
+                    {
+                        <a class="pl-tile" href="@PostUrl(p)">
+                            <img src="@(p.CoverImageUrl ?? "/Assets/img/portfolio/portfolio-2.jpg")" alt="" loading="lazy" />
+                            <div>
+                                @if (!string.IsNullOrWhiteSpace(p.Kicker)) { <span class="pl-tag">@p.Kicker</span> }
+                                <strong>@p.Title</strong>
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "headline" && headlines.Any())
+    {
+        var lead = headlines.First();
+        <section class="cn-section cn-headline">
+            <div class="container">
+                @if (!string.IsNullOrWhiteSpace(sec.Title)) { <h2 class="cn-block-title">@sec.Title</h2> }
+                <div class="cn-headline-grid">
+                    <a class="cn-lead-story" href="@PostUrl(lead)" style="--cn-cover:url('@(lead.CoverImageUrl ?? heroImg)')">
+                        <div>
+                            @if (!string.IsNullOrWhiteSpace(lead.Kicker)) { <span class="cn-kicker">@lead.Kicker</span> }
+                            <h2>@lead.Title</h2>
+                            @if (!string.IsNullOrWhiteSpace(lead.Summary)) { <p>@lead.Summary</p> }
+                            <span class="cn-meta"><span><i class="bi bi-clock"></i> @lead.PublishedAt.ToShamsiText()</span></span>
+                        </div>
+                    </a>
+                    <div class="cn-side-stories">
+                        @foreach (var p in headlines.Skip(1))
+                        {
+                            <a class="cn-side-story" href="@PostUrl(p)">
+                                <img src="@(p.CoverImageUrl ?? "/Assets/img/portfolio/portfolio-2.jpg")" alt="" loading="lazy" />
+                                <span>
+                                    @if (!string.IsNullOrWhiteSpace(p.Kicker)) { <small class="cn-kicker">@p.Kicker</small> }
+                                    <strong>@p.Title</strong>
+                                </span>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "latest" && latest.Any())
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? (layoutId == "corporate" ? "اخبار و مقالات" : "آخرین مطالب"))</h2>
+                    <a class="hs-more" href="@Url.Action("Blog","Shop", new { company })">آرشیو <i class="bi bi-arrow-left"></i></a>
+                </div>
+                @if (layoutId == "corporate" || skin == "daily")
+                {
+                    <div class="cn-grid cn-grid-3">
+                        @foreach (var p in latest.Take(6))
+                        {
+                            @Html.Partial("_PostCard", p)
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="cn-layout">
+                        <div class="cn-main cn-list">
+                            @foreach (var p in latest)
+                            {
+                                <a class="cn-list-item" href="@PostUrl(p)">
+                                    <img src="@(p.CoverImageUrl ?? "/Assets/img/portfolio/portfolio-3.jpg")" alt="" loading="lazy" />
+                                    <span>
+                                        @if (!string.IsNullOrWhiteSpace(p.Kicker)) { <small class="cn-kicker">@p.Kicker</small> }
+                                        <strong>@p.Title</strong>
+                                        @if (!string.IsNullOrWhiteSpace(p.Summary)) { <em>@p.Summary</em> }
+                                        <span class="cn-meta"><span><i class="bi bi-clock"></i> @p.PublishedAt.ToShamsiText()</span></span>
+                                    </span>
+                                </a>
+                            }
+                        </div>
+                        @if (popular.Any())
+                        {
+                            <aside class="cn-aside">
+                                <div class="cn-box">
+                                    <h3><i class="bi bi-graph-up"></i> پربازدیدترین‌ها</h3>
+                                    <ol class="cn-ranked">
+                                        @foreach (var p in popular)
+                                        {
+                                            <li><a href="@PostUrl(p)">@p.Title</a></li>
+                                        }
+                                    </ol>
+                                </div>
+                            </aside>
+                        }
+                    </div>
+                }
+            </div>
+        </section>
+    }
+    else if (sec.Type == "topics" && topics.Any())
+    {
+        <section class="cn-section cn-topics-wrap">
+            <div class="container">
+                @if (!string.IsNullOrWhiteSpace(sec.Title)) { <h2 class="cn-block-title">@sec.Title</h2> }
+                <div class="cn-topics">
+                    @foreach (var t in topics)
+                    {
+                        var first = t.Value.First();
+                        <div class="cn-topic">
+                            <h3><a href="@Url.Action("Blog","Shop", new { company, categoryId = t.Key.Id })">@t.Key.Title <i class="bi bi-chevron-left"></i></a></h3>
+                            <a class="cn-topic-lead" href="@PostUrl(first)">
+                                <img src="@(first.CoverImageUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="" loading="lazy" />
+                                <strong>@first.Title</strong>
+                            </a>
+                            <ul>
+                                @foreach (var p in t.Value.Skip(1))
+                                {
+                                    <li><a href="@PostUrl(p)">@p.Title</a></li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (HomeSections.IsShared(sec.Type))
+    {
+        @Html.Partial("_HomeRich", sec)
+    }
+    else if (sec.Type == "posts")
+    {
+        List<StorePost> items;
+        if (!sectionPosts.TryGetValue(sec.Id, out items) || !items.Any())
+        {
+            continue;
+        }
+        var category = sec.Source == "category" ? categories.FirstOrDefault(c => c.Id == sec.CategoryId) : null;
+        var title = sec.Title ?? category?.Title ?? (HomeSections.PostSources.ContainsKey(sec.Source ?? "") ? HomeSections.PostSources[sec.Source] : "مطالب");
+        <section class="cn-section" id="sec-@sec.Id">
+            <div class="container">
+                <div class="cn-head">
+                    <div>
+                        <h2 class="cn-block-title">@title</h2>
+                        @if (!string.IsNullOrWhiteSpace(sec.Subtitle)) { <p class="text-muted mb-0">@sec.Subtitle</p> }
+                    </div>
+                    <a class="hs-more" href="@(sec.CategoryId.HasValue && sec.Source == "category" ? Url.Action("Blog","Shop", new { company, categoryId = sec.CategoryId }) : Url.Action("Blog","Shop", new { company }))">مشاهده همه <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="cn-grid cn-grid-4">
+                    @foreach (var p in items)
+                    {
+                        @Html.Partial("_PostCard", p, compact)
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "categories" && categories.Any() && skin != null)
+    {
+        var services = categories.OrderBy(c => c.SortOrder).ToList();
+        var serviceIcons = template.CategoryIcons ?? new[] { "bi-briefcase" };
+        <section class="cn-section cn-services-wrap" id="sec-services">
+            <div class="container">
+                <div class="rh-title">
+                    <span class="rh-kicker">@(skin == "industrial" ? "حوزه‌های فعالیت" : "خدمات")</span>
+                    <h2>@(sec.Title ?? (skin == "agency" ? "کارهایی که در آن بهترینیم" : "خدمات ما"))</h2>
+                </div>
+                <div class="cn-services is-numbered">
+                    @for (var i = 0; i < services.Count; i++)
+                    {
+                        var c = services[i];
+                        <a class="cn-service" href="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">
+                            <em class="cn-service-num">@((i + 1).ToString("00").ToFaDigits())</em>
+                            @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
+                            {
+                                <img src="@c.ImageUrl" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <i class="bi @serviceIcons[i % serviceIcons.Length]"></i>
+                            }
+                            <strong>@c.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(c.Description)) { <span>@c.Description</span> }
+                            <b class="cn-service-more">بیشتر بدانید <i class="bi bi-arrow-left"></i></b>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "categories" && categories.Any())
+    {
+        <section class="cn-section" id="sec-services">
+            <div class="container">
+                <h2 class="cn-block-title @(layoutId == "corporate" ? "text-center" : "")">@(sec.Title ?? (layoutId == "corporate" ? "خدمات ما" : "سرویس‌ها"))</h2>
+                <div class="cn-services">
+                    @foreach (var c in categories.OrderBy(c => c.SortOrder))
+                    {
+                        <a class="cn-service" href="@Url.Action("Blog","Shop", new { company, categoryId = c.Id })">
+                            @if (!string.IsNullOrWhiteSpace(c.ImageUrl))
+                            {
+                                <img src="@c.ImageUrl" alt="" loading="lazy" />
+                            }
+                            else
+                            {
+                                <i class="bi @(layoutId == "corporate" ? "bi-briefcase" : "bi-journal-text")"></i>
+                            }
+                            <strong>@c.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(c.Description)) { <span>@c.Description</span> }
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "gallery" && gallery.Any())
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? "گالری تصاویر")</h2>
+                    <a class="hs-more" href="@Url.Action("Gallery","Shop", new { company })">همه تصاویر <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="gallery-grid">
+                    @foreach (var g in gallery)
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "about" && !string.IsNullOrWhiteSpace(settings.About) && layoutId == "corporate")
+    {
+        var strengths = HomeSections.ItemsOf(sections.FirstOrDefault(s => s.Type == "whyus")?.Items, 2).Take(4).ToList();
+        <section class="rh-section" id="sec-about">
+            <div class="container">
+                <div class="rh-about">
+                    <div class="rh-about-media">
+                        <img src="@(gallery.FirstOrDefault()?.LargeUrl ?? heroImg)" alt="@settings.StoreName" loading="lazy" />
+                        @if (!string.IsNullOrWhiteSpace(settings.Tagline)) { <span class="rh-about-badge"><i class="bi bi-patch-check"></i> @settings.Tagline</span> }
+                    </div>
+                    <div class="rh-about-copy">
+                        <span class="rh-kicker">درباره ما</span>
+                        <h2>@settings.StoreName</h2>
+                        <p>@settings.About</p>
+                        @if (strengths.Any())
+                        {
+                            <ul class="rh-checks">
+                                @foreach (var st in strengths)
+                                {
+                                    <li><i class="bi bi-check2-circle"></i> @st[0]</li>
+                                }
+                            </ul>
+                        }
+                        <div class="rh-about-actions">
+                            <a class="btn-wm" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر بدانید</a>
+                            @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                            {
+                                <a class="rh-about-phone" href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "about" && !string.IsNullOrWhiteSpace(settings.About))
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-about">
+                    <div>
+                        <h2>درباره @settings.StoreName</h2>
+                        <p>@settings.About</p>
+                    </div>
+                    <a class="btn-wm" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر بدانید</a>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "contact")
+    {
+        <section class="cn-section cn-contact-band">
+            <div class="container">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-5">
+                        <h2 class="cn-block-title">@(sec.Title ?? "با ما در تماس باشید")</h2>
+                        <p class="text-muted">پرسش یا درخواست همکاری دارید؟ پیام بگذارید تا با شما تماس بگیریم.</p>
+                        @if (!string.IsNullOrWhiteSpace(settings.Phone)) { <div class="mb-1"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Email)) { <div class="mb-1"><i class="bi bi-envelope"></i> @settings.Email</div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Address)) { <div><i class="bi bi-geo-alt"></i> @settings.Address</div> }
+                    </div>
+                    <div class="col-lg-7">
+                        @using (Html.BeginForm("Contact", "Shop", new { company }, FormMethod.Post, new { @class = "cn-contact-form" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="cn-hp" aria-hidden="true">
+                                <label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6"><input class="form-control" name="FullName" placeholder="نام *" maxlength="80" required /></div>
+                                <div class="col-md-6"><input class="form-control" name="Mobile" placeholder="شماره تماس" dir="ltr" maxlength="11" /></div>
+                                <div class="col-12"><textarea class="form-control" name="Message" rows="3" placeholder="پیام شما *" maxlength="4000" required></textarea></div>
+                            </div>
+                            <button class="btn-wm mt-2" type="submit"><i class="bi bi-envelope"></i> ارسال پیام</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "banner" && !string.IsNullOrWhiteSpace(sec.Title))
+    {
+        <section class="hs-banner-wrap" id="sec-@sec.Id">
+            <div class="container">
+                <div class="hs-banner @(string.IsNullOrWhiteSpace(sec.ImageUrl) ? "" : "has-img")"
+                     style="@(string.IsNullOrWhiteSpace(sec.ImageUrl) ? null : "--hs-img:url('" + sec.ImageUrl + "')")">
+                    <div class="hs-banner-copy">
+                        <h2>@sec.Title</h2>
+                        @if (!string.IsNullOrWhiteSpace(sec.Subtitle)) { <p>@sec.Subtitle</p> }
+                        @if (!string.IsNullOrWhiteSpace(sec.LinkUrl))
+                        {
+                            <a class="btn-wm" href="@sec.LinkUrl">@(sec.ButtonText ?? "مشاهده")</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+}
+
+@if (!latest.Any())
+{
+    <section class="cn-section">
+        <div class="container">
+            <div class="cat-empty">
+                <i class="bi bi-journal-text"></i>
+                <h3>هنوز مطلبی منتشر نشده است</h3>
+                <p>به‌زودی خبرها و مقاله‌ها اینجا قرار می‌گیرند.</p>
+            </div>
+        </div>
+    </section>
+}

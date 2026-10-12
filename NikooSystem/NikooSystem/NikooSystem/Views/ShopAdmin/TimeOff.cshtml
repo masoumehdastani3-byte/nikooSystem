@@ -1,0 +1,102 @@
+@model List<StoreTimeOff>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "تعطیلی و مرخصی";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var days = (List<KeyValuePair<string, string>>)ViewBag.Days;
+}
+<div class="mb-3">
+    <h2 class="mb-1">تعطیلی و مرخصی</h2>
+    <p class="text-muted small mb-0">روزهای تعطیل کل مجموعه (مثل تعطیلات رسمی) یا مرخصی یک متخصص را ثبت کنید تا در آن زمان نوبت آنلاین گرفته نشود.</p>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-5">
+        <div class="panel-card">
+            <h5 class="mb-3">ثبت تعطیلی یا مرخصی</h5>
+            @using (Html.BeginForm("AddTimeOff", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label" for="toStaff">برای</label>
+                    <select class="form-select" name="staffId" id="toStaff">
+                        <option value="">کل مجموعه (همه متخصصان)</option>
+                        @foreach (var p in staff)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="toDate">روز</label>
+                    <select class="form-select" name="date" id="toDate">
+                        @foreach (var d in days)
+                        {
+                            <option value="@d.Key">@d.Value</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" name="wholeDay" value="true" id="toWhole" checked />
+                    <input type="hidden" name="wholeDay" value="false" />
+                    <label class="form-check-label" for="toWhole">تمام روز</label>
+                </div>
+                <div class="row g-2 mb-3" id="toHours" hidden>
+                    <div class="col-6">
+                        <label class="form-label small" for="toStart">از ساعت</label>
+                        <input class="form-control" type="time" step="300" name="startTime" id="toStart" dir="ltr" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small" for="toEnd">تا ساعت</label>
+                        <input class="form-control" type="time" step="300" name="endTime" id="toEnd" dir="ltr" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="toReason">علت (اختیاری)</label>
+                    <input class="form-control" name="reason" id="toReason" maxlength="200" placeholder="مثلاً تعطیل رسمی، مرخصی، سمینار" />
+                </div>
+                <button class="btn-store" type="submit"><i class="bi bi-calendar-x"></i> ثبت</button>
+            }
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="panel-card">
+            <h5 class="mb-3">تعطیلی‌ها و مرخصی‌های پیش رو</h5>
+            <table class="table align-middle">
+                <thead><tr><th>روز</th><th>برای</th><th>بازه</th><th>علت</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td>@BookingTime.DayNames[BookingTime.DayOf(t.Date)] @t.Date.ToShamsiText()</td>
+                            <td>@(t.StaffId.HasValue ? (staff.FirstOrDefault(p => p.Id == t.StaffId.Value)?.Name ?? "—") : "کل مجموعه")</td>
+                            <td>@(t.IsWholeDay() ? "تمام روز" : BookingTime.Clock(t.StartMinute.Value) + " تا " + BookingTime.Clock(t.EndMinute.Value))</td>
+                            <td class="small">@t.Reason</td>
+                            <td class="row-actions">@Html.DeleteButton("DeleteTimeOff", t.Id, "این تعطیلی حذف شود؟ نوبت‌دهی در آن زمان دوباره باز می‌شود.")</td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-calendar-check fs-3 d-block mb-1"></i>تعطیلی یا مرخصی ثبت نشده است.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+<script>
+(function () {
+  var whole = document.getElementById('toWhole');
+  var hours = document.getElementById('toHours');
+  var sync = function () {
+    hours.hidden = whole.checked;
+    hours.querySelectorAll('input').forEach(function (i) { i.required = !whole.checked; });
+  };
+  whole.addEventListener('change', sync);
+  sync();
+})();
+</script>
+}

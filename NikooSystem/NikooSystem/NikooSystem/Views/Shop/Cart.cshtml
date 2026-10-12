@@ -1,12 +1,20 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreCartItem>
-@using NikooSystem.Helpers
+@model IEnumerable<StoreCartItem>
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = "سبد خرید";
     var company = (string)ViewBag.CompanyCode;
-    var items = Model?.ToList() ?? new List<NikooSystem.Models.Store.StoreCartItem>();
-    var total = items.Sum(x => x.UnitPrice * x.Quantity);
+    var settings = (StoreSettings)ViewBag.Settings;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var products = (Dictionary<int, StoreProduct>)ViewBag.Products;
+    var shipping = (long)(ViewBag.Shipping ?? 0L);
+    var items = Model?.ToList() ?? new List<StoreCartItem>();
+    var subtotal = items.Sum(x => x.UnitPrice * x.Quantity);
+    var total = subtotal + shipping;
     var count = items.Sum(x => x.Quantity);
+    Func<StoreCartItem, StoreProduct> productOf = i => products.TryGetValue(i.ProductId, out var p) ? p : null;
+    var hasPhysical = items.Any(i => productOf(i) == null || !productOf(i).IsDigital());
+    var freeLeft = hasPhysical && settings.ShippingCost > 0 && settings.FreeShippingThreshold > subtotal
+        ? settings.FreeShippingThreshold - subtotal : 0;
 }
 <section class="cart-page">
     <div class="container">
@@ -15,7 +23,7 @@
                 <h1 class="section-title mb-1">سبد خرید</h1>
                 @if (items.Any())
                 {
-                    <p class="cart-head-sub">@count قلم کالا در سبد شماست</p>
+                    <p class="cart-head-sub">@count.ToFa() مورد در سبد شماست</p>
                 }
             </div>
             <a class="cart-link-back" href="@Url.Action("Catalog","Shop", new { company })">
@@ -28,9 +36,9 @@
             <div class="cart-empty">
                 <div class="cart-empty-icon"><i class="bi bi-bag-x"></i></div>
                 <h2>سبد خرید خالی است</h2>
-                <p>هنوز محصولی اضافه نکرده‌اید. از فروشگاه دیدن کنید و خرید را شروع کنید.</p>
+                <p>هنوز چیزی اضافه نکرده‌اید. از فروشگاه دیدن کنید و خرید را شروع کنید.</p>
                 <a class="btn-store" href="@Url.Action("Catalog","Shop", new { company })">
-                    <i class="bi bi-shop"></i> مشاهده محصولات
+                    <i class="bi bi-shop"></i> مشاهده @kind.ItemsLabel
                 </a>
             </div>
         }
@@ -41,43 +49,46 @@
                     @foreach (var item in items)
                     {
                         var line = item.UnitPrice * item.Quantity;
-                        var slug = item.Slug;
-                        if (string.IsNullOrWhiteSpace(slug))
-                        {
-                            var p = NikooSystem.Services.TenantStore.GetProduct(company, item.ProductId);
-                            slug = p?.Slug;
-                        }
+                        var product = productOf(item);
+                        var digital = product != null && product.IsDigital();
+                        var slug = !string.IsNullOrWhiteSpace(item.Slug) ? item.Slug
+                            : products.ContainsKey(item.ProductId) ? products[item.ProductId].Slug : null;
+                        var productUrl = string.IsNullOrWhiteSpace(slug) ? null : Url.Action("Product", "Shop", new { company, slug });
+                        var thumb = Html.Raw("<img src=\"" + Html.AttributeEncode(item.ImageUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")
+                            + "\" alt=\"" + Html.AttributeEncode(item.Title) + "\" />");
                         <article class="cart-item">
-                            @if (!string.IsNullOrWhiteSpace(slug))
+                            @if (productUrl != null)
                             {
-                                <a class="cart-item-thumb" href="@Url.Action("Product","Shop", new { company, slug })">
-                                    <img src="@(item.ImageUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@item.Title" />
-                                </a>
+                                <a class="cart-item-thumb" href="@productUrl">@thumb</a>
                             }
                             else
                             {
-                                <div class="cart-item-thumb">
-                                    <img src="@(item.ImageUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@item.Title" />
-                                </div>
+                                <div class="cart-item-thumb">@thumb</div>
                             }
                             <div class="cart-item-info">
                                 <h3>
-                                    @if (!string.IsNullOrWhiteSpace(slug))
+                                    @if (productUrl != null)
                                     {
-                                        <a href="@Url.Action("Product","Shop", new { company, slug })">@item.Title</a>
+                                        <a href="@productUrl">@item.Title</a>
                                     }
                                     else
                                     {
                                         @item.Title
                                     }
                                 </h3>
+                                @if (digital)
+                                {
+                                    <span class="wm-type is-inline"><i class="bi @product.ProductType.TypeIcon()"></i> @product.ProductType.TypeText()</span>
+                                }
                                 <div class="cart-item-price">
                                     <span>قیمت واحد: @item.UnitPrice.ToToman()</span>
                                     <strong>@line.ToToman()</strong>
                                 </div>
                             </div>
                             <div class="cart-item-actions">
-                                @using (Html.BeginForm("UpdateCart", "Shop", new { company }, FormMethod.Post, new { @class = "cart-qty-form" }))
+                                @if (!digital)
+                                {
+                                using (Html.BeginForm("UpdateCart", "Shop", new { company }, FormMethod.Post, new { @class = "cart-qty-form" }))
                                 {
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="productId" value="@item.ProductId" />
@@ -90,12 +101,13 @@
                                         <i class="bi bi-arrow-repeat"></i> بروزرسانی
                                     </button>
                                 }
+                                }
                                 @using (Html.BeginForm("RemoveFromCart", "Shop", new { company }, FormMethod.Post, new { @class = "cart-remove-form" }))
                                 {
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="productId" value="@item.ProductId" />
                                     <button class="btn-cart-danger" type="submit" title="حذف از سبد">
-                                        <i class="bi bi-trash3"></i>
+                                        <i class="bi bi-trash"></i>
                                         <span>حذف</span>
                                     </button>
                                 }
@@ -107,13 +119,24 @@
                 <aside class="cart-summary">
                     <h2>خلاصه سفارش</h2>
                     <div class="cart-summary-row">
-                        <span>تعداد کالا</span>
-                        <strong>@count</strong>
+                        <span>تعداد</span>
+                        <strong>@count.ToFa()</strong>
                     </div>
                     <div class="cart-summary-row">
                         <span>جمع جزء</span>
-                        <strong>@total.ToToman()</strong>
+                        <strong>@subtotal.ToToman()</strong>
                     </div>
+                    @if (hasPhysical)
+                    {
+                        <div class="cart-summary-row">
+                            <span>هزینه ارسال</span>
+                            <strong>@(shipping == 0 ? "رایگان" : shipping.ToToman())</strong>
+                        </div>
+                        if (freeLeft > 0)
+                        {
+                            <div class="cart-free-hint"><i class="bi bi-truck"></i> با @freeLeft.ToToman() خرید بیشتر، ارسال رایگان می‌شود.</div>
+                        }
+                    }
                     <div class="cart-summary-row cart-summary-total">
                         <span>مبلغ قابل پرداخت</span>
                         <strong>@total.ToToman()</strong>

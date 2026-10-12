@@ -1,0 +1,139 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "نوبت جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var services = (List<StoreService>)ViewBag.Services;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var days = (List<KeyValuePair<string, string>>)ViewBag.Days;
+    var date = (string)ViewBag.Date;
+    var time = (string)ViewBag.Time;
+    var staffId = (int?)ViewBag.StaffId;
+    var serviceId = (int?)ViewBag.ServiceId;
+}
+<link href="@Url.Asset("~/Content/admin-booking.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">نوبت جدید</h2>
+        <p class="text-muted mb-0 small">برای مراجعی که تلفنی یا حضوری نوبت می‌گیرد. زمان‌های خالی را از فهرست پایین انتخاب کنید یا ساعت را دستی بنویسید.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Calendar","ShopAdmin", new { company })">بازگشت به تقویم</a>
+</div>
+
+@if (!services.Any() || !staff.Any())
+{
+    <div class="alert alert-warning">
+        برای ثبت نوبت دست‌کم یک <a href="@Url.Action("EditService","ShopAdmin", new { company })">خدمت فعال</a> و یک <a href="@Url.Action("EditStaff","ShopAdmin", new { company })">متخصص فعال</a> لازم است.
+    </div>
+}
+else
+{
+    using (Html.BeginForm("NewAppointment", "ShopAdmin", new { company }, FormMethod.Post, new { id = "apForm" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="panel-card row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="apService">خدمت</label>
+                <select class="form-select" name="serviceId" id="apService" required>
+                    @foreach (var s in services)
+                    {
+                        <option value="@s.Id" data-staff="@(string.Join(",", s.StaffIds ?? new List<int>()))" @(serviceId == s.Id ? "selected" : "")>@s.Title (@BookingTime.Duration(s.DurationMinutes))</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="apStaff">متخصص</label>
+                <select class="form-select" name="staffId" id="apStaff" required>
+                    @foreach (var p in staff)
+                    {
+                        <option value="@p.Id" @(staffId == p.Id ? "selected" : "")>@(p.Name + (string.IsNullOrWhiteSpace(p.Title) ? "" : " — " + p.Title))</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="apDate">روز</label>
+                <select class="form-select" name="date" id="apDate">
+                    @foreach (var d in days)
+                    {
+                        <option value="@d.Key" @(d.Key == date ? "selected" : "")>@d.Value</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="apTime">ساعت</label>
+                <input class="form-control" type="time" name="time" id="apTime" value="@time" step="300" required dir="ltr" />
+            </div>
+            <div class="col-12">
+                <div class="small text-muted mb-1">زمان‌های خالی این روز:</div>
+                <div class="bk-free" id="apFree" data-url="@Url.Action("BookingSlots","Shop", new { company })"></div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="apName">نام مراجع</label>
+                <input class="form-control" name="customerName" id="apName" maxlength="80" required />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="apMobile">موبایل</label>
+                <input class="form-control" name="customerMobile" id="apMobile" maxlength="14" required dir="ltr" inputmode="tel" placeholder="09121234567" />
+            </div>
+            <div class="col-12">
+                <label class="form-label" for="apNotes">توضیحات</label>
+                <textarea class="form-control" name="notes" id="apNotes" rows="2" maxlength="1000"></textarea>
+            </div>
+            <div class="col-12 form-check ms-1">
+                <input class="form-check-input" type="checkbox" name="outsideHours" value="true" id="apOutside" />
+                <input type="hidden" name="outsideHours" value="false" />
+                <label class="form-check-label" for="apOutside">خارج از ساعت کاری یا در روز تعطیل هم ثبت شود (روی نوبت دیگر هرگز ثبت نمی‌شود)</label>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn-store" type="submit"><i class="bi bi-calendar-plus"></i> ثبت نوبت</button>
+            </div>
+        </div>
+    }
+}
+
+@section scripts {
+<script>
+(function () {
+  var service = document.getElementById('apService');
+  if (!service) return;
+  var staff = document.getElementById('apStaff');
+  var date = document.getElementById('apDate');
+  var time = document.getElementById('apTime');
+  var free = document.getElementById('apFree');
+
+  function filterStaff() {
+    var allowed = (service.selectedOptions[0].getAttribute('data-staff') || '').split(',').filter(Boolean);
+    Array.prototype.forEach.call(staff.options, function (o) { o.hidden = allowed.length > 0 && allowed.indexOf(o.value) < 0; });
+    if (staff.selectedOptions[0].hidden) {
+      var first = Array.prototype.find.call(staff.options, function (o) { return !o.hidden; });
+      if (first) staff.value = first.value;
+    }
+  }
+
+  function loadFree() {
+    free.textContent = '…';
+    var url = free.getAttribute('data-url') + '?serviceId=' + service.value + '&staffId=' + staff.value + '&date=' + date.value;
+    fetch(url, { credentials: 'same-origin' }).then(function (r) { return r.json(); }).then(function (data) {
+      free.innerHTML = '';
+      if (!data.slots.length) { free.textContent = 'زمان خالی در ساعت کاری نیست؛ می‌توانید ساعت را دستی وارد کنید.'; return; }
+      data.slots.forEach(function (s) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = s.label;
+        b.className = s.time === time.value ? 'active' : '';
+        b.addEventListener('click', function () {
+          time.value = s.time;
+          free.querySelectorAll('button').forEach(function (x) { x.classList.toggle('active', x === b); });
+        });
+        free.appendChild(b);
+      });
+    }).catch(function () { free.textContent = ''; });
+  }
+
+  service.addEventListener('change', function () { filterStaff(); loadFree(); });
+  staff.addEventListener('change', loadFree);
+  date.addEventListener('change', loadFree);
+  filterStaff();
+  loadFree();
+})();
+</script>
+}

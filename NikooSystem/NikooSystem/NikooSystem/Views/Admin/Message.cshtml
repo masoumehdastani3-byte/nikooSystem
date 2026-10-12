@@ -1,0 +1,56 @@
+@model NikooSystem.Models.SiteMessage
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "پیام";
+    var siteName = NikooSystem.Services.SiteContentStore.Settings.SiteName;
+    var reply = "mailto:" + Model.Email + "?subject=" + Uri.EscapeDataString("پاسخ: " + Model.Subject)
+        + "&body=" + Uri.EscapeDataString(Model.Name + " عزیز، سلام\n\n\n\nبا احترام\n" + siteName);
+}
+<div class="adm-head">
+    <div>
+        <h1>@Model.Subject</h1>
+        <p>@Model.CreatedAt.ToShamsiText() ساعت @Model.CreatedAt.ToString("HH:mm")</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@reply"><i class="bi bi-reply"></i> پاسخ با ایمیل</a>
+        @Html.PostButton("MarkMessageUnread", new { id = Model.Id }, "خوانده‌نشده", "btn btn-outline-secondary")
+        @Html.PostButton("DeleteMessage", new { id = Model.Id }, "حذف", "btn btn-outline-danger", "این پیام حذف شود؟")
+        <a class="btn btn-link" href="@Url.Action("Messages","Admin")">بازگشت</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="adm-card">
+            <div class="adm-message-body">@Model.Message</div>
+        </div>
+        <div class="adm-card">
+            <div class="adm-card-title">یادداشت داخلی</div>
+            @using (Html.BeginForm("SaveMessageNote", "Admin", new { id = Model.Id }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <textarea class="form-control mb-2" name="adminNote" rows="3" placeholder="مثلاً: تماس گرفته شد، پیش‌فاکتور ارسال شد..." aria-label="یادداشت داخلی">@Model.AdminNote</textarea>
+                <button class="btn btn-outline-primary btn-sm" type="submit">ذخیره یادداشت</button>
+            }
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="adm-card">
+            <div class="adm-card-title">فرستنده</div>
+            <dl class="adm-dl">
+                <dt>نام</dt><dd>@Model.Name</dd>
+                <dt>ایمیل</dt><dd class="adm-ltr"><a href="mailto:@Model.Email">@Model.Email</a></dd>
+                <dt>تلفن</dt><dd class="adm-ltr">
+                    @if (string.IsNullOrEmpty(Model.Phone))
+                    {
+                        @:-
+                    }
+                    else
+                    {
+                        <a href="tel:@Model.Phone">@Model.Phone</a>
+                    }
+                </dd>
+                <dt>IP</dt><dd class="adm-ltr small">@(Model.Ip ?? "-")</dd>
+            </dl>
+        </div>
+    </div>
+</div>

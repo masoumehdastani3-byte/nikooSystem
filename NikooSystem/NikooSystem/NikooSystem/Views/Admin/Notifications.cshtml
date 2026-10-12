@@ -1,0 +1,58 @@
+@model NikooSystem.Models.NotifyPageVm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "اطلاع‌رسانی بله";
+    var fromConfig = Model.BotReady && string.IsNullOrEmpty(Model.Settings.BotToken);
+}
+<div class="adm-head">
+    <div>
+        <h1>اطلاع‌رسانی در بله</h1>
+        <p>خرید محصولات و اشتراک‌ها، تراکنش‌های درگاه، فروشگاه‌های تازه و پیام‌های تماس را در اپلیکیشن بله دریافت کنید.</p>
+    </div>
+</div>
+
+<div class="adm-card mb-3">
+    <h5 class="mb-1"><i class="bi bi-robot"></i> بازوی بله نیکو سیستم</h5>
+    <p class="text-muted small">همین بازو پیام‌های این سایت و همه فروشگاه‌ها را می‌فرستد؛ صاحبان فروشگاه فقط حساب خود را از پنل فروشگاهشان به آن وصل می‌کنند.</p>
+    @if (Model.BotReady)
+    {
+        <p class="mb-3">
+            <i class="bi bi-check2-circle text-success"></i>
+            @if (!string.IsNullOrEmpty(Model.BotUsername))
+            {
+                <span>وصل به بازوی @if (!string.IsNullOrEmpty(Model.BotName)) {<b>@Model.BotName</b>} <b dir="ltr">@("@" + Model.BotUsername)</b></span>
+            }
+            else
+            {
+                <span>توکن بازو از Web.config (Bale.BotToken) خوانده می‌شود؛ برای ساخت لینک مستقیم اتصال، آن را یک بار این‌جا هم ثبت کنید.</span>
+            }
+        </p>
+    }
+    else
+    {
+        <ol class="small mb-3">
+            <li>در اپلیکیشن بله، بازوی <b dir="ltr">@@botfather</b> («بازوفاده») را باز کنید و دستور <span dir="ltr">/newbot</span> را بفرستید.</li>
+            <li>یک نام (مثلاً «اطلاع‌رسانی نیکو سیستم») و یک شناسه که به <span dir="ltr">bot</span> ختم شود انتخاب کنید.</li>
+            <li>توکنی را که بازوفاده می‌دهد (به شکل <span dir="ltr">123456789:AbC...</span>) در کادر زیر بگذارید.</li>
+        </ol>
+    }
+    @using (Html.BeginForm("SaveBaleBot", "Admin", FormMethod.Post, new { @class = "row g-2 align-items-end", style = "max-width:720px" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-sm">
+            <label class="form-label" for="baleToken">@(Model.BotReady ? "توکن تازه (برای تعویض بازو)" : "توکن بازو")</label>
+            <input class="form-control" type="password" name="token" id="baleToken" dir="ltr" autocomplete="off" required placeholder="123456789:AbC..." />
+        </div>
+        <div class="col-sm-auto">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-plug"></i> بررسی و ذخیره</button>
+        </div>
+    }
+    @if (Model.BotReady && !fromConfig)
+    {
+        <div class="mt-3">
+            @Html.PostButton("SaveBaleBot", new { remove = true }, "برداشتن بازو", "btn btn-outline-danger btn-sm", "بازو برداشته شود؟ اطلاع‌رسانی این سایت و همه فروشگاه‌ها تا ثبت توکن تازه خاموش می‌شود.")
+        </div>
+    }
+</div>
+
+@Html.Partial("_BaleNotify", Model, new ViewDataDictionary(ViewData) { ["Card"] = "adm-card", ["Primary"] = "btn btn-primary" })

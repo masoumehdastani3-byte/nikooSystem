@@ -1,0 +1,37 @@
+@{
+    // What the platform does for search engines by itself; on the main admin's guide (ViewData["Site"] = true) and each store's.
+    var forSite = ViewData["Site"] as bool? ?? false;
+    var schemas = forSite
+        ? "صفحه اول: سازمان، وب‌سایت و سؤالات متداول؛ صفحه هر محصول: نرم‌افزار با قیمت، فهرست امکانات و مسیر صفحه (breadcrumb)."
+        : "صفحه اول: نوع کسب‌وکار (فروشگاه، کلینیک، سالن، رسانه خبری، آموزشگاه…)؛ محصول، کتاب یا دوره با قیمت، موجودی و امتیاز نظرات؛ خبر و مقاله با تاریخ انتشار؛ مسیر صفحه (breadcrumb).";
+    var items = new[]
+    {
+        Tuple.Create("bi-type-h1", "عنوان و توضیح هر صفحه",
+            "اگر عنوان یا توضیح گوگل را خالی بگذارید، از نام، شعار، توضیح کوتاه یا متن همان صفحه ساخته می‌شود. صفحه‌های ۲ به بعد فهرست‌ها « - صفحه N» می‌گیرند تا عنوان تکراری نداشته باشید."),
+        Tuple.Create("bi-link-45deg", "یک آدرس برای هر صفحه (canonical)",
+            "نسخه‌های جستجو، مرتب‌سازی و فیلتر به همان فهرست اصلی اشاره می‌کنند. وقتی دامنه اختصاصی وصل است، همه آدرس‌ها روی همان دامنه اعلام می‌شوند."),
+        Tuple.Create("bi-diagram-3", "داده ساختاریافته (JSON-LD)", schemas + " همین‌ها ستاره، قیمت و پرسش‌ها را در نتایج گوگل نشان می‌دهند."),
+        Tuple.Create("bi-share", "پیش‌نمایش در پیام‌رسان‌ها",
+            "تگ‌های Open Graph و Twitter Card: لینک هر صفحه در تلگرام، واتس‌اپ، بله و شبکه‌های اجتماعی با عکس، عنوان و توضیح نمایش داده می‌شود."),
+        Tuple.Create("bi-map", "نقشه سایت و robots.txt",
+            "sitemap.xml همراه تصاویر و تاریخ آخرین تغییر خودکار ساخته می‌شود و هر محصول، مطلب یا صفحه تازه بلافاصله در آن می‌آید (حداکثر نیم ساعت کش)."),
+        Tuple.Create("bi-eye-slash", "صفحه‌هایی که در گوگل نمی‌آیند",
+            "پنل مدیریت، ورود و حساب کاربری، سبد خرید و پرداخت، پیگیری نوبت و نتایج جستجو noindex هستند. سایت‌های نمونه (دمو) کلاً از گوگل پنهان‌اند تا محتوای تکراری ثبت نشود."),
+        Tuple.Create("bi-lightning-charge", "سرعت",
+            "فشرده‌سازی پاسخ‌ها، کش ۷ روزه فایل‌های ثابت (عکس، CSS، JS) و پشتیبانی از تصاویر webp.")
+    };
+}
+<div class="row g-3">
+    @foreach (var item in items)
+    {
+        <div class="col-md-6">
+            <div class="d-flex gap-2 align-items-start">
+                <i class="bi @item.Item1 text-primary fs-5"></i>
+                <div>
+                    <strong class="d-block">@item.Item2</strong>
+                    <span class="small text-muted">@item.Item3</span>
+                </div>
+            </div>
+        </div>
+    }
+</div>

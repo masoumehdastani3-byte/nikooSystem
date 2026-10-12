@@ -1,0 +1,50 @@
+@model PagedList<StoreContactMessage>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "پیام‌های تماس";
+    var company = (string)ViewBag.CompanyCode;
+}
+@Html.PageHeader("پیام‌های فرم تماس")
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در نام، موبایل، ایمیل، موضوع یا متن…",
+        new GridSelect("state", "همه پیام‌ها", new Dictionary<string, string> { ["unread"] = "خوانده‌نشده", ["read"] = "خوانده‌شده" }))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("name", "فرستنده")
+                    @Html.SortHeader("subject", "موضوع")
+                    @Html.SortHeader("date", "تاریخ")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model)
+                {
+                    var text = m.Message ?? "";
+                    <tr class="@(m.IsRead ? "" : "fw-bold")">
+                        <td>
+                            @if (!m.IsRead) { <i class="bi bi-circle-fill text-primary small" title="خوانده‌نشده"></i> }
+                            @m.FullName
+                            <div class="small text-muted fw-normal" dir="ltr">@m.Mobile @m.Email</div>
+                        </td>
+                        <td>
+                            @(string.IsNullOrEmpty(m.Subject) ? "(بدون موضوع)" : m.Subject)
+                            <div class="small text-muted fw-normal">@(text.Length > 90 ? text.Substring(0, 90) + "…" : text)</div>
+                        </td>
+                        <td class="small text-muted fw-normal">@m.CreatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Message", "ShopAdmin", new { company, id = m.Id }), "bi-envelope-open", "خواندن پیام", "is-view")
+                            @Html.DeleteButton("DeleteMessage", m.Id, "این پیام حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="4"><i class="bi bi-envelope fs-3 d-block mb-1"></i>پیامی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

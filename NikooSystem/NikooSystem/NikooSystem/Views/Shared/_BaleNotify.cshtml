@@ -1,0 +1,165 @@
+@model NikooSystem.Models.NotifyPageVm
+@{
+    // The page of a store (ShopAdmin) or of the main site (Admin): same sections, each panel's own card and button styles.
+    var card = (string)ViewData["Card"] ?? "panel-card";
+    var primary = (string)ViewData["Primary"] ?? "btn-store";
+    var max = NikooSystem.Services.BaleNotifier.MaxRecipients;
+    var canLink = Model.BotReady && !Model.IsDemo && Model.Recipients.Count < max;
+    var bot = string.IsNullOrEmpty(Model.BotUsername) ? null : "@" + Model.BotUsername;
+    Func<DateTime, string> at = d => d.ToShamsiText() + " ساعت " + d.ToString("HH:mm").ToFaDigits();
+}
+
+@if (!Model.BotReady)
+{
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        @(Model.IsSite
+            ? "برای روشن شدن اطلاع‌رسانی (برای این سایت و همه فروشگاه‌ها) ابتدا توکن بازوی بله را در بالا ثبت کنید."
+            : "اطلاع‌رسانی بله هنوز از طرف نیکو سیستم راه‌اندازی نشده است؛ به‌زودی می‌توانید حساب خود را وصل کنید.")
+    </div>
+}
+else if (Model.IsDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این یک فروشگاه نمایشی است و به بله وصل نمی‌شود؛ پس از ساخت فروشگاه خودتان، از همین صفحه حساب بله را وصل کنید.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="@card mb-3">
+            <h5 class="mb-1"><i class="bi bi-phone-vibrate"></i> حساب‌های بله دریافت‌کننده</h5>
+            <p class="text-muted small">هر رویداد به همه این حساب‌ها پیام می‌شود (حداکثر @max.ToFa() حساب؛ مثلاً شما و همکارتان).</p>
+
+            <table class="table align-middle">
+                <thead><tr><th>نام در بله</th><th>شناسه</th><th>وصل از</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in Model.Recipients)
+                    {
+                        <tr>
+                            <td>@(string.IsNullOrEmpty(r.Name) ? "بدون نام" : r.Name)</td>
+                            <td dir="ltr" class="text-end small">@(string.IsNullOrEmpty(r.Username) ? "—" : "@" + r.Username)</td>
+                            <td class="small">@at(r.LinkedAt)</td>
+                            <td class="row-actions">@Html.DeleteButton("RemoveBaleRecipient", r.Id, "این حساب بله جدا شود؟ دیگر پیامی دریافت نمی‌کند.")</td>
+                        </tr>
+                    }
+                    @if (!Model.Recipients.Any())
+                    {
+                        <tr class="admin-empty-row"><td colspan="4"><i class="bi bi-bell-slash fs-3 d-block mb-1"></i>هنوز حساب بله‌ای وصل نشده است.</td></tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (Model.LinkCode != null && canLink)
+            {
+                var left = Math.Max(0, (int)(Model.LinkCodeExpiresAt.Value - DateTime.Now).TotalSeconds);
+                <div class="bale-link border rounded-3 p-3" id="baleWait" data-check="@Url.Action("NotifyCheck")" data-count="@Model.Recipients.Count" data-left="@left">
+                    <h6 class="mb-2"><i class="bi bi-link-45deg"></i> اتصال حساب بله</h6>
+                    <ol class="small mb-3">
+                        @if (Model.LinkUrl != null)
+                        {
+                            <li>دکمه زیر را بزنید تا بازوی نیکو سیستم در بله باز شود، سپس «شروع» را بزنید.</li>
+                            <li>یا در بله بازوی <b dir="ltr">@bot</b> را باز کنید و کد زیر را برایش بفرستید.</li>
+                        }
+                        else
+                        {
+                            <li>در بله بازوی نیکو سیستم را باز کنید و کد زیر را برایش بفرستید.</li>
+                        }
+                        <li>چند ثانیه بعد حساب شما در فهرست بالا می‌آید و پیام تأیید در بله دریافت می‌کنید.</li>
+                    </ol>
+                    <div class="d-flex flex-wrap align-items-center gap-3">
+                        @if (Model.LinkUrl != null)
+                        {
+                            <a class="@primary" href="@Model.LinkUrl" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> باز کردن بازو در بله</a>
+                        }
+                        <span class="fs-4 fw-bold font-monospace" dir="ltr" style="letter-spacing:.2em">@Model.LinkCode</span>
+                    </div>
+                    <div class="small text-muted mt-3">
+                        <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                        در انتظار اتصال… اعتبار کد: <span id="baleLeft"></span>
+                    </div>
+                    <div class="small text-danger mt-1" id="baleError"></div>
+                </div>
+            }
+            else if (canLink)
+            {
+                @Html.PostButton("NotifyLinkCode", null, Model.Recipients.Any() ? "افزودن حساب بله دیگر" : "اتصال حساب بله", primary)
+            }
+            else if (Model.BotReady && !Model.IsDemo)
+            {
+                <p class="small text-muted mb-0">به حداکثر تعداد حساب رسیده‌اید؛ برای افزودن، یکی را حذف کنید.</p>
+            }
+        </div>
+
+        @if (Model.Recipients.Any())
+        {
+            <div class="@card">
+                <h5 class="mb-1"><i class="bi bi-broadcast"></i> آزمایش و وضعیت</h5>
+                <p class="text-muted small">یک پیام آزمایشی به همه حساب‌ها بفرستید تا از رسیدن پیام‌ها مطمئن شوید.</p>
+                @if (Model.Settings.LastSentAt.HasValue)
+                {
+                    <p class="small mb-2"><i class="bi bi-check2-circle text-success"></i> آخرین پیام موفق: @at(Model.Settings.LastSentAt.Value)</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.Settings.LastError) && Model.Settings.LastErrorAt.HasValue
+                     && (!Model.Settings.LastSentAt.HasValue || Model.Settings.LastErrorAt > Model.Settings.LastSentAt))
+                {
+                    <p class="small text-danger mb-2"><i class="bi bi-exclamation-circle"></i> آخرین خطا (@at(Model.Settings.LastErrorAt.Value)): @Model.Settings.LastError</p>
+                }
+                @Html.PostButton("NotifyTest", null, "ارسال پیام آزمایشی", "btn btn-outline-secondary")
+            </div>
+        }
+    </div>
+
+    <div class="col-lg-5">
+        <div class="@card">
+            <h5 class="mb-1"><i class="bi bi-bell"></i> چه چیزهایی خبر داده شود؟</h5>
+            <p class="text-muted small">هر رویداد با جزئیات و لینک مستقیم به همین پنل در بله پیام می‌شود.</p>
+            @using (Html.BeginForm("SaveNotifyEvents", null, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                foreach (var e in Model.Events)
+                {
+                    var id = "ev" + e.Event;
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" name="enabled" value="@e.Event" id="@id" @(e.Enabled ? "checked" : null) />
+                        <label class="form-check-label" for="@id">
+                            @e.Title
+                            <span class="d-block small text-muted">@e.Hint</span>
+                        </label>
+                    </div>
+                }
+                <button class="@primary mt-2" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+  var box = document.getElementById('baleWait');
+  if (!box) return;
+  var url = box.getAttribute('data-check');
+  var count = +box.getAttribute('data-count');
+  var end = Date.now() + (+box.getAttribute('data-left')) * 1000;
+  var clock = document.getElementById('baleLeft');
+  var error = document.getElementById('baleError');
+  var fa = function (s) { return String(s).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+
+  var tick = function () {
+    var s = Math.max(0, Math.round((end - Date.now()) / 1000));
+    clock.textContent = fa(Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2));
+    if (s <= 0) location.reload();
+  };
+  var check = function () {
+    fetch(url, { credentials: 'same-origin', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.recipients !== count || !d.waiting) { location.reload(); return; }
+        error.textContent = d.error || '';
+        setTimeout(check, 4000);
+      })
+      .catch(function () { setTimeout(check, 8000); });
+  };
+  tick();
+  setInterval(tick, 1000);
+  setTimeout(check, 3000);
+})();
+</script>

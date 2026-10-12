@@ -1,0 +1,137 @@
+@{
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus ?? Enumerable.Empty<StoreMenuItem>();
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+    var layoutId = template.Layout;
+    var breaking = (ViewBag.Breaking as IEnumerable<StorePost>)?.ToList() ?? new List<StorePost>();
+    var blogUrl = Url.Action("Blog", "Shop", new { company });
+}
+@helper MenuLinks(IEnumerable<StoreMenuItem> menus)
+{
+    foreach (var item in StoreMenuHelper.Roots(menus, "main"))
+    {
+        var children = StoreMenuHelper.Children(menus, item.Id).ToList();
+        if (children.Any())
+        {
+            <div class="wm-drop">
+                <a href="@item.Url">@item.Title <i class="bi bi-chevron-down"></i></a>
+                <div class="wm-drop-menu">
+                    @foreach (var c in children)
+                    {
+                        <a href="@c.Url">@c.Title</a>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <a href="@item.Url">@item.Title</a>
+        }
+    }
+}
+
+@if (layoutId == "corporate")
+{
+    if (template.Id == "industrial")
+    {
+        <div class="cn-topbar ind-topbar">
+            <div class="container">
+                <span class="ind-topbar-info">
+                    @if (!string.IsNullOrWhiteSpace(settings.Phone)) { <a href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a> }
+                    @if (!string.IsNullOrWhiteSpace(settings.Email)) { <a href="mailto:@settings.Email.Trim()"><i class="bi bi-envelope"></i> @settings.Email</a> }
+                    @if (!string.IsNullOrWhiteSpace(settings.Address)) { <span><i class="bi bi-geo-alt"></i> @settings.Address</span> }
+                </span>
+                <span><i class="bi bi-clock"></i> @template.Topbar</span>
+            </div>
+        </div>
+    }
+    <header class="cn-header cn-corporate">
+        <div class="container">
+            <div class="cn-header-row">
+                @Html.StoreBrand("wm-brand cn-brand", withTagline: true)
+                <input type="checkbox" id="cnNavToggle" class="cn-nav-toggle" hidden />
+                <label for="cnNavToggle" class="cn-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <nav class="cn-nav">
+                    <a href="@Url.Action("Index","Shop", new { company })">خانه</a>
+                    @MenuLinks(menus)
+                    <a href="@blogUrl">اخبار و مقالات</a>
+                </nav>
+                <a class="btn-wm cn-cta" href="@Url.Action("Contact","Shop", new { company })">
+                    @if (template.Id == "agency") { <text><i class="bi bi-arrow-up-left"></i> شروع پروژه</text> }
+                    else if (template.Id == "industrial") { <text><i class="bi bi-clipboard-check"></i> استعلام قیمت</text> }
+                    else { <text><i class="bi bi-telephone"></i> تماس با ما</text> }
+                </a>
+            </div>
+        </div>
+    </header>
+}
+else
+{
+    var today = DateTime.Now.ToString("dddd", System.Globalization.CultureInfo.GetCultureInfo("fa-IR")) + " " + DateTime.Now.ToShamsiText();
+    if (template.Id != "daily")
+    {
+        <div class="cn-topbar">
+            <div class="container">
+                <span><i class="bi bi-calendar3"></i> @today</span>
+                <span class="cn-topbar-links">
+                    <a href="@Url.Action("Rss","Shop", new { company })" title="خوراک RSS"><i class="bi bi-rss"></i> RSS</a>
+                    <a href="@Url.Action("Contact","Shop", new { company })"><i class="bi bi-envelope"></i> تماس</a>
+                </span>
+            </div>
+        </div>
+    }
+    <header class="cn-header cn-magazine">
+        <div class="container">
+            <div class="cn-masthead">
+                @if (template.Id == "daily")
+                {
+                    <div class="dl-dateline">
+                        <strong>@today</strong>
+                        <a href="@Url.Action("Rss","Shop", new { company })"><i class="bi bi-rss"></i> خوراک RSS</a>
+                    </div>
+                }
+                @Html.StoreBrand("wm-brand cn-brand", withTagline: true)
+                <form class="cn-search" method="get" action="@blogUrl" role="search">
+                    <input type="search" name="q" placeholder="جستجو در خبرها و مقاله‌ها..." aria-label="جستجو" />
+                    <button type="submit" aria-label="جستجو"><i class="bi bi-search"></i></button>
+                </form>
+            </div>
+        </div>
+        <nav class="cn-sections">
+            <div class="container">
+                <input type="checkbox" id="cnNavToggle" class="cn-nav-toggle" hidden />
+                <label for="cnNavToggle" class="cn-burger" aria-label="منو"><i class="bi bi-list"></i> سرویس‌ها</label>
+                <div class="cn-nav">
+                    <a href="@Url.Action("Index","Shop", new { company })"><i class="bi bi-house"></i></a>
+                    @MenuLinks(menus)
+                    <a href="@blogUrl">آخرین اخبار</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+}
+
+@if (breaking.Any())
+{
+    <div class="cn-breaking">
+        <div class="container">
+            @if (template.Id == "pulse")
+            {
+                <strong><span class="pl-live" aria-hidden="true"></span> زنده</strong>
+            }
+            else
+            {
+                <strong><i class="bi bi-lightning-charge-fill"></i> فوری</strong>
+            }
+            <div class="cn-breaking-track">
+                <div class="cn-breaking-items">
+                    @foreach (var p in breaking)
+                    {
+                        <a href="@Url.RouteUrl("ShopPost", new { company, slug = p.Slug })">@p.Title</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

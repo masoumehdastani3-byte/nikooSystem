@@ -1,0 +1,57 @@
+@model List<NikooSystem.Models.SiteTestimonial>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "نظرات مشتریان";
+    var shown = NikooSystem.Services.SiteContentStore.Settings.ShowTestimonials;
+}
+<div class="adm-head">
+    <div>
+        <h1>نظرات مشتریان</h1>
+        <p>
+            نظرهای فعال در صفحه اصلی، زیر بخش «چرا ما» نمایش داده می‌شوند؛ تا وقتی نظری ثبت نشود این بخش دیده نمی‌شود.
+            @if (!shown)
+            {
+                <span class="adm-chip is-orange">نمایش این بخش در <a href="@Url.Action("SiteSettings","Admin")">تنظیمات</a> خاموش است</span>
+            }
+        </p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@Url.Action("EditTestimonial","Admin")"><i class="bi bi-plus-lg"></i> نظر جدید</a>
+    </div>
+</div>
+<div class="adm-card">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th style="width:4rem">ترتیب</th><th>مشتری</th><th>نظر</th><th>امتیاز</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.SortOrder.ToFa()</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            @if (!string.IsNullOrEmpty(t.ImageUrl))
+                            {
+                                <img class="admin-thumb" src="@t.ImageUrl" alt="" style="width:40px;height:40px;border-radius:50%" />
+                            }
+                            <div><strong>@t.Name</strong><div class="small text-muted">@t.Role</div></div>
+                        </div>
+                    </td>
+                    <td><div class="adm-faq-a">@t.Text</div></td>
+                    <td class="text-warning text-nowrap">@for (var i = 1; i <= 5; i++) {<i class="bi @(i <= t.Rating ? "bi-star-fill" : "bi-star")"></i>}</td>
+                    <td><span class="adm-chip @(t.IsActive ? "is-green" : "is-gray")">@(t.IsActive ? "نمایش" : "پنهان")</span></td>
+                    <td class="row-actions">
+                        @Html.IconPost("ToggleTestimonial", new { id = t.Id }, t.IsActive ? "bi-eye-slash" : "bi-eye", t.IsActive ? "پنهان کردن" : "نمایش در سایت", "is-toggle")
+                        @Html.EditLink("EditTestimonial", t.Id)
+                        @Html.DeleteButton("DeleteTestimonial", t.Id, "نظر «" + t.Name + "» حذف شود؟")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="6" class="text-center text-muted py-4">هنوز نظری ثبت نشده است. نظر واقعی مشتریان راضی را با اجازه خودشان اضافه کنید.</td></tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

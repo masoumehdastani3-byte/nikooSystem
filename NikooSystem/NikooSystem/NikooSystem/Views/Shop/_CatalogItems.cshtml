@@ -1,0 +1,6 @@
+@model PagedList<StoreProduct>
+@foreach (var p in Model)
+{
+    @Html.Partial("_StoreProductCard", p)
+}
+@Html.Partial("_NextPage", Model)

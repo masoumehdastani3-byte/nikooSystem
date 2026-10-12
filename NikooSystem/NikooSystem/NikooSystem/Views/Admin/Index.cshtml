@@ -1,42 +1,234 @@
 @model NikooSystem.Models.AdminDashboardViewModel
-@using NikooSystem.Helpers
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.Title = "داشبورد";
+    var maxSignups = Math.Max(1, Model.SignupsByDay.Max(d => d.Value));
 }
-<h2 class="mb-4">داشبورد</h2>
-<div class="row g-3 mb-4">
-    <div class="col-md-3"><div class="stat-card"><span>محصولات</span><h3>@Model.ProductCount</h3></div></div>
-    <div class="col-md-3"><div class="stat-card"><span>کل سفارشات</span><h3>@Model.OrderCount</h3></div></div>
-    <div class="col-md-3"><div class="stat-card"><span>پرداخت‌شده</span><h3>@Model.PaidOrderCount</h3></div></div>
-    <div class="col-md-3"><div class="stat-card"><span>درآمد</span><h3 style="font-size:1.1rem;">@Model.TotalRevenue.ToToman()</h3></div></div>
+<div class="adm-head">
+    <div>
+        <h1>داشبورد</h1>
+        <p>نمای کلی فروش سایت، فروشگاه‌های ساخته‌شده و پیام‌ها</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@Url.Action("CreateProduct","Admin")"><i class="bi bi-plus-lg"></i> محصول جدید</a>
+        <a class="btn btn-outline-primary" href="@Url.Action("SiteSettings","Admin")"><i class="bi bi-sliders"></i> متن‌های سایت</a>
+    </div>
 </div>
-<div class="d-flex gap-2 mb-4">
-    <a class="btn btn-primary" href="@Url.Action("CreateProduct","Admin")">افزودن محصول</a>
-    <a class="btn btn-outline-primary" href="@Url.Action("Orders","Admin")">مشاهده سفارشات</a>
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("Orders","Admin")">
+            <i class="bi bi-cash-stack is-green"></i>
+            <div>
+                <span>درآمد ۳۰ روز اخیر</span>
+                <h3>@Model.MonthRevenue.ToToman()</h3>
+                <small>کل درآمد: @Model.TotalRevenue.ToToman()</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("Orders","Admin")">
+            <i class="bi bi-receipt"></i>
+            <div>
+                <span>سفارش‌های پرداخت‌شده</span>
+                <h3>@Model.PaidOrderCount.ToFa()</h3>
+                <small>از @Model.OrderCount.ToFa() سفارش — @Model.PendingOrderCount.ToFa() در انتظار پرداخت</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("Stores","Admin")">
+            <i class="bi bi-shop is-sky"></i>
+            <div>
+                <span>فروشگاه‌های مشتریان</span>
+                <h3>@Model.StoreCount.ToFa()</h3>
+                <small>@Model.PaidStoreCount.ToFa() با اشتراک فعال، @Model.TrialStoreCount.ToFa() آزمایشی، @Model.NewStoresThisWeek.ToFa() جدید در این هفته</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("Messages","Admin", new { status = Model.UnreadMessageCount > 0 ? "unread" : null })">
+            <i class="bi bi-envelope is-orange"></i>
+            <div>
+                <span>پیام‌های خوانده‌نشده</span>
+                <h3>@Model.UnreadMessageCount.ToFa()</h3>
+                <small>از فرم «تماس با ما»</small>
+            </div>
+        </a>
+    </div>
 </div>
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white"><strong>آخرین سفارشات</strong></div>
-    <div class="table-responsive">
-        <table class="table mb-0 align-middle">
-            <thead><tr><th>شماره</th><th>مشتری</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th></th></tr></thead>
-            <tbody>
-            @foreach (var o in Model.RecentOrders)
+
+<div class="row g-3 mb-3">
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("HubPayments","Admin", new { status = "Paid" })">
+            <i class="bi bi-credit-card is-pink"></i>
+            <div>
+                <span>پرداخت‌های درگاه مرکزی</span>
+                <h3>@Model.HubPaidAmount.ToToman()</h3>
+                <small>@Model.HubPaidCount.ToFa() پرداخت موفق از @Model.PaymentAppCount.ToFa() اپلیکیشن</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <a class="stat-card" href="@Url.Action("Products","Admin")">
+            <i class="bi bi-box-seam"></i>
+            <div>
+                <span>محصولات فعال سایت</span>
+                <h3>@Model.ActiveProductCount.ToFa()</h3>
+                <small>از @Model.ProductCount.ToFa() محصول</small>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">ثبت‌نام فروشگاه در ۱۴ روز اخیر <a href="@Url.Action("Stores","Admin")">همه فروشگاه‌ها</a></div>
+            <div class="adm-chart" role="img" aria-label="نمودار ثبت‌نام روزانه">
+                @foreach (var day in Model.SignupsByDay)
+                {
+                    <div title="@day.Key.ToShamsiText(): @day.Value.ToFa() ثبت‌نام">
+                        <b style="height:@(day.Value * 100 / maxSignups)%"></b>
+                        <span>@(day.Key.ToShamsi().Substring(8).ToFaDigits())</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="row g-3 mb-3">
+    <div class="col-xl-6">
+        @Html.Partial("_VisitMini", Model.SiteVisits, new ViewDataDictionary { { "VisitsUrl", Url.Action("Visits", "Admin") } })
+    </div>
+    <div class="col-xl-6">
+        @Html.Partial("_VisitMini", Model.StoreVisits, new ViewDataDictionary { { "VisitsUrl", Url.Action("Visits", "Admin") + "#stores" } })
+    </div>
+</div>
+
+@{
+    var domainsForSupport = NikooSystem.Services.CustomDomains.CountWaitingSupport();
+}
+@if (domainsForSupport > 0)
+{
+    <div class="alert alert-primary d-flex flex-wrap align-items-center gap-2">
+        <i class="bi bi-globe"></i>
+        <span>DNS دامنه @domainsForSupport.ToFa() مشتری درست تنظیم شده و منتظر binding و صدور SSL توسط پشتیبانی است.</span>
+        <a class="ms-auto btn btn-sm btn-primary" href="@Url.Action("Domains","Admin")">انجام اتصال</a>
+    </div>
+}
+@{
+    var closedStores = Model.RenewalsDue.Count(t => t.IsSubscriptionLocked());
+    var expiredSubscriptions = Model.RenewalsDue.Count(t => t.IsSubscriptionExpired() && !t.IsSubscriptionLocked());
+}
+@if (Model.ExpiredStoreCount > 0 || Model.ExpiringTrials.Any() || expiredSubscriptions > 0 || closedStores > 0)
+{
+    <div class="alert alert-warning d-flex flex-wrap align-items-center gap-2">
+        <i class="bi bi-hourglass-split"></i>
+        <span>
+            @if (Model.ExpiringTrials.Any())
             {
-                <tr>
-                    <td>@o.OrderNumber</td>
-                    <td>@o.CustomerName</td>
-                    <td>@o.ProductTitle</td>
-                    <td>@o.Amount.ToToman()</td>
-                    <td><span class="badge @o.Status.StatusBadgeClass()">@o.Status.StatusText()</span></td>
-                    <td><a href="@Url.Action("OrderDetails","Admin", new { id = o.Id })">جزئیات</a></td>
-                </tr>
+                @:دوره آزمایشی @Model.ExpiringTrials.Count.ToFa() فروشگاه تا ۳ روز دیگر تمام می‌شود.
             }
+            @if (Model.ExpiredStoreCount > 0)
+            {
+                @:@Model.ExpiredStoreCount.ToFa() فروشگاه آزمایشی منقضی شده و در پاک‌سازی بعدی حذف می‌شود.
+            }
+            @if (expiredSubscriptions > 0)
+            {
+                @:اشتراک @expiredSubscriptions.ToFa() سایت تمام شده و در مهلت تمدید است.
+            }
+            @if (closedStores > 0)
+            {
+                @:@closedStores.ToFa() سایت به‌خاطر تمدید نشدن اشتراک بسته شده است.
+            }
+        </span>
+        <a class="ms-auto btn btn-sm btn-outline-dark" href="@Url.Action("Stores","Admin", new { status = expiredSubscriptions + closedStores > 0 ? "renew" : "trial", sort = "trial", dir = "asc" })">پیگیری</a>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-xl-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">آخرین سفارش‌ها <a href="@Url.Action("Orders","Admin")">همه سفارش‌ها</a></div>
+            <ul class="adm-list">
+                @foreach (var o in Model.RecentOrders)
+                {
+                    <li>
+                        <div class="grow">
+                            <a href="@Url.Action("OrderDetails","Admin", new { id = o.Id })"><strong>@o.CustomerName — @o.ProductTitle</strong></a>
+                            <span>@o.CreatedAt.ToShamsiText() · @o.Amount.ToToman()@(string.IsNullOrEmpty(o.CompanyCode) ? "" : " · اشتراک " + o.CompanyCode)</span>
+                        </div>
+                        @Html.StatusBadge(o.Status)
+                    </li>
+                }
+            </ul>
             @if (!Model.RecentOrders.Any())
             {
-                <tr><td colspan="6" class="text-center text-muted">سفارشی ثبت نشده است</td></tr>
+                <div class="adm-empty">هنوز سفارشی ثبت نشده است</div>
             }
-            </tbody>
-        </table>
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">فروشگاه‌های تازه <a href="@Url.Action("Stores","Admin")">مدیریت فروشگاه‌ها</a></div>
+            <ul class="adm-list">
+                @foreach (var t in Model.RecentStores)
+                {
+                    <li>
+                        <div class="grow">
+                            <a href="@Url.Action("Store","Admin", new { id = t.CompanyCode })"><strong>@t.Name</strong></a>
+                            <span>@NikooSystem.Helpers.StoreTypes.Get(t.StoreType).Name · @(t.OwnerName) · @t.CreatedAt.ToShamsiText()</span>
+                        </div>
+                        @Html.Partial("_StoreStatus", t)
+                    </li>
+                }
+            </ul>
+            @if (!Model.RecentStores.Any())
+            {
+                <div class="adm-empty">هنوز فروشگاهی ساخته نشده است</div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">آزمایشی‌ها و اشتراک‌های رو به پایان <a href="@Url.Action("Stores","Admin", new { status = "renew", sort = "trial", dir = "asc" })">نیازمند تمدید</a></div>
+            <ul class="adm-list">
+                @foreach (var t in Model.RenewalsDue.Concat(Model.ExpiringTrials).Take(8))
+                {
+                    <li>
+                        <div class="grow">
+                            <a href="@Url.Action("Store","Admin", new { id = t.CompanyCode })"><strong>@t.Name</strong></a>
+                            <span dir="auto">@t.OwnerName · @t.OwnerMobile</span>
+                        </div>
+                        @Html.Partial("_StoreStatus", t)
+                    </li>
+                }
+            </ul>
+            @if (!Model.ExpiringTrials.Any() && !Model.RenewalsDue.Any())
+            {
+                <div class="adm-empty">نه دوره آزمایشی‌ای در ۳ روز آینده تمام می‌شود و نه اشتراکی در ۲ هفته آینده</div>
+            }
+        </div>
+    </div>
+    <div class="col-xl-6">
+        <div class="adm-card h-100">
+            <div class="adm-card-title">آخرین پیام‌ها <a href="@Url.Action("Messages","Admin")">صندوق پیام‌ها</a></div>
+            <ul class="adm-list">
+                @foreach (var m in Model.RecentMessages)
+                {
+                    <li>
+                        <i class="bi @(m.IsRead ? "bi-envelope-open text-muted" : "bi-envelope-fill text-warning")"></i>
+                        <div class="grow">
+                            <a href="@Url.Action("Message","Admin", new { id = m.Id })"><strong>@m.Subject</strong></a>
+                            <span>@m.Name · @m.CreatedAt.ToShamsiText()</span>
+                        </div>
+                    </li>
+                }
+            </ul>
+            @if (!Model.RecentMessages.Any())
+            {
+                <div class="adm-empty">پیامی دریافت نشده است</div>
+            }
+        </div>
     </div>
 </div>

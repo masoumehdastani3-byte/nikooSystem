@@ -1,0 +1,29 @@
+@model string
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var type = (StoreTypeInfo)ViewBag.Type;
+    ViewBag.Title = "قالب دموی " + type.Name;
+    ViewBag.PickerSite = "دموی " + type.Name;
+}
+<div class="adm-head">
+    <div>
+        <h1>قالب دموی «@type.Name»</h1>
+        <p>قالبی را انتخاب کنید که این دمو برای همه بازدیدکننده‌ها با آن باز شود. رنگ‌های دمو هم رنگ‌های پیش‌فرض همان قالب می‌شوند.</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-outline-secondary" href="@Url.Action("DemoTemplates","Admin")"><i class="bi bi-arrow-right"></i> همه دموها</a>
+        <a class="btn btn-outline-primary" href="@Url.Action("Index","Shop", new { company = ViewBag.CompanyCode })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده دمو</a>
+    </div>
+</div>
+@using (Html.BeginForm("DemoTemplate", "Admin", FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="slug" value="@ViewBag.Slug" />
+    <div class="adm-card">
+        @Html.Partial("~/Views/ShopAdmin/_TemplatePicker.cshtml", Model)
+    </div>
+    <div class="adm-card d-flex align-items-center gap-3 position-sticky bottom-0 mt-3 shadow-sm">
+        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check2"></i> ذخیره و اعمال روی دمو</button>
+        <a href="@Url.Action("DemoTemplates","Admin")" class="btn btn-link">انصراف</a>
+    </div>
+}

@@ -1,0 +1,21 @@
+@model IEnumerable<PlatformModule>
+@{
+    // ViewData["ShowOnly"]: name the products that have a module when not all do (on pages that show every module).
+    var showOnly = ViewData["ShowOnly"] as bool? ?? false;
+}
+<div class="lf-module-grid">
+    @foreach (var m in Model)
+    {
+        <article class="lf-module @(m.Highlight ? "is-highlight" : null)">
+            <i class="bi @m.Icon" aria-hidden="true"></i>
+            <div>
+                <h3>@m.Name</h3>
+                <p>@m.Summary</p>
+                @if (showOnly && m.Only != null)
+                {
+                    <span class="lf-module-only">@m.Only</span>
+                }
+            </div>
+        </article>
+    }
+</div>

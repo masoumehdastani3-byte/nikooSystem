@@ -9,7 +9,7 @@ using NikooSystem.Models.Store;
 
 namespace NikooSystem.Services
 {
-    /// <summary>ساخت خودکار فروشگاه آزمایشی، فعال‌سازی پس از پرداخت و حذف آزمایشی‌های منقضی</summary>
+    /// <summary>ساخت خودکار فروشگاه آزمایشی و حذف آزمایشی‌های منقضی (اشتراک پس از آن: <see cref="Subscriptions"/>)</summary>
     public static class TenantProvisioningService
     {
         private const string DefaultLogoUrl = "/Assets/img/logo.png";
@@ -30,6 +30,8 @@ namespace NikooSystem.Services
         {
             get
             {
+                var configured = SiteContentStore.Settings.TrialDays;
+                if (configured > 0) return configured;
                 int days;
                 return int.TryParse(ConfigurationManager.AppSettings["Trial.Days"], out days) && days > 0 ? days : 7;
             }
@@ -41,10 +43,22 @@ namespace NikooSystem.Services
             get { return (ConfigurationManager.AppSettings["Platform.RootDomain"] ?? "").Trim().TrimEnd('.').ToLowerInvariant(); }
         }
 
-        /// <summary>IP سرور برای رکورد A دامنه اختصاصی مشتری</summary>
+        /// <summary>IP سرور برای رکورد A دامنه اختصاصی مشتری (اولین IP ثبت‌شده)؛ خالی = ثبت نشده</summary>
         public static string ServerIp
         {
-            get { return (ConfigurationManager.AppSettings["Platform.ServerIp"] ?? "").Trim(); }
+            get { return ServerIps.FirstOrDefault() ?? ""; }
+        }
+
+        /// <summary>IPهای سرور: تنظیم صفحه «دامنه‌های مشتریان» پنل نیکو، وگرنه Platform.ServerIp در Web.config</summary>
+        public static List<string> ServerIps
+        {
+            get
+            {
+                var configured = SiteContentStore.Settings.ServerIp;
+                if (string.IsNullOrWhiteSpace(configured)) configured = ConfigurationManager.AppSettings["Platform.ServerIp"];
+                return (configured ?? "").Split(new[] { ',', ' ', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(ip => ip.Trim()).Distinct().ToList();
+            }
         }
 
         public static string NormalizeCode(string input)
@@ -76,7 +90,8 @@ namespace NikooSystem.Services
         {
             var code = NormalizeCode(vm.StoreCode).ToUpperInvariant();
             var type = StoreTypes.Get(vm.StoreType);
-            var template = StoreTemplates.Get(type.DefaultTemplate);
+            var template = StoreTemplates.All.FirstOrDefault(t => t.Id == vm.Template && t.Kinds.Contains(type.Kind))
+                           ?? StoreTemplates.Get(type.DefaultTemplate);
             var storeName = vm.StoreName.Trim();
 
             var tenant = new TenantInfo
@@ -126,19 +141,6 @@ namespace NikooSystem.Services
             }
 
             return tenant;
-        }
-
-        public static void MarkPaid(string companyCode)
-        {
-            var tenant = TenantStore.GetTenants().FirstOrDefault(t =>
-                string.Equals(t.CompanyCode, companyCode, StringComparison.OrdinalIgnoreCase));
-            if (tenant == null) return;
-
-            tenant.IsPaid = true;
-            tenant.IsTrial = false;
-            tenant.PaidAt = DateTime.Now;
-            tenant.TrialEndsAt = null;
-            TenantStore.UpdateTenant(tenant);
         }
 
         /// <summary>حذف فروشگاه‌های آزمایشی که مهلتشان تمام شده و پرداخت نکرده‌اند</summary>
@@ -203,11 +205,14 @@ namespace NikooSystem.Services
             return "/Shop/" + code.ToUpperInvariant();
         }
 
-        /// <summary>محصول سایت نیکو که پرداختش فروشگاه آزمایشی را دائمی می‌کند</summary>
+        /// <summary>محصول سایت نیکو که قیمت اشتراک فروشگاه از آن خوانده می‌شود (هم‌نوع فروشگاه)</summary>
         public static int? SubscriptionProductId(string storeType)
         {
-            var products = JsonStore.GetProducts().Where(p => p.IsActive && !string.IsNullOrEmpty(p.DemoSlug)).ToList();
-            var match = products.FirstOrDefault(p => p.DemoSlug == storeType) ?? products.FirstOrDefault();
+            var products = SiteStore.GetProducts().Where(p => p.IsActive && !string.IsNullOrEmpty(p.DemoSlug)).ToList();
+            var kind = StoreTypes.Get(storeType).Kind;
+            var match = products.FirstOrDefault(p => p.DemoSlug == storeType)
+                ?? products.FirstOrDefault(p => StoreTypes.Get(p.DemoSlug).Kind == kind)
+                ?? products.FirstOrDefault();
             return match?.Id;
         }
 

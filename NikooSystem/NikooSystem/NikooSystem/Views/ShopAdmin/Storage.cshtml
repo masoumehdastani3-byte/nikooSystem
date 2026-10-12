@@ -1,0 +1,188 @@
+@model NikooSystem.Models.StorageUsage
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "فضای ذخیره‌سازی";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var company = (string)ViewBag.CompanyCode;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var packages = (IReadOnlyList<NikooSystem.Models.StoragePackage>)ViewBag.Packages;
+    var purchases = (List<NikooSystem.Models.StoragePurchase>)ViewBag.Purchases;
+    var returnUrl = (string)ViewBag.ReturnUrl;
+    var state = Model.IsFull ? "is-full" : Model.IsNearlyFull ? "is-near" : "is-ok";
+    var imagePercent = Model.QuotaBytes > 0 ? Math.Min(100.0, Model.ImageBytes * 100.0 / Model.QuotaBytes) : 0;
+    var filePercent = Model.QuotaBytes > 0 ? Math.Min(100.0 - imagePercent, Model.FileBytes * 100.0 / Model.QuotaBytes) : 0;
+    var showFiles = kind.IsDigital || Model.FileBytes > 0;
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">فضای ذخیره‌سازی</h2>
+        <p class="text-muted small mb-0">تصاویر و فایل‌هایی که در @kind.SiteNoun بارگذاری می‌کنید در این فضا نگهداری می‌شوند. هر وقت پر شد، از همین صفحه حجم بیشتر بخرید.</p>
+    </div>
+    @if (!string.IsNullOrEmpty(returnUrl))
+    {
+        <a class="btn-outline-store" href="@returnUrl"><i class="bi bi-arrow-right"></i> بازگشت به صفحه قبل</a>
+    }
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این @kind.SiteNoun نمونه (دمو) است و خرید فضا در آن غیرفعال است؛ در @kind.SiteNoun خودتان همین صفحه را دارید.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card storage-usage @state mb-3">
+            <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mb-2">
+                <div>
+                    <div class="small text-muted">فضای استفاده‌شده</div>
+                    <div class="storage-big">@StorageQuota.Format(Model.UsedBytes) <span>از @StorageQuota.Format(Model.QuotaBytes)</span></div>
+                </div>
+                <div class="storage-percent">@Model.Percent.ToFa()٪</div>
+            </div>
+            <div class="storage-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Model.Percent" aria-label="درصد فضای استفاده‌شده">
+                <span class="seg-images" style="width:@imagePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                @if (showFiles)
+                {
+                    <span class="seg-files" style="width:@filePercent.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"></span>
+                }
+            </div>
+            <ul class="storage-legend">
+                <li><i class="dot seg-images"></i> تصاویر <b>@StorageQuota.Format(Model.ImageBytes)</b></li>
+                @if (showFiles)
+                {
+                    <li><i class="dot seg-files"></i> فایل‌های دوره‌ها و محصولات دانلودی <b>@StorageQuota.Format(Model.FileBytes)</b></li>
+                }
+                <li><i class="dot seg-free"></i> فضای خالی <b>@StorageQuota.Format(Model.FreeBytes)</b></li>
+            </ul>
+
+            @if (Model.IsFull)
+            {
+                <div class="alert alert-danger mb-0"><i class="bi bi-exclamation-octagon"></i> <strong>فضای @kind.SiteNoun شما پر شده است.</strong> تا حجم بیشتری نخرید، بارگذاری تصویر و فایل تازه ممکن نیست. اطلاعات و تصاویر فعلی سر جایشان می‌مانند و سایت عادی کار می‌کند.</div>
+            }
+            else if (Model.IsNearlyFull)
+            {
+                <div class="alert alert-warning mb-0"><i class="bi bi-exclamation-triangle"></i> فضای شما رو به اتمام است. پیش از پر شدن، یکی از بسته‌های زیر را بخرید یا فایل‌های بی‌استفاده را پاک کنید.</div>
+            }
+            else
+            {
+                <div class="alert alert-success mb-0"><i class="bi bi-check2-circle"></i> فضای کافی دارید.</div>
+            }
+
+            <div class="storage-plan small text-muted mt-3">
+                فضای پایه هر @kind.SiteNoun: <b>@StorageQuota.FormatMb(Model.BaseMb)</b>
+                @if (Model.ExtraMb > 0)
+                {
+                    <span> + فضای خریداری‌شده: <b>@StorageQuota.FormatMb(Model.ExtraMb)</b></span>
+                }
+            </div>
+        </div>
+
+        <div class="panel-card mb-3" id="buy">
+            <h5 class="mb-1"><i class="bi bi-cart-plus"></i> خرید حجم بیشتر</h5>
+            <p class="small text-muted mb-3">فضای خریداری‌شده دائمی است و هزینه ماهانه ندارد؛ بلافاصله پس از پرداخت اضافه می‌شود.</p>
+            <div class="storage-packages">
+                @foreach (var p in packages)
+                {
+                    <div class="storage-package @(p.Gigabytes == 5 ? "is-popular" : null)">
+                        @if (p.Gigabytes == 5)
+                        {
+                            <span class="storage-tag">پرطرفدار</span>
+                        }
+                        <div class="size"><i class="bi bi-hdd"></i> @p.Gigabytes.ToFa() گیگابایت</div>
+                        <div class="price">@p.Price.ToToman()</div>
+                        @if (p.DiscountPercent > 0)
+                        {
+                            <div class="small"><del class="text-muted">@p.FullPrice.ToToman()</del> <span class="badge bg-success">@p.DiscountPercent.ToFa()٪ تخفیف</span></div>
+                        }
+                        else
+                        {
+                            <div class="small text-muted">&nbsp;</div>
+                        }
+                        @using (Html.BeginForm("BuyStorage", "ShopAdmin", new { company }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="gb" value="@p.Gigabytes" />
+                            <button class="btn-store w-100 mt-2" type="submit" @(isDemo ? "disabled" : null)><i class="bi bi-cart-plus"></i> خرید</button>
+                        }
+                    </div>
+                }
+            </div>
+            <p class="small text-muted mt-3 mb-0"><i class="bi bi-shield-check"></i> پرداخت از درگاه امن زرین‌پال انجام می‌شود و پس از بازگشت از درگاه، فضای جدید خودکار به @kind.SiteNoun شما اضافه می‌شود.</p>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-clock-history"></i> سابقه خرید فضا</h5>
+            <div class="table-responsive">
+                <table class="table align-middle small mb-0">
+                    <thead><tr><th>تاریخ</th><th>حجم</th><th>مبلغ</th><th>وضعیت</th><th>توضیح</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in purchases)
+                        {
+                            <tr>
+                                <td class="text-nowrap">@((p.PaidAt ?? p.CreatedAt).ToShamsiText())</td>
+                                <td class="text-nowrap">@(p.Megabytes < 0 ? "−" : "")@StorageQuota.FormatMb(Math.Abs(p.Megabytes))</td>
+                                <td class="text-nowrap">@(p.Amount > 0 ? p.Amount.ToToman() : "رایگان")</td>
+                                <td>
+                                    @if (p.Status == NikooSystem.Models.OrderStatus.Paid)
+                                    {
+                                        <span class="badge bg-success">@(p.Amount > 0 ? "پرداخت شد" : "افزوده شد")</span>
+                                    }
+                                    else if (p.Status == NikooSystem.Models.OrderStatus.PendingPayment)
+                                    {
+                                        <span class="badge bg-secondary">پرداخت نشده</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">ناموفق</span>
+                                    }
+                                </td>
+                                <td>@(p.Note ?? (p.RefId.HasValue ? "کد پیگیری " + p.RefId.Value : p.PaymentMessage))</td>
+                            </tr>
+                        }
+                        @if (!purchases.Any())
+                        {
+                            <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-hdd fs-3 d-block mb-1"></i>هنوز فضای اضافه‌ای نخریده‌اید.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-trash"></i> پاک‌سازی فایل‌های بی‌استفاده</h5>
+            <p class="small text-muted">تصویر محصول یا مطلبی که حذف کرده‌اید، لوگو و بنری که عوض کرده‌اید و فایل‌های دوره‌ای که برداشته‌اید هنوز جا می‌گیرند. این دکمه فقط فایل‌هایی را پاک می‌کند که دیگر هیچ جای سایت به کار نرفته‌اند.</p>
+            @using (Html.BeginForm("CleanStorage", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <button class="btn-outline-store" type="submit"><i class="bi bi-stars"></i> پاک‌سازی و آزاد کردن فضا</button>
+            }
+            <p class="small text-muted mt-2 mb-0">وقتی فضا پر شود، این پاک‌سازی پیش از هشدار خودکار هم انجام می‌شود.</p>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> وقتی فضا پر می‌شود چه کنم؟</h5>
+            <ol class="small mb-0">
+                <li class="mb-2">اگر فضا پر شود، هنگام انتخاب تصویر یا فایل پیام «فضای کافی ندارید» نمایش داده می‌شود و فایل ذخیره نمی‌شود؛ بقیه سایت و اطلاعات شما بدون تغییر کار می‌کنند.</li>
+                <li class="mb-2">ابتدا دکمه «پاک‌سازی و آزاد کردن فضا» را بزنید؛ شاید فایل‌های قدیمی جای زیادی گرفته باشند.</li>
+                <li class="mb-2">اگر باز هم جا کم بود، یکی از بسته‌های «خرید حجم بیشتر» را انتخاب کنید و در درگاه زرین‌پال پرداخت کنید.</li>
+                <li>پس از پرداخت به همین صفحه برمی‌گردید و فضای جدید همان لحظه اضافه شده است؛ دوباره تصویر یا فایل را بارگذاری کنید.</li>
+            </ol>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> چه چیزی فضا می‌گیرد؟</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">تصاویر خودکار کوچک و فشرده ذخیره می‌شوند؛ هر عکس محصول معمولاً کمتر از ۵۰۰ کیلوبایت جا می‌گیرد، حتی اگر عکس اصلی چند مگابایت باشد.</li>
+                @if (kind.IsDigital)
+                {
+                    <li class="mb-1">ویدئوهای آموزشی بیشترین حجم را دارند؛ پیش از بارگذاری، ویدئو را با کیفیت ۷۲۰p خروجی بگیرید تا حجم آن چند برابر کم شود.</li>
+                }
+                <li class="mb-1">پیوست‌های تیکت پشتیبانی جزو فضای شما حساب نمی‌شوند.</li>
+                <li>فضای پایه هر @kind.SiteNoun @StorageQuota.FormatMb(Model.BaseMb) است و فضای خریداری‌شده به آن اضافه می‌شود.</li>
+            </ul>
+        </div>
+    </div>
+</div>

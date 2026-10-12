@@ -1,0 +1,143 @@
+@model StoreSettings
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "سئو و گوگل";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var site = kind.SiteNoun;
+    var company = (string)ViewBag.CompanyCode;
+    var tenant = ViewBag.Tenant as TenantInfo;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var withoutImage = (int)ViewBag.WithoutImage;
+    var hasDomain = tenant?.ActiveDomain() != null;
+    var ownTexts = !string.IsNullOrWhiteSpace(Model.SeoTitle) || !string.IsNullOrWhiteSpace(Model.SeoDescription);
+    var hasAbout = !string.IsNullOrWhiteSpace(Model.About) || !string.IsNullOrWhiteSpace(Model.HeroSubtitle) || !string.IsNullOrWhiteSpace(Model.Tagline);
+    Func<bool, MvcHtmlString> mark = ok => MvcHtmlString.Create(ok
+        ? "<i class=\"bi bi-check-circle-fill text-success\"></i>"
+        : "<i class=\"bi bi-exclamation-circle-fill text-warning\"></i>");
+}
+<div class="mb-3">
+    <h2 class="mb-1">سئو و نمایش در گوگل</h2>
+    <p class="text-muted small mb-0">بیشتر کارهای سئو خودکار انجام می‌شود؛ این صفحه می‌گوید چه چیزهایی آماده است و شما چه کارهایی باید انجام دهید.</p>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این @site نمونه (دمو) است و عمداً از گوگل پنهان می‌ماند. همه موارد این صفحه در @site خودتان فعال است.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3"><i class="bi bi-clipboard-check"></i> وضعیت @site شما</h5>
+            <ul class="list-unstyled mb-0">
+                <li class="mb-2">
+                    @mark(!string.IsNullOrEmpty(Model.GoogleVerification))
+                    <strong>تأیید مالکیت در گوگل سرچ کنسول:</strong>
+                    @(string.IsNullOrEmpty(Model.GoogleVerification) ? "هنوز کد تأیید ثبت نشده است (مرحله ۲ پایین)." : "کد تأیید ثبت شده است.")
+                </li>
+                <li class="mb-2">
+                    @mark(ownTexts || hasAbout)
+                    <strong>عنوان و توضیح صفحه اول:</strong>
+                    @(ownTexts ? "متن اختصاصی نوشته‌اید." : hasAbout ? "خودکار از شعار و متن «درباره» ساخته می‌شود؛ بهتر است متن اختصاصی بنویسید." : "متن «درباره» و شعار خالی است؛ یکی را در تنظیمات پر کنید.")
+                    <a href="@Url.Action("Settings","ShopAdmin", new { company })">ویرایش</a>
+                </li>
+                <li class="mb-2">
+                    @mark(hasDomain)
+                    <strong>دامنه:</strong>
+                    @if (hasDomain)
+                    {
+                        <span>همه آدرس‌ها روی <b dir="ltr">@tenant.CustomDomain</b> به گوگل معرفی می‌شوند.</span>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(tenant?.CustomDomain))
+                    {
+                        <span>اتصال <b dir="ltr">@tenant.CustomDomain</b> هنوز کامل نشده؛ تا فعال شدن آن، آدرس رایگان به گوگل معرفی می‌شود.</span>
+                    }
+                    else
+                    {
+                        <span>از آدرس رایگان استفاده می‌کنید. دامنه اختصاصی برای اعتماد کاربر و گوگل بهتر است.</span>
+                    }
+                    <a href="@Url.Action("Domain","ShopAdmin", new { company })">@(hasDomain ? "وضعیت دامنه" : "راهنمای اتصال دامنه")</a>
+                </li>
+                @if (kind.Sells)
+                {
+                    <li class="mb-2">
+                        @mark(withoutImage == 0)
+                        <strong>تصویر @kind.ItemsLabel:</strong>
+                        @(withoutImage == 0 ? "همه موارد فعال تصویر دارند." : withoutImage.ToFa() + " مورد فعال بدون تصویر است؛ تصویر در نتایج گوگل" + (kind.IsShop ? " و ترب" : "") + " اثر زیادی دارد.")
+                    </li>
+                }
+                <li>
+                    @mark(NikooSystem.Services.SiteVerification.Seal(Model.EnamadHtml) != null)
+                    <strong>نماد اعتماد (اینماد):</strong>
+                    @(NikooSystem.Services.SiteVerification.Seal(Model.EnamadHtml) == null ? "ثبت نشده؛ برای اعتماد خریدار" + (kind.IsShop ? " و پذیرش در ترب" : "") + " مهم است." : "در فوتر نمایش داده می‌شود.")
+                    <a href="@Url.Action("Enamad","ShopAdmin", new { company })">راهنمای اینماد</a>
+                </li>
+                @if (!string.IsNullOrEmpty(Model.VerifyHomeTitle))
+                {
+                    <li class="mt-2">
+                        @mark(false)
+                        <strong>عنوان موقت صفحه اول:</strong>
+                        عنوان صفحه اول برای تأیید مالکیت عوض شده است؛ بعد از تأیید، آن را در <a href="@Url.Action("Enamad","ShopAdmin", new { company })#verify">صفحه اینماد</a> حذف کنید تا گوگل عنوان اصلی را ببیند.
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> معرفی @site به گوگل (یک بار)</h5>
+            <ol class="mb-0">
+                <li class="mb-2">به <a href="https://search.google.com/search-console" target="_blank" rel="noopener">Google Search Console</a> بروید، «Add property» را بزنید، نوع <b>URL prefix</b> را انتخاب کنید و آدرس صفحه اول را وارد کنید:
+                    <code dir="ltr" class="d-block mt-1">@ViewBag.Home</code>
+                </li>
+                <li class="mb-2">روش تأیید <b>HTML tag</b> را انتخاب کنید، تگ <code dir="ltr">&lt;meta name="google-site-verification" …&gt;</code> را کپی کنید و در
+                    <a href="@Url.Action("Settings","ShopAdmin", new { company })">تنظیمات</a>، کادر «کد تأیید گوگل سرچ کنسول» بچسبانید و ذخیره کنید. سپس در سرچ کنسول «Verify» را بزنید.</li>
+                <li class="mb-2">در سرچ کنسول از منوی <b>Sitemaps</b> این آدرس را ثبت کنید:
+                    <code dir="ltr" class="d-block mt-1">@ViewBag.Sitemap</code>
+                </li>
+                <li class="mb-2">چند روز بعد در بخش <b>Pages</b> ببینید کدام صفحه‌ها ایندکس شده‌اند. برای صفحه تازه‌ای که عجله دارید، آدرسش را در «URL inspection» بزنید و «Request indexing» را انتخاب کنید.</li>
+                <li>اگر بعداً دامنه اختصاصی وصل کردید، دامنه تازه را هم یک property جدا در سرچ کنسول بسازید و همین مراحل را تکرار کنید.</li>
+            </ol>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> نکته‌های نوشتن برای گوگل</h5>
+            <ul class="small mb-0">
+                <li class="mb-1">در فرم هر @(kind.IsContent ? "مطلب" : kind.IsBooking ? "صفحه" : "محصول")، گروه و صفحه کادر <b>«نمایش در گوگل»</b> هست؛ پیش‌نمایش آن دقیقاً مثل نتیجه گوگل است.</li>
+                <li class="mb-1">عنوان تا حدود ۶۰ و توضیح تا حدود ۱۶۰ حرف دیده می‌شود؛ کلمه مهم را اول بیاورید (مثلاً «کفش رانینگ مردانه نایکی» به‌جای «محصول جدید»).</li>
+                <li class="mb-1">توضیح باید دلیل کلیک باشد: قیمت، ارسال رایگان، ضمانت، ساعت کاری یا نکته‌ای که در نتایج دیگر نیست.</li>
+                <li class="mb-1">برای هر @(kind.IsContent ? "مطلب" : "محصول") متن اختصاصی بنویسید؛ متن کپی‌شده از سایت‌های دیگر رتبه نمی‌گیرد.</li>
+                <li class="mb-1">نام انگلیسی کوتاه آدرس (slug) را بعد از انتشار عوض نکنید؛ آدرس قبلی در گوگل از کار می‌افتد.</li>
+                <li>تصویرهای واضح با نام مناسب بگذارید؛ در جستجوی تصویر گوگل و پیش‌نمایش پیام‌رسان‌ها دیده می‌شوند.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-signpost"></i> آدرس‌های مهم</h5>
+            <dl class="small mb-0">
+                <dt>صفحه اول (آدرس اصلی)</dt>
+                <dd class="text-break"><a class="font-monospace" href="@ViewBag.Home" target="_blank" rel="noopener" dir="ltr">@ViewBag.Home</a></dd>
+                <dt>نقشه سایت</dt>
+                <dd class="text-break"><a class="font-monospace" href="@ViewBag.Sitemap" target="_blank" rel="noopener" dir="ltr">@ViewBag.Sitemap</a></dd>
+                <dt>robots.txt</dt>
+                <dd class="text-break mb-0"><a class="font-monospace" href="@ViewBag.Robots" target="_blank" rel="noopener" dir="ltr">@ViewBag.Robots</a></dd>
+            </dl>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-question-circle"></i> چقدر طول می‌کشد؟</h5>
+            <p class="small mb-2">گوگل معمولاً چند روز تا چند هفته بعد از ثبت نقشه سایت صفحه‌ها را نشان می‌دهد. رتبه گرفتن برای کلمه‌های پررقابت به محتوای خوب، لینک از سایت‌های دیگر و زمان نیاز دارد.</p>
+            <p class="small text-muted mb-0">برای دیده شدن سریع‌تر، لینک @site را در شبکه‌های اجتماعی، گوگل مپ (Google Business Profile) و سایت‌های معتبر حوزه کارتان بگذارید.</p>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card mt-3">
+    <h5 class="mb-3"><i class="bi bi-gear-wide-connected"></i> کارهایی که خودکار انجام می‌شود</h5>
+    @Html.Partial("_SeoAutomatic")
+    @if (kind.IsShop)
+    {
+        <p class="small text-muted mt-3 mb-0"><i class="bi bi-graph-up"></i> وقتی <a href="@Url.Action("Torob","ShopAdmin", new { company })">اتصال به ترب</a> روشن است، صفحه هر محصول متاتگ‌های قیمت و موجودی ترب را هم دارد.</p>
+    }
+</div>

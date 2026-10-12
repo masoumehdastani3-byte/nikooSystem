@@ -1,35 +1,47 @@
-@model IEnumerable<NikooSystem.Models.Store.StorePage>
+@model PagedList<StorePage>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "صفحات";
     var company = (string)ViewBag.CompanyCode;
 }
-<div class="d-flex justify-content-between mb-3">
-    <h2>صفحات سایت</h2>
-    <a class="btn-store" href="@Url.Action("EditPage","ShopAdmin", new { company })">صفحه جدید</a>
-</div>
+@Html.PageHeader("صفحات سایت", "صفحه جدید", "EditPage")
 <div class="panel-card">
-    <table class="table">
-        <thead><tr><th>عنوان</th><th>اسلاگ</th><th>وضعیت</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var p in Model)
-        {
-            <tr>
-                <td>@p.Title</td>
-                <td>@p.Slug</td>
-                <td>@(p.IsPublished ? "منتشر" : "پیش‌نویس")</td>
-                <td class="text-nowrap">
-                    <a href="@Url.Action("EditPage","ShopAdmin", new { company, id = p.Id })">ویرایش</a> |
-                    <a href="@Url.Action("Page","Shop", new { company, slug = p.Slug })" target="_blank">مشاهده</a>
-                    @using (Html.BeginForm("DeletePage", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@p.Id" />
-                        <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                    }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @Html.GridToolbar("جستجو در عنوان یا اسلاگ…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("title", "عنوان")
+                    @Html.SortHeader("slug", "اسلاگ")
+                    <th>وضعیت</th>
+                    @Html.SortHeader("updated", "آخرین تغییر")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr>
+                        <td>@p.Title</td>
+                        <td dir="ltr" class="text-end small">@p.Slug</td>
+                        <td>
+                            @if (p.IsPublished) { <span class="badge bg-success-subtle text-success-emphasis">منتشر</span> }
+                            else { <span class="badge bg-secondary">پیش‌نویس</span> }
+                        </td>
+                        <td class="small text-muted">@p.UpdatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Page", "Shop", new { company, slug = p.Slug }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            @Html.EditLink("EditPage", p.Id)
+                            @Html.DeleteButton("DeletePage", p.Id, "صفحه «" + p.Title + "» حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-file-earmark-text fs-3 d-block mb-1"></i>صفحه‌ای پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

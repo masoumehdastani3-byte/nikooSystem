@@ -1,40 +1,40 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreOrder>
-@using NikooSystem.Helpers
+@model PagedList<StoreOrder>
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     ViewBag.Title = "سفارش‌های من";
     var company = (string)ViewBag.CompanyCode;
-    var customer = ViewBag.Customer as NikooSystem.Models.Store.StoreCustomer;
+    var customer = ViewBag.Customer as StoreCustomer;
+    var kind = (SiteKindInfo)ViewBag.Kind;
 }
 <section class="py-4">
     <div class="container" style="max-width:860px;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="section-title mb-0">سفارش‌های @(customer?.FullName)</h1>
-            <div>
-                <a class="btn-outline-store" href="@Url.Action("Profile","ShopAccount", new { company })">پروفایل</a>
-                <a class="btn-outline-store" href="@Url.Action("Logout","ShopAccount", new { company })">خروج</a>
-            </div>
-        </div>
+        @Html.Partial("_AccountNav", "Orders")
+        <h1 class="section-title">سفارش‌های @(customer?.FullName)</h1>
         @foreach (var o in Model)
         {
-            <div class="panel-card mb-2">
-                <div class="d-flex justify-content-between">
-                    <strong>@o.OrderNumber</strong>
-                    <span>@o.Status</span>
+            <div class="panel-card mb-2 account-order">
+                <div class="d-flex justify-content-between align-items-center">
+                    <strong dir="ltr">@o.OrderNumber</strong>
+                    @Html.StatusBadge(o.Status)
                 </div>
-                <div class="text-muted small">@o.CreatedAt.ToString("yyyy/MM/dd HH:mm")</div>
-                <div class="mt-2">@o.Amount.ToToman()</div>
+                <div class="text-muted small">@o.CreatedAt.ToShamsiText() · @o.CreatedAt.ToString("HH:mm").ToFaDigits()</div>
                 <ul class="mb-0 mt-2">
                     @foreach (var i in o.Items)
                     {
-                        <li>@i.Title × @i.Quantity</li>
+                        <li>@i.Title @(i.Quantity > 1 ? "× " + i.Quantity.ToFa() : "") @if (i.IsDigital) { <i class="bi bi-cloud-arrow-down text-muted" title="دیجیتال"></i> }</li>
                     }
                 </ul>
+                <div class="d-flex flex-wrap gap-3 mt-2 small">
+                    <span>مبلغ: <strong>@o.Amount.ToToman()</strong></span>
+                    @if (o.ShippingCost > 0) { <span>هزینه ارسال: @o.ShippingCost.ToToman()</span> }
+                    @if (!string.IsNullOrWhiteSpace(o.TrackingCode)) { <span><i class="bi bi-truck"></i> کد رهگیری مرسوله: <strong dir="ltr">@o.TrackingCode</strong></span> }
+                </div>
             </div>
         }
         @if (!Model.Any())
         {
-            <div class="panel-card">هنوز سفارشی ندارید. <a href="@Url.Action("Catalog","Shop", new { company })">خرید کنید</a></div>
+            <div class="panel-card">هنوز سفارشی ندارید. <a href="@Url.Action("Catalog","Shop", new { company })">مشاهده @kind.ItemsLabel</a></div>
         }
+        @Html.Pager(Model, sizes: false)
     </div>
 </section>

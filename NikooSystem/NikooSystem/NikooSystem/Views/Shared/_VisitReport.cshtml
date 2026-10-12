@@ -1,0 +1,107 @@
+@model NikooSystem.Models.VisitReport
+@{
+    var maxDay = Math.Max(1, Model.Days.Max(d => d.Views));
+    var maxMonth = Math.Max(1, Model.Months.Max(m => m.Views));
+    var empty = Model.Months.All(m => m.Views == 0);
+}
+<div class="vs-report">
+    @if (!string.IsNullOrEmpty(Model.Title))
+    {
+        <h4 class="vs-title">@Model.Title</h4>
+    }
+    <div class="vs-tiles">
+        @Tile("bi-sun", "امروز", Model.Today)
+        @Tile("bi-clock-history", "دیروز", Model.Yesterday)
+        @Tile("bi-calendar3", "این ماه · " + Model.ThisMonth.Label, Model.ThisMonth)
+        @Tile("bi-calendar-minus", "ماه قبل · " + Model.LastMonth.Label, Model.LastMonth)
+    </div>
+
+    @if (empty)
+    {
+        <div class="vs-empty"><i class="bi bi-bar-chart"></i> هنوز بازدیدی ثبت نشده است؛ آمار از اولین بازدید سایت جمع می‌شود.</div>
+    }
+
+    <div class="vs-card">
+        <div class="vs-card-head">
+            <h5>بازدید روزانه <small>۳۰ روز اخیر</small></h5>
+            @Legend()
+        </div>
+        <div class="vs-chart is-days" role="img" aria-label="نمودار بازدید روزانه ۳۰ روز اخیر">
+            @foreach (var d in Model.Days)
+            {
+                <div class="vs-col @(d.Start == DateTime.Today ? "is-now" : null)" title="@d.Label: @d.Views.ToFa() بازدید، @d.Visitors.ToFa() بازدیدکننده">
+                    <b style="height:@(d.Views * 100 / maxDay)%"><i style="height:@(d.Views == 0 ? 0 : d.Visitors * 100 / d.Views)%"></i></b>
+                    <span>@d.Start.ToShamsi().Substring(8).TrimStart('0').ToFaDigits()</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="vs-card">
+        <div class="vs-card-head">
+            <h5>بازدید ماهانه <small>۱۲ ماه اخیر</small></h5>
+            @Legend()
+        </div>
+        <div class="vs-chart is-months" role="img" aria-label="نمودار بازدید ماهانه ۱۲ ماه اخیر">
+            @foreach (var m in Model.Months)
+            {
+                <div class="vs-col @(m.Start == Model.ThisMonth.Start ? "is-now" : null)" title="@m.Label: @m.Views.ToFa() بازدید، @m.Visitors.ToFa() بازدیدکننده">
+                    <em>@(m.Views > 0 ? m.Views.ToFa() : "")</em>
+                    <b style="height:@(m.Views * 100 / maxMonth)%"><i style="height:@(m.Views == 0 ? 0 : Math.Min(100, m.Visitors * 100 / m.Views))%"></i></b>
+                    <span>@m.Label.Split(' ')[0]</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <details class="vs-card vs-table">
+        <summary><i class="bi bi-table"></i> جدول بازدید روزانه و ماهانه</summary>
+        <div class="row g-3 mt-1">
+            <div class="col-lg-6">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>روز</th><th>بازدید</th><th>بازدیدکننده</th></tr></thead>
+                    <tbody>
+                        @foreach (var d in Enumerable.Reverse(Model.Days))
+                        {
+                            <tr><td>@d.Label</td><td>@d.Views.ToFa()</td><td>@d.Visitors.ToFa()</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <div class="col-lg-6">
+                <table class="table table-sm align-middle mb-0">
+                    <thead><tr><th>ماه</th><th>بازدید</th><th>بازدیدکننده</th></tr></thead>
+                    <tbody>
+                        @foreach (var m in Enumerable.Reverse(Model.Months))
+                        {
+                            <tr><td>@m.Label</td><td>@m.Views.ToFa()</td><td>@m.Visitors.ToFa()</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </details>
+
+    <p class="vs-note">
+        <i class="bi bi-info-circle"></i>
+        «بازدید» تعداد صفحه‌هایی است که دیده شده؛ «بازدیدکننده» افراد متفاوت است: هر نفر در آمار روزانه روزی یک بار و در آمار ماهانه ماهی یک بار شمرده می‌شود.
+        بازدید خود مدیران سایت و ربات‌های موتورهای جستجو حساب نمی‌شود.
+    </p>
+</div>
+
+@helper Tile(string icon, string label, NikooSystem.Models.VisitCount count)
+{
+    <div class="vs-tile">
+        <i class="bi @icon"></i>
+        <div>
+            <span>@label</span>
+            <strong>@count.Views.ToFa() <small>بازدید</small></strong>
+            <small>@count.Visitors.ToFa() بازدیدکننده</small>
+        </div>
+    </div>
+}
+
+@helper Legend()
+{
+    <div class="vs-legend"><span><b class="is-views"></b> بازدید</span><span><b class="is-visitors"></b> بازدیدکننده</span></div>
+}

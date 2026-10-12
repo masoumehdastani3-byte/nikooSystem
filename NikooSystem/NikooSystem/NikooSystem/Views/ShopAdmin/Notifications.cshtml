@@ -1,0 +1,11 @@
+@model NikooSystem.Models.NotifyPageVm
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اطلاع‌رسانی بله";
+}
+<div class="mb-3">
+    <h2 class="mb-1">اطلاع‌رسانی در بله</h2>
+    <p class="text-muted small mb-0">حساب بله خود را وصل کنید تا هر سفارش، پرداخت، نوبت یا پیام تازه همان لحظه در اپلیکیشن بله به شما خبر داده شود.</p>
+</div>
+
+@Html.Partial("_BaleNotify", Model, new ViewDataDictionary(ViewData) { ["Card"] = "panel-card", ["Primary"] = "btn-store" })

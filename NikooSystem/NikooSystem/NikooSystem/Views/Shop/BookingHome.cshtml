@@ -1,0 +1,235 @@
+﻿@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+    var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
+    var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
+    var services = (List<StoreService>)ViewBag.Services;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+    ViewBag.Title = "نوبت‌دهی آنلاین";
+}
+
+@foreach (var sec in sections)
+{
+    if (sec.Type == "hero")
+    {
+        <section class="bk-hero bk-hero-@layoutId">
+            <div class="container">
+                <div class="bk-hero-grid">
+                    <div class="bk-hero-copy">
+                        @if (!string.IsNullOrWhiteSpace(settings.Tagline))
+                        {
+                            <div class="bk-kicker"><i class="bi bi-calendar-check"></i> @settings.Tagline</div>
+                        }
+                        <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                        @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))
+                        {
+                            <p>@settings.HeroSubtitle</p>
+                        }
+                        <div class="bk-hero-actions">
+                            <a class="btn-wm bk-btn-lg" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> رزرو نوبت</a>
+                            <a class="bk-btn-ghost" href="@Url.Action("Track","Shop", new { company })"><i class="bi bi-search"></i> پیگیری نوبت</a>
+                        </div>
+                        <ul class="bk-hero-facts">
+                            <li><i class="bi bi-lightning-charge"></i> رزرو در کمتر از یک دقیقه</li>
+                            <li><i class="bi bi-clock-history"></i> فقط ساعت‌های واقعاً خالی</li>
+                            @if (settings.BookingCancelHours > 0)
+                            {
+                                <li><i class="bi bi-x-circle"></i> لغو آنلاین تا @settings.BookingCancelHours.ToString().ToFaDigits() ساعت قبل</li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="bk-hero-media" style="--bk-hero:url('@heroImg')">
+                        @if (services.Any())
+                        {
+                            <div class="bk-hero-card">
+                                <strong><i class="bi bi-stars"></i> خدمات پرطرفدار</strong>
+                                @foreach (var s in services.Take(3))
+                                {
+                                    <a href="@Url.Action("Book","Shop", new { company, serviceId = s.Id })">
+                                        <span>@s.Title</span>
+                                        <small>@BookingTime.Duration(s.DurationMinutes)</small>
+                                    </a>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "services" && services.Any())
+    {
+        <section class="cn-section bk-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? "خدمات و تعرفه‌ها")</h2>
+                    <a class="hs-more" href="@Url.Action("Services","Shop", new { company })">همه خدمات <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="bk-services">
+                    @foreach (var s in services.Take(6))
+                    {
+                        @Html.Partial("_BookingServiceCard", s)
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "staff" && staff.Any())
+    {
+        <section class="cn-section bk-section bk-section-alt">
+            <div class="container">
+                <h2 class="cn-block-title">@(sec.Title ?? "متخصصان ما")</h2>
+                <div class="bk-staff-grid">
+                    @foreach (var p in staff)
+                    {
+                        @Html.Partial("_BookingStaffCard", p)
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "hours" && staff.Any())
+    {
+        var week = Enumerable.Range(0, 7).Select(d => new
+        {
+            Day = d,
+            Hours = staff.SelectMany(p => p.HoursOn(d)).ToList()
+        }).ToList();
+        <section class="cn-section bk-section">
+            <div class="container">
+                <div class="row g-4 align-items-stretch">
+                    <div class="col-lg-6">
+                        <div class="bk-panel h-100">
+                            <h2 class="cn-block-title">@(sec.Title ?? "ساعت پذیرش")</h2>
+                            <ul class="bk-hours">
+                                @foreach (var d in week)
+                                {
+                                    <li class="@(d.Day == BookingTime.DayOf(DateTime.Today) ? "is-today" : "")">
+                                        <span>@BookingTime.DayNames[d.Day]</span>
+                                        @if (d.Hours.Any())
+                                        {
+                                            <strong>@BookingTime.Clock(d.Hours.Min(h => h.StartMinute)) تا @BookingTime.Clock(d.Hours.Max(h => h.EndMinute))</strong>
+                                        }
+                                        else
+                                        {
+                                            <em>تعطیل</em>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="bk-panel bk-steps h-100">
+                            <h2 class="cn-block-title">رزرو آنلاین در سه قدم</h2>
+                            <ol>
+                                <li><i class="bi bi-clipboard-check"></i><div><strong>خدمت و متخصص</strong><span>خدمت مورد نیاز و در صورت تمایل متخصص دلخواهتان را انتخاب کنید.</span></div></li>
+                                <li><i class="bi bi-calendar3"></i><div><strong>روز و ساعت</strong><span>فقط زمان‌های خالی نمایش داده می‌شوند؛ یکی را انتخاب کنید.</span></div></li>
+                                <li><i class="bi bi-check2-circle"></i><div><strong>ثبت و کد پیگیری</strong><span>نام و موبایل را وارد کنید و کد پیگیری نوبت را بگیرید.</span></div></li>
+                            </ol>
+                            <a class="btn-wm" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> شروع رزرو</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "gallery" && gallery.Any())
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? "گالری تصاویر")</h2>
+                    <a class="hs-more" href="@Url.Action("Gallery","Shop", new { company })">همه تصاویر <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="gallery-grid">
+                    @foreach (var g in gallery)
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "about" && !string.IsNullOrWhiteSpace(settings.About))
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-about">
+                    <div>
+                        <h2>درباره @settings.StoreName</h2>
+                        <p>@settings.About</p>
+                    </div>
+                    <a class="btn-wm" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر بدانید</a>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "contact")
+    {
+        <section class="cn-section cn-contact-band">
+            <div class="container">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-5">
+                        <h2 class="cn-block-title">@(sec.Title ?? "پرسشی دارید؟")</h2>
+                        <p class="text-muted">برای هماهنگی نوبت‌های خاص یا هر پرسشی پیام بگذارید تا با شما تماس بگیریم.</p>
+                        @if (!string.IsNullOrWhiteSpace(settings.Phone)) { <div class="mb-1"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Email)) { <div class="mb-1"><i class="bi bi-envelope"></i> @settings.Email</div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Address)) { <div><i class="bi bi-geo-alt"></i> @settings.Address</div> }
+                    </div>
+                    <div class="col-lg-7">
+                        @using (Html.BeginForm("Contact", "Shop", new { company }, FormMethod.Post, new { @class = "cn-contact-form" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="cn-hp" aria-hidden="true">
+                                <label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6"><input class="form-control" name="FullName" placeholder="نام *" maxlength="80" required /></div>
+                                <div class="col-md-6"><input class="form-control" name="Mobile" placeholder="شماره تماس" dir="ltr" maxlength="11" /></div>
+                                <div class="col-12"><textarea class="form-control" name="Message" rows="3" placeholder="پیام شما *" maxlength="4000" required></textarea></div>
+                            </div>
+                            <button class="btn-wm mt-2" type="submit"><i class="bi bi-envelope"></i> ارسال پیام</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "banner" && !string.IsNullOrWhiteSpace(sec.Title))
+    {
+        <section class="hs-banner-wrap" id="sec-@sec.Id">
+            <div class="container">
+                <div class="hs-banner @(string.IsNullOrWhiteSpace(sec.ImageUrl) ? "" : "has-img")"
+                     style="@(string.IsNullOrWhiteSpace(sec.ImageUrl) ? null : "--hs-img:url('" + sec.ImageUrl + "')")">
+                    <div class="hs-banner-copy">
+                        <h2>@sec.Title</h2>
+                        @if (!string.IsNullOrWhiteSpace(sec.Subtitle)) { <p>@sec.Subtitle</p> }
+                        @if (!string.IsNullOrWhiteSpace(sec.LinkUrl))
+                        {
+                            <a class="btn-wm" href="@sec.LinkUrl">@(sec.ButtonText ?? "مشاهده")</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+}
+
+@if (!services.Any())
+{
+    <section class="cn-section">
+        <div class="container">
+            <div class="cat-empty">
+                <i class="bi bi-calendar-x"></i>
+                <h3>نوبت‌دهی آنلاین به‌زودی فعال می‌شود</h3>
+                <p>برای گرفتن نوبت فعلاً با ما تماس بگیرید.</p>
+            </div>
+        </div>
+    </section>
+}

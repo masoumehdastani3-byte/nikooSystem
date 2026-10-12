@@ -1,8 +1,9 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreGalleryItem>
+@model PagedList<StoreGalleryItem>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "گالری";
     var company = (string)ViewBag.CompanyCode;
+    var albums = (List<string>)ViewBag.Albums;
     var baseUrl = Request.Url.GetLeftPart(UriPartial.Authority).TrimEnd('/');
 
     Func<string, string> fullUrl = (path) =>
@@ -23,74 +24,72 @@
         @Html.AntiForgeryToken()
         <div class="row g-2 align-items-end">
             <div class="col-md-3"><label class="form-label">عنوان</label><input class="form-control" name="title" /></div>
-            <div class="col-md-3"><label class="form-label">آلبوم</label><input class="form-control" name="album" value="عمومی" /></div>
+            <div class="col-md-3">
+                <label class="form-label">آلبوم</label>
+                <input class="form-control" name="album" value="عمومی" list="gallery-albums" />
+                <datalist id="gallery-albums">
+                    @foreach (var a in albums) { <option value="@a"></option> }
+                </datalist>
+            </div>
             <div class="col-md-4"><label class="form-label">تصاویر (چندتایی)</label><input class="form-control" type="file" name="imageFiles" accept="image/*" multiple required /></div>
-            <div class="col-md-2"><button class="btn-store w-100" type="submit">آپلود</button></div>
+            <div class="col-md-2"><button class="btn-store w-100" type="submit"><i class="bi bi-cloud-arrow-up"></i> آپلود</button></div>
         </div>
     }
 </div>
 
-<div class="row g-3">
-@foreach (var g in Model)
-{
-    var thumbFull = fullUrl(g.ThumbUrl);
-    var largeFull = fullUrl(g.LargeUrl);
-    <div class="col-md-6 col-xl-4">
-        <div class="panel-card h-100">
-            <img src="@(g.ThumbUrl ?? g.LargeUrl)" class="w-100 rounded mb-2" alt="@g.Title" style="height:180px;object-fit:cover;" />
-            <div class="fw-bold">@g.Title</div>
-            <div class="small text-muted mb-2">آلبوم: @g.Album</div>
-
-            <label class="form-label small mb-1">آدرس نسخه کوچک (Thumb)</label>
-            <div class="input-group input-group-sm mb-2">
-                <input type="text" class="form-control" dir="ltr" readonly value="@thumbFull" id="thumb-@g.Id" />
-                <button type="button" class="btn btn-outline-secondary" onclick="copyUrl('thumb-@g.Id', this)">کپی</button>
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در عنوان تصویر…", new GridSelect("album", "همه آلبوم‌ها", GridHtml.Options(albums, a => a, a => a)))
+    <div class="row g-3">
+        @foreach (var g in Model)
+        {
+            var largeFull = fullUrl(g.LargeUrl);
+            <div class="col-sm-6 col-lg-4 col-xxl-3">
+                <div class="gallery-tile">
+                    <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                    <div class="p-2">
+                        <div class="fw-bold text-truncate" title="@g.Title">@g.Title</div>
+                        <div class="small text-muted mb-2"><i class="bi bi-folder2"></i> @g.Album</div>
+                        <div class="row-actions text-start">
+                            <button type="button" class="icon-btn is-edit" title="کپی آدرس تصویر بزرگ" aria-label="کپی آدرس تصویر بزرگ" data-copy="@largeFull"><i class="bi bi-link-45deg"></i></button>
+                            <button type="button" class="icon-btn" title="کپی آدرس تصویر کوچک" aria-label="کپی آدرس تصویر کوچک" data-copy="@fullUrl(g.ThumbUrl)"><i class="bi bi-image"></i></button>
+                            @Html.IconLink(largeFull, "bi-box-arrow-up-left", "باز کردن", "is-view", true)
+                            @Html.DeleteButton("DeleteGalleryItem", g.Id, "این تصویر حذف شود؟")
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <label class="form-label small mb-1">آدرس نسخه بزرگ (Large)</label>
-            <div class="input-group input-group-sm mb-2">
-                <input type="text" class="form-control" dir="ltr" readonly value="@largeFull" id="large-@g.Id" />
-                <button type="button" class="btn btn-outline-secondary" onclick="copyUrl('large-@g.Id', this)">کپی</button>
-            </div>
-
-            <div class="d-flex gap-2 mt-2">
-                <a class="btn btn-sm btn-outline-primary" href="@largeFull" target="_blank">باز کردن</a>
-                @using (Html.BeginForm("DeleteGalleryItem", "ShopAdmin", new { company }, FormMethod.Post, new { onsubmit = "return confirm('حذف شود؟');", @class = "flex-grow-1" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@g.Id" />
-                    <button class="btn btn-sm btn-outline-danger w-100" type="submit">حذف</button>
-                }
-            </div>
-        </div>
+        }
     </div>
-}
+    @if (Model.Count == 0)
+    {
+        <div class="text-center text-muted py-5"><i class="bi bi-images fs-2 d-block mb-2"></i>تصویری پیدا نشد.</div>
+    }
+    @Html.Pager(Model)
 </div>
-
-@if (!Model.Any())
-{
-    <div class="panel-card">هنوز تصویری در گالری نیست.</div>
-}
 
 @section scripts {
 <script>
-function copyUrl(id, btn) {
-  var input = document.getElementById(id);
-  if (!input) return;
-  var text = input.value;
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  var text = btn.getAttribute('data-copy');
+  var done = function () {
+    var icon = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check2"></i>';
+    btn.classList.add('is-ok');
+    setTimeout(function () { btn.innerHTML = icon; btn.classList.remove('is-ok'); }, 1200);
+  };
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(function () {
-      var old = btn.textContent;
-      btn.textContent = 'کپی شد';
-      setTimeout(function () { btn.textContent = old; }, 1200);
-    });
+    navigator.clipboard.writeText(text).then(done);
   } else {
+    var input = document.createElement('textarea');
+    input.value = text;
+    document.body.appendChild(input);
     input.select();
     document.execCommand('copy');
-    var old2 = btn.textContent;
-    btn.textContent = 'کپی شد';
-    setTimeout(function () { btn.textContent = old2; }, 1200);
+    input.remove();
+    done();
   }
-}
+});
 </script>
 }

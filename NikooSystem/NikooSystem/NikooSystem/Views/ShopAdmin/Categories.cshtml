@@ -1,36 +1,43 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreCategory>
+@model PagedList<TreeRow<StoreCategory>>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "گروه‌های محصول";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var title = kind.IsContent ? "سرویس‌ها و دسته‌بندی مطالب" : "گروه‌های محصول";
+    ViewBag.Title = title;
     var company = (string)ViewBag.CompanyCode;
 }
-<div class="d-flex justify-content-between mb-3">
-    <h2>گروه‌های محصول (درختی)</h2>
-    <a class="btn-store" href="@Url.Action("EditCategory","ShopAdmin", new { company })">گروه جدید</a>
-</div>
+@Html.PageHeader(title + " (درختی)", "گروه جدید", "EditCategory")
 <div class="panel-card">
-    <table class="table align-middle">
-        <thead><tr><th>عنوان</th><th>والد</th><th>اسلاگ</th><th>ترتیب</th><th></th></tr></thead>
-        <tbody>
-        @foreach (var c in Model.OrderBy(x => x.SortOrder))
-        {
-            var parent = Model.FirstOrDefault(p => p.Id == c.ParentId);
-            <tr>
-                <td>@(c.ParentId.HasValue ? "— " : "")@c.Title</td>
-                <td>@(parent?.Title ?? "—")</td>
-                <td>@c.Slug</td>
-                <td>@c.SortOrder</td>
-                <td class="text-nowrap">
-                    <a href="@Url.Action("EditCategory","ShopAdmin", new { company, id = c.Id })">ویرایش</a>
-                    @using (Html.BeginForm("DeleteCategory", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف این گروه و زیرمجموعه‌ها؟');" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@c.Id" />
-                        <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                    }
-                </td>
-            </tr>
-        }
-        </tbody>
-    </table>
+    @Html.GridToolbar("جستجو در عنوان گروه…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>عنوان</th><th>والد</th><th>اسلاگ</th><th>ترتیب</th><th>وضعیت</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var row in Model)
+                {
+                    var c = row.Node;
+                    <tr>
+                        <td style="padding-inline-start:@(12 + row.Depth * 24)px">
+                            @if (row.Depth > 0) { <i class="bi bi-arrow-return-left text-muted"></i> }
+                            @c.Title
+                        </td>
+                        <td>@(row.Parent?.Title ?? "—")</td>
+                        <td dir="ltr" class="text-end small">@c.Slug</td>
+                        <td>@c.SortOrder</td>
+                        <td>@(c.IsActive ? "فعال" : "غیرفعال")</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action(kind.IsContent ? "Blog" : "Catalog", "Shop", new { company, categoryId = c.Id }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            @Html.EditLink("EditCategory", c.Id)
+                            @Html.DeleteButton("DeleteCategory", c.Id, "«" + c.Title + "» و زیرمجموعه‌هایش حذف شوند؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-diagram-3 fs-3 d-block mb-1"></i>گروهی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

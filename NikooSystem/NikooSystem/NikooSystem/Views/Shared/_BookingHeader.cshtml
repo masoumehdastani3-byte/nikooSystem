@@ -1,0 +1,50 @@
+@{
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus ?? Enumerable.Empty<StoreMenuItem>();
+}
+<div class="bk-topbar">
+    <div class="container">
+        @if (!string.IsNullOrWhiteSpace(settings.Phone))
+        {
+            <a href="tel:@settings.Phone"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
+        }
+        @if (!string.IsNullOrWhiteSpace(settings.Address))
+        {
+            <span class="d-none d-md-inline"><i class="bi bi-geo-alt"></i> @settings.Address</span>
+        }
+        <a class="ms-auto" href="@Url.Action("Track","Shop", new { company })"><i class="bi bi-search"></i> پیگیری نوبت</a>
+    </div>
+</div>
+<header class="bk-header">
+    <div class="container">
+        <div class="bk-header-row">
+            @Html.StoreBrand("wm-brand bk-brand", withTagline: true)
+            <input type="checkbox" id="bkNavToggle" class="cn-nav-toggle" hidden />
+            <label for="bkNavToggle" class="cn-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+            <nav class="bk-nav">
+                @foreach (var item in StoreMenuHelper.Roots(menus, "main"))
+                {
+                    var children = StoreMenuHelper.Children(menus, item.Id).ToList();
+                    if (children.Any())
+                    {
+                        <div class="wm-drop">
+                            <a href="@item.Url">@item.Title <i class="bi bi-chevron-down"></i></a>
+                            <div class="wm-drop-menu">
+                                @foreach (var c in children)
+                                {
+                                    <a href="@c.Url">@c.Title</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <a href="@item.Url">@item.Title</a>
+                    }
+                }
+            </nav>
+            <a class="btn-wm bk-cta" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> رزرو نوبت</a>
+        </div>
+    </div>
+</header>

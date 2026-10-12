@@ -1,0 +1,72 @@
+/* Upload space in the store panel: the warning banner of every page, the "no space" dialog and the Storage page. */
+
+.storage-banner {
+    display: flex; align-items: center; gap: .75rem; flex-wrap: wrap;
+    border-radius: 14px;
+    padding: .8rem 1rem;
+    margin-bottom: 1.25rem;
+    border: 1px solid #fcd9a0;
+    background: linear-gradient(90deg, #fff7e6, #fff);
+}
+.storage-banner > i { font-size: 1.35rem; color: #d97706; }
+.storage-banner .grow { flex: 1 1 240px; min-width: 0; }
+.storage-banner a.btn { white-space: nowrap; }
+.storage-banner.is-full { border-color: #f5b5b5; background: linear-gradient(90deg, #fdecec, #fff); }
+.storage-banner.is-full > i { color: #dc2626; }
+
+.storage-modal { border: 0; border-radius: 18px; }
+.storage-modal-icon {
+    width: 64px; height: 64px; margin: 0 auto .75rem;
+    display: grid; place-items: center;
+    border-radius: 50%;
+    background: #fdecec; color: #dc2626;
+    font-size: 1.8rem;
+}
+
+.storage-big { font-size: 1.6rem; font-weight: 700; color: var(--store-primary, #1b4332); line-height: 1.3; }
+.storage-big span { font-size: .95rem; font-weight: 400; color: #6c757d; }
+.storage-percent { font-size: 1.25rem; font-weight: 700; color: #198754; }
+.storage-usage.is-near .storage-percent { color: #d97706; }
+.storage-usage.is-full .storage-percent { color: #dc2626; }
+
+.storage-bar {
+    display: flex;
+    height: 14px;
+    border-radius: 999px;
+    background: #e9ecef;
+    overflow: hidden;
+    margin-bottom: .75rem;
+}
+.storage-bar span { display: block; height: 100%; transition: width .4s ease; }
+.seg-images { background: #2d6a4f; }
+.seg-files { background: #4c8bf5; }
+.seg-free { background: #e9ecef; border: 1px solid #ced4da; }
+.storage-usage.is-near .seg-images { background: #f59e0b; }
+.storage-usage.is-full .seg-images { background: #dc2626; }
+
+.storage-legend { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-wrap: wrap; gap: .4rem 1.25rem; font-size: .88rem; }
+.storage-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-left: .25rem; vertical-align: middle; }
+
+.storage-packages { display: grid; grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: .75rem; }
+.storage-package .btn-store { white-space: nowrap; padding: .55rem .75rem; }
+.storage-package {
+    position: relative;
+    border: 1px solid #dee2e6;
+    border-radius: 14px;
+    padding: 1rem .9rem .9rem;
+    text-align: center;
+    background: #fff;
+}
+.storage-package.is-popular { border-color: var(--store-primary, #1b4332); box-shadow: 0 6px 18px rgba(27, 67, 50, .12); }
+.storage-package .size { font-weight: 700; font-size: 1.05rem; margin-bottom: .35rem; }
+.storage-package .price { font-size: 1.05rem; color: var(--store-price, #2d6a4f); font-weight: 700; }
+.storage-package .btn-store:disabled { opacity: .55; cursor: not-allowed; }
+.storage-tag {
+    position: absolute; top: -.6rem; right: 50%; transform: translateX(50%);
+    background: var(--store-primary, #1b4332); color: #fff;
+    font-size: .72rem; border-radius: 999px; padding: .1rem .6rem;
+    white-space: nowrap;
+}
+
+/* The storage card of Nikoo's admin (Admin/Store) */
+.storage-mini .storage-bar { height: 10px; }

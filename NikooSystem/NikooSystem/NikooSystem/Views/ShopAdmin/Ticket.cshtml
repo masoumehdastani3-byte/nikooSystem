@@ -1,0 +1,115 @@
+@model TicketPageVm
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    var t = Model.Ticket;
+    ViewBag.Title = "تیکت #" + t.Id.ToFa();
+    var company = (string)ViewBag.CompanyCode;
+    Func<DateTime, string> at = d => d.ToShamsiText() + " ساعت " + d.ToString("HH:mm").ToFaDigits();
+}
+<link href="@Url.Asset("~/Content/support.css")" rel="stylesheet" />
+<div class="sp">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <div class="small text-muted mb-1">تیکت #@t.Id.ToFa() · @SupportLabels.Category(t.Category)</div>
+            <h2 class="mb-0">@t.Subject</h2>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="sp-pill @SupportLabels.StatusTone(t.Status)">@SupportLabels.Status(t.Status, false)</span>
+            <a class="btn-outline-store" href="@Url.Action("Support", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> همه تیکت‌ها</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="panel-card mb-3">
+                <div class="sp-thread">
+                    @foreach (var m in Model.Messages)
+                    {
+                        <div class="sp-msg @(m.FromSupport ? "is-theirs is-support" : "is-mine")">
+                            <span class="sp-avatar"><i class="bi @(m.FromSupport ? "bi-headset" : "bi-person")"></i></span>
+                            <div class="sp-bubble">
+                                <div class="sp-meta">
+                                    <strong>@(m.FromSupport ? "پشتیبانی نیکو" : (string.IsNullOrEmpty(m.AuthorName) ? "شما" : m.AuthorName))</strong>
+                                    <span>@at(m.CreatedAt)</span>
+                                    @if (m.Via == TicketVia.Bale) { <span class="sp-via"><i class="bi bi-phone"></i> از بله</span> }
+                                </div>
+                                @if (!string.IsNullOrEmpty(m.Body))
+                                {
+                                    <div class="sp-body">@m.Body</div>
+                                }
+                                @if (m.ImageList.Length > 0)
+                                {
+                                    <div class="sp-images">
+                                        @foreach (var img in m.ImageList)
+                                        {
+                                            var src = Url.Action("TicketImage", "ShopAdmin", new { company, id = m.Id, name = img });
+                                            <a class="sp-image" href="@src" target="_blank" rel="noopener"><img src="@src" alt="تصویر پیوست" loading="lazy" /></a>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @if (!Model.IsDemo)
+            {
+                <div class="panel-card sp-reply">
+                    @if (t.Status == TicketStatus.Closed)
+                    {
+                        <div class="sp-closed-note"><i class="bi bi-lock"></i> این تیکت بسته شده است؛ اگر هنوز سؤالی دارید بنویسید تا دوباره باز شود.</div>
+                    }
+                    @using (Html.BeginForm("ReplyTicket", "ShopAdmin", new { company, id = t.Id }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <label class="form-label fw-bold" for="replyBody">پاسخ شما</label>
+                        <textarea class="form-control" id="replyBody" name="body" maxlength="4000" placeholder="توضیح بیشتر یا پاسخ به پشتیبانی…"></textarea>
+                        @Html.Partial("_SupportUpload")
+                        <div class="sp-reply-foot">
+                            <span class="sp-reply-hint"><i class="bi bi-info-circle"></i> پاسخ شما همان لحظه برای پشتیبانی نیکو در پنل و بله فرستاده می‌شود.</span>
+                            <button class="btn-store" type="submit"><i class="bi bi-reply"></i> ارسال پاسخ</button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        <div class="col-lg-4">
+            <div class="panel-card mb-3">
+                <h5 class="mb-3">مشخصات تیکت</h5>
+                <dl class="sp-facts">
+                    <dt>شماره</dt><dd>#@t.Id.ToFa()</dd>
+                    <dt>بخش</dt><dd>@SupportLabels.Category(t.Category)</dd>
+                    <dt>اولویت</dt><dd><span class="sp-pill is-plain @SupportLabels.PriorityTone(t.Priority)">@SupportLabels.Priority(t.Priority)</span></dd>
+                    <dt>ثبت</dt><dd>@at(t.CreatedAt)</dd>
+                    <dt>آخرین پیام</dt><dd>@at(t.UpdatedAt)</dd>
+                    @if (t.ClosedAt.HasValue) { <dt>بسته شد</dt><dd>@at(t.ClosedAt.Value)</dd> }
+                </dl>
+                @if (t.Status != TicketStatus.Closed && !Model.IsDemo)
+                {
+                    <hr />
+                    @Html.PostButton("CloseTicket", new { id = t.Id }, "مشکل حل شد؛ تیکت بسته شود", "btn btn-outline-secondary btn-sm w-100", "این تیکت بسته شود؟")
+                }
+            </div>
+            @if (Model.BotReady && !Model.IsDemo)
+            {
+                <div class="sp-bale @(Model.BaleRecipients > 0 ? "is-on" : null)">
+                    <span class="sp-bale-icon"><i class="bi @(Model.BaleRecipients > 0 ? "bi-check2-all" : "bi-phone")"></i></span>
+                    <div class="sp-bale-text">
+                        @if (Model.BaleRecipients > 0)
+                        {
+                            <strong>این گفتگو در بله هم هست</strong>
+                            @:پاسخ پشتیبانی به بله شما می‌رسد؛ با «پاسخ» روی همان پیام جواب دهید یا بنویسید <code dir="ltr">#@t.Id متن</code>
+                        }
+                        else
+                        {
+                            <strong>پاسخ را در بله بگیرید</strong>
+                            <span><a href="@Url.Action("Notifications", "ShopAdmin", new { company })">حساب بله را وصل کنید</a> تا پاسخ‌ها همان لحظه برسد.</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<script src="@Url.Asset("~/Content/support.js")" defer></script>

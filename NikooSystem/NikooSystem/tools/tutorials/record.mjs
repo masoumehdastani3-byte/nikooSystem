@@ -1,17 +1,17 @@
 // Records Content/tutorials/videos/{Page}.webm for every tutorial whose page changed since its last recording.
 // Usage: node record.mjs --base http://localhost:8095 --company FASHION --user admin [--only Products,Settings] [--force]
 // The admin password is read from the TUTORIAL_PASSWORD environment variable.
+// Tours and recorded fingerprints live in the database; the site lists them at /ShopAdmin/{company}/TutorialIndex.
+// Each finished video is printed as "RECORDED<tab>page<tab>file<tab>fingerprint<tab>time" for update-tutorials.ps1,
+// which stores it in the TutorialVideos table.
 import { chromium } from 'playwright-core';
-import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, renameSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const site = resolve(here, '../../NikooSystem');
-const toursDir = join(site, 'Content', 'tutorials');
-const videosDir = join(toursDir, 'videos');
-const manifestFile = join(videosDir, 'manifest.json');
+const videosDir = join(site, 'Content', 'tutorials', 'videos');
 const workDir = join(here, '.recordings');
 const viewport = { width: 1280, height: 720 };
 
@@ -28,36 +28,6 @@ function parseArgs(argv) {
   args.password = process.env.TUTORIAL_PASSWORD;
   if (!args.password) throw new Error('Set the TUTORIAL_PASSWORD environment variable.');
   return args;
-}
-
-// Must match TutorialService.Fingerprint in Services/TutorialService.cs.
-function fingerprint(files) {
-  const parts = [];
-  for (const file of files) {
-    if (!existsSync(file)) continue;
-    let bytes = readFileSync(file);
-    if (bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) bytes = bytes.subarray(3);
-    parts.push(Buffer.from(bytes.filter(b => b !== 0x0d)), Buffer.from([0]));
-  }
-  return createHash('sha256').update(Buffer.concat(parts)).digest('hex').slice(0, 16);
-}
-
-function loadTours() {
-  return readdirSync(toursDir)
-    .filter(f => /^[A-Za-z0-9]+\.json$/.test(f))
-    .map(f => {
-      const page = f.replace(/\.json$/, '');
-      const file = join(toursDir, f);
-      const tour = JSON.parse(readFileSync(file, 'utf8').replace(/^\uFEFF/, ''));
-      const views = (tour.views || [])
-        .filter(v => /^[A-Za-z0-9_]+\/[A-Za-z0-9_]+\.cshtml$/.test(v))
-        .map(v => join(site, 'Views', ...v.split('/')));
-      return { page, tour, fingerprint: fingerprint([file, ...views]) };
-    });
-}
-
-function readManifest() {
-  return existsSync(manifestFile) ? JSON.parse(readFileSync(manifestFile, 'utf8').replace(/^\uFEFF/, '')) : {};
 }
 
 function adminUrl(args, path) {
@@ -81,6 +51,17 @@ async function login(browser, args) {
   return state;
 }
 
+async function loadIndex(browser, storageState, args) {
+  const context = await browser.newContext({ storageState });
+  try {
+    const response = await context.request.get(adminUrl(args, 'TutorialIndex'), { maxRedirects: 0 });
+    if (!response.ok()) throw new Error(`TutorialIndex returned HTTP ${response.status()}`);
+    return await response.json();
+  } finally {
+    await context.close();
+  }
+}
+
 async function record(browser, storageState, args, item) {
   const context = await browser.newContext({
     viewport,
@@ -91,7 +72,7 @@ async function record(browser, storageState, args, item) {
   const page = await context.newPage();
   const video = page.video();
   try {
-    await page.goto(adminUrl(args, item.tour.path ?? item.page), { waitUntil: 'load', timeout: 60000 });
+    await page.goto(adminUrl(args, item.Path), { waitUntil: 'load', timeout: 60000 });
     if (/\/Login/i.test(new URL(page.url()).pathname)) throw new Error('redirected to login');
     await page.waitForFunction(() => window.NikooTutorial, null, { timeout: 15000 });
     await page.waitForTimeout(800);
@@ -102,7 +83,7 @@ async function record(browser, storageState, args, item) {
   } finally {
     await context.close();
   }
-  const name = `${item.page}.webm`;
+  const name = `${item.Page}.webm`;
   rmSync(join(videosDir, name), { force: true });
   renameSync(await video.path(), join(videosDir, name));
   return name;
@@ -110,32 +91,29 @@ async function record(browser, storageState, args, item) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const manifest = readManifest();
-  const tours = loadTours().filter(t => !args.only || args.only.includes(t.page));
-  const pending = tours.filter(t => args.force || manifest[t.page]?.fingerprint !== t.fingerprint);
-
-  if (!pending.length) {
-    console.log(`All ${tours.length} tutorial videos are up to date.`);
-    return;
-  }
-  console.log(`Recording ${pending.length} of ${tours.length} tutorials: ${pending.map(t => t.page).join(', ')}`);
-
   mkdirSync(videosDir, { recursive: true });
   mkdirSync(workDir, { recursive: true });
   const browser = await chromium.launch({ channel: args.channel, headless: true });
   let failed = 0;
   try {
     const state = await login(browser, args);
+    const tours = (await loadIndex(browser, state, args)).filter(t => !args.only || args.only.includes(t.Page));
+    const pending = tours.filter(t => args.force || t.VideoFingerprint !== t.Fingerprint);
+    if (!pending.length) {
+      console.log(`All ${tours.length} tutorial videos are up to date.`);
+      return;
+    }
+    console.log(`Recording ${pending.length} of ${tours.length} tutorials: ${pending.map(t => t.Page).join(', ')}`);
+
     for (const item of pending) {
       const startedAt = Date.now();
       try {
         const video = await record(browser, state, args, item);
-        manifest[item.page] = { video, fingerprint: item.fingerprint, recordedAt: new Date().toISOString() };
-        writeFileSync(manifestFile, JSON.stringify(manifest, null, 2) + '\n');
-        console.log(`  ✓ ${item.page} (${Math.round((Date.now() - startedAt) / 1000)}s)`);
+        console.log(['RECORDED', item.Page, video, item.Fingerprint, new Date().toISOString()].join('\t'));
+        console.log(`  ✓ ${item.Page} (${Math.round((Date.now() - startedAt) / 1000)}s)`);
       } catch (err) {
         failed++;
-        console.error(`  ✗ ${item.page}: ${err.message}`);
+        console.error(`  ✗ ${item.Page}: ${err.message}`);
       }
     }
   } finally {

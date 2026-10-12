@@ -1,0 +1,54 @@
+@model NikooSystem.Helpers.SeoFieldsVm
+@{
+    var id = "seo" + Guid.NewGuid().ToString("N").Substring(0, 6);
+}
+<div class="seo-box" id="@id">
+    <div class="seo-preview" aria-hidden="true">
+        <div class="seo-preview-url" dir="ltr">@(Model.Url ?? "پس از ذخیره ساخته می‌شود")</div>
+        <div class="seo-preview-title" data-seo-show="title"></div>
+        <div class="seo-preview-desc" data-seo-show="desc"></div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label d-flex justify-content-between" for="@(id)t">
+            <span>عنوان در نتایج جستجو</span>
+            <small class="seo-count" data-seo-count="title" data-max="60"></small>
+        </label>
+        <input class="form-control" id="@(id)t" name="@Model.TitleName" value="@Model.Title" maxlength="90" placeholder="@Model.AutoTitle" data-seo-input="title" />
+        <div class="form-text">خالی بماند، «@Model.AutoTitle» استفاده می‌شود. بهتر است کمتر از ۶۰ حرف و شامل کلمه‌ای باشد که مشتری جستجو می‌کند.</div>
+    </div>
+    <div>
+        <label class="form-label d-flex justify-content-between" for="@(id)d">
+            <span>توضیح در نتایج جستجو</span>
+            <small class="seo-count" data-seo-count="desc" data-max="160"></small>
+        </label>
+        <textarea class="form-control" id="@(id)d" name="@Model.DescriptionName" rows="3" maxlength="300" placeholder="@Model.AutoDescription" data-seo-input="desc">@Model.Description</textarea>
+        <div class="form-text">یک یا دو جمله جذاب که زیر عنوان در گوگل دیده می‌شود (حدود ۱۲۰ تا ۱۶۰ حرف). خالی بماند، از متن خود صفحه ساخته می‌شود.</div>
+    </div>
+</div>
+<style>
+    .seo-preview { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; background: #fff; font-family: Tahoma, sans-serif; }
+    .seo-preview-url { color: #4d5156; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seo-preview-title { color: #1a0dab; font-size: 18px; line-height: 1.4; margin: 4px 0 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .seo-preview-desc { color: #4d5156; font-size: 13px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .seo-count { color: #6b7280; font-weight: normal; }
+    .seo-count.is-long { color: #dc2626; }
+</style>
+<script>
+(function () {
+  var box = document.getElementById('@id');
+  var fa = function (n) { return String(n).replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+  var sync = function () {
+    ['title', 'desc'].forEach(function (k) {
+      var input = box.querySelector('[data-seo-input="' + k + '"]');
+      var text = input.value.trim() || input.placeholder;
+      box.querySelector('[data-seo-show="' + k + '"]').textContent = text;
+      var count = box.querySelector('[data-seo-count="' + k + '"]');
+      var max = +count.getAttribute('data-max');
+      count.textContent = fa(input.value.trim().length) + ' / ' + fa(max);
+      count.classList.toggle('is-long', input.value.trim().length > max);
+    });
+  };
+  box.addEventListener('input', sync);
+  sync();
+})();
+</script>

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Web;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
 using NikooSystem.Models.Torob;
 using Newtonsoft.Json.Linq;
@@ -27,32 +28,25 @@ namespace NikooSystem.Services
             return null;
         }
 
+        /// <summary>
+        /// The store's public root (its home page): the address the owner entered, otherwise the same root the store's
+        /// canonical addresses use (own domain, platform subdomain or /Shop/CODE), so Torob and Google see one address per product.
+        /// </summary>
         public static string GetPublicBaseUrl(StoreSettings settings, TenantInfo tenant, string companyCode, HttpRequestBase request)
         {
             if (!string.IsNullOrWhiteSpace(settings?.PublicStoreBaseUrl))
                 return settings.PublicStoreBaseUrl.Trim().TrimEnd('/');
-
-            if (tenant != null && !string.IsNullOrWhiteSpace(tenant.CustomDomain))
-            {
-                var scheme = request?.Url?.Scheme ?? "https";
-                return scheme + "://" + tenant.CustomDomain.Trim().TrimEnd('/');
-            }
-
-            if (request?.Url != null)
-                return request.Url.GetLeftPart(UriPartial.Authority).TrimEnd('/');
-
-            return "https://localhost/Shop/" + companyCode;
+            if (tenant != null)
+                return Seo.StoreUrl(tenant, request).TrimEnd('/');
+            return Seo.SiteUrl(request) + "/Shop/" + companyCode;
         }
 
         public static string BuildProductPageUrl(string baseUrl, string companyCode, string slug, TenantInfo tenant)
         {
-            baseUrl = (baseUrl ?? "").TrimEnd('/');
-            slug = (slug ?? "").Trim('/');
-            if (tenant != null && !string.IsNullOrWhiteSpace(tenant.CustomDomain))
-                return baseUrl + "/Product/" + slug + "/";
-            return baseUrl + "/Shop/" + companyCode + "/Product/" + slug + "/";
+            return (baseUrl ?? "").TrimEnd('/') + "/Product/" + Uri.EscapeDataString((slug ?? "").Trim('/'));
         }
 
+        /// <summary>Files live at the root of the host, also when the store's root is /Shop/CODE.</summary>
         public static string ToAbsoluteUrl(string baseUrl, string url)
         {
             if (string.IsNullOrWhiteSpace(url)) return null;
@@ -60,9 +54,11 @@ namespace NikooSystem.Services
             if (url.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
                 url.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
                 return url;
-            baseUrl = (baseUrl ?? "").TrimEnd('/');
+            if (url.StartsWith("~")) url = url.Substring(1);
+            var origin = Seo.Origin(baseUrl);
+            if (origin.Length == 0) origin = (baseUrl ?? "").TrimEnd('/');
             if (!url.StartsWith("/")) url = "/" + url;
-            return baseUrl + url;
+            return origin + url;
         }
 
         public static TorobProductsResponse HandleRequest(string companyCode, JObject body, HttpRequestBase request)
@@ -71,16 +67,10 @@ namespace NikooSystem.Services
                 return Error("request body is empty");
 
             var settings = TenantStore.GetSettings(companyCode);
-            var tenant = TenantStore.GetTenant(companyCode);
             if (settings == null || !settings.EnableTorob)
                 return Error("torob integration is disabled");
 
-            var catalog = TenantStore.GetProducts(companyCode)
-                .Where(p => p.IsActive)
-                .ToList();
-            var categories = TenantStore.GetCategories(companyCode)
-                .ToDictionary(c => c.Id, c => c.Title);
-            var baseUrl = GetPublicBaseUrl(settings, tenant, companyCode, request);
+            Load(companyCode, settings, request, out var tenant, out var catalog, out var categories, out var baseUrl);
 
             if (body["page_urls"] != null)
                 return ByUrls(companyCode, body, catalog, categories, baseUrl, tenant);
@@ -95,6 +85,22 @@ namespace NikooSystem.Services
                 return ByPage(companyCode, body, catalog, categories, baseUrl, tenant);
 
             return Error("invalid request parameters");
+        }
+
+        /// <summary>The first page Torob gets (newest products first), also while the integration is off: the owner's preview.</summary>
+        public static TorobProductsResponse Preview(string companyCode, HttpRequestBase request)
+        {
+            Load(companyCode, TenantStore.GetSettings(companyCode), request, out var tenant, out var catalog, out var categories, out var baseUrl);
+            return ByPage(companyCode, new JObject { ["page"] = 1, ["sort"] = "date_added_desc" }, catalog, categories, baseUrl, tenant);
+        }
+
+        private static void Load(string companyCode, StoreSettings settings, HttpRequestBase request, out TenantInfo tenant,
+            out List<StoreProduct> catalog, out Dictionary<int, string> categories, out string baseUrl)
+        {
+            tenant = TenantStore.GetTenant(companyCode);
+            catalog = TenantStore.GetProducts(companyCode).Where(p => p.IsActive).ToList();
+            categories = TenantStore.GetCategories(companyCode).ToDictionary(c => c.Id, c => c.Title);
+            baseUrl = GetPublicBaseUrl(settings, tenant, companyCode, request);
         }
 
         private static TorobProductsResponse ByUrls(string companyCode, JObject body, List<StoreProduct> catalog,
@@ -266,11 +272,14 @@ namespace NikooSystem.Services
             return s.Length <= max ? s : s.Substring(0, max);
         }
 
+        /// <summary>Compares addresses as Torob may send them: either scheme, with or without www, encoded or not, trailing slash.</summary>
         private static string NormalizeUrl(string url)
         {
             if (string.IsNullOrWhiteSpace(url)) return "";
-            url = url.Trim().TrimEnd('/');
-            return url.ToLowerInvariant();
+            url = Uri.UnescapeDataString(url.Trim()).TrimEnd('/').ToLowerInvariant();
+            var scheme = url.IndexOf("://", StringComparison.Ordinal);
+            if (scheme >= 0) url = url.Substring(scheme + 3);
+            return url.StartsWith("www.") ? url.Substring(4) : url;
         }
 
         private static TorobProductsResponse OkPage(List<TorobProductDto> products, int page, int total)

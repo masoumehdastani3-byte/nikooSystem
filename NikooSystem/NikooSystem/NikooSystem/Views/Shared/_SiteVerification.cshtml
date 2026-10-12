@@ -1,0 +1,135 @@
+@model NikooSystem.Controllers.SiteVerificationVm
+@using NikooSystem.Services
+@{
+    var s = Model.Site;
+    var files = Model.Files;
+    var seal = SiteVerification.Seal(s.EnamadHtml);
+    var disabled = Model.Disabled ? "disabled" : null;
+    var domainUrl = Model.Domain != null ? "https://" + Model.Domain : Model.FreeAddressNote ? "https://yourdomain.ir" : Model.SiteRoot;
+}
+<div class="@Model.CardClass mb-3 dm-guide" id="verify">
+    <h5 class="mb-1"><i class="bi bi-shield-check"></i> تأیید مالکیت دامنه</h5>
+    <p class="small text-muted">فقط روشی را انجام دهید که اینماد (یا سرویس دیگری مثل گوگل) از شما خواسته است. همه روی @(Model.Domain != null || !Model.FreeAddressNote ? "دامنه شما" : "دامنه شما، بعد از فعال شدن،") کار می‌کنند.</p>
+
+    <details @(files.Any() ? "open" : null)>
+        <summary><i class="bi bi-file-earmark-text"></i> گذاشتن فایل در ریشه سایت @(files.Any() ? "(" + files.Count.ToFa() + " فایل)" : "")</summary>
+        <p class="small">اینماد فایلی (مثلاً <code dir="ltr">12345678.txt</code>) می‌دهد که باید در آدرس <code dir="ltr">@domainUrl/12345678.txt</code> باز شود. فایل را دانلود و اینجا بارگذاری کنید، یا اگر اینماد نام و متن فایل را نوشته، همان‌ها را وارد کنید.</p>
+        @if (files.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle small">
+                    <thead><tr><th>نام فایل</th><th>محتوا</th><th>تاریخ</th><th></th></tr></thead>
+                    <tbody>
+                        @foreach (var f in files)
+                        {
+                            var url = Model.SiteRoot + "/" + f.Name;
+                            <tr>
+                                <td><code dir="ltr">@f.Name</code></td>
+                                <td><code dir="ltr" class="text-break">@(f.Content.Length > 60 ? f.Content.Substring(0, 60) + "…" : f.Content)</code></td>
+                                <td class="text-nowrap">@f.AddedAt.ToShamsiText()</td>
+                                <td class="text-nowrap dm-no-print">
+                                    <a class="btn btn-sm btn-outline-secondary" href="@url" target="_blank" rel="noopener" title="@url"><i class="bi bi-box-arrow-up-left"></i> باز کردن</a>
+                                    @using (Html.BeginForm("EnamadFileRemove", Model.Controller, Model.Route, FormMethod.Post, new { @class = "d-inline" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="name" value="@f.Name" />
+                                        <button class="btn btn-sm btn-outline-danger" type="submit" title="حذف"><i class="bi bi-trash"></i></button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            if (Model.Domain == null && Model.FreeAddressNote)
+            {
+                <p class="small text-muted">تا فعال شدن دامنه، لینک «باز کردن» فایل را روی آدرس رایگان نشان می‌دهد تا از درستی آن مطمئن شوید.</p>
+            }
+        }
+        @using (Html.BeginForm("EnamadFile", Model.Controller, Model.Route, FormMethod.Post, new { enctype = "multipart/form-data", @class = "dm-no-print" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="row g-2">
+                <div class="col-12">
+                    <label class="form-label small mb-1" for="enamadUpload">بارگذاری فایل (txt یا html)</label>
+                    <input class="form-control form-control-sm" type="file" name="file" id="enamadUpload" accept=".txt,.html,.htm,text/plain,text/html" />
+                </div>
+                <div class="col-12 small text-muted">یا نام و متن فایل را بنویسید:</div>
+                <div class="col-md-5">
+                    <input class="form-control form-control-sm font-monospace" name="fileName" dir="ltr" placeholder="12345678.txt" />
+                </div>
+                <div class="col-md-7">
+                    <input class="form-control form-control-sm" name="fileContent" dir="ltr" placeholder="متن داخل فایل" />
+                </div>
+                <div class="col-12">
+                    <button class="@Model.ButtonClass btn-sm" type="submit" @disabled><i class="bi bi-upload"></i> قرار دادن در ریشه سایت</button>
+                </div>
+            </div>
+        }
+    </details>
+
+    <details @(!string.IsNullOrEmpty(s.VerifyHomeTitle) ? "open" : null)>
+        <summary><i class="bi bi-type"></i> کد در عنوان صفحه اول @(!string.IsNullOrEmpty(s.VerifyHomeTitle) ? "(فعال)" : "")</summary>
+        <p class="small">
+            اگر اینماد گفته کدی را در عنوان (title) صفحه اول بگذارید، متن کامل عنوان را اینجا بنویسید؛ تا وقتی حذفش نکنید جای عنوان صفحه اول می‌نشیند.
+            اگر خواسته کد به عنوان فعلی اضافه شود، عنوان فعلی را هم بنویسید:
+        </p>
+        <p class="small"><span class="text-muted">عنوان همیشگی:</span> <b id="usualTitle">@Model.UsualTitle</b> <button type="button" class="dm-copy dm-no-print" data-copy="usualTitle" title="کپی"><i class="bi bi-clipboard"></i></button></p>
+        @using (Html.BeginForm("EnamadTitle", Model.Controller, Model.Route, FormMethod.Post, new { @class = "dm-no-print" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="input-group input-group-sm">
+                <input class="form-control" name="verifyHomeTitle" value="@s.VerifyHomeTitle" maxlength="@SiteVerification.MaxTitleLength" placeholder="@Model.UsualTitle - کد اینماد" />
+                <button class="btn btn-success" type="submit" @disabled><i class="bi bi-check2"></i> ذخیره</button>
+                @if (!string.IsNullOrEmpty(s.VerifyHomeTitle))
+                {
+                    <button class="btn btn-outline-danger" type="submit" name="remove" value="true" @disabled><i class="bi bi-arrow-counterclockwise"></i> برگرداندن عنوان همیشگی</button>
+                }
+            </div>
+        }
+    </details>
+
+    <details @(!string.IsNullOrEmpty(s.EnamadMeta) ? "open" : null)>
+        <summary><i class="bi bi-code-slash"></i> متاتگ اینماد @(!string.IsNullOrEmpty(s.EnamadMeta) ? "(فعال)" : "")</summary>
+        <p class="small">اگر اینماد تگی مثل <code dir="ltr">&lt;meta name="enamad" content="12345678" /&gt;</code> داده، کل تگ یا فقط مقدار content را بچسبانید؛ در بخش head همه صفحه‌ها قرار می‌گیرد.</p>
+        @if (!string.IsNullOrEmpty(s.EnamadMeta))
+        {
+            <p class="small"><i class="bi bi-check-circle-fill text-success"></i> در سایت: <code dir="ltr">&lt;meta name="enamad" content="@s.EnamadMeta" /&gt;</code></p>
+        }
+        @using (Html.BeginForm("EnamadMeta", Model.Controller, Model.Route, FormMethod.Post, new { @class = "dm-no-print" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="input-group input-group-sm" dir="ltr">
+                <input class="form-control font-monospace" name="enamadMeta" value="@s.EnamadMeta" placeholder="<meta name=&quot;enamad&quot; content=&quot;...&quot; />" />
+                <button class="btn btn-success" type="submit" @disabled>ذخیره <i class="bi bi-check2"></i></button>
+                @if (!string.IsNullOrEmpty(s.EnamadMeta))
+                {
+                    <button class="btn btn-outline-danger" type="submit" name="remove" value="true" @disabled>حذف <i class="bi bi-trash"></i></button>
+                }
+            </div>
+        }
+    </details>
+</div>
+
+<div class="@Model.CardClass" id="seal">
+    <h5 class="mb-1"><i class="bi bi-patch-check"></i> نماد اعتماد در فوتر</h5>
+    @if (seal != null)
+    {
+        <p class="small"><span class="badge bg-success">ثبت شده</span> نماد در فوتر همه صفحه‌ها نمایش داده می‌شود (شناسه <span dir="ltr">@seal.Id</span>). تصویر نماد فقط روی دامنه‌ای که در اینماد ثبت شده درست دیده می‌شود.</p>
+        <div class="mb-3 wm-enamad">@SiteVerification.SealHtml(s)</div>
+    }
+    else
+    {
+        <p class="small text-muted">بعد از صدور نماد، در پنل اینماد کد نماد را کپی کنید (کدی که با <code dir="ltr">&lt;a referrerpolicy='origin' … trustseal.enamad.ir</code> شروع می‌شود) و اینجا بچسبانید.</p>
+    }
+    @using (Html.BeginForm("EnamadSeal", Model.Controller, Model.Route, FormMethod.Post, new { @class = "dm-no-print" }))
+    {
+        @Html.AntiForgeryToken()
+        <textarea class="form-control font-monospace small mb-2" name="enamadHtml" rows="4" dir="ltr" placeholder="<a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=...&Code=...'><img ... /></a>">@s.EnamadHtml</textarea>
+        <button class="@Model.ButtonClass btn-sm" type="submit" @disabled><i class="bi bi-check2"></i> ذخیره نماد</button>
+        if (seal != null)
+        {
+            <button class="btn btn-sm btn-outline-danger" type="submit" name="remove" value="true" @disabled><i class="bi bi-trash"></i> برداشتن نماد</button>
+        }
+    }
+</div>

@@ -1,0 +1,315 @@
+@model StoreHomeSection
+@{
+    var sec = Model;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Layout;
+    var narrow = layoutId == "minimal" ? "narrow" : "";
+    var icons = new[] { "bi-people", "bi-clock-history", "bi-headset", "bi-cash-coin", "bi-shield-check", "bi-lightbulb", "bi-award", "bi-gear", "bi-trophy", "bi-hand-thumbs-up", "bi-bullseye", "bi-gem" };
+}
+@helper Title(string kicker, string title, string sub)
+{
+    <div class="rh-title">
+        @if (!string.IsNullOrWhiteSpace(kicker)) { <span class="rh-kicker">@kicker</span> }
+        <h2>@title</h2>
+        @if (!string.IsNullOrWhiteSpace(sub)) { <p>@sub</p> }
+    </div>
+}
+@helper Stars(int rating)
+{
+    <span class="rh-stars" aria-label="@(rating.ToString().ToFaDigits()) از ۵ ستاره">
+        @for (var i = 1; i <= 5; i++)
+        {
+            <i class="bi @(i <= rating ? "bi-star-fill" : "bi-star")"></i>
+        }
+    </span>
+}
+@switch (sec.Type)
+{
+    case "deals":
+        var deals = (ViewBag.Deals as List<StoreProduct>) ?? new List<StoreProduct>();
+        if (deals.Any())
+        {
+            <section class="rh-deals-wrap" id="sec-deals">
+                <div class="container">
+                    <div class="rh-deals">
+                        <div class="rh-deals-intro">
+                            <span class="rh-deals-icon"><i class="bi bi-lightning-charge"></i></span>
+                            <h2>@(sec.Title ?? "پیشنهاد شگفت‌انگیز")</h2>
+                            <p>تخفیف‌های ویژه امروز</p>
+                            <div class="rh-countdown" data-rh-countdown dir="ltr" aria-label="زمان باقی‌مانده تا پایان امروز">
+                                <span><b data-h>۰۰</b><small>ساعت</small></span>
+                                <i>:</i>
+                                <span><b data-m>۰۰</b><small>دقیقه</small></span>
+                                <i>:</i>
+                                <span><b data-s>۰۰</b><small>ثانیه</small></span>
+                            </div>
+                            <a class="rh-deals-more" href="@Url.Action("Catalog","Shop", new { company, onSale = true })">همه تخفیف‌ها <i class="bi bi-arrow-left"></i></a>
+                        </div>
+                        <div class="rh-deals-track">
+                            @foreach (var p in deals)
+                            {
+                                <div class="rh-deals-item">@Html.Partial("_StoreProductCard", p)</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <script>
+                (function () {
+                    var box = document.querySelector('[data-rh-countdown]');
+                    if (!box) return;
+                    var fa = function (n) { return String(n).padStart(2, '0').replace(/\d/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; }); };
+                    var tick = function () {
+                        var now = new Date(), end = new Date(now);
+                        end.setHours(24, 0, 0, 0);
+                        var left = Math.max(0, Math.floor((end - now) / 1000));
+                        box.querySelector('[data-h]').textContent = fa(Math.floor(left / 3600));
+                        box.querySelector('[data-m]').textContent = fa(Math.floor(left % 3600 / 60));
+                        box.querySelector('[data-s]').textContent = fa(left % 60);
+                    };
+                    tick();
+                    setInterval(tick, 1000);
+                })();
+            </script>
+        }
+        break;
+
+    case "newest":
+        var newest = (ViewBag.Newest as List<StoreProduct>) ?? new List<StoreProduct>();
+        if (newest.Any())
+        {
+            var newTitle = sec.Title ?? "تازه‌ترین‌ها";
+            var newUrl = Url.Action("Catalog", "Shop", new { company, sort = "newest" });
+            <section class="@(layoutId == "fashion" ? "bf-section" : "wm-section") hs-products" id="sec-newest">
+                <div class="container @narrow">
+                    @if (layoutId == "fashion")
+                    {
+                        <div class="bf-head">
+                            <div>
+                                <h2>@newTitle</h2>
+                                <p>آخرین کالاهایی که به فروشگاه رسیده است</p>
+                            </div>
+                            <a class="bf-link" href="@newUrl">مشاهده همه</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="hs-head">
+                            <div>
+                                <h2 class="wm-section-title">@newTitle</h2>
+                                <p>آخرین کالاهایی که به فروشگاه رسیده است</p>
+                            </div>
+                            <a class="hs-more" href="@newUrl">مشاهده همه <i class="bi bi-arrow-left"></i></a>
+                        </div>
+                    }
+                    <div class="product-grid grid-@layoutId">
+                        @foreach (var p in newest)
+                        {
+                            Html.RenderPartial("_StoreProductCard", p);
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+        break;
+
+    case "stats":
+        var stats = HomeSections.ItemsOf(sec.Items, 2);
+        if (stats.Any())
+        {
+            <section class="rh-section rh-stats-wrap" id="sec-stats">
+                <div class="container">
+                    <div class="rh-stats">
+                        @if (!string.IsNullOrWhiteSpace(sec.Title)) { <h2 class="rh-stats-title">@sec.Title</h2> }
+                        @foreach (var r in stats)
+                        {
+                            <div class="rh-stat">
+                                <strong>@r[0]</strong>
+                                @if (r[1].Length > 0) { <span>@r[1]</span> }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+        break;
+
+    case "whyus":
+        var perks = HomeSections.ItemsOf(sec.Items, 2);
+        if (perks.Any())
+        {
+            <section class="rh-section" id="sec-whyus">
+                <div class="container">
+                    @Title("مزیت‌های ما", sec.Title ?? "چرا " + settings.StoreName + "؟", null)
+                    <div class="rh-perks">
+                        @for (var i = 0; i < perks.Count; i++)
+                        {
+                            <div class="rh-perk">
+                                <span class="rh-perk-icon"><i class="bi @icons[i % icons.Length]"></i></span>
+                                <h3>@perks[i][0]</h3>
+                                @if (perks[i][1].Length > 0) { <p>@perks[i][1]</p> }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+        break;
+
+    case "steps":
+        var steps = HomeSections.ItemsOf(sec.Items, 2);
+        if (!steps.Any()) { steps = HomeSections.DefaultSteps.ToList(); }
+        <section class="rh-section rh-steps-wrap" id="sec-steps">
+            <div class="container">
+                @Title("از اولین تماس تا تحویل", sec.Title ?? "روند همکاری با ما", null)
+                <ol class="rh-steps">
+                    @for (var i = 0; i < steps.Count; i++)
+                    {
+                        <li class="rh-step">
+                            <span class="rh-step-num">@((i + 1).ToString().ToFaDigits())</span>
+                            <h3>@steps[i][0]</h3>
+                            @if (steps[i][1].Length > 0) { <p>@steps[i][1]</p> }
+                        </li>
+                    }
+                </ol>
+            </div>
+        </section>
+        break;
+
+    case "reviews":
+        var real = kind.IsContent ? null : ViewBag.HomeReviews as List<KeyValuePair<StoreProductReview, StoreProduct>>;
+        var written = HomeSections.ItemsOf(sec.Items, 3);
+        if ((real != null && real.Any()) || written.Any())
+        {
+            <section class="rh-section rh-reviews-wrap" id="sec-reviews">
+                <div class="container">
+                    @Title(kind.IsContent ? "رضایت مشتریان" : "تجربه خریداران", sec.Title ?? (kind.IsContent ? "مشتریان درباره ما چه می‌گویند" : "نظر خریداران ما"), null)
+                    <div class="rh-reviews">
+                        @if (real != null && real.Any())
+                        {
+                            foreach (var pair in real)
+                            {
+                                var r = pair.Key;
+                                <figure class="rh-review">
+                                    @Stars(r.Rating)
+                                    <blockquote>@r.Comment</blockquote>
+                                    <figcaption>
+                                        <span class="rh-avatar">@(string.IsNullOrWhiteSpace(r.AuthorName) ? "؟" : r.AuthorName.Trim().Substring(0, 1))</span>
+                                        <span>
+                                            <strong>@(string.IsNullOrWhiteSpace(r.AuthorName) ? "خریدار" : r.AuthorName)</strong>
+                                            <a href="@Url.Action("Product","Shop", new { company, slug = pair.Value.Slug })">خریدار «@pair.Value.Title»</a>
+                                        </span>
+                                    </figcaption>
+                                </figure>
+                            }
+                        }
+                        else
+                        {
+                            foreach (var w in written)
+                            {
+                                <figure class="rh-review">
+                                    <i class="bi bi-chat-quote rh-review-mark"></i>
+                                    <blockquote>@(w[2].Length > 0 ? w[2] : w[1])</blockquote>
+                                    <figcaption>
+                                        <span class="rh-avatar">@w[0].Substring(0, 1)</span>
+                                        <span>
+                                            <strong>@w[0]</strong>
+                                            @if (w[2].Length > 0 && w[1].Length > 0) { <small>@w[1]</small> }
+                                        </span>
+                                    </figcaption>
+                                </figure>
+                            }
+                        }
+                    </div>
+                </div>
+            </section>
+        }
+        break;
+
+    case "faq":
+        var faqs = HomeSections.ItemsOf(sec.Items, 2).Where(f => f[1].Length > 0).ToList();
+        if (!faqs.Any() && !kind.IsContent) { faqs = HomeSections.DefaultShopFaq(settings, kind); }
+        if (faqs.Any())
+        {
+            Html.Seo().Schemas.Add(SeoPages.Faq(faqs.Select(f => new SiteFaq { Question = f[0], Answer = f[1] })));
+            <section class="rh-section rh-faq-wrap" id="sec-faq">
+                <div class="container">
+                    <div class="rh-faq">
+                        <div class="rh-faq-intro">
+                            <span class="rh-kicker">پاسخ پرسش‌های شما</span>
+                            <h2>@(sec.Title ?? "پرسش‌های پرتکرار")</h2>
+                            <p>جواب پرسش خود را پیدا نکردید؟ با ما در تماس باشید.</p>
+                            <div class="rh-faq-contact">
+                                @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                                {
+                                    <a href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
+                                }
+                                <a href="@Url.Action("Contact","Shop", new { company })"><i class="bi bi-envelope"></i> ارسال پیام</a>
+                            </div>
+                        </div>
+                        <div class="rh-faq-list">
+                            @for (var i = 0; i < faqs.Count; i++)
+                            {
+                                <details class="rh-faq-item" @(i == 0 ? "open" : "")>
+                                    <summary>@faqs[i][0]<i class="bi bi-chevron-down"></i></summary>
+                                    <p>@faqs[i][1]</p>
+                                </details>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </section>
+        }
+        break;
+
+    case "cta":
+        var signedIn = ViewBag.SignedIn as bool? == true;
+        string ctaTitle, ctaText, ctaButton, ctaUrl, ctaIcon;
+        if (kind.IsContent)
+        {
+            ctaTitle = "آماده شروع همکاری هستید؟";
+            ctaText = "برای مشاوره و دریافت پیشنهاد قیمت با ما در تماس باشید.";
+            ctaButton = "درخواست مشاوره";
+            ctaUrl = Url.Action("Contact", "Shop", new { company });
+            ctaIcon = "bi-chat-dots";
+        }
+        else if (signedIn)
+        {
+            ctaTitle = "خوش آمدید؛ سفارش‌هایتان یک کلیک فاصله دارد";
+            ctaText = kind.IsDigital ? "همه خریدها در «کتابخانه من» همیشه در دسترس است." : "وضعیت سفارش‌ها و کد رهگیری مرسوله را از حساب کاربری ببینید.";
+            ctaButton = kind.IsDigital ? "کتابخانه من" : "سفارش‌های من";
+            ctaUrl = Url.Action(kind.IsDigital ? "Library" : "Orders", "ShopAccount", new { company });
+            ctaIcon = "bi-person-check";
+        }
+        else
+        {
+            ctaTitle = "به جمع مشتریان " + settings.StoreName + " بپیوندید";
+            ctaText = kind.IsDigital
+                ? "با ساخت حساب کاربری، کتاب‌ها و دوره‌های خریداری‌شده همیشه در «کتابخانه من» در دسترس شماست."
+                : "با ساخت حساب کاربری، خریدهای بعدی سریع‌تر انجام می‌شود و وضعیت سفارش‌ها و کد رهگیری را همیشه در دسترس دارید.";
+            ctaButton = "ثبت‌نام رایگان";
+            ctaUrl = Url.Action("Register", "ShopAccount", new { company });
+            ctaIcon = "bi-person-plus";
+        }
+        var custom = !string.IsNullOrWhiteSpace(sec.LinkUrl);
+        <section class="rh-section rh-cta-wrap" id="sec-cta">
+            <div class="container">
+                <div class="rh-cta">
+                    <div class="rh-cta-copy">
+                        <h2>@(sec.Title ?? ctaTitle)</h2>
+                        <p>@(sec.Subtitle ?? ctaText)</p>
+                    </div>
+                    <div class="rh-cta-actions">
+                        <a class="rh-cta-btn" href="@(custom ? sec.LinkUrl : ctaUrl)"><i class="bi @(custom ? "bi-arrow-left-circle" : ctaIcon)"></i> @(sec.ButtonText ?? (custom ? "مشاهده" : ctaButton))</a>
+                        @if (kind.IsContent && !string.IsNullOrWhiteSpace(settings.Phone))
+                        {
+                            <a class="rh-cta-ghost" href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+        break;
+}

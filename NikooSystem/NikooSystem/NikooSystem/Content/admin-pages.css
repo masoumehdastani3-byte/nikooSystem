@@ -205,3 +205,37 @@
   .ls-actions { width: 100%; justify-content: flex-end; border-top: 1px solid #f3f4f6; padding-top: .35rem; }
   .ls-link-pick { max-width: 100%; }
 }
+
+/* ---------- Settings: how images sit in their frames (StoreImageFit) ---------- */
+.fit-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .75rem; }
+.fit-option {
+  display: flex; flex-direction: column; gap: .35rem;
+  border: 1.5px solid #e5e7eb; border-radius: 14px;
+  padding: .85rem; cursor: pointer; background: #fff;
+  transition: border-color .15s, box-shadow .15s;
+}
+.fit-option:hover { border-color: #cbd5e1; }
+.fit-option:has(input:checked) { border-color: var(--store-primary, #1b4332); box-shadow: 0 6px 18px rgba(27,67,50,.1); }
+.fit-option input { position: absolute; opacity: 0; pointer-events: none; }
+.fit-option:focus-within { outline: 2px solid var(--store-accent, #95d5b2); outline-offset: 2px; }
+
+/* Three frames of the same size holding a tall, a square and a wide "photo" */
+.fit-demo { display: flex; gap: .4rem; margin-bottom: .25rem; }
+.fit-demo i {
+  position: relative; flex: 1; aspect-ratio: 1; border-radius: 8px; overflow: hidden;
+  background: #f1f5f9; border: 1px solid #e2e8f0;
+}
+.fit-demo i::before {
+  content: ""; position: absolute; inset: 0; margin: auto;
+  background: linear-gradient(160deg, #7dd3fc 0 45%, #34d399 45% 70%, #059669 70%);
+}
+/* cover: every photo fills its frame */
+.fit-demo-cover i::before { width: 100%; height: 100%; }
+/* contain: every photo keeps its shape */
+.fit-demo-contain i:nth-child(1)::before { width: 45%; height: 100%; }
+.fit-demo-contain i:nth-child(2)::before { width: 100%; height: 100%; }
+.fit-demo-contain i:nth-child(3)::before { width: 100%; height: 38%; }
+/* auto: fills, except the very long or very wide photo */
+.fit-demo-auto i:nth-child(1)::before,
+.fit-demo-auto i:nth-child(2)::before { width: 100%; height: 100%; }
+.fit-demo-auto i:nth-child(3)::before { width: 100%; height: 38%; }

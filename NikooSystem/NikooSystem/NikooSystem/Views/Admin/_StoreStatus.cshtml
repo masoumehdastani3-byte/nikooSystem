@@ -1,0 +1,37 @@
+@model NikooSystem.Models.Store.TenantInfo
+@if (!Model.IsActive)
+{
+    <span class="adm-chip is-red"><i class="bi bi-pause-circle"></i> تعلیق</span>
+}
+else if (NikooSystem.Services.TenantStore.IsDemo(Model.CompanyCode))
+{
+    <span class="adm-chip is-blue"><i class="bi bi-display"></i> دمو</span>
+}
+else if (Model.IsSubscriptionLocked())
+{
+    <span class="adm-chip is-red"><i class="bi bi-lock"></i> بسته؛ تمدید نشده</span>
+}
+else if (Model.IsSubscriptionExpired())
+{
+    <span class="adm-chip is-red"><i class="bi bi-hourglass-bottom"></i> اشتراک تمام شده · @Model.GraceDaysLeft().ToFa() روز مهلت</span>
+}
+else if (Model.IsRenewalDue())
+{
+    <span class="adm-chip is-orange"><i class="bi bi-arrow-repeat"></i> تمدید · @Model.SubscriptionDaysLeft().ToFa() روز</span>
+}
+else if (Model.IsPaid)
+{
+    <span class="adm-chip is-green"><i class="bi bi-patch-check"></i> اشتراک @NikooSystem.Services.Subscriptions.PeriodName(Model.SubscriptionMonths)</span>
+}
+else if (Model.IsTrialExpired())
+{
+    <span class="adm-chip is-red"><i class="bi bi-hourglass-bottom"></i> منقضی</span>
+}
+else if (Model.IsTrial)
+{
+    <span class="adm-chip is-orange"><i class="bi bi-hourglass-split"></i> آزمایشی · @Model.TrialDaysLeft().ToFa() روز</span>
+}
+else
+{
+    <span class="adm-chip is-gray">فعال</span>
+}

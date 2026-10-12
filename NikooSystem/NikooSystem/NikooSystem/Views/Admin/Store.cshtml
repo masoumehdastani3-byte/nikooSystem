@@ -1,0 +1,301 @@
+﻿@model NikooSystem.Models.Store.TenantInfo
+@using NikooSystem.Helpers
+@using NikooSystem.Services
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "فروشگاه " + Model.Name;
+    var settings = (NikooSystem.Models.Store.StoreSettings)ViewBag.Settings;
+    var counts = (Dictionary<string, int>)ViewBag.Counts;
+    var orders = (List<NikooSystem.Models.Order>)ViewBag.Orders;
+    var newPassword = ViewBag.NewPassword as string;
+    var type = StoreTypes.Get(Model.StoreType);
+    var kind = SiteKinds.Get(type.Kind);
+    var isDemo = TenantStore.IsDemo(Model.CompanyCode);
+    var live = TenantStore.IsLive(Model);
+    var storeUrl = TenantProvisioningService.DefaultStoreUrl(Model.CompanyCode, Request);
+    var storage = (NikooSystem.Models.StorageUsage)ViewBag.Storage;
+    var storagePurchases = (List<NikooSystem.Models.StoragePurchase>)ViewBag.StoragePurchases;
+    var storageState = storage.IsFull ? "is-full" : storage.IsNearlyFull ? "is-near" : "is-ok";
+}
+<link href="@Url.Asset("~/Content/storage.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>@Model.Name @Html.Partial("_StoreStatus", Model)</h1>
+        <p><i class="bi @type.Icon"></i> @type.Name · کد <code>@Model.CompanyCode</code> · ساخته‌شده در @Model.CreatedAt.ToShamsiText()</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-outline-primary" href="@Url.Action("Index","Shop", new { company = Model.CompanyCode })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+        @if (live)
+        {
+            @Html.PostButton("EnterStore", new { id = Model.CompanyCode }, "ورود به پنل فروشگاه", "btn btn-primary")
+        }
+        <a class="btn btn-link" href="@Url.Action("Stores","Admin")">بازگشت به فهرست</a>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(newPassword))
+{
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-2">
+        <i class="bi bi-key"></i>
+        <span>رمز جدید پنل فروشگاه (نام کاربری: <strong dir="ltr">@settings.AdminUsername</strong>):</span>
+        <code class="adm-code">@newPassword</code>
+    </div>
+}
+
+<div class="row g-3">
+    <div class="col-xl-8">
+        <div class="row g-3 mb-3">
+            @foreach (var c in new[]
+            {
+                new { Key = "Products", Label = kind.Sells ? "محصول" : "-", Icon = "bi-box-seam" },
+                new { Key = "Orders", Label = kind.Sells ? "سفارش" : "-", Icon = "bi-receipt" },
+                new { Key = "Customers", Label = kind.Sells ? "مشتری" : "-", Icon = "bi-people" },
+                new { Key = "Posts", Label = kind.IsContent ? "مطلب" : "-", Icon = "bi-file-text" },
+                new { Key = "Services", Label = kind.IsBooking ? "خدمت" : "-", Icon = "bi-clipboard-check" },
+                new { Key = "Appointments", Label = kind.IsBooking ? "نوبت" : "-", Icon = "bi-calendar-check" },
+                new { Key = "ContactMessages", Label = "پیام", Icon = "bi-envelope" }
+            }.Where(c => c.Label != "-"))
+            {
+                <div class="col">
+                    <div class="stat-card">
+                        <i class="bi @c.Icon"></i>
+                        <div><span>@c.Label</span><h3>@counts[c.Key].ToFa()</h3></div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card-title">اطلاعات فروشگاه و مالک</div>
+            @using (Html.BeginForm("UpdateStore", "Admin", new { id = Model.CompanyCode }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label" for="name">نام فروشگاه</label>
+                        <input class="form-control" id="name" name="name" value="@Model.Name" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="customDomain">دامنه اختصاصی</label>
+                        <input class="form-control" id="customDomain" name="customDomain" value="@Model.CustomDomain" dir="ltr" placeholder="myshop.ir" />
+                        @if (Model.DomainStatus() != NikooSystem.Models.Store.DomainState.None)
+                        {
+                            var domainState = Model.DomainStatus();
+                            <div class="form-text">
+                                @(domainState == NikooSystem.Models.Store.DomainState.Active ? "فعال" : domainState == NikooSystem.Models.Store.DomainState.WaitingSupport ? "DNS درست است؛ منتظر binding و SSL" : "منتظر تنظیم DNS توسط مشتری")
+                                — <a href="@Url.Action("Domains","Admin")">دامنه‌های مشتریان</a>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="ownerName">نام مالک</label>
+                        <input class="form-control" id="ownerName" name="ownerName" value="@Model.OwnerName" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="ownerMobile">موبایل مالک</label>
+                        <input class="form-control" id="ownerMobile" name="ownerMobile" value="@Model.OwnerMobile" dir="ltr" placeholder="09121234567" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label" for="ownerEmail">ایمیل مالک</label>
+                        <input class="form-control" id="ownerEmail" name="ownerEmail" type="email" value="@Model.OwnerEmail" dir="ltr" />
+                    </div>
+                </div>
+                <div class="mt-3"><button class="btn btn-primary" type="submit">ذخیره</button></div>
+            }
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card-title">پرداخت‌های اشتراک این فروشگاه</div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>شماره</th><th>تاریخ</th><th>محصول</th><th>مبلغ</th><th>وضعیت</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var o in orders)
+                    {
+                        <tr>
+                            <td class="adm-ltr">@o.OrderNumber</td>
+                            <td>@o.CreatedAt.ToShamsi()</td>
+                            <td>
+                                @o.ProductTitle
+                                @if (o.SubscriptionEndsAt.HasValue)
+                                {
+                                    <div class="small text-muted">تمدید تا @o.SubscriptionEndsAt.Value.ToShamsiText()@(string.IsNullOrEmpty(o.Notes) ? "" : " · " + o.Notes)</div>
+                                }
+                            </td>
+                            <td>@o.Amount.ToToman()</td>
+                            <td>@Html.StatusBadge(o.Status)</td>
+                            <td class="row-actions">@Html.IconLink(Url.Action("OrderDetails", "Admin", new { id = o.Id }), "bi-eye", "جزئیات سفارش", "is-view")</td>
+                        </tr>
+                    }
+                    @if (!orders.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-3">پرداختی برای این فروشگاه ثبت نشده است</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="adm-card">
+            <div class="adm-card-title">مشخصات</div>
+            <dl class="adm-dl">
+                <dt>آدرس رایگان</dt><dd class="adm-ltr"><a href="@storeUrl" target="_blank" rel="noopener">@storeUrl</a></dd>
+                <dt>نام در سایت</dt><dd>@(settings?.StoreName ?? "-")</dd>
+                <dt>نام کاربری پنل</dt><dd class="adm-ltr">@(settings?.AdminUsername ?? "-")</dd>
+                <dt>درگاه پرداخت</dt><dd>@(settings != null && settings.EnablePayment && TenantProvisioningService.HasValidMerchant(settings) ? "فعال (زرین‌پال)" : "فعال نشده")</dd>
+                <dt>راه‌اندازی اولیه</dt><dd>@(settings != null && settings.OnboardingCompleted ? "تکمیل شده" : "ناقص")</dd>
+                @if (Model.IsPaid)
+                {
+                    <dt>آخرین پرداخت اشتراک</dt><dd>@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsiText() : "-")</dd>
+                }
+                else if (Model.TrialEndsAt.HasValue)
+                {
+                    <dt>پایان آزمایشی</dt><dd>@Model.TrialEndsAt.Value.ToShamsiText() (@Model.TrialDaysLeft().ToFa() روز مانده)</dd>
+                }
+            </dl>
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card-title">اشتراک</div>
+            @if (isDemo)
+            {
+                <p class="text-muted small mb-0">این سایت دموی نیکو سیستم است و اشتراک ندارد.</p>
+            }
+            else
+            {
+                if (Model.IsPaid && Model.SubscriptionEndsAt.HasValue)
+                {
+                    <dl class="adm-dl small mb-2">
+                        <dt>دوره فعلی</dt><dd>@NikooSystem.Services.Subscriptions.PeriodName(Model.SubscriptionMonths)</dd>
+                        <dt>پایان اشتراک</dt><dd>@Model.SubscriptionEndsAt.Value.ToShamsiText()</dd>
+                        <dt>وضعیت</dt>
+                        <dd>
+                            @if (Model.IsSubscriptionLocked())
+                            {
+                                <span class="text-danger">سایت بسته است (از @Model.ClosesAt().Value.ToShamsiText())</span>
+                            }
+                            else if (Model.IsSubscriptionExpired())
+                            {
+                                <span class="text-danger">تمام شده؛ @Model.GraceDaysLeft().ToFa() روز تا بسته شدن سایت</span>
+                            }
+                            else
+                            {
+                                <span class="@(Model.IsRenewalDue() ? "text-warning" : "text-success")">@Model.SubscriptionDaysLeft().ToFa() روز مانده</span>
+                            }
+                        </dd>
+                    </dl>
+                }
+                else
+                {
+                    using (Html.BeginForm("ExtendTrial", "Admin", new { id = Model.CompanyCode }, FormMethod.Post, new { @class = "d-flex gap-2 mb-2" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <select class="form-select" name="days" aria-label="مدت تمدید">
+                            <option value="3">۳ روز</option>
+                            <option value="7" selected>۷ روز</option>
+                            <option value="14">۱۴ روز</option>
+                            <option value="30">۳۰ روز</option>
+                        </select>
+                        <button class="btn btn-outline-primary text-nowrap" type="submit">تمدید آزمایشی</button>
+                    }
+                }
+                using (Html.BeginForm("GrantSubscription", "Admin", new { id = Model.CompanyCode }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="small fw-bold mt-2 mb-1">ثبت اشتراک بدون پرداخت آنلاین</div>
+                    <div class="input-group input-group-sm mb-2">
+                        <select class="form-select" name="months" aria-label="مدت اشتراک">
+                            @foreach (var m in NikooSystem.Services.Subscriptions.GrantPeriods)
+                            {
+                                <option value="@m" @(m == 3 ? "selected" : null)>@NikooSystem.Services.Subscriptions.PeriodName(m)</option>
+                            }
+                        </select>
+                        <button class="btn btn-success text-nowrap" type="submit">ثبت تمدید</button>
+                    </div>
+                    <input class="form-control form-control-sm" name="note" maxlength="200" placeholder="توضیح (مثلاً: کارت‌به‌کارت یا هدیه)" aria-label="توضیح" />
+                    <div class="form-text">مدت از پایان دوره فعلی (یا باقی‌مانده دوره آزمایشی) حساب می‌شود و در فهرست پرداخت‌ها با مبلغ صفر ثبت می‌شود.</div>
+                }
+            }
+        </div>
+
+        <div class="adm-card storage-mini storage-usage @storageState">
+            <div class="adm-card-title">فضای ذخیره‌سازی</div>
+            <div class="d-flex justify-content-between align-items-end mb-2">
+                <div><strong>@StorageQuota.Format(storage.UsedBytes)</strong> <span class="small text-muted">از @StorageQuota.Format(storage.QuotaBytes)</span></div>
+                <span class="storage-percent">@storage.Percent.ToFa()٪</span>
+            </div>
+            <div class="storage-bar" role="progressbar" aria-valuenow="@storage.Percent" aria-valuemin="0" aria-valuemax="100" aria-label="فضای استفاده‌شده">
+                <span class="seg-images" style="width:@storage.Percent%"></span>
+            </div>
+            <dl class="adm-dl small mb-2">
+                <dt>تصاویر</dt><dd>@StorageQuota.Format(storage.ImageBytes)</dd>
+                <dt>فایل‌های دانلودی</dt><dd>@StorageQuota.Format(storage.FileBytes)</dd>
+                <dt>فضای پایه</dt><dd>@StorageQuota.FormatMb(storage.BaseMb)</dd>
+                <dt>فضای اضافه</dt><dd>@(storage.ExtraMb > 0 ? StorageQuota.FormatMb(storage.ExtraMb) : "ندارد")</dd>
+            </dl>
+            @using (Html.BeginForm("GrantStorage", "Admin", new { id = Model.CompanyCode }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="input-group input-group-sm mb-2">
+                    <select class="form-select" name="megabytes" aria-label="حجم">
+                        <option value="500">۵۰۰ مگابایت</option>
+                        <option value="1024" selected>۱ گیگابایت</option>
+                        <option value="5120">۵ گیگابایت</option>
+                        <option value="10240">۱۰ گیگابایت</option>
+                        <option value="-1024">کم کردن ۱ گیگابایت</option>
+                    </select>
+                    <button class="btn btn-outline-primary text-nowrap" type="submit">افزودن فضا</button>
+                </div>
+                <input class="form-control form-control-sm mb-2" name="note" maxlength="200" placeholder="توضیح (مثلاً: هدیه یا پرداخت کارت‌به‌کارت)" aria-label="توضیح" />
+            }
+            @Html.PostButton("CleanStoreStorage", new { id = Model.CompanyCode }, "پاک‌سازی فایل‌های بی‌استفاده", "btn btn-outline-secondary btn-sm w-100")
+            @if (storagePurchases.Any())
+            {
+                <div class="small fw-bold mt-3 mb-1">سابقه</div>
+                <ul class="list-unstyled small mb-0">
+                    @foreach (var p in storagePurchases.Take(6))
+                    {
+                        <li class="d-flex justify-content-between gap-2 border-bottom py-1">
+                            <span>@((p.PaidAt ?? p.CreatedAt).ToShamsi()) · @(p.Megabytes < 0 ? "−" : "+")@StorageQuota.FormatMb(Math.Abs(p.Megabytes))</span>
+                            <span class="text-muted text-truncate">@(p.Status == NikooSystem.Models.OrderStatus.Paid ? (p.Amount > 0 ? p.Amount.ToToman() : (p.Note ?? "رایگان")) : p.Status == NikooSystem.Models.OrderStatus.PendingPayment ? "پرداخت نشده" : "ناموفق")</span>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card-title">پشتیبانی</div>
+            <div class="d-grid gap-2">
+                @Html.PostButton("ResetStorePassword", new { id = Model.CompanyCode }, "ساخت رمز جدید برای پنل فروشگاه", "btn btn-outline-primary w-100", "رمز فعلی پنل این فروشگاه از کار می‌افتد. ادامه می‌دهید؟")
+                @Html.PostButton("ToggleStore", new { id = Model.CompanyCode }, Model.IsActive ? "تعلیق فروشگاه" : "رفع تعلیق فروشگاه", Model.IsActive ? "btn btn-outline-warning w-100" : "btn btn-warning w-100", Model.IsActive ? "سایت و پنل این فروشگاه تا رفع تعلیق از دسترس خارج شود؟" : null)
+                <a class="btn btn-outline-secondary" href="@Url.Action("Visits", "Admin", new { site = Model.CompanyCode })"><i class="bi bi-bar-chart-line"></i> آمار بازدید</a>
+                <a class="btn btn-outline-secondary" href="@Url.Action("Tickets", "Admin", new { company = Model.CompanyCode, state = "all" })"><i class="bi bi-headset"></i> تیکت‌های این فروشگاه</a>
+                @if (!string.IsNullOrEmpty(Model.OwnerMobile))
+                {
+                    <a class="btn btn-outline-secondary" href="tel:@Model.OwnerMobile"><i class="bi bi-telephone"></i> تماس با مالک</a>
+                }
+                @if (!string.IsNullOrEmpty(Model.OwnerEmail))
+                {
+                    <a class="btn btn-outline-secondary" href="mailto:@Model.OwnerEmail"><i class="bi bi-envelope"></i> ایمیل به مالک</a>
+                }
+            </div>
+        </div>
+
+        @if (!isDemo)
+        {
+            <div class="adm-card adm-danger">
+                <div class="adm-card-title">حذف فروشگاه</div>
+                <p class="small text-muted">همه محصولات، سفارش‌ها، مشتریان و فایل‌های این فروشگاه برای همیشه حذف می‌شوند. برای تأیید، کد فروشگاه را بنویسید.</p>
+                @using (Html.BeginForm("DeleteStore", "Admin", new { id = Model.CompanyCode }, FormMethod.Post, new { @class = "d-flex gap-2" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input class="form-control" name="confirmCode" placeholder="@Model.CompanyCode" dir="ltr" autocomplete="off" aria-label="کد فروشگاه برای تأیید حذف" />
+                    <button class="btn btn-danger text-nowrap" type="submit">حذف</button>
+                }
+            </div>
+        }
+    </div>
+</div>

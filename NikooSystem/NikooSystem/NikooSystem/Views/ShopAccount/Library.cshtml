@@ -1,0 +1,68 @@
+@model List<StoreProduct>
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "کتابخانه من";
+    var company = (string)ViewBag.CompanyCode;
+    var customer = ViewBag.Customer as StoreCustomer;
+}
+<section class="py-4">
+    <div class="container" style="max-width:980px;">
+        @Html.Partial("_AccountNav", "Library")
+        <h1 class="section-title">کتابخانه من</h1>
+        <p class="text-muted">@(customer?.FullName) عزیز، همه کتاب‌ها، دوره‌ها و فایل‌هایی که خریده‌اید اینجاست و همیشه در دسترس می‌ماند.</p>
+
+        @if (!Model.Any())
+        {
+            <div class="cat-empty">
+                <i class="bi bi-collection-play"></i>
+                <h3>هنوز چیزی نخریده‌اید</h3>
+                <p>پس از خرید، دوره‌ها و کتاب‌ها بلافاصله اینجا اضافه می‌شوند.</p>
+                <a class="btn-wm" href="@Url.Action("Catalog","Shop", new { company })">مشاهده دوره‌ها و کتاب‌ها</a>
+            </div>
+        }
+
+        <div class="library-grid">
+            @foreach (var p in Model)
+            {
+                var cover = p.CoverImage();
+                var course = p.ProductType == StoreProductType.Course;
+                <article class="library-item">
+                    <a class="library-cover" href="@Url.Action("Product","Shop", new { company, slug = p.Slug })">
+                        <img src="@(cover?.ThumbUrl ?? cover?.LargeUrl ?? "/Assets/img/portfolio/portfolio-1.jpg")" alt="@p.Title" loading="lazy" />
+                        <span class="wm-type"><i class="bi @p.ProductType.TypeIcon()"></i> @p.ProductType.TypeText()</span>
+                    </a>
+                    <div class="library-body">
+                        <h3>@p.Title</h3>
+                        @if (!string.IsNullOrWhiteSpace(p.Author))
+                        {
+                            <div class="text-muted small"><i class="bi bi-person"></i> @p.Author</div>
+                        }
+                        @if (course)
+                        {
+                            <div class="small mt-1">@((p.Lessons?.Count ?? 0).ToFa()) جلسه</div>
+                            <a class="btn-wm mt-2" href="@Url.Action("Learn","ShopAccount", new { company, id = p.Id })"><i class="bi bi-play-circle"></i> شروع / ادامه دوره</a>
+                        }
+                        @if (p.Files != null && p.Files.Any() && !course)
+                        {
+                            <ul class="library-files">
+                                @foreach (var f in p.Files)
+                                {
+                                    <li>
+                                        <a href="@Url.Action("Media","ShopAccount", new { company, id = p.Id, file = f.Id, download = true })">
+                                            <i class="bi bi-download"></i> @f.Title
+                                        </a>
+                                        <small>@System.IO.Path.GetExtension(f.FileName).TrimStart('.').ToUpperInvariant() · @f.Size.ToFileSize()</small>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                        else if (!course)
+                        {
+                            <p class="small text-muted mt-2 mb-0">فایل این مورد هنوز بارگذاری نشده؛ به‌زودی اضافه می‌شود.</p>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>

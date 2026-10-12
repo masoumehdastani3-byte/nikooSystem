@@ -1,0 +1,16 @@
+<script>
+(function () {
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var text = document.getElementById(btn.getAttribute('data-copy')).textContent.trim();
+      var done = function () { btn.innerHTML = '<i class="bi bi-check2"></i>'; setTimeout(function () { btn.innerHTML = '<i class="bi bi-clipboard"></i>'; }, 1500); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+    });
+  });
+  var print = document.getElementById('dmPrint');
+  if (print) print.addEventListener('click', function () {
+    document.querySelectorAll('.dm-guide details').forEach(function (d) { d.open = true; });
+    window.print();
+  });
+})();
+</script>

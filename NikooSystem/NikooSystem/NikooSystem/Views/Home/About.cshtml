@@ -1,6 +1,7 @@
 @{
     ViewBag.Title = "درباره ما";
     ViewBag.Nav = "about";
+    var site = NikooSystem.Services.SiteContentStore.Settings;
 }
 <main id="main" class="lf-about-page">
     <section class="lf-about-hero">
@@ -47,7 +48,7 @@
                     <p>سایت فروشگاهی با طراحی مدرن، درگاه پرداخت، مدیریت محصولات و سفارش‌ها</p>
                 </article>
                 <article>
-                    <i class="bi bi-mortarboard"></i>
+                    <i class="bi bi-easel"></i>
                     <h3>سایت آموزشی آماده</h3>
                     <p>پلتفرم برای فروش دوره، ثبت‌نام دانشجو، پخش ویدیو و مدیریت محتوا</p>
                 </article>
@@ -147,8 +148,14 @@
                 با تجربه ۲۰ ساله‌ام در کنار شما هستم تا حضور آنلاین‌تان را قدرتمند شروع کنید.
             </p>
             <div class="lf-about-contacts">
-                <a href="tel:02177458550"><i class="bi bi-telephone"></i> ۰۲۱-۷۷۴۵۸۵۵۰</a>
-                <a href="mailto:info@nikoooo.ir"><i class="bi bi-envelope"></i> info@nikoooo.ir</a>
+                @if (!string.IsNullOrWhiteSpace(site.Phone))
+                {
+                    <a href="tel:@site.Phone.Replace("-", "").Replace(" ", "")"><i class="bi bi-telephone"></i> <span dir="ltr">@site.Phone</span></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(site.Email))
+                {
+                    <a href="mailto:@site.Email"><i class="bi bi-envelope"></i> @site.Email</a>
+                }
                 <a href="@Url.Action("Contact","Home")"><i class="bi bi-send"></i> فرم تماس با ما</a>
             </div>
             <a class="lf-btn lf-btn-warm" href="@Url.Action("Contact","Home")"><i class="bi bi-chat-dots"></i> درخواست مشاوره رایگان</a>

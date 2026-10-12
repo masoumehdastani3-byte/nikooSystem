@@ -64,7 +64,7 @@ namespace NikooSystem.Services
 
         public static PaymentClient Authenticate(string appId, string apiKey)
         {
-            var client = JsonStore.GetPaymentClient(appId);
+            var client = SiteStore.GetPaymentClient(appId);
             if (client == null) return null;
             if (string.IsNullOrWhiteSpace(apiKey)) return null;
             if (!string.Equals(client.ApiKey, apiKey, StringComparison.Ordinal))
@@ -232,7 +232,7 @@ namespace NikooSystem.Services
                     wc.Encoding = Encoding.UTF8;
                     await wc.UploadStringTaskAsync(payment.NotifyUrl, "POST", body);
                     payment.NotifySent = true;
-                    JsonStore.UpdateHubPayment(payment);
+                    SiteStore.UpdateHubPayment(payment);
                 }
             }
             catch

@@ -1,0 +1,85 @@
+@model NikooSystem.Models.PaymentClientForm
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = Model.IsNew ? "اپلیکیشن جدید" : "ویرایش اپلیکیشن";
+    var baseUrl = NikooSystem.Services.PaymentHubService.BaseUrl;
+}
+<div class="adm-head">
+    <div>
+        <h1>@ViewBag.Title</h1>
+        <p>هر پروژه با شناسه و کلید API خودش درخواست پرداخت می‌سازد و نتیجه را با امضای همین کلید دریافت می‌کند.</p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-link" href="@Url.Action("PaymentApps","Admin")">بازگشت</a>
+    </div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="adm-card">
+            @using (Html.BeginForm("EditPaymentApp", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.IsNew)
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Name, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "مثلاً لبخند فردا" })
+                    @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger small" })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.AppId, new { @class = "form-label" })
+                    @if (Model.IsNew)
+                    {
+                        @Html.TextBoxFor(m => m.AppId, new { @class = "form-control", dir = "ltr", placeholder = "my-app" })
+                        <div class="form-text">بعد از ساخت قابل تغییر نیست.</div>
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(m => m.AppId)
+                        <div class="adm-code">@Model.AppId</div>
+                    }
+                    @Html.ValidationMessageFor(m => m.AppId, "", new { @class = "text-danger small" })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.AllowedHosts, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.AllowedHosts, 4, 1, new { @class = "form-control", dir = "ltr", placeholder = "example.ir\nwww.example.ir\n*.example.ir" })
+                    <div class="form-text">کاربر بعد از پرداخت فقط به این دامنه‌ها برمی‌گردد. خالی بگذارید تا همه دامنه‌ها مجاز باشند (توصیه نمی‌شود).</div>
+                </div>
+                <button class="btn btn-primary" type="submit">@(Model.IsNew ? "ساخت اپلیکیشن" : "ذخیره")</button>
+            }
+        </div>
+    </div>
+    <div class="col-lg-5">
+        @if (!Model.IsNew)
+        {
+            <div class="adm-card">
+                <div class="adm-card-title">کلید API</div>
+                <div class="d-flex gap-2 align-items-center mb-2">
+                    <input class="form-control adm-code" id="apiKey" type="password" value="@Model.ApiKey" readonly aria-label="کلید API" />
+                    <button class="icon-btn is-view" type="button" title="نمایش / پنهان" aria-label="نمایش کلید" onclick="var k=document.getElementById('apiKey');k.type=k.type==='password'?'text':'password'"><i class="bi bi-eye"></i></button>
+                    <button class="icon-btn is-edit" type="button" title="کپی" aria-label="کپی کلید" onclick="navigator.clipboard.writeText(document.getElementById('apiKey').value);this.innerHTML='<i class=&quot;bi bi-check2&quot;></i>'"><i class="bi bi-clipboard"></i></button>
+                </div>
+                <p class="small text-muted">این کلید را فقط در سرور پروژه مقصد نگه دارید.</p>
+                @Html.PostButton("RegenerateApiKey", new { id = Model.AppId }, "ساخت کلید جدید", "btn btn-outline-danger btn-sm", "کلید فعلی باطل می‌شود و پروژه مقصد تا جایگزینی کلید جدید نمی‌تواند پرداخت بگیرد. ادامه می‌دهید؟")
+            </div>
+            <div class="adm-card">
+                <div class="adm-card-title">اتصال</div>
+                <dl class="adm-dl">
+                    <dt>ساخت پرداخت</dt><dd><div class="adm-code">POST @baseUrl/api/payments/create</div></dd>
+                    <dt>وضعیت پرداخت</dt><dd><div class="adm-code">GET @baseUrl/api/payments/status/{token}</div></dd>
+                </dl>
+                <a class="small" href="@Url.Action("Guide","Pay")" target="_blank" rel="noopener">راهنمای کامل و نمونه کد</a>
+            </div>
+        }
+        else
+        {
+            <div class="adm-card">
+                <p class="small text-muted mb-0">کلید API بعد از ساخت اپلیکیشن به‌صورت خودکار و امن ساخته می‌شود.</p>
+            </div>
+        }
+    </div>
+</div>
+@section scripts {
+    <script src="~/Scripts/jquery-3.7.0.min.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}

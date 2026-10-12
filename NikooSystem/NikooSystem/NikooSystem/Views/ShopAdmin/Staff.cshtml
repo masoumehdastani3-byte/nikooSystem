@@ -1,0 +1,65 @@
+@model PagedList<StoreStaff>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "متخصصان و ساعت کاری";
+    var company = (string)ViewBag.CompanyCode;
+    var services = (List<StoreService>)ViewBag.Services;
+}
+@Html.PageHeader("متخصصان و ساعت کاری", "متخصص جدید", "EditStaff")
+<div class="panel-card">
+    @Html.GridToolbar("جستجوی نام یا تخصص…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr><th>نام</th><th>روزهای کاری</th><th>خدمات</th><th>وضعیت</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var workDays = Enumerable.Range(0, 7).Where(d => p.HoursOn(d).Any()).ToList();
+                    var offered = services.Count(s => s.IsActive && s.OfferedBy(p.Id));
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                @if (!string.IsNullOrWhiteSpace(p.PhotoUrl))
+                                {
+                                    <img src="@p.PhotoUrl" alt="" style="width:40px;height:40px;border-radius:50%;object-fit:cover" />
+                                }
+                                <div>
+                                    <a class="fw-bold text-decoration-none" href="@Url.Action("EditStaff","ShopAdmin", new { company, id = p.Id })">@p.Name</a>
+                                    @if (p.IsSample) { <span class="badge bg-light text-muted">نمونه</span> }
+                                    <div class="small text-muted">@p.Title</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="small">
+                            @if (workDays.Any())
+                            {
+                                @(string.Join("، ", workDays.Select(d => BookingTime.DayNames[d])))
+                            }
+                            else
+                            {
+                                <span class="text-danger">ساعت کاری ندارد</span>
+                            }
+                        </td>
+                        <td class="small">@offered.ToFa() خدمت</td>
+                        <td>
+                            @if (p.IsActive) { <span class="badge bg-success">فعال</span> }
+                            else { <span class="badge bg-secondary">غیرفعال</span> }
+                        </td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Calendar", "ShopAdmin", new { company, staffId = p.Id }), "bi-calendar-week", "تقویم " + p.Name, "is-view")
+                            @Html.EditLink("EditStaff", p.Id, "ویرایش و ساعت کاری")
+                            @Html.DeleteButton("DeleteStaff", p.Id, "«" + p.Name + "» حذف شود؟ نوبت‌های قبلی او در فهرست می‌مانند.")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-person-plus fs-3 d-block mb-1"></i>هنوز متخصصی اضافه نکرده‌اید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

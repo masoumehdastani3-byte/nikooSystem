@@ -1,0 +1,42 @@
+@model NikooSystem.Models.AdminAccountViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "نام کاربری و رمز";
+}
+<div class="adm-head">
+    <div>
+        <h1>نام کاربری و رمز پنل</h1>
+        <p>اطلاعات ورود به همین پنل مدیریت سایت</p>
+    </div>
+</div>
+@if (NikooSystem.Services.SiteContentStore.UsesDefaultPassword)
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> پنل هنوز با رمز پیش‌فرض باز می‌شود و این رمز در صفحه ورود نمایش داده می‌شود؛ همین حالا آن را عوض کنید.</div>
+}
+<div class="adm-card" style="max-width:560px">
+    @using (Html.BeginForm("Account", "Admin", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            @Html.LabelFor(m => m.Username, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", dir = "ltr", autocomplete = "username" })
+            @Html.ValidationMessageFor(m => m.Username, "", new { @class = "text-danger small" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(m => m.CurrentPassword, new { @class = "form-label" })
+            @Html.PasswordFor(m => m.CurrentPassword, new { @class = "form-control", dir = "ltr", autocomplete = "current-password" })
+            @Html.ValidationMessageFor(m => m.CurrentPassword, "", new { @class = "text-danger small" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(m => m.NewPassword, new { @class = "form-label" })
+            @Html.PasswordFor(m => m.NewPassword, new { @class = "form-control", dir = "ltr", autocomplete = "new-password" })
+            @Html.ValidationMessageFor(m => m.NewPassword, "", new { @class = "text-danger small" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(m => m.ConfirmPassword, new { @class = "form-label" })
+            @Html.PasswordFor(m => m.ConfirmPassword, new { @class = "form-control", dir = "ltr", autocomplete = "new-password" })
+            @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "text-danger small" })
+        </div>
+        <button class="btn btn-primary" type="submit">ذخیره</button>
+    }
+</div>

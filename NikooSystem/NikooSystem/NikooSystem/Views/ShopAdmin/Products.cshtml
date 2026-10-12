@@ -1,39 +1,101 @@
-@model IEnumerable<NikooSystem.Models.Store.StoreProduct>
-@using NikooSystem.Helpers
+@model PagedList<StoreProduct>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "محصولات";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    ViewBag.Title = kind.ItemsLabel;
     var company = (string)ViewBag.CompanyCode;
-    var cats = ((IEnumerable<NikooSystem.Models.Store.StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
-}
-<div class="d-flex justify-content-between mb-3">
-    <h2>محصولات</h2>
-    <a class="btn-store" href="@Url.Action("EditProduct","ShopAdmin", new { company })">محصول جدید</a>
-</div>
-<div class="panel-card">
-<table class="table align-middle">
-    <thead><tr><th>تصویر</th><th>عنوان</th><th>گروه</th><th>قیمت</th><th>موجودی</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var p in Model)
+    var categories = (List<StoreCategory>)ViewBag.Categories;
+    var cats = categories.ToDictionary(c => c.Id, c => c.Title);
+    var lowStock = ((StoreSettings)ViewBag.Settings).LowStockThreshold;
+    var statusOptions = new Dictionary<string, string>
     {
-        var img = p.Images?.OrderBy(i => i.SortOrder).FirstOrDefault();
-        <tr>
-            <td><img src="@(img?.ThumbUrl ?? img?.LargeUrl)" style="width:48px;height:48px;object-fit:cover;border-radius:8px;" /></td>
-            <td>@p.Title</td>
-            <td>@(cats.ContainsKey(p.CategoryId) ? cats[p.CategoryId] : "-")</td>
-            <td>@p.Price.ToToman()</td>
-            <td>@p.Stock</td>
-            <td class="text-nowrap">
-                <a href="@Url.Action("EditProduct","ShopAdmin", new { company, id = p.Id })">ویرایش</a>
-                @using (Html.BeginForm("DeleteProduct", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-inline", onsubmit = "return confirm('حذف شود؟');" }))
-                {
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="id" value="@p.Id" />
-                    <button class="btn btn-link text-danger p-0" type="submit">حذف</button>
-                }
-            </td>
-        </tr>
+        ["active"] = "فعال",
+        ["inactive"] = "غیرفعال",
+        ["featured"] = "ویژه",
+        ["sample"] = "نمونه (پیش‌فرض)"
+    };
+    if (kind.IsShop) { statusOptions["lowstock"] = "رو به اتمام"; }
+    var filters = new List<GridSelect>
+    {
+        new GridSelect("categoryId", "همه گروه‌ها", GridHtml.Options(categories, c => c.Id, c => c.TreeTitle())),
+        new GridSelect("status", "همه وضعیت‌ها", statusOptions)
+    };
+    if (kind.IsDigital)
+    {
+        filters.Add(new GridSelect("type", "همه انواع", GridHtml.Options(kind.ProductTypes(), t => t, t => t.TypeText())));
     }
-    </tbody>
-</table>
+}
+@Html.PageHeader(kind.ItemsLabel, kind.IsDigital ? "دوره یا کتاب جدید" : "محصول جدید", "EditProduct")
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در عنوان، نویسنده یا کد…", filters.ToArray())
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>تصویر</th>
+                    @Html.SortHeader("title", "عنوان")
+                    <th>گروه</th>
+                    @Html.SortHeader("price", "قیمت")
+                    @if (kind.IsShop)
+                    {
+                        @Html.SortHeader("stock", "موجودی")
+                    }
+                    @Html.SortHeader("sold", "فروش")
+                    @Html.SortHeader("created", "تاریخ")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    var img = p.CoverImage();
+                    <tr>
+                        <td><img class="admin-thumb" src="@(img?.ThumbUrl ?? img?.LargeUrl)" alt="" /></td>
+                        <td>
+                            <strong>@p.Title</strong>
+                            <div class="small text-muted">
+                                @if (kind.IsDigital)
+                                {
+                                    <span><i class="bi @p.ProductType.TypeIcon()"></i> @p.ProductType.TypeText()</span>
+                                    if (p.ProductType == StoreProductType.Course) { <span> · @p.Lessons.Count جلسه</span> }
+                                    if (p.Files.Any()) { <span> · @p.Files.Count فایل</span> }
+                                }
+                                @if (!p.IsActive) { <span class="badge bg-secondary">غیرفعال</span> }
+                                @if (p.IsFeatured) { <span class="badge bg-warning text-dark">ویژه</span> }
+                                @if (p.IsSample) { <span class="badge bg-light text-muted">نمونه</span> }
+                            </div>
+                        </td>
+                        <td>@(cats.ContainsKey(p.CategoryId) ? cats[p.CategoryId] : "—")</td>
+                        <td>
+                            @p.Price.ToToman()
+                            @if (p.CompareAtPrice.HasValue && p.CompareAtPrice > p.Price)
+                            {
+                                <div class="small text-muted text-decoration-line-through">@p.CompareAtPrice.Value.ToToman()</div>
+                            }
+                        </td>
+                        @if (kind.IsShop)
+                        {
+                            <td>
+                                @if (p.Stock <= 0) { <span class="badge bg-danger">ناموجود</span> }
+                                else if (p.Stock <= lowStock) { <span class="badge bg-warning text-dark">@p.Stock</span> }
+                                else { @p.Stock }
+                            </td>
+                        }
+                        <td>@p.SoldCount</td>
+                        <td class="small text-muted">@p.CreatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Product", "Shop", new { company, slug = p.Slug }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            @Html.EditLink("EditProduct", p.Id)
+                            @Html.DeleteButton("DeleteProduct", p.Id, "«" + p.Title + "» حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="8"><i class="bi bi-inbox fs-3 d-block mb-1"></i>موردی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

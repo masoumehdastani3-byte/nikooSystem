@@ -1,0 +1,40 @@
+@model NikooSystem.Models.SiteFaq
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش سؤال" : "سؤال جدید";
+}
+<div class="adm-head">
+    <h1>@ViewBag.Title</h1>
+    <a class="btn btn-link" href="@Url.Action("Faqs","Admin")">بازگشت</a>
+</div>
+<div class="adm-card" style="max-width:860px">
+    @using (Html.BeginForm("EditFaq", "Admin", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+        <div class="mb-3">
+            @Html.LabelFor(m => m.Question, new { @class = "form-label" })
+            @Html.TextBoxFor(m => m.Question, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Question, "", new { @class = "text-danger small" })
+        </div>
+        <div class="mb-3">
+            @Html.LabelFor(m => m.Answer, new { @class = "form-label" })
+            @Html.TextAreaFor(m => m.Answer, 5, 1, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.Answer, "", new { @class = "text-danger small" })
+        </div>
+        <div class="row g-3 align-items-end mb-3">
+            <div class="col-sm-4">
+                @Html.LabelFor(m => m.SortOrder, new { @class = "form-label" })
+                @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })
+                <div class="form-text">عدد کوچک‌تر بالاتر نمایش داده می‌شود.</div>
+            </div>
+            <div class="col-sm-8">
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                    @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary" type="submit">ذخیره</button>
+    }
+</div>

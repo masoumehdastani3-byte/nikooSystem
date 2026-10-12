@@ -1,0 +1,72 @@
+@model NewTicketForm
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "تیکت جدید";
+    var company = (string)ViewBag.CompanyCode;
+}
+<link href="@Url.Asset("~/Content/support.css")" rel="stylesheet" />
+<div class="sp">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h2 class="mb-0">تیکت جدید به پشتیبانی نیکو</h2>
+        <a class="btn-outline-store" href="@Url.Action("Support", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> همه تیکت‌ها</a>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-8">
+            @using (Html.BeginForm("NewTicket", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                <div class="panel-card row g-3">
+                    <div class="col-12">
+                        <label class="form-label" for="Subject">موضوع</label>
+                        @Html.TextBoxFor(m => m.Subject, new { @class = "form-control", maxlength = "120", required = "required", placeholder = "مثلاً: پرداخت آنلاین سفارش‌ها خطا می‌دهد" })
+                        @Html.ValidationMessageFor(m => m.Subject, "", new { @class = "text-danger small" })
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="Category">بخش</label>
+                        <select class="form-select" id="Category" name="Category">
+                            @foreach (var c in SupportLabels.Categories)
+                            {
+                                <option value="@c.Key" @(c.Key == Model.Category ? "selected" : null)>@c.Value</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label" for="Priority">اولویت</label>
+                        <select class="form-select" id="Priority" name="Priority">
+                            @foreach (var p in SupportLabels.Priorities)
+                            {
+                                <option value="@p.Key" @(p.Key == Model.Priority ? "selected" : null)>@p.Value</option>
+                            }
+                        </select>
+                        <div class="form-text">«فوری» را برای مشکلی بگذارید که فروش یا کار سایت را متوقف کرده است.</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label" for="Body">شرح درخواست</label>
+                        @Html.TextAreaFor(m => m.Body, new { @class = "form-control", rows = "8", maxlength = "4000", required = "required",
+                            placeholder = "چه اتفاقی افتاد؟ در کدام صفحه؟ اگر پیام خطایی دیدید، متن آن را بنویسید." })
+                        @Html.ValidationMessageFor(m => m.Body, "", new { @class = "text-danger small" })
+                        @Html.Partial("_SupportUpload")
+                    </div>
+                    <div class="col-12 d-flex gap-2">
+                        <button class="btn-store" type="submit"><i class="bi bi-check2-circle"></i> ارسال تیکت</button>
+                        <a class="btn-outline-store" href="@Url.Action("Support", "ShopAdmin", new { company })">انصراف</a>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-lg-4">
+            <div class="panel-card">
+                <h5 class="mb-3"><i class="bi bi-lightning-charge"></i> پاسخ سریع‌تر بگیرید</h5>
+                <ol class="sp-steps">
+                    <li>در هر تیکت فقط یک موضوع را مطرح کنید.</li>
+                    <li>آدرس صفحه و کارهایی که انجام دادید تا مشکل پیش آمد را بنویسید.</li>
+                    <li>متن دقیق پیام خطا را کپی کنید، یا از صفحه اسکرین‌شات بگیرید و با Ctrl+V در متن بچسبانید.</li>
+                    <li>حساب بله را از «اطلاع‌رسانی بله» وصل کنید تا پاسخ را همان لحظه در بله ببینید.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="@Url.Asset("~/Content/support.js")" defer></script>

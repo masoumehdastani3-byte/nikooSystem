@@ -2,22 +2,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
+using NikooSystem.Filters;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
 {
     /// <summary>ثبت‌نام خودکار و ساخت فروشگاه آزمایشی بدون نیاز به پشتیبان</summary>
+    [CountVisits]
     public class SignupController : Controller
     {
         private const int MaxSignupsPerHour = 3;
         private static readonly Dictionary<string, List<DateTime>> SignupsByIp = new Dictionary<string, List<DateTime>>();
 
         [HttpGet]
-        public ActionResult Index(string type)
+        public ActionResult Index(string type, string template)
         {
             ViewBag.Nav = "signup";
-            return View(new StoreSignupVm { StoreType = Helpers.StoreTypes.Get(type).Id });
+            Seo.Of(HttpContext).Description = "ساخت رایگان فروشگاه اینترنتی، سایت خبری یا شرکتی و سامانه نوبت‌دهی آنلاین در چند دقیقه؛ بدون نیاز به برنامه‌نویسی، با درگاه پرداخت و پشتیبانی.";
+            var chosen = StoreTemplates.All.FirstOrDefault(t => t.Id == template);
+            return View(new StoreSignupVm { StoreType = Helpers.StoreTypes.Get(type).Id, Template = chosen?.Id });
         }
 
         [HttpPost]
@@ -60,6 +65,7 @@ namespace NikooSystem.Controllers
                 return View(model);
             }
 
+            Notifications.Signup(tenant);
             Session["shop_admin_" + tenant.CompanyCode] = true;
             TempData["Welcome"] = true;
             return RedirectToAction("Setup", "ShopAdmin", new { company = tenant.CompanyCode });
@@ -79,6 +85,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
+        [NoIndex]
         public ActionResult Login()
         {
             ViewBag.Nav = "signup";

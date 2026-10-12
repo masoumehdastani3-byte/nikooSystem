@@ -1,0 +1,12 @@
+@* Image attachments of a ticket message; Content/support.js adds previews, paste (Ctrl+V) and drag-and-drop, and shrinks large photos before upload. *@
+@{
+    var max = NikooSystem.Services.SupportDesk.MaxImages;
+}
+<div class="sp-upload" data-sp-upload data-max="@max">
+    <label class="sp-upload-btn">
+        <i class="bi bi-image"></i> افزودن تصویر
+        <input type="file" name="images" accept="image/jpeg,image/png,image/gif" multiple data-no-quota />
+    </label>
+    <span class="sp-upload-hint">تا @max.ToFa() تصویر JPG، PNG یا GIF؛ اسکرین‌شات را می‌توانید با Ctrl+V در متن بچسبانید.</span>
+    <div class="sp-upload-list"></div>
+</div>

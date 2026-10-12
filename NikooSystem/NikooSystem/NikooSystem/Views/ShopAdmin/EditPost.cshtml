@@ -1,0 +1,152 @@
+@using System.Globalization
+@using NikooSystem.Controllers
+@model StorePost
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش مطلب" : "مطلب جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var categories = (List<StoreCategory>)ViewBag.Categories;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">@ViewBag.Title</h2>
+        <p class="text-muted mb-0 small">تیتر، لید و متن خبر یا مقاله؛ با زمان انتشار آینده، مطلب خودکار در آن زمان منتشر می‌شود.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Posts","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت به فهرست</a>
+</div>
+
+@using (Html.BeginForm("EditPost", "ShopAdmin", new { company }, FormMethod.Post, new { id = "postForm", enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="panel-card row g-3 m-0">
+                <div class="col-12">
+                    <label class="form-label">روتیتر</label>
+                    @Html.TextBoxFor(m => m.Kicker, new { @class = "form-control", maxlength = "120", placeholder = "مثلاً گزارش اختصاصی" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label">تیتر</label>
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control form-control-lg", required = "required", maxlength = "200" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label">لید (خلاصه)</label>
+                    @Html.TextAreaFor(m => m.Summary, new { @class = "form-control", rows = "3", maxlength = "600" })
+                    <div class="form-text">در فهرست مطالب، نتایج گوگل و اشتراک‌گذاری نمایش داده می‌شود.</div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">متن</label>
+                    @Html.TextAreaFor(m => m.BodyHtml, new { @class = "form-control", id = "BodyHtml", rows = "18" })
+                </div>
+            </div>
+            <div class="panel-card mt-3">
+                <h6 class="mb-3"><i class="bi bi-google"></i> نمایش در گوگل</h6>
+                @Html.Partial("_SeoFields", new SeoFieldsVm
+                {
+                    Title = Model.SeoTitle,
+                    Description = Model.SeoDescription,
+                    AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "تیتر مطلب" : Model.Title, ((StoreSettings)ViewBag.Settings).StoreName),
+                    AutoDescription = Model.Id > 0 ? SeoPages.PostDescription(Model) : "از لید یا ابتدای متن ساخته می‌شود",
+                    Url = Model.Id > 0 ? Html.Seo().Url(Url.RouteUrl("ShopPost", new { company, slug = Model.Slug })) : null
+                })
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="panel-card mb-3">
+                <h6 class="mb-3">انتشار</h6>
+                <div class="mb-3">
+                    <label class="form-label">زمان انتشار</label>
+                    <input class="form-control" type="datetime-local" name="publishAt" dir="ltr"
+                           value="@Model.PublishedAt.ToString(ShopAdminController.PublishAtFormat, CultureInfo.InvariantCulture)" />
+                </div>
+                <div class="d-grid gap-2 mb-3">
+                    @Html.BoolField("IsPublished", Model.IsPublished, "منتشر شود (در غیر این صورت پیش‌نویس)")
+                    @Html.BoolField("IsFeatured", Model.IsFeatured, "تیتر یک صفحه اول")
+                    @Html.BoolField("IsBreaking", Model.IsBreaking, "نمایش در نوار خبر فوری")
+                    @Html.BoolField("AllowComments", Model.AllowComments, "خوانندگان بتوانند نظر بدهند")
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+                    @if (Model.Id > 0 && Model.IsLive())
+                    {
+                        <a class="btn-outline-store" href="@Url.RouteUrl("ShopPost", new { company, slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
+                    }
+                </div>
+                @if (Model.Id > 0)
+                {
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-bar-chart"></i> @Model.ViewCount بازدید</p>
+                }
+            </div>
+
+            <div class="panel-card mb-3">
+                <h6 class="mb-3">دسته‌بندی و برچسب</h6>
+                <div class="mb-3">
+                    <label class="form-label" for="CategoryId">سرویس / دسته</label>
+                    <div class="qm-field">
+                        <select class="form-select" name="CategoryId" id="CategoryId" data-qm="categories">
+                            <option value="">بدون دسته</option>
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.Id" @(Model.CategoryId == c.Id ? "selected" : "")>@c.TreeTitle()</option>
+                            }
+                        </select>
+                        @Html.QuickManage("categories", "سرویس‌ها و دسته‌ها")
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">برچسب‌ها</label>
+                    @Html.TextBoxFor(m => m.Tags, new { @class = "form-control", placeholder = "با ویرگول جدا کنید" })
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">نویسنده</label>
+                    @Html.TextBoxFor(m => m.Author, new { @class = "form-control", maxlength = "80" })
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">منبع</label>
+                    @Html.TextBoxFor(m => m.Source, new { @class = "form-control", maxlength = "120", placeholder = "مثلاً خبرگزاری …" })
+                </div>
+                <div>
+                    <label class="form-label">آدرس (اسلاگ)</label>
+                    @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", dir = "ltr", placeholder = "خالی بماند تا خودکار ساخته شود" })
+                </div>
+            </div>
+
+            <div class="panel-card">
+                <h6 class="mb-3">تصویر شاخص</h6>
+                @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                {
+                    <img src="@Model.CoverImageUrl" alt="" class="w-100 rounded mb-2" style="max-height:200px;object-fit:cover" />
+                    <label class="small d-block mb-2"><input type="checkbox" name="removeCover" value="true" /> حذف تصویر</label>
+                }
+                <input class="form-control" type="file" name="coverFile" accept="image/*" />
+            </div>
+        </div>
+    </div>
+}
+
+@section scripts {
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#BodyHtml',
+        height: 560,
+        menubar: true,
+        directionality: 'rtl',
+        language: 'fa',
+        language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@23.10.9/langs6/fa.js',
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount directionality',
+        toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignright aligncenter alignleft alignjustify | bullist numlist outdent indent | link image table media | ltr rtl | removeformat | code preview fullscreen',
+        content_style: 'body { font-family: Far_Yekan, Tahoma, sans-serif; font-size: 15px; direction: rtl; }',
+        branding: false,
+        promotion: false,
+        convert_urls: false,
+        relative_urls: false,
+        entity_encoding: 'raw'
+    });
+
+    document.getElementById('postForm').addEventListener('submit', function () {
+        if (window.tinymce) tinymce.triggerSave();
+    });
+</script>
+}

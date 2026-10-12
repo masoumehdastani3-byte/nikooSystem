@@ -4,6 +4,7 @@
     ViewBag.Title = Model.Title;
     ViewBag.Nav = "products";
     var related = ViewBag.Related as List<NikooSystem.Models.Product> ?? new List<NikooSystem.Models.Product>();
+    var kind = string.IsNullOrEmpty(Model.DemoSlug) ? null : SiteKinds.Get(StoreTypes.Get(Model.DemoSlug).Kind);
 }
 <main id="main">
     <div class="page-hero">
@@ -28,13 +29,35 @@
                         <span class="badge bg-primary mb-2">@Model.Category</span>
                         <h1 class="h3">@Model.Title</h1>
                         <p class="text-muted">@Model.ShortDescription</p>
-                        <p class="price fs-4 mb-3">@Model.Price.ToToman()</p>
+                        @if (kind != null)
+                        {
+                            <div class="lf-plans" aria-label="دوره‌های اشتراک">
+                                @foreach (var plan in NikooSystem.Services.Subscriptions.Plans(Model))
+                                {
+                                    <div class="lf-plan @(plan.Months == 12 ? "is-best" : "")">
+                                        <span class="lf-plan-name">@NikooSystem.Services.Subscriptions.PeriodName(plan.Months)</span>
+                                        <strong>@plan.Price.ToToman()</strong>
+                                        <small>ماهی @plan.PerMonth.ToToman()</small>
+                                        @if (plan.DiscountPercent > 0)
+                                        {
+                                            <span class="lf-plan-off">@plan.DiscountPercent.ToFa()٪ تخفیف</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                            <p class="small text-muted mb-3"><i class="bi bi-calendar-check"></i> اشتراک را هر سه ماه، شش ماه یا سالی یک‌بار از داخل پنل تمدید می‌کنید؛ @NikooSystem.Services.TenantProvisioningService.TrialDays.ToFa() روز اول رایگان است.</p>
+                        }
+                        else
+                        {
+                            <p class="price fs-4 mb-3">@Model.Price.ToToman()</p>
+                        }
                         <p>@Model.Description</p>
                         <div class="d-flex flex-wrap gap-2 mt-4">
                             @if (!string.IsNullOrEmpty(Model.DemoSlug))
                             {
                                 <a class="btn-primary-shop" href="@Url.Action("Index","Signup", new { type = Model.DemoSlug })"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@NikooSystem.Services.TenantProvisioningService.TrialDays روز)</a>
                                 <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })"><i class="bi bi-eye"></i> مشاهده دمو فروشگاه</a>
+                                <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @StoreTemplates.ForKind(kind.Id).Count().ToString().ToFaDigits() قالب آماده</a>
                             }
                             else
                             {
@@ -44,6 +67,20 @@
                     </div>
                 </div>
             </div>
+
+            @if (kind != null)
+            {
+                @Html.Partial("_TemplateShowcase", Model)
+
+                <h2 class="h4 mt-5 mb-3">امکانات و ماژول‌های این محصول</h2>
+                <ul class="lf-kind-features">
+                    @foreach (var f in kind.Features)
+                    {
+                        <li><i class="bi bi-check2-circle"></i> @f</li>
+                    }
+                </ul>
+                @Html.Partial("_ModuleGrid", PlatformModules.For(kind))
+            }
 
             @if (related.Any())
             {

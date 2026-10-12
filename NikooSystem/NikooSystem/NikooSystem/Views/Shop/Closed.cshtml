@@ -1,0 +1,38 @@
+@using NikooSystem.Services
+@{
+    Layout = null;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var name = settings?.StoreName ?? company;
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>@name — موقتاً در دسترس نیست</title>
+    <link href="@Url.Asset("~/Assets/css/style.css")" rel="stylesheet" />
+    <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/subscription.css")" rel="stylesheet" />
+</head>
+<body class="store-closed">
+    <main class="store-closed-card">
+        @if (TenantProvisioningService.HasCustomLogo(settings))
+        {
+            <img src="@settings.LogoUrl" alt="@name" />
+        }
+        else
+        {
+            <div class="store-closed-icon"><i class="bi bi-door-closed"></i></div>
+        }
+        <h1>@name موقتاً در دسترس نیست</h1>
+        <p>این سایت به‌زودی دوباره باز می‌شود. لطفاً کمی بعد سر بزنید.</p>
+        @if (!string.IsNullOrWhiteSpace(settings?.Phone))
+        {
+            <p>تماس: <a href="tel:@settings.Phone" dir="ltr">@settings.Phone</a></p>
+        }
+        <p class="owner"><a href="@Url.Action("Login", "ShopAdmin", new { company })">مدیر سایت هستید؟ برای تمدید اشتراک وارد شوید</a></p>
+    </main>
+</body>
+</html>

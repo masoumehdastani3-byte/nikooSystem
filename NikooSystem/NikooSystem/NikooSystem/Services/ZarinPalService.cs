@@ -24,6 +24,12 @@ namespace NikooSystem.Services
         public long RefId { get; set; }
         public string Message { get; set; }
         public int Code { get; set; }
+
+        /// <summary>
+        /// The callback did not carry the authority issued for this payment (a forged or mixed-up link):
+        /// the payment must be left as it is rather than marked failed.
+        /// </summary>
+        public bool Forged { get; set; }
     }
 
     public class ZarinPalService
@@ -121,6 +127,19 @@ namespace NikooSystem.Services
                     Message = "خطا در ارتباط با درگاه پرداخت: " + ex.Message
                 };
             }
+        }
+
+        /// <summary>
+        /// Checks the gateway's return to a callback URL: the authority must be the one stored when the payment was
+        /// started, the payer must not have cancelled, and the gateway must confirm the stored amount.
+        /// </summary>
+        public async Task<ZarinPalVerifyResult> VerifyCallbackAsync(string storedAuthority, string authority, string status, long amountToman)
+        {
+            if (string.IsNullOrEmpty(storedAuthority) || !string.Equals(authority, storedAuthority, StringComparison.Ordinal))
+                return new ZarinPalVerifyResult { Forged = true, Message = "اطلاعات بازگشت از درگاه معتبر نیست." };
+            if (!string.Equals(status, "OK", StringComparison.OrdinalIgnoreCase))
+                return new ZarinPalVerifyResult { Message = "پرداخت توسط کاربر لغو شد یا ناموفق بود." };
+            return await VerifyPaymentAsync(storedAuthority, amountToman);
         }
 
         public async Task<ZarinPalVerifyResult> VerifyPaymentAsync(string authority, long amountToman)

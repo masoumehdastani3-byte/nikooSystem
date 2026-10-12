@@ -1,0 +1,90 @@
+@model List<NikooSystem.Models.StoreVisitRow>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "آمار بازدید";
+    var site = (NikooSystem.Models.VisitReport)ViewBag.SiteVisits;
+    var stores = (NikooSystem.Models.VisitReport)ViewBag.StoreVisits;
+    var monthName = site.ThisMonth.Label;
+}
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>آمار بازدید</h1>
+        <p>بازدید روزانه و ماهانه سایت نیکو و سایت‌های ساخته‌شده مشتریان</p>
+    </div>
+</div>
+
+<ul class="nav nav-pills vs-tabs mb-3" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#vsSite" type="button" role="tab" aria-controls="vsSite" aria-selected="true">
+            <i class="bi bi-house"></i> سایت نیکو <span class="badge bg-light text-dark">@site.Today.Views.ToFa() امروز</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#vsStores" type="button" role="tab" aria-controls="vsStores" aria-selected="false">
+            <i class="bi bi-shop"></i> سایت‌های مشتریان <span class="badge bg-light text-dark">@stores.Today.Views.ToFa() امروز</span>
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#vsRanking" type="button" role="tab" aria-controls="vsRanking" aria-selected="false">
+            <i class="bi bi-trophy"></i> پربازدیدترین سایت‌ها
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="vsSite" role="tabpanel">
+        @Html.Partial("_VisitReport", site)
+    </div>
+    <div class="tab-pane fade" id="vsStores" role="tabpanel">
+        @Html.Partial("_VisitReport", stores)
+    </div>
+    <div class="tab-pane fade" id="vsRanking" role="tabpanel">
+        <div class="adm-card">
+            <div class="adm-card-title">سایت‌های مشتریان به ترتیب بازدید @monthName</div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr><th>#</th><th>سایت</th><th>بازدید امروز</th><th>بازدید این ماه</th><th>بازدیدکننده این ماه</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < Model.Count; i++)
+                        {
+                            var s = Model[i];
+                            <tr>
+                                <td class="text-muted">@((i + 1).ToFa())</td>
+                                <td>
+                                    <a href="@Url.Action("Store","Admin", new { id = s.CompanyCode })"><strong>@s.Name</strong></a>
+                                    <span class="small text-muted">@s.CompanyCode</span>
+                                    @if (s.IsDemo) { <span class="adm-chip">دمو</span> }
+                                </td>
+                                <td>@s.TodayViews.ToFa()</td>
+                                <td class="fw-bold">@s.MonthViews.ToFa()</td>
+                                <td>@s.MonthVisitors.ToFa()</td>
+                                <td><a class="btn btn-sm btn-outline-primary" href="@Url.Action("Visits","Admin", new { site = s.CompanyCode })"><i class="bi bi-bar-chart-line"></i> گزارش</a></td>
+                            </tr>
+                        }
+                        @if (!Model.Any())
+                        {
+                            <tr><td colspan="6" class="adm-empty">این ماه هنوز بازدیدی از سایت‌های مشتریان ثبت نشده است.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script>
+        (function () {
+            var panes = { '#site': '#vsSite', '#stores': '#vsStores', '#ranking': '#vsRanking' };
+            function open() {
+                var tab = panes[location.hash] && document.querySelector('[data-bs-target="' + panes[location.hash] + '"]');
+                if (tab) bootstrap.Tab.getOrCreateInstance(tab).show();
+            }
+            open();
+            window.addEventListener('hashchange', open);
+        })();
+    </script>
+}
