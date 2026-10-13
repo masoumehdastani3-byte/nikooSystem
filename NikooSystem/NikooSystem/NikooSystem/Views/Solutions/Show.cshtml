@@ -1,0 +1,337 @@
+@model ProductLanding
+@using NikooSystem.Models
+@using NikooSystem.Services
+@{
+    var site = SiteContentStore.Settings;
+    ViewBag.Title = Model.Name;
+    ViewBag.DarkHeader = true;
+    Func<string, string> fill = text => ProductLandings.Fill(text, site.SiteName);
+    var kind = Model.KindInfo;
+    var plan = ViewBag.Plan as Product;
+    var plans = Subscriptions.Plans(plan);
+    var products = ViewBag.Products as List<Product> ?? new List<Product>();
+    var posts = ViewBag.Posts as List<SitePost> ?? new List<SitePost>();
+    var types = (Model.Types ?? new string[0]).Select(StoreTypes.Get).ToList();
+    var demoType = types.FirstOrDefault(t => TenantStore.DemoBySlug.ContainsKey(t.Id));
+    var trialDays = TenantProvisioningService.TrialDays.ToFa();
+    var signupUrl = Url.Action("Index", "Signup", new { type = Model.MainType });
+    var showcases = new List<TemplateShowcase>();
+    if (kind != null && demoType != null)
+    {
+        showcases.Add(TemplateShowcase.For(demoType.Id, Model.TemplateLayout));
+    }
+    else if (kind == null)
+    {
+        showcases.Add(TemplateShowcase.For("fashion", null, "قالب‌های فروشگاه اینترنتی و سایت آموزشی", "templates-shop"));
+        showcases.Add(TemplateShowcase.For("corporate", "corporate", "قالب‌های سایت شرکتی", "templates-corporate"));
+        showcases.Add(TemplateShowcase.For("news", "magazine", "قالب‌های سایت خبری", "templates-news"));
+        showcases.Add(TemplateShowcase.For("clinic", null, "قالب‌های نوبت‌دهی آنلاین", "templates-booking"));
+        foreach (var s in showcases) { s.Heading = s.Templates.Count.ToString().ToFaDigits() + " " + s.Heading; }
+    }
+}
+
+<section class="lf-hero lf-land-hero">
+    <div class="lf-hero-wave" aria-hidden="true"></div>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb lf-land-crumbs">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index","Home")">خانه</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index","Products")">محصولات</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Name</li>
+            </ol>
+        </nav>
+        <div class="row align-items-center g-4 lf-hero-row">
+            <div class="col-lg-6 lf-hero-copy">
+                <p class="lf-eyebrow"><i class="bi @Model.Icon"></i> @Model.Name</p>
+                <h1>@Model.Heading</h1>
+                <p class="lf-hero-lead">@fill(Model.Lead)</p>
+                <div class="lf-hero-cta">
+                    @if (kind != null)
+                    {
+                        <a class="lf-btn lf-btn-warm" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@trialDays روز)</a>
+                        if (demoType != null)
+                        {
+                            <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Demo", new { slug = demoType.Id })"><i class="bi bi-eye"></i> مشاهده دمو</a>
+                        }
+                    }
+                    else
+                    {
+                        <a class="lf-btn lf-btn-warm" href="#templates-shop"><i class="bi bi-palette"></i> دیدن قالب‌ها</a>
+                        <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت سایت رایگان</a>
+                    }
+                </div>
+                @if (plans.Any())
+                {
+                    <p class="lf-land-price"><i class="bi bi-tag"></i> از ماهی @plans.Min(p => p.PerMonth).ToToman() با اشتراک یک‌ساله؛ @trialDays روز اول رایگان</p>
+                }
+            </div>
+            <div class="col-lg-6 lf-hero-visual">
+                <div class="lf-hero-devices">
+                    <img src="@Model.Image" alt="@Model.Name" fetchpriority="high" />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="lf-land-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="@(Model.Audience != null ? "col-lg-7" : "col-lg-10 mx-auto")">
+                <h2 class="lf-land-title">@Model.IntroTitle</h2>
+                @foreach (var paragraph in Model.Intro)
+                {
+                    <p class="lf-land-text">@fill(paragraph)</p>
+                }
+            </div>
+            @if (Model.Audience != null)
+            {
+                <div class="col-lg-5">
+                    <aside class="lf-land-audience">
+                        <h3><i class="bi bi-person-check"></i> مناسب چه کسانی است؟</h3>
+                        <ul>
+                            @foreach (var who in Model.Audience)
+                            {
+                                <li><i class="bi bi-check2-circle"></i> @who</li>
+                            }
+                        </ul>
+                    </aside>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@if (kind != null)
+{
+    <section class="lf-land-section is-soft">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>انواع @Model.Name</h2>
+                <p>نوع کسب‌وکارتان را انتخاب کنید و دموی آماده‌اش را ببینید</p>
+            </header>
+            <div class="lf-land-types">
+                @foreach (var type in types)
+                {
+                    var product = products.FirstOrDefault(p => p.DemoSlug == type.Id);
+                    <article class="lf-land-type">
+                        <i class="bi @type.Icon" aria-hidden="true"></i>
+                        <h3>@type.Name</h3>
+                        <p>@type.Description</p>
+                        <div class="lf-land-type-actions">
+                            @if (TenantStore.DemoBySlug.ContainsKey(type.Id))
+                            {
+                                <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = type.Id })"><i class="bi bi-eye"></i> دمو</a>
+                            }
+                            <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Index","Signup", new { type = type.Id })"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان</a>
+                        </div>
+                        @if (product != null)
+                        {
+                            <a class="lf-land-type-more" href="@Url.Action("Details","Products", new { id = product.Id })">جزئیات و قیمت <i class="bi bi-arrow-left"></i></a>
+                        }
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.Highlights != null)
+{
+    <section class="lf-land-section">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>امکانات کلیدی</h2>
+                <p>چرا @Model.Name @site.SiteName؟</p>
+            </header>
+            <div class="lf-land-highlights">
+                @foreach (var h in Model.Highlights)
+                {
+                    <article class="lf-land-card">
+                        <i class="bi @h.Icon" aria-hidden="true"></i>
+                        <h3>@h.Name</h3>
+                        <p>@h.Summary</p>
+                    </article>
+                }
+            </div>
+            @if (kind != null)
+            {
+                <h3 class="lf-land-subtitle">همه امکانات @kind.Name</h3>
+                <ul class="lf-kind-features">
+                    @foreach (var f in kind.Features)
+                    {
+                        <li><i class="bi bi-check2-circle"></i> @f</li>
+                    }
+                </ul>
+            }
+        </div>
+    </section>
+}
+
+@if (showcases.Any())
+{
+    <section class="lf-land-section is-soft pt-2">
+        <div class="container">
+            @if (kind == null)
+            {
+                <nav class="lf-land-chips mt-5" aria-label="گروه‌های قالب">
+                    @foreach (var s in showcases)
+                    {
+                        <a href="#@s.SectionId">@s.Heading</a>
+                    }
+                </nav>
+            }
+            @foreach (var s in showcases)
+            {
+                @Html.Partial("~/Views/Products/_TemplateShowcase.cshtml", s)
+            }
+        </div>
+    </section>
+}
+
+@if (kind == null && products.Any())
+{
+    <section class="lf-land-section">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>نرم‌افزارهای آماده</h2>
+                <p>هر قالب روی یکی از این نرم‌افزارها اجرا می‌شود</p>
+            </header>
+            <div class="lf-store-grid">
+                @foreach (var p in products)
+                {
+                    <article class="lf-store-card">
+                        <div class="lf-store-thumb">
+                            <img src="@p.ImageUrl" alt="@p.Title" loading="lazy" decoding="async" />
+                        </div>
+                        <div class="lf-store-body">
+                            <h3>@p.Title</h3>
+                            <p>@p.ShortDescription</p>
+                            <div class="lf-store-foot">
+                                <span class="lf-price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>
+                                <a class="lf-link-demo" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات <i class="bi bi-arrow-left"></i></a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (kind != null)
+{
+    <section class="lf-modules">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>ماژول‌های همراه</h2>
+                <p>این ماژول‌ها در @Model.Name آماده و فعال‌اند</p>
+            </header>
+            @Html.Partial("_ModuleGrid", PlatformModules.For(kind))
+        </div>
+    </section>
+}
+
+@if (plans.Any())
+{
+    <section class="lf-land-section">
+        <div class="container">
+            <div class="lf-land-pricing">
+                <div>
+                    <h2 class="lf-land-title">قیمت و دوره اشتراک</h2>
+                    <p class="lf-land-text mb-3">
+                        بدون هزینه طراحی و راه‌اندازی؛ فقط اشتراک دوره‌ای که هر وقت خواستید از داخل پنل تمدیدش می‌کنید.
+                        @trialDays روز اول رایگان است و دوره‌های بلندتر تخفیف دارند.
+                    </p>
+                </div>
+                <div>
+                    <div class="lf-plans" aria-label="دوره‌های اشتراک">
+                        @foreach (var p in plans)
+                        {
+                            <div class="lf-plan @(p.Months == 12 ? "is-best" : "")">
+                                <span class="lf-plan-name">@Subscriptions.PeriodName(p.Months)</span>
+                                <strong>@p.Price.ToToman()</strong>
+                                <small>ماهی @p.PerMonth.ToToman()</small>
+                                @if (p.DiscountPercent > 0)
+                                {
+                                    <span class="lf-plan-off">@p.DiscountPercent.ToFa()٪ تخفیف</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <a class="lf-btn lf-btn-warm w-100 mt-2" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> شروع رایگان</a>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.Steps != null)
+{
+    <section class="lf-steps">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>مراحل راه‌اندازی</h2>
+                <p>همه مراحل را خودتان و در چند دقیقه انجام می‌دهید</p>
+            </header>
+            <div class="lf-steps-grid lf-land-steps">
+                @for (var i = 0; i < Model.Steps.Length; i++)
+                {
+                    <div class="lf-step"><span>@((i + 1).ToFa())</span><div><strong>@Model.Steps[i].Item1</strong><em>@Model.Steps[i].Item2</em></div></div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (Model.Faqs != null && Model.Faqs.Any())
+{
+    <section id="faq" class="lf-faq">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>سوالات متداول</h2>
+                <p>درباره @Model.Name</p>
+            </header>
+            <div class="lf-faq-list">
+                @foreach (var f in Model.Faqs)
+                {
+                    <details class="lf-faq-item">
+                        <summary>@f.Question <i class="bi bi-chevron-down"></i></summary>
+                        <div class="lf-faq-answer">@Html.TextBlocks(fill(f.Answer))</div>
+                    </details>
+                }
+            </div>
+            <p class="text-center mt-4 mb-0">
+                جواب سوالتان را پیدا نکردید؟ <a href="@Url.Action("Contact","Home")">با ما تماس بگیرید</a>
+            </p>
+        </div>
+    </section>
+}
+
+@if (posts.Any())
+{
+    <section class="lf-blog-section">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>مقاله‌های مرتبط</h2>
+                <p>بیشتر بخوانید</p>
+            </header>
+            <div class="lf-store-grid">
+                @foreach (var post in posts)
+                {
+                    @Html.Partial("~/Views/Blog/_BlogCard.cshtml", post)
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<section class="lf-land-section">
+    <div class="container">
+        <header class="lf-section-head">
+            <h2>راهکارهای دیگر</h2>
+            <p>برای هر کسب‌وکار، سایت مخصوص خودش</p>
+        </header>
+        @Html.Partial("_SolutionLinks", ProductLandings.All.Where(p => p.Slug != Model.Slug))
+    </div>
+</section>

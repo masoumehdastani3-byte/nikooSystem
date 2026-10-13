@@ -109,9 +109,18 @@ namespace NikooSystem.Controllers
                 UrlEntry(site + Url.Action("Terms", "Home")),
                 UrlEntry(site + Url.Action("Privacy", "Home"))
             };
+            urls.AddRange(ProductLandings.All.Select(p => UrlEntry(site + Url.RouteUrl("Solution", new { slug = p.Slug }), null,
+                Images(main.Asset, p.Image))));
             foreach (var product in SiteStore.GetProducts().Where(p => p.IsActive).OrderBy(p => p.Id))
                 urls.Add(UrlEntry(site + Url.Action("Details", "Products", new { id = product.Id }), product.CreatedAt,
                     Images(main.Asset, product.ImageUrl)));
+            var posts = SiteBlogStore.All().Where(p => p.IsLive()).ToList();
+            if (posts.Any())
+            {
+                urls.Add(UrlEntry(site + Url.RouteUrl("Blog"), posts.Max(p => p.UpdatedAt ?? p.PublishedAt)));
+                urls.AddRange(posts.Select(p => UrlEntry(site + Url.RouteUrl("BlogPost", new { slug = p.Slug }),
+                    p.UpdatedAt ?? p.PublishedAt, Images(main.Asset, p.CoverImageUrl))));
+            }
             return UrlSet(urls);
         }
 

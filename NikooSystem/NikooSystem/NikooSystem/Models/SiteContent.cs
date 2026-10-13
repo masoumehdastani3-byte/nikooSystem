@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace NikooSystem.Models
 {
@@ -220,5 +222,53 @@ namespace NikooSystem.Models
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+
+    /// <summary>مقاله وبلاگ سایت اصلی (/blog)</summary>
+    public class SitePost : Store.ISeoFields
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "عنوان الزامی است")]
+        [StringLength(200, ErrorMessage = "حداکثر ۲۰۰ حرف")]
+        [Display(Name = "عنوان")]
+        public string Title { get; set; }
+
+        /// <summary>The part of the address after /blog/; made from the title when left empty.</summary>
+        [Display(Name = "آدرس (اسلاگ)")]
+        public string Slug { get; set; }
+
+        [StringLength(600, ErrorMessage = "حداکثر ۶۰۰ حرف")]
+        [Display(Name = "خلاصه")]
+        public string Summary { get; set; }
+
+        [System.Web.Mvc.AllowHtml]
+        [Display(Name = "متن")]
+        public string BodyHtml { get; set; }
+
+        public string CoverImageUrl { get; set; }
+
+        [Display(Name = "نویسنده")]
+        public string Author { get; set; }
+
+        /// <summary>برچسب‌ها، جداشده با ویرگول</summary>
+        [Display(Name = "برچسب‌ها")]
+        public string Tags { get; set; }
+
+        public string SeoTitle { get; set; }
+        public string SeoDescription { get; set; }
+
+        [Display(Name = "منتشر شود")]
+        public bool IsPublished { get; set; } = true;
+
+        public DateTime PublishedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? UpdatedAt { get; set; }
+        public int ViewCount { get; set; }
+
+        public IEnumerable<string> TagList() =>
+            (Tags ?? "").Split(new[] { ',', '،' }, StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).Where(t => t.Length > 0);
+
+        public bool IsLive() => IsPublished && PublishedAt <= DateTime.Now;
     }
 }

@@ -41,11 +41,18 @@
                     @(string.IsNullOrEmpty(Model.GoogleVerification) ? "کد تأیید ثبت نشده است." : "کد تأیید ثبت شده است.")
                     <a href="@Url.Action("SiteSettings","Admin")">تنظیمات و متن‌ها</a>
                 </li>
-                <li>
+                <li class="mb-3">
                     @mark(ownTexts)
                     <strong>عنوان و توضیح صفحه اول:</strong>
                     @(ownTexts ? "متن اختصاصی دارد." : "متن پیش‌فرض استفاده می‌شود.")
                     عنوان و توضیح هر محصول هم در فرم <a href="@Url.Action("Products","Admin")">محصولات</a> (کادر «نمایش در گوگل») قابل تنظیم است.
+                </li>
+                <li>
+                    @mark(NikooSystem.Services.SiteBlogStore.AnyLive)
+                    <strong>مقاله‌های وبلاگ:</strong>
+                    @(NikooSystem.Services.SiteBlogStore.AnyLive ? "وبلاگ مقاله منتشرشده دارد." : "هنوز مقاله‌ای منتشر نشده است.")
+                    بیشترین بازدید گوگل از مقاله‌هایی می‌آید که به سؤال‌های مشتریان جواب می‌دهند؛
+                    <a href="@Url.Action("BlogPosts","Admin")">وبلاگ و مقالات</a> راهنما و موضوع‌های پیشنهادی دارد.
                 </li>
             </ul>
         </div>

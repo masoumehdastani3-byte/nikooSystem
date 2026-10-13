@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.Net;
 using System.Web;
 using System.Web.Mvc;
@@ -45,6 +46,8 @@ namespace NikooSystem
 
         protected void Application_BeginRequest()
         {
+            if (RedirectToSiteUrl()) return;
+
             var path = Request.Path ?? "";
             if (path.StartsWith("/Assets", StringComparison.OrdinalIgnoreCase) ||
                 path.StartsWith("/Content", StringComparison.OrdinalIgnoreCase) ||
@@ -80,6 +83,37 @@ namespace NikooSystem
             }
 
             Context.RewritePath("~/Shop/" + tenant.CompanyCode + "/" + path.TrimStart('/'));
+        }
+
+        private static readonly Uri SiteUrl = ParseSiteUrl();
+
+        private static Uri ParseSiteUrl()
+        {
+            Uri uri;
+            var configured = (ConfigurationManager.AppSettings["Seo.SiteUrl"] ?? "").Trim();
+            return Uri.TryCreate(configured, UriKind.Absolute, out uri) ? uri : null;
+        }
+
+        /// <summary>
+        /// http:// and the www or bare form of the main domain get a 301 to the Seo.SiteUrl address, so search engines see one site.
+        /// Stores' own domains and subdomains are left alone, and only GET and HEAD are moved, so forms and payment callbacks keep their body.
+        /// </summary>
+        private bool RedirectToSiteUrl()
+        {
+            var site = SiteUrl;
+            if (site == null || (Request.HttpMethod != "GET" && Request.HttpMethod != "HEAD")) return false;
+            var host = Request.Url.Host.ToLowerInvariant();
+            var bare = site.Host.StartsWith("www.", StringComparison.Ordinal) ? site.Host.Substring(4) : site.Host;
+            if (host != bare && host != "www." + bare) return false;
+
+            // behind a CDN that ends TLS, the request reaches IIS over http and the original scheme is in this header
+            var forwarded = Request.Headers["X-Forwarded-Proto"];
+            var scheme = string.IsNullOrEmpty(forwarded) ? Request.Url.Scheme : forwarded.Split(',')[0].Trim().ToLowerInvariant();
+            if (host == site.Host && scheme == site.Scheme) return false;
+
+            Response.RedirectPermanent(site.GetLeftPart(UriPartial.Authority) + Request.RawUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
+            return true;
         }
     }
 }

@@ -1,0 +1,128 @@
+@model NikooSystem.Models.SitePost
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش مقاله" : "مقاله جدید";
+    var site = NikooSystem.Services.SiteContentStore.Settings;
+}
+<div class="adm-head">
+    <div>
+        <h1>@ViewBag.Title</h1>
+        <p>با زمان انتشار آینده، مقاله خودکار در آن زمان منتشر می‌شود.</p>
+    </div>
+    <div class="adm-head-actions">
+        @if (Model.Id > 0 && Model.IsLive())
+        {
+            <a class="btn btn-outline-primary" href="@Url.RouteUrl("BlogPost", new { slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
+        }
+        <a class="btn btn-link" href="@Url.Action("BlogPosts","Admin")">بازگشت</a>
+    </div>
+</div>
+
+@using (Html.BeginForm("EditBlogPost", "Admin", FormMethod.Post, new { id = "postForm", enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.ValidationSummary(true, "", new { @class = "text-danger small" })
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="adm-card mb-3">
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Title, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control form-control-lg", maxlength = "200", placeholder = "مثلاً راهنمای ساخت فروشگاه اینترنتی رایگان" })
+                    @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small" })
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Summary, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.Summary, 3, 1, new { @class = "form-control", maxlength = "600" })
+                    <div class="form-text">بالای مقاله، در فهرست مقاله‌ها و (اگر توضیح گوگل خالی باشد) در نتایج گوگل نمایش داده می‌شود.</div>
+                </div>
+                <div>
+                    @Html.LabelFor(m => m.BodyHtml, new { @class = "form-label" })
+                    @Html.TextAreaFor(m => m.BodyHtml, new { @class = "form-control", id = "BodyHtml", rows = "20" })
+                </div>
+            </div>
+            <div class="adm-card">
+                <h5 class="mb-3"><i class="bi bi-google"></i> نمایش در گوگل</h5>
+                @Html.Partial("_SeoFields", new SeoFieldsVm
+                {
+                    Title = Model.SeoTitle,
+                    Description = Model.SeoDescription,
+                    AutoTitle = SeoPages.SitePostTitle(new NikooSystem.Models.SitePost { Title = string.IsNullOrWhiteSpace(Model.Title) ? "عنوان مقاله" : Model.Title }, site),
+                    AutoDescription = Model.Id > 0 ? SeoPages.SitePostDescription(Model) : "از خلاصه یا ابتدای متن ساخته می‌شود",
+                    Url = Model.Id > 0 ? Html.Seo().Url(Url.RouteUrl("BlogPost", new { slug = Model.Slug })) : null
+                })
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="adm-card mb-3">
+                <h5 class="mb-3">انتشار</h5>
+                <div class="mb-3">
+                    <label class="form-label" for="publishAt">زمان انتشار</label>
+                    @Html.ShamsiDateTime("publishAt", Model.PublishedAt, "publishAt")
+                </div>
+                <div class="form-check mb-3">
+                    @Html.CheckBoxFor(m => m.IsPublished, new { @class = "form-check-input" })
+                    <label class="form-check-label" for="IsPublished">منتشر شود (در غیر این صورت پیش‌نویس)</label>
+                </div>
+                <button class="btn btn-primary" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+                @if (Model.Id > 0)
+                {
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-bar-chart"></i> @Model.ViewCount.ToFa() بازدید</p>
+                }
+            </div>
+            <div class="adm-card mb-3">
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Tags, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Tags, new { @class = "form-control", placeholder = "مثلاً فروشگاه اینترنتی، سئو" })
+                    <div class="form-text">با ویرگول جدا کنید.</div>
+                </div>
+                <div class="mb-3">
+                    @Html.LabelFor(m => m.Author, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Author, new { @class = "form-control", maxlength = "80" })
+                </div>
+                <div>
+                    @Html.LabelFor(m => m.Slug, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", dir = "auto", placeholder = "خالی بماند تا از عنوان ساخته شود" })
+                    <div class="form-text">پس از انتشار تغییرش ندهید؛ آدرسی که گوگل ثبت کرده از کار می‌افتد.</div>
+                </div>
+            </div>
+            <div class="adm-card">
+                <h5 class="mb-3">تصویر شاخص</h5>
+                @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+                {
+                    <img src="@Model.CoverImageUrl" alt="" class="w-100 rounded mb-2" style="max-height:200px;object-fit:cover" />
+                    <label class="small d-block mb-2"><input type="checkbox" name="removeCover" value="true" /> حذف تصویر</label>
+                }
+                <input class="form-control" type="file" name="coverFile" accept="image/*" />
+                @Html.ValidationMessage("coverFile", "", new { @class = "text-danger small" })
+                <div class="form-text">در بالای مقاله، کارت مقاله و پیش‌نمایش لینک در پیام‌رسان‌ها نمایش داده می‌شود.</div>
+            </div>
+        </div>
+    </div>
+}
+
+@section scripts {
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6.8.5/tinymce.min.js" referrerpolicy="origin"></script>
+<script>
+    tinymce.init({
+        selector: '#BodyHtml',
+        height: 600,
+        menubar: true,
+        directionality: 'rtl',
+        language: 'fa',
+        language_url: 'https://cdn.jsdelivr.net/npm/tinymce-i18n@23.10.9/langs6/fa.js',
+        plugins: 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table wordcount directionality',
+        toolbar: 'undo redo | blocks | bold italic underline forecolor backcolor | alignright aligncenter alignleft alignjustify | bullist numlist outdent indent | link image table media | ltr rtl | removeformat | code preview fullscreen',
+        content_style: 'body { font-family: Far_Yekan, Tahoma, sans-serif; font-size: 15px; direction: rtl; }',
+        branding: false,
+        promotion: false,
+        convert_urls: false,
+        relative_urls: false,
+        entity_encoding: 'raw'
+    });
+
+    document.getElementById('postForm').addEventListener('submit', function () {
+        if (window.tinymce) tinymce.triggerSave();
+    });
+</script>
+}

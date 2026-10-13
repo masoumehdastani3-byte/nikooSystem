@@ -167,6 +167,9 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminController.Content.cs" />
+    <Compile Include="Controllers\AdminController.Blog.cs" />
+    <Compile Include="Controllers\BlogController.cs" />
+    <Compile Include="Services\SiteBlogStore.cs" />
     <Compile Include="Controllers\AdminController.Payments.cs" />
     <Compile Include="Controllers\AdminController.Notify.cs" />
     <Compile Include="Controllers\AdminController.Guides.cs" />
@@ -205,6 +208,7 @@
     <Compile Include="Controllers\ShopController.Booking.cs" />
     <Compile Include="Controllers\ShopController.Seo.cs" />
     <Compile Include="Controllers\SeoController.cs" />
+    <Compile Include="Controllers\SolutionsController.cs" />
     <Compile Include="Controllers\SignupController.cs" />
     <Compile Include="Controllers\TorobApiController.cs" />
     <Compile Include="Filters\AdminAuthorizeAttribute.cs" />
@@ -217,6 +221,7 @@
     <Compile Include="Helpers\Seo.cs" />
     <Compile Include="Helpers\SeoPages.cs" />
     <Compile Include="Helpers\PlatformModules.cs" />
+    <Compile Include="Helpers\ProductLandings.cs" />
     <Compile Include="Helpers\SiteHelpers.cs" />
     <Compile Include="Helpers\StoreHtml.cs" />
     <Compile Include="Helpers\StoreMenuHelper.cs" />
@@ -367,6 +372,8 @@
     <Content Include="Content\subscription.css" />
     <Content Include="Content\domain.css" />
     <Content Include="Content\storage-guard.js" />
+    <Content Include="Content\shamsi-datetime.css" />
+    <Content Include="Content\shamsi-datetime.js" />
     <Content Include="Content\storefront-images.css" />
     <Content Include="Content\storefront-images.js" />
     <Content Include="Content\support.js" />
@@ -482,6 +489,8 @@
     <Content Include="Views\Shared\_SeoFields.cshtml" />
     <Content Include="Views\Shared\_SeoAutomatic.cshtml" />
     <Content Include="Views\Shared\_ModuleGrid.cshtml" />
+    <Content Include="Views\Shared\_SolutionLinks.cshtml" />
+    <Content Include="Views\Solutions\Show.cshtml" />
     <Content Include="Views\Shared\_DemoTemplateBar.cshtml" />
     <Content Include="Views\Demo\Fashion.cshtml" />
     <Content Include="Views\Demo\Grocery.cshtml" />
@@ -509,6 +518,12 @@
     <Content Include="Views\Admin\Stores.cshtml" />
     <Content Include="Views\Admin\Domains.cshtml" />
     <Content Include="Views\Admin\Testimonials.cshtml" />
+    <Content Include="Views\Admin\BlogPosts.cshtml" />
+    <Content Include="Views\Admin\EditBlogPost.cshtml" />
+    <Content Include="Views\Blog\Index.cshtml" />
+    <Content Include="Views\Blog\Post.cshtml" />
+    <Content Include="Views\Blog\_BlogCard.cshtml" />
+    <Content Include="Views\Shared\_PoweredBy.cshtml" />
     <Content Include="Views\Admin\Products.cshtml" />
     <Content Include="Views\Admin\CreateProduct.cshtml" />
     <Content Include="Views\Admin\EditProduct.cshtml" />

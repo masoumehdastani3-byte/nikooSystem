@@ -242,6 +242,11 @@
 {
     @Html.Partial("_QuickManage")
 }
+@if (Html.UsesShamsiDateTime())
+{
+    <link href="@Url.Asset("~/Content/shamsi-datetime.css")" rel="stylesheet" />
+    <script src="@Url.Asset("~/Content/shamsi-datetime.js")"></script>
+}
 @RenderSection("scripts", required: false)
 @if (tutorial != null)
 {

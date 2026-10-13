@@ -1,0 +1,8 @@
+@{
+    var settings = (StoreSettings)ViewBag.Settings;
+    var platform = NikooSystem.Services.SiteContentStore.Settings.SiteName;
+}
+@if (settings != null && !settings.HidePoweredBy && settings.FooterText?.Contains(platform) != true)
+{
+    <span class="store-powered">ساخته شده با <a href="@(Seo.PlatformUrl(Request))/" title="ساخت فروشگاه اینترنتی و سایت با @platform">@platform</a></span>
+}

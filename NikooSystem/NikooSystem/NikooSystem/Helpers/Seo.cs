@@ -107,6 +107,17 @@ namespace NikooSystem.Helpers
             return request?.Url != null ? request.Url.GetLeftPart(UriPartial.Authority) : "";
         }
 
+        /// <summary>The main site's root, also when the request came to a store's own domain or subdomain.</summary>
+        public static string PlatformUrl(HttpRequestBase request)
+        {
+            var configured = (ConfigurationManager.AppSettings["Seo.SiteUrl"] ?? "").Trim().TrimEnd('/');
+            if (configured.Length > 0) return configured;
+            if (request?.Url != null && TenantStore.ResolveByHost(request.Url.Host) == null)
+                return request.Url.GetLeftPart(UriPartial.Authority);
+            var root = TenantProvisioningService.RootDomain;
+            return !string.IsNullOrEmpty(root) ? "https://" + root : PaymentHubService.BaseUrl;
+        }
+
         /// <summary>
         /// A store's public root. On its own domain or subdomain that host; otherwise the custom domain once support has
         /// activated it, the platform subdomain, or /Shop/CODE on the main site, in that order (one address per page, so search
@@ -182,12 +193,13 @@ namespace NikooSystem.Helpers
         public static string FirstText(params string[] values) =>
             values.Select(v => Text(v)).FirstOrDefault(v => v != null);
 
-        /// <summary>The verification code from what the owner pasted: the code itself or the whole meta tag.</summary>
+        /// <summary>The verification code from what the owner pasted: the code itself, the whole meta tag or the DNS TXT value.</summary>
         public static string VerificationCode(string pasted)
         {
             if (string.IsNullOrWhiteSpace(pasted)) return null;
             var match = Regex.Match(pasted, "content\\s*=\\s*[\"']([^\"']+)[\"']", RegexOptions.IgnoreCase);
-            var code = (match.Success ? match.Groups[1].Value : pasted).Trim();
+            var code = (match.Success ? match.Groups[1].Value : pasted).Trim().Trim('"', '\'');
+            code = Regex.Replace(code, @"^google-site-verification\s*[=:]\s*", "", RegexOptions.IgnoreCase);
             return Regex.IsMatch(code, @"^[A-Za-z0-9_\-]{10,100}$") ? code : null;
         }
 

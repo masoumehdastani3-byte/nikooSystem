@@ -643,6 +643,17 @@ a { color: inherit; }
   display: block;
 }
 
+.store-powered {
+  white-space: nowrap;
+  margin-inline-start: .75rem;
+}
+.store-powered a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
 /* ========== ADMIN SHELL (keep working) ========== */
 .admin-shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
 .admin-side {

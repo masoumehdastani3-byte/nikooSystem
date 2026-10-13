@@ -7,7 +7,7 @@
     var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
     var services = (List<StoreService>)ViewBag.Services;
     var staff = (List<StoreStaff>)ViewBag.Staff;
-    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.jpg";
     ViewBag.Title = "نوبت‌دهی آنلاین";
 }
 

@@ -93,6 +93,12 @@ namespace NikooSystem
                 defaults: new { controller = "TorobApi", action = "Products", company = UrlParameter.Optional }
             );
 
+            routes.MapRoute(name: "Solution", url: "{slug}", defaults: new { controller = "Solutions", action = "Show" },
+                constraints: new { slug = Helpers.ProductLandings.SlugPattern });
+
+            routes.MapRoute(name: "Blog", url: "blog", defaults: new { controller = "Blog", action = "Index" });
+            routes.MapRoute(name: "BlogPost", url: "blog/{slug}", defaults: new { controller = "Blog", action = "Post" });
+
             routes.MapRoute(
                 name: "Demo",
                 url: "Demo/{slug}",

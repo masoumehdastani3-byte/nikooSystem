@@ -30,8 +30,11 @@
 .adm-side.offcanvas-lg { background-color: var(--adm-navy) !important; }
 
 @media (max-width: 991.98px) {
-  .adm-side.offcanvas-lg { width: 270px; }
+  .adm-side.offcanvas-lg { width: 270px; max-width: 85vw; height: 100%; }
 }
+
+.adm-brand,
+.adm-side-foot { flex-shrink: 0; }
 
 .adm-brand {
   display: flex;
@@ -43,7 +46,7 @@
 .adm-brand a { display: flex; align-items: center; gap: .55rem; color: #fff; text-decoration: none; font-weight: 700; }
 .adm-brand img { width: 34px; height: 34px; object-fit: contain; background: #fff; border-radius: 10px; padding: 3px; }
 
-.adm-nav { padding: .6rem .7rem; flex: 1 1 auto; }
+.adm-nav { padding: .6rem .7rem; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
 .adm-nav-title {
   margin: 1rem .6rem .35rem;

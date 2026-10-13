@@ -32,6 +32,7 @@
         <link rel="icon" href="@settings.LogoUrl" />
     }
     <meta name="theme-color" content="@primary" />
+    <link rel="preload" href="~/Assets/fonts/Far_Yekan.woff" as="font" type="font/woff" crossorigin />
     <link href="~/Assets/vendor/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/storefront.css")" rel="stylesheet" />
@@ -363,7 +364,7 @@ else
                 {
                     <div class="wm-enamad mt-3 d-inline-block">@NikooSystem.Services.SiteVerification.SealHtml(settings)</div>
                 }
-                <div class="pt-3 mt-3 small opacity-50">@(settings.FooterText)</div>
+                <div class="pt-3 mt-3 small opacity-50">@(settings.FooterText) @Html.Partial("_PoweredBy")</div>
             </div>
         }
         else if (layoutId == "boutique")
@@ -391,7 +392,7 @@ else
                     }
                 </div>
             </div>
-            <div class="pt-4 mt-4 border-top small opacity-75 text-center">@(settings.FooterText)</div>
+            <div class="pt-4 mt-4 border-top small opacity-75 text-center">@(settings.FooterText) @Html.Partial("_PoweredBy")</div>
         }
         else
         {
@@ -450,7 +451,7 @@ else
                     }
                 </div>
             </div>
-            <div class="pt-4 mt-4 border-top border-success border-opacity-25 small opacity-75">@(settings.FooterText)</div>
+            <div class="pt-4 mt-4 border-top border-success border-opacity-25 small opacity-75">@(settings.FooterText) @Html.Partial("_PoweredBy")</div>
         }
     </div>
 </footer>

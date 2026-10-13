@@ -5,6 +5,7 @@
     ViewBag.Nav = "products";
     var related = ViewBag.Related as List<NikooSystem.Models.Product> ?? new List<NikooSystem.Models.Product>();
     var kind = string.IsNullOrEmpty(Model.DemoSlug) ? null : SiteKinds.Get(StoreTypes.Get(Model.DemoSlug).Kind);
+    var landing = string.IsNullOrEmpty(Model.DemoSlug) ? null : ProductLandings.ForType(Model.DemoSlug);
 }
 <main id="main">
     <div class="page-hero">
@@ -52,6 +53,10 @@
                             <p class="price fs-4 mb-3">@Model.Price.ToToman()</p>
                         }
                         <p>@Model.Description</p>
+                        @if (landing != null)
+                        {
+                            <p class="mb-0"><a href="@Url.RouteUrl("Solution", new { slug = landing.Slug })"><i class="bi @landing.Icon"></i> همه چیز درباره @landing.Name <i class="bi bi-arrow-left"></i></a></p>
+                        }
                         <div class="d-flex flex-wrap gap-2 mt-4">
                             @if (!string.IsNullOrEmpty(Model.DemoSlug))
                             {
@@ -70,7 +75,7 @@
 
             @if (kind != null)
             {
-                @Html.Partial("_TemplateShowcase", Model)
+                @Html.Partial("_TemplateShowcase", TemplateShowcase.For(Model.DemoSlug))
 
                 <h2 class="h4 mt-5 mb-3">امکانات و ماژول‌های این محصول</h2>
                 <ul class="lf-kind-features">

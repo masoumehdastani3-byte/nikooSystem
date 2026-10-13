@@ -51,6 +51,9 @@
         <div class="col-md-3"><label class="form-label">رنگ اصلی</label><input class="form-control form-control-color w-100" type="color" name="PrimaryColor" id="PrimaryColor" value="@Model.PrimaryColor" /></div>
         <div class="col-md-3"><label class="form-label">رنگ فرعی</label><input class="form-control form-control-color w-100" type="color" name="SecondaryColor" id="SecondaryColor" value="@Model.SecondaryColor" /></div>
         <div class="col-md-8"><label class="form-label">متن فوتر</label>@Html.TextBoxFor(m => m.FooterText, new { @class = "form-control" })</div>
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="small">@Html.BoolField("HidePoweredBy", Model.HidePoweredBy, "عبارت «ساخته شده با نیکو سیستم» در فوتر نمایش داده نشود")</div>
+        </div>
 
         <div class="col-12"><hr /><h5>قالب ظاهری @site</h5>
             <p class="text-muted small">یکی از قالب‌های آماده را انتخاب کنید. در صورت نیاز رنگ‌ها را هم دستی تغییر دهید.</p>

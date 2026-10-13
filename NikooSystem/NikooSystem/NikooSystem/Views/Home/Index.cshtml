@@ -7,6 +7,7 @@
     var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
     var faqs = (ViewBag.Faqs as List<NikooSystem.Models.SiteFaq>) ?? new List<NikooSystem.Models.SiteFaq>();
     var testimonials = (ViewBag.Testimonials as List<NikooSystem.Models.SiteTestimonial>) ?? new List<NikooSystem.Models.SiteTestimonial>();
+    var posts = (ViewBag.Posts as List<NikooSystem.Models.SitePost>) ?? new List<NikooSystem.Models.SitePost>();
 }
 
 <section class="lf-hero">
@@ -34,7 +35,7 @@
             </div>
             <div class="col-lg-6 lf-hero-visual">
                 <div class="lf-hero-devices">
-                    <img src="~/Assets/img/hero-img.png" alt="تیم توسعه و فروشگاه آنلاین نیکو سیستم آفرین" />
+                    <img src="~/Assets/img/hero-img.jpg" alt="تیم توسعه و فروشگاه آنلاین نیکو سیستم آفرین" fetchpriority="high" />
                     <span class="lf-float lf-float-a"><i class="bi bi-bag-check"></i> آماده برای فروش</span>
                     <span class="lf-float lf-float-b"><i class="bi bi-shield-check"></i> پشتیبانی و آموزش</span>
                 </div>
@@ -78,6 +79,16 @@
     </div>
 </section>
 
+<section id="solutions" class="lf-land-section lf-home-solutions">
+    <div class="container">
+        <header class="lf-section-head">
+            <h2>راهکارهای @site.SiteName</h2>
+            <p>برای هر کسب‌وکار، سایت مخصوص خودش</p>
+        </header>
+        @Html.Partial("_SolutionLinks", ProductLandings.All)
+    </div>
+</section>
+
 <section id="stores" class="lf-stores">
     <div class="container">
         <div class="lf-stores-head">
@@ -98,7 +109,7 @@
                         {
                             <span class="lf-badge lf-badge-warm">پیشنهادی</span>
                         }
-                        <img src="@p.ImageUrl" alt="@p.Title" />
+                        <img src="@p.ImageUrl" alt="@p.Title" loading="lazy" decoding="async" />
                     </div>
                     <div class="lf-store-body">
                         <h3>@p.Title</h3>
@@ -134,7 +145,7 @@
             </div>
             <div class="col-lg-6">
                 <div class="lf-why-media">
-                    <img src="~/Assets/img/why-nikoo.png" alt="چرا نیکو سیستم آفرین" />
+                    <img src="~/Assets/img/why-nikoo.jpg" alt="چرا نیکو سیستم آفرین" loading="lazy" decoding="async" />
                 </div>
             </div>
         </div>
@@ -159,7 +170,7 @@
         </header>
         <div class="row align-items-center g-4">
             <div class="col-lg-5">
-                <img class="lf-steps-img" src="~/Assets/img/features.png" alt="فرآیند خرید" />
+                <img class="lf-steps-img" src="~/Assets/img/features.png" alt="فرآیند خرید" loading="lazy" decoding="async" />
             </div>
             <div class="col-lg-7">
                 <div class="lf-steps-grid">
@@ -234,7 +245,7 @@
                             <figcaption>
                                 @if (!string.IsNullOrEmpty(t.ImageUrl))
                                 {
-                                    <img src="@t.ImageUrl" alt="" />
+                                    <img src="@t.ImageUrl" alt="" loading="lazy" decoding="async" />
                                 }
                                 else
                                 {
@@ -249,6 +260,27 @@
                     </div>
                 }
             </div>
+        </div>
+    </section>
+}
+
+@if (posts.Any())
+{
+    <section id="blog" class="lf-blog-section">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>تازه‌ترین مقاله‌ها</h2>
+                <p>آموزش راه‌اندازی و رشد فروش آنلاین</p>
+            </header>
+            <div class="lf-store-grid">
+                @foreach (var post in posts)
+                {
+                    @Html.Partial("~/Views/Blog/_BlogCard.cshtml", post)
+                }
+            </div>
+            <p class="text-center mt-4 mb-0">
+                <a class="lf-btn lf-btn-primary" href="@Url.RouteUrl("Blog")">همه مقاله‌ها <i class="bi bi-arrow-left"></i></a>
+            </p>
         </div>
     </section>
 }

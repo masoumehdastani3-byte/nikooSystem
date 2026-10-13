@@ -17,7 +17,7 @@
     ViewBag.Title = "خانه";
     var heroTitle = string.IsNullOrWhiteSpace(settings.HeroTitle) ? "تخفیف ویژه محصولات تازه و منتخب فروشگاه" : settings.HeroTitle;
     var heroSub = string.IsNullOrWhiteSpace(settings.HeroSubtitle) ? "به جمع مشتریان بپیوندید و از پیشنهادهای روزانه بهره‌مند شوید." : settings.HeroSubtitle;
-    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.jpg";
 
     var fashionRootCats = categories.Where(c => c.ParentId == null && c.IsActive).OrderBy(c => c.SortOrder).Take(4).ToList();
     var fashionShowCats = fashionRootCats.Any()

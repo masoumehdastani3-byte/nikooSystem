@@ -56,6 +56,12 @@ namespace NikooSystem.Helpers
         public static string SiteProductDescription(Product p) =>
             Seo.FirstText(p.SeoDescription, p.ShortDescription, p.Description) ?? p.Title;
 
+        public static string SitePostTitle(SitePost p, SiteSettings s) =>
+            Clean(p.SeoTitle) ?? p.Title + Separator + s.SiteName;
+
+        public static string SitePostDescription(SitePost p) =>
+            Seo.FirstText(p.SeoDescription, p.Summary, p.BodyHtml) ?? p.Title;
+
         // ---- Structured data of stores
 
         /// <summary>schema.org type of the business behind a store type.</summary>
@@ -240,6 +246,32 @@ namespace NikooSystem.Helpers
             offer["availability"] = "https://schema.org/InStock";
             app["offers"] = offer;
             return app;
+        }
+
+        /// <summary>An article of the main site's blog.</summary>
+        public static Dictionary<string, object> SiteArticle(SeoInfo seo, SitePost post, SiteSettings s)
+        {
+            var article = Schema("BlogPosting");
+            article["@id"] = seo.Canonical + "#article";
+            article["headline"] = post.Title.Length > 110 ? post.Title.Substring(0, 109) + "…" : post.Title;
+            article["description"] = SitePostDescription(post);
+            article["mainEntityOfPage"] = seo.Canonical;
+            article["image"] = new[] { seo.Asset(post.CoverImageUrl ?? "/Assets/img/hero-img.jpg") };
+            article["datePublished"] = Iso(post.PublishedAt);
+            article["dateModified"] = Iso(post.UpdatedAt ?? post.PublishedAt);
+            var publisher = new Dictionary<string, object>
+            {
+                { "@type", "Organization" }, { "@id", seo.Url("/") + "#organization" }, { "name", s.SiteName }, { "url", seo.Url("/") },
+                { "logo", new Dictionary<string, object> { { "@type", "ImageObject" }, { "url", seo.Asset("/Assets/img/logo_full.png") } } }
+            };
+            article["author"] = string.IsNullOrWhiteSpace(post.Author)
+                ? publisher
+                : new Dictionary<string, object> { { "@type", "Person" }, { "name", post.Author.Trim() } };
+            article["publisher"] = publisher;
+            var tags = post.TagList().ToList();
+            if (tags.Any()) article["keywords"] = string.Join(", ", tags);
+            article["inLanguage"] = "fa-IR";
+            return article;
         }
 
         public static Dictionary<string, object> Faq(IEnumerable<SiteFaq> faqs)

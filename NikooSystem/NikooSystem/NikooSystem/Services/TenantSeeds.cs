@@ -505,7 +505,7 @@ namespace NikooSystem.Services
                 SecondaryColor = secondary,
                 HeroTitle = heroTitle,
                 HeroSubtitle = heroSub,
-                HeroImageUrl = "/Assets/img/hero-img.png",
+                HeroImageUrl = "/Assets/img/hero-img.jpg",
                 FooterText = "© " + name + " — قدرت‌گرفته از نیکو سیستم آفرین",
                 LayoutStyle = layoutStyle,
                 AdminUsername = "admin",

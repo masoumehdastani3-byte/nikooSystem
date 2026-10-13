@@ -1,5 +1,3 @@
-@using System.Globalization
-@using NikooSystem.Controllers
 @model StorePost
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
@@ -56,9 +54,8 @@
             <div class="panel-card mb-3">
                 <h6 class="mb-3">انتشار</h6>
                 <div class="mb-3">
-                    <label class="form-label">زمان انتشار</label>
-                    <input class="form-control" type="datetime-local" name="publishAt" dir="ltr"
-                           value="@Model.PublishedAt.ToString(ShopAdminController.PublishAtFormat, CultureInfo.InvariantCulture)" />
+                    <label class="form-label" for="publishAt">زمان انتشار</label>
+                    @Html.ShamsiDateTime("publishAt", Model.PublishedAt, "publishAt")
                 </div>
                 <div class="d-grid gap-2 mb-3">
                     @Html.BoolField("IsPublished", Model.IsPublished, "منتشر شود (در غیر این صورت پیش‌نویس)")

@@ -1,17 +1,22 @@
-@model NikooSystem.Models.Product
+@model TemplateShowcase
 @{
-    var type = StoreTypes.Get(Model.DemoSlug);
+    var type = Model.Type;
     var kind = SiteKinds.Get(type.Kind);
     string demoCode;
-    NikooSystem.Services.TenantStore.DemoBySlug.TryGetValue(Model.DemoSlug ?? "", out demoCode);
-    var templates = StoreTemplates.ForKind(kind.Id).OrderByDescending(t => t.Id == type.DefaultTemplate).ToList();
+    NikooSystem.Services.TenantStore.DemoBySlug.TryGetValue(type.Id, out demoCode);
     var subject = kind.IsContent ? "سایت" : kind.IsBooking ? "سامانه نوبت‌دهی" : "فروشگاه";
+    // The preview popup and its script are shared by every showcase on the page.
+    var first = Context.Items["TemplateShowcase"] == null;
+    Context.Items["TemplateShowcase"] = true;
 }
-<link href="@Url.Asset("~/Content/template-picker.css")" rel="stylesheet" />
-<section id="templates" class="lf-templates mt-5">
+@if (first)
+{
+    <link href="@Url.Asset("~/Content/template-picker.css")" rel="stylesheet" />
+}
+<section id="@Model.SectionId" class="lf-templates mt-5">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
         <div>
-            <h2 class="h4 mb-1"><i class="bi bi-palette text-warning"></i> @templates.Count.ToString().ToFaDigits() قالب آماده برای این محصول</h2>
+            <h2 class="h4 mb-1"><i class="bi bi-palette text-warning"></i> @(Model.Heading ?? Model.Templates.Count.ToString().ToFaDigits() + " قالب آماده برای این محصول")</h2>
             <p class="text-muted small mb-0">
                 هر قالب، @subject دمو را با همان اطلاعات واقعی نشان می‌دهد. با «پیش‌نمایش زنده» در صفحات بگردید و نمای موبایل را ببینید؛
                 داخل خود دمو هم با دکمه «قالب دمو» هر وقت خواستید قالب را عوض کنید. بعد از ساخت هم قالب و رنگ‌ها از پنل قابل تغییرند.
@@ -19,11 +24,11 @@
         </div>
     </div>
     <div class="tpl-grid">
-        @foreach (var t in templates)
+        @foreach (var t in Model.Templates)
         {
             var previewUrl = demoCode == null ? null : Url.Action("Index", "Shop", new { company = demoCode, previewTemplate = t.Id });
             var signupUrl = Url.Action("Index", "Signup", new { type = type.Id, template = t.Id });
-            <div class="tpl-card lf-tpl-card" data-name="@t.Name" data-url="@previewUrl" data-signup="@signupUrl">
+            <div class="tpl-card lf-tpl-card" data-name="@t.Name" data-url="@previewUrl" data-signup="@signupUrl" data-subject="@subject">
                 <div class="tpl-thumb" style="--tpl-bg:@t.PreviewGradient">
                     @if (previewUrl != null)
                     {
@@ -60,6 +65,8 @@
     </div>
 </section>
 
+@if (first)
+{
 <div class="tpl-modal" id="tplModal" hidden>
     <div class="tpl-modal-box">
         <div class="tpl-modal-head">
@@ -70,7 +77,7 @@
             </div>
             <div class="ms-auto d-flex gap-2">
                 <a class="btn btn-light btn-sm" id="tplModalTab" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> تب جدید</a>
-                <a class="btn btn-sm btn-primary-shop" id="tplModalSignup"><i class="bi bi-rocket-takeoff"></i> ساخت @subject با این قالب</a>
+                <a class="btn btn-sm btn-primary-shop" id="tplModalSignup"><i class="bi bi-rocket-takeoff"></i> <span id="tplModalSignupText"></span></a>
                 <button type="button" class="btn btn-light btn-sm" id="tplModalClose" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
@@ -81,7 +88,8 @@
 </div>
 
 <script>
-(function () {
+// Runs after the whole page is parsed, so it also finds the cards of showcases further down the page.
+document.addEventListener('DOMContentLoaded', function () {
   var DESKTOP_WIDTH = 1280;
   var cards = document.querySelectorAll('.lf-tpl-card');
   var modal = document.getElementById('tplModal');
@@ -104,6 +112,7 @@
     document.getElementById('tplModalName').textContent = card.getAttribute('data-name');
     document.getElementById('tplModalTab').href = url;
     document.getElementById('tplModalSignup').href = card.getAttribute('data-signup');
+    document.getElementById('tplModalSignupText').textContent = 'ساخت ' + card.getAttribute('data-subject') + ' با این قالب';
     setDevice('desktop');
     frame.src = url;
     modal.hidden = false;
@@ -132,5 +141,6 @@
   document.getElementById('tplModalClose').addEventListener('click', closeModal);
   modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) closeModal(); });
-})();
+});
 </script>
+}

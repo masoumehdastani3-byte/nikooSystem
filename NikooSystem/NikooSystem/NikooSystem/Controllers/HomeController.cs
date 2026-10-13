@@ -21,6 +21,7 @@ namespace NikooSystem.Controllers
             var products = SiteStore.GetProducts().Where(p => p.IsActive).OrderByDescending(p => p.IsFeatured).ThenBy(p => p.Id).ToList();
             ViewBag.Faqs = site.ShowFaq ? SiteContentStore.GetFaqs(true) : new List<SiteFaq>();
             ViewBag.Testimonials = site.ShowTestimonials ? SiteContentStore.GetTestimonials(true) : new List<SiteTestimonial>();
+            ViewBag.Posts = SiteBlogStore.Latest(3);
 
             var seo = Seo.Of(HttpContext);
             seo.Title = SeoPages.SiteHomeTitle(site);

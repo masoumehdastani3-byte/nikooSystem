@@ -1,3 +1,5 @@
+using System;
+using System.Globalization;
 using System.Text;
 using System.Web.Mvc;
 using System.Web.Routing;
@@ -110,6 +112,58 @@ namespace NikooSystem.Helpers
             button.AddCssClass(buttonClass);
             button.SetInnerText(text);
             return PostForm(html, action, fields, button.ToString(), confirm);
+        }
+
+        private const string ShamsiDateTimeKey = "NikooSystem.ShamsiDateTime";
+
+        /// <summary>
+        /// A date and time field picked on the Shamsi calendar. The form still posts <paramref name="name"/> as a Gregorian
+        /// "yyyy-MM-ddTHH:mm" (<see cref="Controllers.ShopAdminController.PublishAtFormat"/>), so actions parse it as before.
+        /// </summary>
+        public static MvcHtmlString ShamsiDateTime(this HtmlHelper html, string name, DateTime value, string id = null)
+        {
+            html.ViewContext.HttpContext.Items[ShamsiDateTimeKey] = true;
+
+            var hidden = new TagBuilder("input");
+            hidden.MergeAttribute("type", "hidden");
+            hidden.MergeAttribute("name", name);
+            hidden.MergeAttribute("value", value.ToString(Controllers.ShopAdminController.PublishAtFormat, CultureInfo.InvariantCulture));
+
+            var date = new TagBuilder("button")
+            {
+                InnerHtml = Icon("bi-calendar3") + "<span>" + html.Encode(value.ToShamsiText()) + "</span>"
+            };
+            date.MergeAttribute("type", "button");
+            date.MergeAttribute("aria-haspopup", "dialog");
+            date.AddCssClass("form-control shamsi-dt-date");
+            if (!string.IsNullOrEmpty(id)) date.MergeAttribute("id", id);
+
+            var time = new TagBuilder("div")
+            {
+                InnerHtml = ClockSelect("hour", "ساعت", 24, value.Hour) + "<span>:</span>" + ClockSelect("minute", "دقیقه", 60, value.Minute)
+            };
+            time.AddCssClass("shamsi-dt-time");
+            time.MergeAttribute("dir", "ltr");
+
+            var wrapper = new TagBuilder("div") { InnerHtml = hidden.ToString(TagRenderMode.SelfClosing) + date + time };
+            wrapper.AddCssClass("shamsi-dt");
+            wrapper.MergeAttribute("data-shamsi-dt", "");
+            return MvcHtmlString.Create(wrapper.ToString());
+        }
+
+        /// <summary>Whether the page rendered a <see cref="ShamsiDateTime"/> field, so the layout adds its script.</summary>
+        public static bool UsesShamsiDateTime(this HtmlHelper html) => html.ViewContext.HttpContext.Items.Contains(ShamsiDateTimeKey);
+
+        private static string ClockSelect(string part, string label, int count, int selected)
+        {
+            var options = new StringBuilder();
+            for (var i = 0; i < count; i++)
+                options.Append("<option value=\"" + i + "\"" + (i == selected ? " selected" : "") + ">" + i.ToString("00").ToFaDigits() + "</option>");
+            var select = new TagBuilder("select") { InnerHtml = options.ToString() };
+            select.AddCssClass("form-select");
+            select.MergeAttribute("data-part", part);
+            select.MergeAttribute("aria-label", label);
+            return select.ToString();
         }
 
         private const string QuickManageKey = "NikooSystem.QuickManage";

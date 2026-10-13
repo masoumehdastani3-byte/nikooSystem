@@ -66,6 +66,6 @@
                 }
             </div>
         </div>
-        <div class="pt-4 mt-4 border-top small opacity-75">@(settings.FooterText ?? "© " + settings.StoreName)</div>
+        <div class="pt-4 mt-4 border-top small opacity-75">@(settings.FooterText ?? "© " + settings.StoreName) @Html.Partial("_PoweredBy")</div>
     </div>
 </footer>

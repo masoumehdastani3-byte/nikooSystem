@@ -1,0 +1,85 @@
+@model List<NikooSystem.Models.SitePost>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "وبلاگ و مقالات";
+    var now = DateTime.Now;
+}
+<div class="adm-head">
+    <div>
+        <h1>وبلاگ و مقالات</h1>
+        <p>
+            مقاله‌های منتشرشده در <a href="@Url.RouteUrl("Blog")" target="_blank" rel="noopener" dir="ltr">/blog</a>، صفحه اول و نقشه سایت می‌آیند
+            و منوی «وبلاگ» با اولین مقاله منتشرشده در سایت نمایش داده می‌شود.
+        </p>
+    </div>
+    <div class="adm-head-actions">
+        <a class="btn btn-primary" href="@Url.Action("EditBlogPost","Admin")"><i class="bi bi-plus-lg"></i> مقاله جدید</a>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="adm-card">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead><tr><th>عنوان</th><th>تاریخ انتشار</th><th>وضعیت</th><th>بازدید</th><th></th></tr></thead>
+                    <tbody>
+                    @foreach (var p in Model)
+                    {
+                        var state = !p.IsPublished ? "پیش‌نویس" : p.PublishedAt > now ? "زمان‌بندی‌شده" : "منتشرشده";
+                        var tone = !p.IsPublished ? "is-gray" : p.PublishedAt > now ? "is-orange" : "is-green";
+                        <tr>
+                            <td>
+                                <strong>@p.Title</strong>
+                                <div class="small text-muted text-break" dir="ltr">/blog/@p.Slug</div>
+                            </td>
+                            <td class="text-nowrap">@p.PublishedAt.ToShamsi()</td>
+                            <td><span class="adm-chip @tone">@state</span></td>
+                            <td>@p.ViewCount.ToFa()</td>
+                            <td class="row-actions">
+                                @if (p.IsLive())
+                                {
+                                    @Html.IconLink(Url.RouteUrl("BlogPost", new { slug = p.Slug }), "bi-eye", "مشاهده در سایت", null, true)
+                                }
+                                @Html.EditLink("EditBlogPost", p.Id)
+                                @Html.DeleteButton("DeleteBlogPost", p.Id, "مقاله «" + p.Title + "» حذف شود؟")
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">هنوز مقاله‌ای ننوشته‌اید. اولین مقاله را با یکی از موضوع‌های پیشنهادی کنار صفحه شروع کنید.</td></tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="adm-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-list-ol"></i> مقاله‌ای که از گوگل بازدید بیاورد</h5>
+            <ol class="small mb-0">
+                <li class="mb-2">هر مقاله جواب <b>یک سؤال</b> باشد که مشتری در گوگل جستجو می‌کند؛ همان عبارت را در عنوان بیاورید. آدرس مقاله خودکار از عنوان ساخته می‌شود.</li>
+                <li class="mb-2">متن کامل و کاربردی بنویسید (حداقل ۸۰۰ کلمه)، با تیترهای «Heading 2» برای هر بخش، فهرست قدم‌به‌قدم و عکس.</li>
+                <li class="mb-2">در متن به <a href="@Url.Action("Products","Admin")">محصولات</a>، دموها و مقاله‌های دیگر لینک بدهید؛ پایین هر مقاله هم خودکار دعوت به ساخت سایت نمایش داده می‌شود.</li>
+                <li class="mb-2">کادر «نمایش در گوگل» را پر کنید تا عنوان و توضیح جذابی در نتایج دیده شود.</li>
+                <li class="mb-2">بعد از انتشار، در سرچ کنسول آدرس مقاله را در «URL Inspection» بزنید و «Request indexing» را انتخاب کنید.</li>
+                <li>منظم بنویسید (مثلاً هفته‌ای یک مقاله) و لینک هر مقاله را در اینستاگرام، تلگرام و بله هم بگذارید.</li>
+            </ol>
+        </div>
+        <div class="adm-card">
+            <h5 class="mb-2"><i class="bi bi-lightbulb"></i> موضوع‌های پیشنهادی</h5>
+            <ul class="small mb-0">
+                <li>ساخت فروشگاه اینترنتی رایگان؛ قدم‌به‌قدم</li>
+                <li>راه‌اندازی سایت نوبت‌دهی آنلاین برای مطب و سالن زیبایی</li>
+                <li>اتصال درگاه پرداخت زرین‌پال به فروشگاه</li>
+                <li>گرفتن اینماد برای فروشگاه اینترنتی</li>
+                <li>نمایش محصولات فروشگاه در ترب</li>
+                <li>سئو فروشگاه اینترنتی برای مبتدی‌ها</li>
+                <li>فروش دوره آموزشی و کتاب الکترونیک به‌صورت آنلاین</li>
+                <li>فروشگاه‌ساز آماده یا طراحی سایت اختصاصی؛ کدام بهتر است؟</li>
+            </ul>
+        </div>
+    </div>
+</div>

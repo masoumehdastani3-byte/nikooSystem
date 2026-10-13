@@ -35,6 +35,7 @@
         {
             new { Text = "تنظیمات و متن‌ها", Icon = "bi-sliders", Action = "SiteSettings", Also = "sitesettings", Badge = 0 },
             new { Text = "راهنمای سئو", Icon = "bi-google", Action = "SeoGuide", Also = "seoguide", Badge = 0 },
+            new { Text = "وبلاگ و مقالات", Icon = "bi-journal-text", Action = "BlogPosts", Also = "blogposts editblogpost", Badge = 0 },
             new { Text = "اینماد", Icon = "bi-patch-check", Action = "Enamad", Also = "enamad", Badge = 0 },
             new { Text = "سوالات متداول", Icon = "bi-question-circle", Action = "Faqs", Also = "faqs editfaq", Badge = 0 },
             new { Text = "نظرات مشتریان", Icon = "bi-chat-quote", Action = "Testimonials", Also = "testimonials edittestimonial", Badge = 0 }
@@ -131,6 +132,11 @@
         </main>
     }
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    @if (Html.UsesShamsiDateTime())
+    {
+        <link href="@Url.Asset("~/Content/shamsi-datetime.css")" rel="stylesheet">
+        <script src="@Url.Asset("~/Content/shamsi-datetime.js")"></script>
+    }
     @RenderSection("scripts", required: false)
 </body>
 </html>

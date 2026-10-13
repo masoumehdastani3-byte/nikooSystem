@@ -112,6 +112,11 @@ namespace NikooSystem.Services.Data
         public static readonly EntityMap<SiteFaq> SiteFaqs = new EntityMap<SiteFaq>("SiteFaqs", "Id");
         public static readonly EntityMap<SiteTestimonial> SiteTestimonials = new EntityMap<SiteTestimonial>("SiteTestimonials", "Id");
 
+        public static readonly EntityMap<SitePost> SitePosts = new EntityMap<SitePost>("SitePosts", "Id")
+            .Text("Slug", 400)
+            .UniqueIndex("UX_SitePosts_Slug", "Slug")
+            .Index("IX_SitePosts_PublishedAt", "PublishedAt");
+
         // ---- Admin-panel tutorials (the videos themselves stay on disk)
         public static readonly EntityMap<TutorialDefinition> Tutorials = new EntityMap<TutorialDefinition>("Tutorials", "Page")
             .Text("Page", 40)
@@ -160,7 +165,7 @@ namespace NikooSystem.Services.Data
             Tenants, Settings, PageLayouts, Categories, AttributeDefs, Products, Collections, MenuItems, Pages,
             GalleryItems, Customers, Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs,
             Appointments, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
-            SiteFaqs, SiteTestimonials, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
+            SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
             SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, StoragePurchases
         };
 

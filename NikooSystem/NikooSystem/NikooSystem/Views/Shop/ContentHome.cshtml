@@ -13,7 +13,7 @@
     var popular = ((IEnumerable<StorePost>)ViewBag.Popular)?.ToList() ?? new List<StorePost>();
     var topics = (ViewBag.Topics as List<KeyValuePair<StoreCategory, List<StorePost>>>) ?? new List<KeyValuePair<StoreCategory, List<StorePost>>>();
     var sectionPosts = (ViewBag.SectionPosts as Dictionary<string, List<StorePost>>) ?? new Dictionary<string, List<StorePost>>();
-    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.png";
+    var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.jpg";
     var compact = new ViewDataDictionary(ViewData) { { "compact", true } };
     ViewBag.Title = "خانه";
 }

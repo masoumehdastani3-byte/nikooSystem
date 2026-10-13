@@ -155,6 +155,8 @@ namespace NikooSystem.Models.Store
         public string HeroSubtitle { get; set; }
         public string HeroImageUrl { get; set; }
         public string FooterText { get; set; }
+        /// <summary>لینک «ساخته شده با نیکو سیستم» در فوتر نمایش داده نشود</summary>
+        public bool HidePoweredBy { get; set; }
         public string LayoutStyle { get; set; } = "organic"; // organic | fashion | minimal | marketplace | boutique
         /// <summary>چیدمان بخش‌های صفحه اول و گزینه‌های صفحه محصول؛ null = پیش‌فرض قالب</summary>
         public StorePageLayout PageLayout { get; set; }

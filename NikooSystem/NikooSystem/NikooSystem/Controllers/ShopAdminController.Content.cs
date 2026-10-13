@@ -75,7 +75,7 @@ namespace NikooSystem.Controllers
             return Ok("مطلب «" + model.Title + "» ذخیره شد.", "EditPost", new { id = model.Id });
         }
 
-        /// <summary>The value format of a datetime-local input; parsed without the fa-IR culture of the site.</summary>
+        /// <summary>The Gregorian value posted by <c>Html.ShamsiDateTime</c>; parsed without the fa-IR culture of the site.</summary>
         public const string PublishAtFormat = "yyyy-MM-ddTHH:mm";
 
         [HttpPost]

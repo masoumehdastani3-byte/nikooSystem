@@ -1,7 +1,0 @@
-src=C:\Users\programmer 4\.cursor\projects\e-Dastani-MyProject-cursor-access-project-NikooSystem\assets\c__Users_programmer_4_AppData_Roaming_Cursor_User_workspaceStorage_empty-window_images_ChatGPT_Image_Sep_14__2026__12_39_19_PM-cae07029-e434-4081-a760-55e51c423a88.png
-srcExists=False
-destDir=E:\Dastani\MyProject\cursor-access-project\NikooSystem\NikooSystem\NikooSystem\Assets\img
-destExists=True
-dest=E:\Dastani\MyProject\cursor-access-project\NikooSystem\NikooSystem\NikooSystem\Assets\img\labkhand-farda.png
-destExists=False
-size=0

@@ -1,0 +1,22 @@
+@model SitePost
+@{
+    var url = Url.RouteUrl("BlogPost", new { slug = Model.Slug });
+}
+<article class="lf-store-card lf-blog-card">
+    <a class="lf-store-thumb" href="@url" tabindex="-1" aria-hidden="true">
+        @if (!string.IsNullOrEmpty(Model.CoverImageUrl))
+        {
+            <img src="@Model.CoverImageUrl" alt="" loading="lazy" decoding="async" />
+        }
+        else
+        {
+            <span class="lf-blog-noimg"><i class="bi bi-journal-text"></i></span>
+        }
+    </a>
+    <div class="lf-store-body">
+        <time class="lf-blog-date" datetime="@Model.PublishedAt.ToString("yyyy-MM-dd")">@Model.PublishedAt.ToShamsiText()</time>
+        <h3><a href="@url">@Model.Title</a></h3>
+        <p>@Seo.Text(Model.Summary ?? Model.BodyHtml, 180)</p>
+        <a class="lf-link-demo" href="@url">ادامه مطلب <i class="bi bi-arrow-left"></i></a>
+    </div>
+</article>
