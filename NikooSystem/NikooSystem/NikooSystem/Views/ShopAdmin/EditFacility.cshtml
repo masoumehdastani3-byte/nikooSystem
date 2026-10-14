@@ -1,0 +1,128 @@
+@model StoreFacility
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش سالن" : "سالن جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    Func<int, string> clock = m => (m / 60).ToString("00", invariant) + ":" + (m % 60).ToString("00", invariant);
+}
+<link href="@Url.Asset("~/Content/admin-booking.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Facilities","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditFacility", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="panel-card row g-3 h-100 m-0">
+                <div class="col-12">
+                    <label class="form-label" for="Title">نام سالن یا زمین</label>
+                    @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً سالن فوتبال چمن مصنوعی" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="Place">محل</label>
+                    @Html.TextBoxFor(m => m.Place, new { @class = "form-control", maxlength = "120", placeholder = "طبقه همکف، زمین شماره ۱" })
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="Description">توضیح</label>
+                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", maxlength = "1000" })
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="SlotMinutes">مدت هر نوبت (دقیقه)</label>
+                    @Html.TextBoxFor(m => m.SlotMinutes, new { @class = "form-control", type = "number", min = "15", max = "240", step = "15", dir = "ltr" })
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="Price">قیمت هر نوبت (تومان)</label>
+                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="Capacity">ظرفیت همزمان</label>
+                    @Html.TextBoxFor(m => m.Capacity, new { @class = "form-control", type = "number", min = "1", max = "200", dir = "ltr" })
+                    <div class="form-text">۱ یعنی کل سالن برای یک رزرو بسته می‌شود. برای میزهای هم‌زمان عدد بزرگ‌تر بگذارید.</div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="SortOrder">ترتیب</label>
+                    @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
+                </div>
+                <div class="col-12">
+                    @Html.BoolField("IsActive", Model.IsActive, "فعال (قابل رزرو)")
+                </div>
+                <div class="col-12">
+                    <label class="form-label">تصویر</label>
+                    <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg" />
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <label class="small mt-1"><input type="checkbox" name="removeImage" value="true" /> حذف تصویر</label>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-7">
+            <div class="panel-card h-100">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                    <h5 class="mb-0">ساعت باز بودن</h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="copyFirst"><i class="bi bi-files"></i> ساعت شنبه برای همه روزهای کاری</button>
+                </div>
+                <p class="small text-muted">رزرو آنلاین فقط در این بازه‌ها و به اندازه «مدت هر نوبت» ساخته می‌شود. روز تعطیل را تیک بزنید.</p>
+                <table class="table align-middle bk-hours-table">
+                    <thead><tr><th>روز</th><th>تعطیل</th><th>بازه اول</th><th>بازه دوم (اختیاری)</th></tr></thead>
+                    <tbody>
+                        @for (var d = 0; d < 7; d++)
+                        {
+                            var hours = Model.HoursOn(d).ToList();
+                            var first = hours.ElementAtOrDefault(0);
+                            var second = hours.ElementAtOrDefault(1);
+                            <tr data-day="@d" class="@(hours.Any() ? "" : "is-off")">
+                                <th>@BookingTime.DayNames[d]</th>
+                                <td><input class="form-check-input day-off" type="checkbox" name="off@(d)" value="true" @(hours.Any() ? "" : "checked") aria-label="تعطیل @BookingTime.DayNames[d]" /></td>
+                                <td>
+                                    <div class="bk-range">
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)s1" value="@(first != null ? clock(first.StartMinute) : "")" />
+                                        <span>تا</span>
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)e1" value="@(first != null ? clock(first.EndMinute) : "")" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="bk-range">
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)s2" value="@(second != null ? clock(second.StartMinute) : "")" />
+                                        <span>تا</span>
+                                        <input class="form-control form-control-sm" type="time" step="300" name="h@(d)e2" value="@(second != null ? clock(second.EndMinute) : "")" />
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-12 d-flex gap-2">
+            @Html.FormActions("Facilities")
+        </div>
+    </div>
+}
+@section scripts {
+<script>
+(function () {
+  var rows = document.querySelectorAll('.bk-hours-table tbody tr');
+  rows.forEach(function (row) {
+    var off = row.querySelector('.day-off');
+    var sync = function () {
+      row.classList.toggle('is-off', off.checked);
+      row.querySelectorAll('input[type=time]').forEach(function (i) { i.disabled = off.checked; });
+    };
+    off.addEventListener('change', sync);
+    sync();
+  });
+  document.getElementById('copyFirst').addEventListener('click', function () {
+    var source = rows[0].querySelectorAll('input[type=time]');
+    rows.forEach(function (row, i) {
+      if (i === 0 || row.querySelector('.day-off').checked) return;
+      row.querySelectorAll('input[type=time]').forEach(function (input, k) { input.value = source[k].value; });
+    });
+  });
+})();
+</script>
+}

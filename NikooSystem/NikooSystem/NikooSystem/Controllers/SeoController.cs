@@ -146,10 +146,15 @@ namespace NikooSystem.Controllers
                     seo.Url(Url.RouteUrl("ShopPost", new { company = code, slug = p.Slug })), p.UpdatedAt ?? p.PublishedAt,
                     Images(asset, p.CoverImageUrl))));
             }
-            else if (kind.IsBooking)
+            else if (kind.Schedules)
             {
                 urls.Add(UrlEntry(ShopUrl("Services")));
                 urls.Add(UrlEntry(ShopUrl("Book")));
+                if (kind.IsCampus)
+                {
+                    urls.Add(UrlEntry(ShopUrl("Classes")));
+                    urls.Add(UrlEntry(ShopUrl("Facilities")));
+                }
             }
             else
             {

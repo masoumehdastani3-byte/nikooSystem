@@ -36,7 +36,16 @@
                 {
                     <div><a href="@item.Url">@item.Title</a></div>
                 }
-                @if (kind.IsBooking)
+                @if (kind.IsCampus)
+                {
+                    <div><a href="@Url.Action("Classes","Shop", new { company })">کلاس‌ها و دوره‌ها</a></div>
+                    <div><a href="@Url.Action("Book","Shop", new { company })">کلاس خصوصی</a></div>
+                    <div><a href="@Url.Action("Facilities","Shop", new { company })">رزرو سالن</a></div>
+                    <div><a href="@Url.Action("CampusTrack","Shop", new { company })">پیگیری</a></div>
+                    <div><a href="@Url.Action("Gallery","Shop", new { company })">گالری</a></div>
+                    <div><a href="@Url.Action("Contact","Shop", new { company })">تماس با ما</a></div>
+                }
+                else if (kind.IsBooking)
                 {
                     <div><a href="@Url.Action("Services","Shop", new { company })">خدمات و تعرفه‌ها</a></div>
                     <div><a href="@Url.Action("Book","Shop", new { company })">رزرو نوبت</a></div>

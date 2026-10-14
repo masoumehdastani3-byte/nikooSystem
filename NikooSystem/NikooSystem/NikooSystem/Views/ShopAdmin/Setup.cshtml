@@ -13,7 +13,7 @@
     var storeUrl = (string)ViewBag.StoreUrl;
     var serverIp = NikooSystem.Services.TenantProvisioningService.ServerIp;
     var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
-    var firstItem = kind.IsContent ? "اولین مطلب" : kind.IsBooking ? "خدمات" : kind.IsDigital ? "اولین دوره یا کتاب" : "اولین محصول";
+    var firstItem = kind.IsContent ? "اولین مطلب" : kind.IsCampus ? "کلاس خصوصی" : kind.IsBooking ? "خدمات" : kind.IsDigital ? "اولین دوره یا کتاب" : "اولین محصول";
     var steps = new[] { "نام و لوگو", "ظاهر " + site, firstItem, kind.IsContent ? "نظرات و تماس" : "درگاه پرداخت", "آدرس سایت" };
 }
 <link href="@Url.Asset("~/Content/storefront-themes.css")" rel="stylesheet" />
@@ -22,7 +22,7 @@
 @if ((bool)ViewBag.Welcome)
 {
     <div class="alert alert-success">
-        <strong>@site شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده @(kind.IsContent ? "انتشار" : kind.IsBooking ? "نوبت‌دهی" : "فروش") کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
+        <strong>@site شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده @(kind.IsContent ? "انتشار" : kind.IsCampus ? "کلاس و رزرو" : kind.IsBooking ? "نوبت‌دهی" : "فروش") کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
     </div>
 }
 
@@ -53,7 +53,7 @@
             </div>
             <div class="col-md-6">
                 <label class="form-label">شعار کوتاه (اختیاری)</label>
-                <input class="form-control" name="tagline" value="@Model.Tagline" placeholder="@(kind.IsContent ? "مثلاً: خبر دقیق، تحلیل عمیق" : kind.IsBooking ? "مثلاً: نوبت آنلاین، بدون انتظار" : kind.IsDigital ? "مثلاً: یادگیری از بهترین مدرسان" : "مثلاً: پوشاک باکیفیت با قیمت مناسب")" />
+                <input class="form-control" name="tagline" value="@Model.Tagline" placeholder="@(kind.IsContent ? "مثلاً: خبر دقیق، تحلیل عمیق" : kind.IsCampus ? "مثلاً: کلاس، مربی خصوصی، رزرو سالن" : kind.IsBooking ? "مثلاً: نوبت آنلاین، بدون انتظار" : kind.IsDigital ? "مثلاً: یادگیری از بهترین مدرسان" : "مثلاً: پوشاک باکیفیت با قیمت مناسب")" />
             </div>
             <div class="col-md-6">
                 <label class="form-label">تلفن تماس</label>
@@ -181,14 +181,18 @@ else if (step == 3 && kind.IsContent)
         </div>
     }
 }
-else if (step == 3 && kind.IsBooking)
+else if (step == 3 && kind.Schedules)
 {
     using (Html.BeginForm("SetupService", "ShopAdmin", new { company }, FormMethod.Post))
     {
         @Html.AntiForgeryToken()
-        <h5>چه خدمتی نوبت می‌دهید؟</h5>
+        <h5>@(kind.IsCampus ? "اولین کلاس خصوصی" : "چه خدمتی نوبت می‌دهید؟")</h5>
         <p class="text-muted small">
-            @if (realCount > 0)
+            @if (kind.IsCampus)
+            {
+                <span>این قدم فقط جلسه با مدرس خصوصی است. کلاس گروهی را از «کلاس‌ها و دوره‌ها» و سالن را از «سالن‌ها و زمین‌ها» می‌سازید. راهنمای کامل در «راهنمای راه‌اندازی» است.</span>
+            }
+            else if (realCount > 0)
             {
                 <span>تا الان @realCount خدمت تعریف کرده‌اید. می‌توانید یکی دیگر اضافه کنید یا ادامه دهید.</span>
             }
@@ -360,8 +364,8 @@ else if (step == 4)
     using (Html.BeginForm("SetupPayment", "ShopAdmin", new { company }, FormMethod.Post))
     {
         @Html.AntiForgeryToken()
-        <h5>@(kind.IsBooking ? "بیعانه آنلاین نوبت (درگاه زرین‌پال)" : "دریافت پول از مشتری (درگاه زرین‌پال)")</h5>
-        <p class="text-muted small">@(kind.IsBooking ? "مراجع هنگام رزرو بخشی از هزینه را آنلاین می‌پردازد؛ مبلغ مستقیم به حساب زرین‌پال خودتان واریز می‌شود." : "مبلغ هر سفارش مستقیم به حساب زرین‌پال خودتان واریز می‌شود.")</p>
+        <h5>@(kind.Schedules ? (kind.IsCampus ? "شهریه، اجاره سالن و بیعانه کلاس خصوصی" : "بیعانه آنلاین نوبت (درگاه زرین‌پال)") : "دریافت پول از مشتری (درگاه زرین‌پال)")</h5>
+        <p class="text-muted small">@(kind.IsCampus ? "شهریه کلاس و اجاره سالن کامل به حساب زرین‌پال شما می‌رود. درصد بیعانه فقط برای کلاس خصوصی است." : kind.IsBooking ? "مراجع هنگام رزرو بخشی از هزینه را آنلاین می‌پردازد؛ مبلغ مستقیم به حساب زرین‌پال خودتان واریز می‌شود." : "مبلغ هر سفارش مستقیم به حساب زرین‌پال خودتان واریز می‌شود.")</p>
         <ol class="small mb-3">
             <li>در <a href="https://www.zarinpal.com" target="_blank" rel="noopener">zarinpal.com</a> ثبت‌نام کنید و احراز هویت را کامل کنید.</li>
             <li>در پنل زرین‌پال یک «درگاه پرداخت» برای آدرس فروشگاهتان بسازید.</li>
@@ -377,7 +381,7 @@ else if (step == 4)
                 <input type="hidden" name="enablePayment" value="false" />
                 <label class="form-check-label" for="enablePayment">پرداخت آنلاین فعال باشد</label>
             </div>
-            @if (kind.IsBooking)
+            @if (kind.Schedules)
             {
                 <div class="col-md-4">
                     <label class="form-label">درصد بیعانه از هزینه هر خدمت</label>
@@ -390,9 +394,9 @@ else if (step == 4)
             }
         </div>
         <div class="alert alert-light border small mt-3 mb-0">
-            @if (kind.IsBooking)
+            @if (kind.Schedules)
             {
-                <span>هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، نوبت‌ها بدون بیعانه ثبت و بلافاصله تأیید می‌شوند.</span>
+                <span>@(kind.IsCampus ? "هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، ثبت‌نام کلاس، رزرو سالن و جلسه خصوصی بدون پرداخت آنلاین و بلافاصله تأیید می‌شوند." : "هنوز درگاه ندارید؟ اشکالی ندارد؛ این مرحله را رد کنید. تا وقتی پرداخت فعال نشده، نوبت‌ها بدون بیعانه ثبت و بلافاصله تأیید می‌شوند.")</span>
             }
             else
             {

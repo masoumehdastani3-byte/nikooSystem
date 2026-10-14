@@ -116,6 +116,15 @@ namespace NikooSystem.Helpers
                 Description = "مشاوره حقوقی، روانشناسی، تحصیلی و جلسه آنلاین",
                 Icon = "bi-chat-dots",
                 DefaultTemplate = "clinic"
+            },
+            new StoreTypeInfo
+            {
+                Id = "club",
+                Kind = SiteKinds.Campus,
+                Name = "آموزشگاه و باشگاه ورزشی",
+                Description = "کلاس گروهی، مدرس خصوصی آنلاین یا حضوری، و رزرو ساعتی سالن",
+                Icon = "bi-trophy",
+                DefaultTemplate = "club"
             }
         };
 

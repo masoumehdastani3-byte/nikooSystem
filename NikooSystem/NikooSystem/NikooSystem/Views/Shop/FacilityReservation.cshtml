@@ -1,0 +1,51 @@
+@model StoreFacilityBooking
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "رزرو " + Model.Code;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var canCancel = (bool)ViewBag.CanCancel;
+    var active = Model.Status == AppointmentStatus.Confirmed || Model.Status == AppointmentStatus.PendingPayment;
+}
+<section class="bk-book">
+    <div class="container">
+        <div class="bk-ticket @(active ? "" : "is-closed")">
+            <div class="bk-ticket-head">
+                <div>
+                    <div class="small opacity-75">کد پیگیری رزرو</div>
+                    <div class="bk-code" dir="ltr">@Model.Code</div>
+                </div>
+                <span class="badge @Model.Status.StatusBadgeClass()">@Model.Status.StatusText()</span>
+            </div>
+            <div class="bk-ticket-when">
+                <i class="bi bi-calendar-event"></i>
+                <div>
+                    <strong>@BookingTime.DayNames[BookingTime.DayOf(Model.StartAt)] @Model.StartAt.ToShamsiText()</strong>
+                    <span>ساعت @BookingTime.Clock(Model.StartAt) تا @BookingTime.Clock(Model.EndAt)</span>
+                </div>
+            </div>
+            <dl class="bk-ticket-list">
+                <dt>سالن</dt><dd>@Model.FacilityTitle</dd>
+                <dt>نام</dt><dd>@Model.CustomerName</dd>
+                <dt>موبایل</dt><dd dir="ltr" class="text-end">@Model.CustomerMobile</dd>
+                <dt>مبلغ</dt><dd>@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</dd>
+                @if (Model.PaidAmount > 0)
+                {
+                    <dt>پرداخت‌شده</dt><dd>@Model.PaidAmount.ToToman()</dd>
+                }
+                @if (!string.IsNullOrWhiteSpace(settings.Address))
+                {
+                    <dt>نشانی</dt><dd>@settings.Address</dd>
+                }
+            </dl>
+            @if (canCancel)
+            {
+                using (Html.BeginForm("CancelFacility", "Shop", new { company, id = Model.Code }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger mt-3" type="submit">لغو رزرو</button>
+                }
+            }
+        </div>
+    </div>
+</section>

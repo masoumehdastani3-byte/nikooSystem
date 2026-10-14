@@ -29,6 +29,22 @@
             @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
             <div class="form-text">۰ یعنی رایگان.</div>
         </div>
+        @{
+            var kind = (SiteKindInfo)ViewBag.Kind;
+            var mode = CampusDelivery.Normalize(Model.Mode);
+        }
+        @if (kind != null && kind.IsCampus)
+        {
+            <div class="col-md-6">
+                <label class="form-label" for="Mode">نحوه برگزاری</label>
+                <select class="form-select" id="Mode" name="Mode">
+                    <option value="@CampusDelivery.InPerson" @(mode == CampusDelivery.InPerson ? "selected" : null)>حضوری</option>
+                    <option value="@CampusDelivery.Online" @(mode == CampusDelivery.Online ? "selected" : null)>آنلاین</option>
+                    <option value="@CampusDelivery.Hybrid" @(mode == CampusDelivery.Hybrid ? "selected" : null)>حضوری یا آنلاین</option>
+                </select>
+                <div class="form-text">آنلاین یعنی جلسه تصویری است؛ لینک را در توضیح بنویسید تا مشتری ببیند.</div>
+            </div>
+        }
         <div class="col-12">
             <label class="form-label" for="Description">توضیح کوتاه</label>
             @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", maxlength = "1000" })

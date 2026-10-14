@@ -51,6 +51,46 @@ namespace NikooSystem.Services
             BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/AppointmentDetails/" + a.Id);
         }
 
+        public static void StoreEnrollment(string code, StoreEnrollment e)
+        {
+            var text = new Message("🎓", "ثبت‌نام کلاس", BaleNotifier.SiteName(code))
+                .Line("کلاس", e.ClassTitle)
+                .Line("دانشجو", Person(e.CustomerName, e.CustomerMobile))
+                .Line("شهریه", e.PaidAmount > 0 ? e.PaidAmount.ToToman() + " پرداخت شد ✅" : (e.Price > 0 ? e.Price.ToToman() : "رایگان"))
+                .Line("کد پیگیری", e.Code);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/Enrollments");
+        }
+
+        public static void StoreEnrollmentCancelled(string code, StoreEnrollment e)
+        {
+            var text = new Message("❌", "لغو ثبت‌نام کلاس", BaleNotifier.SiteName(code))
+                .Line("کلاس", e.ClassTitle)
+                .Line("دانشجو", Person(e.CustomerName, e.CustomerMobile))
+                .Line("شهریه", e.PaidAmount > 0 ? e.PaidAmount.ToToman() + " پرداخت شده بود؛ برای بازگشت آن هماهنگ کنید." : null);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/Enrollments");
+        }
+
+        public static void StoreFacilityBooking(string code, StoreFacilityBooking b)
+        {
+            var text = new Message("🏟️", "رزرو سالن", BaleNotifier.SiteName(code))
+                .Line("زمان", When(b.StartAt))
+                .Line("سالن", b.FacilityTitle)
+                .Line("رزروکننده", Person(b.CustomerName, b.CustomerMobile))
+                .Line("مبلغ", b.PaidAmount > 0 ? b.PaidAmount.ToToman() + " پرداخت شد ✅" : (b.Price > 0 ? b.Price.ToToman() : "رایگان"))
+                .Line("کد پیگیری", b.Code);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/FacilityBookings");
+        }
+
+        public static void StoreFacilityBookingCancelled(string code, StoreFacilityBooking b)
+        {
+            var text = new Message("❌", "لغو رزرو سالن", BaleNotifier.SiteName(code))
+                .Line("زمان", When(b.StartAt))
+                .Line("سالن", b.FacilityTitle)
+                .Line("رزروکننده", Person(b.CustomerName, b.CustomerMobile))
+                .Line("مبلغ", b.PaidAmount > 0 ? b.PaidAmount.ToToman() + " پرداخت شده بود؛ برای بازگشت آن هماهنگ کنید." : null);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/FacilityBookings");
+        }
+
         public static void StoreMessage(string code, StoreContactMessage m)
         {
             var text = new Message("✉️", "پیام تماس جدید", BaleNotifier.SiteName(code))
@@ -225,8 +265,12 @@ namespace NikooSystem.Services
                 list.Add(Option(settings, NotifyEvent.Order, "سفارش و پرداخت", "هر سفارشی که پرداخت شد یا بدون پرداخت آنلاین ثبت شد"));
                 list.Add(Option(settings, NotifyEvent.Review, "نظر مشتریان", "نظری که برای یک محصول ثبت شد"));
             }
-            if (kind.IsBooking)
-                list.Add(Option(settings, NotifyEvent.Appointment, "نوبت‌ها", "نوبت تازه (همراه بیعانه پرداخت‌شده) و لغو نوبت توسط مراجع"));
+            if (kind.Schedules)
+                list.Add(Option(settings, NotifyEvent.Appointment,
+                    kind.IsCampus ? "کلاس، سالن و جلسات خصوصی" : "نوبت‌ها",
+                    kind.IsCampus
+                        ? "ثبت‌نام کلاس، رزرو ساعتی سالن و جلسه خصوصی تازه، و لغو آن‌ها"
+                        : "نوبت تازه (همراه بیعانه پرداخت‌شده) و لغو نوبت توسط مراجع"));
             if (kind.IsContent)
                 list.Add(Option(settings, NotifyEvent.Review, "دیدگاه خوانندگان", "دیدگاهی که زیر خبر یا مقاله ثبت شد"));
             list.Add(Option(settings, NotifyEvent.Message, "پیام‌های تماس", "پیامی که از فرم «تماس با ما» رسید"));

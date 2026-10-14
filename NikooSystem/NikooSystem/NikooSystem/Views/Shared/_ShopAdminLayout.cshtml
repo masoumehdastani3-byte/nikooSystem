@@ -33,6 +33,24 @@
         add("Comments", "bi-chat-left-text", "نظرات خوانندگان", pendingComments, null);
         add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
     }
+    else if (kind.IsCampus)
+    {
+        section("کلاس و ثبت‌نام", "bi-easel");
+        add("Classes", "bi-easel", "کلاس‌ها و دوره‌ها", 0, new[] { "EditClass" });
+        add("Enrollments", "bi-person-check", "ثبت‌نام‌ها", NikooSystem.Services.TenantStore.CountEnrollmentsToday(company), null);
+        add("CampusGuide", "bi-signpost", "راهنمای راه‌اندازی", 0, null);
+        section("سالن و زمین", "bi-trophy");
+        add("Facilities", "bi-trophy", "سالن‌ها و زمین‌ها", 0, new[] { "EditFacility" });
+        add("FacilityBookings", "bi-calendar-week", "رزرو ساعتی", NikooSystem.Services.TenantStore.CountFacilityBookingsToday(company), null);
+        section("کلاس خصوصی", "bi-camera-video");
+        add("Calendar", "bi-calendar-week", "تقویم جلسات", 0, null);
+        add("Appointments", "bi-card-checklist", "جلسات خصوصی", NikooSystem.Services.TenantStore.CountAppointmentsToday(company), new[] { "AppointmentDetails", "NewAppointment" });
+        add("Services", "bi-clipboard-check", "کلاس خصوصی و تعرفه", 0, new[] { "EditService" });
+        add("Staff", "bi-person-badge", "مدرس‌ها و مربی‌ها", 0, new[] { "EditStaff" });
+        add("TimeOff", "bi-calendar-x", "تعطیلی و مرخصی", 0, null);
+        section(null, null);
+        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
+    }
     else if (kind.IsBooking)
     {
         section("نوبت‌دهی", "bi-calendar-week");

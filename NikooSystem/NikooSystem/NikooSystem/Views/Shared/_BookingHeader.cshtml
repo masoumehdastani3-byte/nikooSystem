@@ -1,6 +1,7 @@
 @{
     var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
     var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus ?? Enumerable.Empty<StoreMenuItem>();
 }
 <div class="bk-topbar">
@@ -13,7 +14,7 @@
         {
             <span class="d-none d-md-inline"><i class="bi bi-geo-alt"></i> @settings.Address</span>
         }
-        <a class="ms-auto" href="@Url.Action("Track","Shop", new { company })"><i class="bi bi-search"></i> پیگیری نوبت</a>
+        <a class="ms-auto" href="@Url.Action(kind.IsCampus ? "CampusTrack" : "Track","Shop", new { company })"><i class="bi bi-search"></i> @(kind.IsCampus ? "پیگیری" : "پیگیری نوبت")</a>
     </div>
 </div>
 <header class="bk-header">
@@ -44,7 +45,7 @@
                     }
                 }
             </nav>
-            <a class="btn-wm bk-cta" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> رزرو نوبت</a>
+            <a class="btn-wm bk-cta" href="@Url.Action("Book","Shop", new { company })"><i class="bi bi-calendar-plus"></i> @(kind.IsCampus ? "کلاس خصوصی" : "رزرو نوبت")</a>
         </div>
     </div>
 </header>

@@ -1,0 +1,24 @@
+@model List<StoreClass>
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+}
+<section class="cn-section bk-section">
+    <div class="container">
+        <h1 class="cn-block-title">کلاس‌ها و دوره‌ها</h1>
+        <p class="text-muted">کلاس گروهی را انتخاب کنید و ثبت‌نام کنید. برای جلسه با مدرس خصوصی، <a href="@Url.Action("Book","Shop", new { company })">رزرو کلاس خصوصی</a> را ببینید.</p>
+        @if (Model.Any())
+        {
+            <div class="bk-services">
+                @foreach (var item in Model)
+                {
+                    @Html.Partial("_CampusClassCard", item)
+                }
+            </div>
+        }
+        else
+        {
+            <div class="bk-panel">هنوز کلاسی برای ثبت‌نام باز نشده است.</div>
+        }
+    </div>
+</section>

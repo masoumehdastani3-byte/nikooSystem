@@ -1,0 +1,99 @@
+@model StoreClass
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+    var taken = (int)ViewBag.Taken;
+    var left = Math.Max(0, Model.Capacity - taken);
+    var open = Model.AcceptsEnrollment(DateTime.Today) && left > 0;
+    var instructor = ViewBag.Instructor as StoreStaff;
+}
+<section class="bk-book">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="bk-panel h-100">
+                    <div class="bk-kicker"><i class="bi bi-easel"></i> @CampusDelivery.Text(Model.Mode)</div>
+                    <h1>@Model.Title</h1>
+                    @if (!string.IsNullOrWhiteSpace(Model.Summary))
+                    {
+                        <p class="lead">@Model.Summary</p>
+                    }
+                    <ul class="bk-hero-facts">
+                        <li><i class="bi bi-calendar-week"></i> @Model.WhenText</li>
+                        @if (!string.IsNullOrWhiteSpace(Model.InstructorName))
+                        {
+                            <li><i class="bi bi-person-badge"></i> @Model.InstructorName @(instructor != null && !string.IsNullOrWhiteSpace(instructor.Title) ? " — " + instructor.Title : "")</li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Place))
+                        {
+                            <li><i class="bi bi-geo-alt"></i> @Model.Place</li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.Level))
+                        {
+                            <li><i class="bi bi-bar-chart"></i> سطح @Model.Level</li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(Model.AgeGroup))
+                        {
+                            <li><i class="bi bi-people"></i> @Model.AgeGroup</li>
+                        }
+                        @if (Model.Sessions > 0)
+                        {
+                            <li><i class="bi bi-list-ol"></i> @Model.Sessions.ToFa() جلسه</li>
+                        }
+                        @if (Model.StartDate.HasValue || Model.EndDate.HasValue)
+                        {
+                            <li><i class="bi bi-calendar-range"></i>
+                                @(Model.StartDate.HasValue ? "از " + Model.StartDate.Value.ToShamsiText() : "")
+                                @(Model.EndDate.HasValue ? " تا " + Model.EndDate.Value.ToShamsiText() : "")
+                            </li>
+                        }
+                        <li><i class="bi bi-person-check"></i> @left.ToFa() جای خالی از @Model.Capacity.ToFa()</li>
+                    </ul>
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <p class="mt-3 mb-0" style="white-space:pre-wrap">@Model.Description</p>
+                    }
+                    <p class="bk-price mt-3 mb-0">@(Model.Price > 0 ? Model.Price.ToToman() : "ثبت‌نام رایگان")</p>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="bk-panel">
+                    @if (!open)
+                    {
+                        <h2 class="h5">ثبت‌نام این کلاس بسته است</h2>
+                        <p class="text-muted mb-0">@(left == 0 ? "ظرفیت تکمیل شده است." : "مهلت ثبت‌نام این کلاس تمام شده است.")</p>
+                    }
+                    else
+                    {
+                        <h2 class="h5">ثبت‌نام</h2>
+                        <p class="text-muted small">پس از ثبت‌نام کد پیگیری می‌گیرید و با همان کد وضعیت را پیگیری می‌کنید.</p>
+                        using (Html.BeginForm("Enroll", "Shop", new { company }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="classId" value="@Model.Id" />
+                            <input class="d-none" name="website" tabindex="-1" autocomplete="off" />
+                            <div class="mb-3">
+                                <label class="form-label" for="enName">نام و نام خانوادگی</label>
+                                <input class="form-control" id="enName" name="customerName" maxlength="80" required />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="enMobile">موبایل</label>
+                                <input class="form-control" id="enMobile" name="customerMobile" dir="ltr" maxlength="14" required inputmode="tel" placeholder="09121234567" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="enEmail">ایمیل (اختیاری)</label>
+                                <input class="form-control" id="enEmail" name="customerEmail" type="email" maxlength="120" dir="ltr" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" for="enNotes">توضیح (اختیاری)</label>
+                                <textarea class="form-control" id="enNotes" name="notes" rows="2" maxlength="1000"></textarea>
+                            </div>
+                            <button class="btn-wm w-100" type="submit"><i class="bi bi-check2-circle"></i> ثبت‌نام @(Model.Price > 0 ? "و پرداخت" : "")</button>
+                        }
+                    }
+                    <div class="mt-3 small"><a href="@Url.Action("CampusTrack","Shop", new { company })">قبلاً ثبت‌نام کرده‌اید؟ پیگیری</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

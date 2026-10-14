@@ -23,7 +23,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Services()
         {
             ViewBag.Staff = ActiveStaff();
@@ -35,7 +35,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Book(int? serviceId, int? staffId)
         {
             var services = ActiveServices();
@@ -51,7 +51,7 @@ namespace NikooSystem.Controllers
         /// <summary>The days with at least one free time, for the day chips of the wizard.</summary>
         [HttpGet]
         [NoIndex]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult BookingDays(int serviceId, int? staffId)
         {
             var service = ActiveService(serviceId);
@@ -69,7 +69,7 @@ namespace NikooSystem.Controllers
         /// <summary>The free start times of a day; with "any staff" each time lists the staff free then.</summary>
         [HttpGet]
         [NoIndex]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult BookingSlots(int serviceId, int? staffId, string date)
         {
             var service = ActiveService(serviceId);
@@ -86,7 +86,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public async Task<ActionResult> Book(int? serviceId, int? staffId, string date, string time, string customerName,
             string customerMobile, string customerEmail, string notes, string website)
         {
@@ -153,7 +153,7 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [NoIndex]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public async Task<ActionResult> BookingCallback(int? id, string Authority, string Status)
         {
             var appointment = id.HasValue ? TenantStore.GetAppointment(CompanyCode, id.Value) : null;
@@ -176,7 +176,7 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [NoIndex]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Track(string code)
         {
             ViewBag.Code = code;
@@ -185,7 +185,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Track(string code, string mobile)
         {
             var appointment = TenantStore.GetAppointmentByCode(CompanyCode, code);
@@ -199,7 +199,7 @@ namespace NikooSystem.Controllers
         /// <summary>The customer's appointment; open to whoever booked it or proved the mobile number on the tracking page.</summary>
         [HttpGet]
         [NoIndex]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Appointment(string id)
         {
             var appointment = TenantStore.GetAppointmentByCode(CompanyCode, id);
@@ -212,7 +212,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult CancelAppointment(string id)
         {
             var appointment = TenantStore.GetAppointmentByCode(CompanyCode, id);

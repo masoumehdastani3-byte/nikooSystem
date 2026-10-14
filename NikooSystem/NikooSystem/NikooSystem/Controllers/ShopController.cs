@@ -31,6 +31,7 @@ namespace NikooSystem.Controllers
             ViewBag.Categories = TenantStore.GetCategories(CompanyCode).Where(c => c.IsActive && c.ParentId == null).ToList();
             ViewBag.Gallery = TenantStore.GetGallery(CompanyCode).Take(6).ToList();
             SeoHome();
+            if (Kind.IsCampus) return CampusHome();
             if (Kind.IsBooking) return BookingHome();
             return Kind.IsContent ? ContentHome(sections) : ShopHome(sections);
         }

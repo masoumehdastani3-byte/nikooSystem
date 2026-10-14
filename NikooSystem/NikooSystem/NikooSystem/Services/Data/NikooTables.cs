@@ -83,6 +83,21 @@ namespace NikooSystem.Services.Data
             .Index("IX_Appointments_Code", "CompanyCode", "Code")
             .Index("IX_Appointments_Authority", "Authority");
 
+        public static readonly EntityMap<StoreClass> Classes = Store<StoreClass>("Classes");
+
+        public static readonly EntityMap<StoreEnrollment> Enrollments = Store<StoreEnrollment>("Enrollments")
+            .Text("Code", 12).Text("Authority", 100).Text("CustomerMobile", 20).Text("Source", 10)
+            .Index("IX_Enrollments_Class", "CompanyCode", "ClassId")
+            .Index("IX_Enrollments_Code", "CompanyCode", "Code");
+
+        public static readonly EntityMap<StoreFacility> Facilities = Store<StoreFacility>("Facilities")
+            .Child("Hours", "FacilityHours", "FacilityId");
+
+        public static readonly EntityMap<StoreFacilityBooking> FacilityBookings = Store<StoreFacilityBooking>("FacilityBookings")
+            .Text("Code", 12).Text("Authority", 100).Text("CustomerMobile", 20).Text("Source", 10)
+            .Index("IX_FacilityBookings_StartAt", "CompanyCode", "StartAt")
+            .Index("IX_FacilityBookings_Code", "CompanyCode", "Code");
+
         public static readonly EntityMap<StoreCart> Carts = new EntityMap<StoreCart>("Carts", "CartId", "CompanyCode")
             .Text("CartId", 32).Text("CompanyCode", 40)
             .Index("IX_Carts_UpdatedAt", "UpdatedAt")
@@ -164,7 +179,7 @@ namespace NikooSystem.Services.Data
         {
             Tenants, Settings, PageLayouts, Categories, AttributeDefs, Products, Collections, MenuItems, Pages,
             GalleryItems, Customers, Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs,
-            Appointments, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
+            Appointments, Classes, Enrollments, Facilities, FacilityBookings, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
             SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
             SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, StoragePurchases
         };
@@ -173,7 +188,8 @@ namespace NikooSystem.Services.Data
         public static readonly TableMap[] StoreScoped =
         {
             Settings, Categories, AttributeDefs, Products, Collections, MenuItems, Pages, GalleryItems, Customers,
-            Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments, Carts,
+            Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments,
+            Classes, Enrollments, Facilities, FacilityBookings, Carts,
             NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits
         };
 

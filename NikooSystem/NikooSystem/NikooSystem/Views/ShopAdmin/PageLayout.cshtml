@@ -82,6 +82,18 @@
                     </ul>
                 </div>
             }
+            else if (kind.IsCampus)
+            {
+                <div class="panel-card">
+                    <h5><i class="bi bi-trophy"></i> صفحه کلاس و رزرو</h5>
+                    <p class="small text-muted mb-2">صفحه اول کلاس‌های گروهی، سالن‌ها و کلاس خصوصی را نشان می‌دهد. مشتری برای کلاس ثبت‌نام می‌کند، برای سالن ساعت خالی را انتخاب می‌کند و برای جلسه خصوصی مدرس و زمان را برمی‌گزیند.</p>
+                    <ul class="small text-muted mb-0">
+                        <li>ساعت کلاس خصوصی از <a href="@Url.Action("Staff","ShopAdmin", new { company })">ساعت کاری مدرس‌ها</a> ساخته می‌شود.</li>
+                        <li>ساعت سالن را در <a href="@Url.Action("Facilities","ShopAdmin", new { company })">سالن‌ها و زمین‌ها</a> تنظیم کنید.</li>
+                        <li>مراحل راه‌اندازی در <a href="@Url.Action("CampusGuide","ShopAdmin", new { company })">راهنمای راه‌اندازی</a> آمده است.</li>
+                    </ul>
+                </div>
+            }
             else if (kind.IsBooking)
             {
                 <div class="panel-card">

@@ -42,7 +42,7 @@
                 Description = Model.SeoDescription,
                 AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "نام گروه" : Model.Title, storeName),
                 AutoDescription = SeoPages.CategoryDescription(Model.Id > 0 ? Model : new StoreCategory { Title = "…" }, kind, storeName),
-                Url = Model.Id > 0 && !kind.IsBooking ? Html.Seo().Url(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id) : null
+                Url = Model.Id > 0 && !kind.Schedules ? Html.Seo().Url(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id) : null
             })
         </div>
         <div class="col-12">@Html.FormActions("Categories")</div>

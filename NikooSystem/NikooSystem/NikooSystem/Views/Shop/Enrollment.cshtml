@@ -1,0 +1,56 @@
+@model StoreEnrollment
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "ثبت‌نام " + Model.Code;
+    var company = (string)ViewBag.CompanyCode;
+    var item = ViewBag.Class as StoreClass;
+    var canCancel = (bool)ViewBag.CanCancel;
+    var active = Model.Status == AppointmentStatus.Confirmed || Model.Status == AppointmentStatus.PendingPayment;
+    var showLink = active && item != null && item.Mode != CampusDelivery.InPerson && !string.IsNullOrWhiteSpace(item.OnlineLink);
+}
+<section class="bk-book">
+    <div class="container">
+        <div class="bk-ticket @(active ? "" : "is-closed")">
+            <div class="bk-ticket-head">
+                <div>
+                    <div class="small opacity-75">کد پیگیری ثبت‌نام</div>
+                    <div class="bk-code" dir="ltr">@Model.Code</div>
+                </div>
+                <span class="badge @Model.Status.StatusBadgeClass()">@Model.Status.StatusText()</span>
+            </div>
+            <dl class="bk-ticket-list">
+                <dt>کلاس</dt><dd>@Model.ClassTitle</dd>
+                @if (item != null)
+                {
+                    <dt>زمان</dt><dd>@item.WhenText</dd>
+                    <dt>نحوه برگزاری</dt><dd>@CampusDelivery.Text(item.Mode)</dd>
+                    if (!string.IsNullOrWhiteSpace(item.Place)) { <dt>محل</dt><dd>@item.Place</dd> }
+                    if (!string.IsNullOrWhiteSpace(item.InstructorName)) { <dt>مدرس</dt><dd>@item.InstructorName</dd> }
+                }
+                <dt>نام</dt><dd>@Model.CustomerName</dd>
+                <dt>موبایل</dt><dd dir="ltr" class="text-end">@Model.CustomerMobile</dd>
+                <dt>شهریه</dt><dd>@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</dd>
+                @if (Model.PaidAmount > 0)
+                {
+                    <dt>پرداخت‌شده</dt><dd>@Model.PaidAmount.ToToman()</dd>
+                }
+            </dl>
+            @if (showLink)
+            {
+                <div class="bk-notice"><i class="bi bi-camera-video"></i> لینک کلاس آنلاین: <a href="@item.OnlineLink" target="_blank" rel="noopener">ورود به جلسه</a></div>
+            }
+            @if (canCancel)
+            {
+                using (Html.BeginForm("CancelEnrollment", "Shop", new { company, id = Model.Code }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <button class="btn btn-outline-danger mt-3" type="submit">لغو ثبت‌نام</button>
+                }
+            }
+            @if (Model.PaidAmount > 0 && Model.Status == AppointmentStatus.Cancelled)
+            {
+                <p class="small text-muted mt-3 mb-0">شهریه پرداخت شده بود. برای بازگشت مبلغ با مجموعه تماس بگیرید.</p>
+            }
+        </div>
+    </div>
+</section>

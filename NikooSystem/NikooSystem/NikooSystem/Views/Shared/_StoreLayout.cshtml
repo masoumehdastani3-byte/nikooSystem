@@ -46,11 +46,11 @@
     {
         <link href="@Url.Asset("~/Content/storefront-skins.css")" rel="stylesheet" />
     }
-    @if (!kind.IsBooking)
+    @if (!kind.Schedules)
     {
         <link href="@Url.Asset("~/Content/storefront-home.css")" rel="stylesheet" />
     }
-    @if (kind.IsBooking)
+    @if (kind.Schedules)
     {
         <link href="@Url.Asset("~/Content/storefront-booking.css")" rel="stylesheet" />
     }
@@ -99,7 +99,7 @@ else if (layoutId == "fashion")
 {
     @Html.Partial("_ContentHeader")
 }
-else if (kind.IsBooking)
+else if (kind.Schedules)
 {
     @Html.Partial("_BookingHeader")
 }
@@ -363,7 +363,7 @@ else if (layoutId == "fashion")
     </div>
 }
 
-@if (kind.IsContent || kind.IsBooking)
+@if (kind.IsContent || kind.Schedules)
 {
     @Html.Partial("_ContentFooter")
 }

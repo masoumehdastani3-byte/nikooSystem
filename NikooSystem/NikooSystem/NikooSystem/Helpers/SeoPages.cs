@@ -75,6 +75,7 @@ namespace NikooSystem.Helpers
                 case "clinic": return "MedicalClinic";
                 case "beauty": return "BeautySalon";
                 case "consulting": return "ProfessionalService";
+                case "club": return "SportsActivityLocation";
                 default: return "OnlineStore";
             }
         }

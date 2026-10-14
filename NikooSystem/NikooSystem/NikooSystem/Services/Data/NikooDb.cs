@@ -86,10 +86,13 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("site-content-defaults", SiteContentStore.SeedDefaults);
                     NikooSchema.RunOnce("seed-booking-demo", TenantStore.SeedBookingDemo);
                     NikooSchema.RunOnce("site-booking-product", SiteStore.ApplyBookingProduct);
+                    NikooSchema.RunOnce("seed-club-demo", TenantStore.SeedClubDemo);
+                    NikooSchema.RunOnce("site-club-product", SiteStore.ApplyClubProduct);
                     NikooSchema.RunOnce("site-content-product", SiteStore.ApplyContentProduct);
                     NikooSchema.RunOnce("site-seo-defaults", SiteContentStore.ApplySeoDefaults);
                     NikooSchema.RunOnce("site-module-faqs", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-kinds-faq", SiteContentStore.ApplyKindsFaq);
+                    NikooSchema.RunOnce("site-campus-kinds-faq", SiteContentStore.ApplyCampusKindsFaq);
                     NikooSchema.RunOnce("home-sections-demo-samples", HomeSamples.ApplyDemos);
                     NikooSchema.RunOnce("site-home-sections-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-content-template-count", SiteStore.ApplyContentTemplateCount);
@@ -103,6 +106,7 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("custom-domain-status", CustomDomains.MigrateExisting);
                     NikooSchema.RunOnce("site-domain-faq", SiteContentStore.ApplyDomainFaq);
                     NikooSchema.RunOnce("site-enamad-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-campus-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-legal-texts", SiteContentStore.ApplyLegalTexts);
                     TutorialService.ApplySeed();
                     _initialized = true;

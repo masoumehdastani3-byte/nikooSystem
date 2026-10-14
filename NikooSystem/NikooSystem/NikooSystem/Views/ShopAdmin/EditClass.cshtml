@@ -1,0 +1,124 @@
+@model StoreClass
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش کلاس" : "کلاس جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    Func<int, string> clock = m => (m / 60).ToString("00", invariant) + ":" + (m % 60).ToString("00", invariant);
+    var mode = CampusDelivery.Normalize(Model.Mode);
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Classes","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditClass", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3">
+        <div class="col-md-6">
+            <label class="form-label" for="Title">عنوان کلاس</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً فوتبال پایه نونهالان" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="InstructorId">مدرس یا مربی</label>
+            <select class="form-select" id="InstructorId" name="InstructorId">
+                <option value="">بدون مدرس مشخص</option>
+                @foreach (var person in staff)
+                {
+                    <option value="@person.Id" @(Model.InstructorId == person.Id ? "selected" : null)>@person.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Mode">نحوه برگزاری</label>
+            <select class="form-select" id="Mode" name="Mode">
+                <option value="@CampusDelivery.InPerson" @(mode == CampusDelivery.InPerson ? "selected" : null)>حضوری</option>
+                <option value="@CampusDelivery.Online" @(mode == CampusDelivery.Online ? "selected" : null)>آنلاین</option>
+                <option value="@CampusDelivery.Hybrid" @(mode == CampusDelivery.Hybrid ? "selected" : null)>حضوری و آنلاین</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Weekday">روز هفته</label>
+            <select class="form-select" id="Weekday" name="Weekday">
+                @for (var d = 0; d < 7; d++)
+                {
+                    <option value="@d" @(Model.Weekday == d ? "selected" : null)>@BookingTime.DayNames[d]</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="startTime">از ساعت</label>
+            <input class="form-control" id="startTime" name="startTime" type="time" step="300" required value="@clock(Model.StartMinute)" dir="ltr" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="endTime">تا ساعت</label>
+            <input class="form-control" id="endTime" name="endTime" type="time" step="300" required value="@clock(Model.EndMinute)" dir="ltr" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Capacity">ظرفیت</label>
+            @Html.TextBoxFor(m => m.Capacity, new { @class = "form-control", type = "number", min = "1", max = "500", dir = "ltr" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Price">شهریه (تومان)</label>
+            @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+            <div class="form-text">۰ یعنی رایگان. اگر زرین‌پال وصل باشد، کل شهریه آنلاین گرفته می‌شود.</div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Sessions">تعداد جلسات</label>
+            @Html.TextBoxFor(m => m.Sessions, new { @class = "form-control", type = "number", min = "0", max = "200", dir = "ltr" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Level">سطح</label>
+            @Html.TextBoxFor(m => m.Level, new { @class = "form-control", maxlength = "40", placeholder = "مبتدی" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="AgeGroup">گروه سنی</label>
+            @Html.TextBoxFor(m => m.AgeGroup, new { @class = "form-control", maxlength = "40", placeholder = "۷ تا ۱۰ سال" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Place">محل برگزاری</label>
+            @Html.TextBoxFor(m => m.Place, new { @class = "form-control", maxlength = "120", placeholder = "چمن مصنوعی، سالن شماره ۲" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="startDate">شروع دوره</label>
+            <input class="form-control" id="startDate" name="startDate" type="date" dir="ltr" value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd", invariant) : "")" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="endDate">پایان دوره</label>
+            <input class="form-control" id="endDate" name="endDate" type="date" dir="ltr" value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd", invariant) : "")" />
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="Summary">خلاصه</label>
+            @Html.TextBoxFor(m => m.Summary, new { @class = "form-control", maxlength = "300" })
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="Description">توضیح</label>
+            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4", maxlength = "2000" })
+        </div>
+        <div class="col-md-8">
+            <label class="form-label" for="OnlineLink">لینک جلسه آنلاین</label>
+            @Html.TextBoxFor(m => m.OnlineLink, new { @class = "form-control", maxlength = "300", dir = "ltr", placeholder = "https://" })
+            <div class="form-text">فقط به کسی که ثبت‌نامش قطعی شده نشان داده می‌شود و فقط برای کلاس آنلاین یا ترکیبی.</div>
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال و قابل ثبت‌نام")
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="SortOrder">ترتیب نمایش</label>
+            @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">تصویر</label>
+            <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg" />
+            @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+            {
+                <label class="small mt-1"><input type="checkbox" name="removeImage" value="true" /> حذف تصویر</label>
+            }
+        </div>
+        <div class="col-12 d-flex gap-2">
+            @Html.FormActions("Classes")
+        </div>
+    </div>
+}

@@ -16,6 +16,8 @@ namespace NikooSystem.Models.Store
         public bool IsActive { get; set; } = true;
         public int SortOrder { get; set; }
         public bool IsSample { get; set; }
+        /// <summary><see cref="CampusDelivery"/>: in person, online, or either. Empty is in person, so older clinics stay unchanged.</summary>
+        public string Mode { get; set; }
         /// <summary>The staff who offer the service; empty means every staff member.</summary>
         public List<int> StaffIds { get; set; } = new List<int>();
 

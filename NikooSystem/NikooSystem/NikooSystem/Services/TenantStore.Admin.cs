@@ -13,7 +13,7 @@ namespace NikooSystem.Services
         /// <summary>The sample sites linked from the main site; they cannot be deleted from the panel.</summary>
         public static readonly IReadOnlyCollection<string> DemoCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "FASHION", "GROCERY", "DIGITAL", "ACADEMY", "BOOKS", "NEWS", "COMPANY", "CLINIC"
+            "FASHION", "GROCERY", "DIGITAL", "ACADEMY", "BOOKS", "NEWS", "COMPANY", "CLINIC", "CLUB"
         };
 
         public static bool IsDemo(string companyCode) => companyCode != null && DemoCodes.Contains(companyCode);
@@ -28,7 +28,8 @@ namespace NikooSystem.Services
             { "ebook", "BOOKS" },
             { "news", "NEWS" },
             { "corporate", "COMPANY" },
-            { "clinic", "CLINIC" }
+            { "clinic", "CLINIC" },
+            { "club", "CLUB" }
         };
 
         /// <summary>The store whatever its state (suspended or expired ones included).</summary>
@@ -83,7 +84,7 @@ namespace NikooSystem.Services
         public static Dictionary<string, int> TenantCounts(string companyCode)
         {
             var counts = new Dictionary<string, int>();
-            foreach (var table in new TableMap[] { NikooTables.Products, NikooTables.Orders, NikooTables.Customers, NikooTables.Posts, NikooTables.ContactMessages, NikooTables.Services, NikooTables.Appointments })
+            foreach (var table in new TableMap[] { NikooTables.Products, NikooTables.Orders, NikooTables.Customers, NikooTables.Posts, NikooTables.ContactMessages, NikooTables.Services, NikooTables.Appointments, NikooTables.Classes, NikooTables.Enrollments, NikooTables.Facilities, NikooTables.FacilityBookings })
                 counts[table.Name] = NikooDb.Count(table, SqlFilter.ForStore(companyCode));
             return counts;
         }

@@ -283,6 +283,7 @@
             <div class="brand-kicker"><i class="bi bi-shield-lock"></i> پنل مدیریت امن @siteNoun</div>
             <h1>مدیریت @siteNoun خود را از اینجا شروع کنید</h1>
             <p>@(kind.IsContent ? "خبرها، مقاله‌ها، نظرات، پیام‌ها، منوها و صفحات را از یک پنل یکپارچه کنترل کنید."
+                 : kind.IsCampus ? "کلاس‌ها، ثبت‌نام، رزرو سالن، جلسات خصوصی و ساعت کاری مدرس‌ها را از یک پنل یکپارچه کنترل کنید."
                  : kind.IsBooking ? "نوبت‌ها، تقویم، خدمات، ساعت کاری متخصصان و بیعانه آنلاین را از یک پنل یکپارچه کنترل کنید."
                  : kind.IsDigital ? "دوره‌ها، کتاب‌ها، فایل‌ها، سفارش‌ها و درگاه پرداخت را از یک پنل یکپارچه کنترل کنید."
                  : "محصولات، سفارش‌ها، منوها، گالری و درگاه پرداخت را از یک پنل یکپارچه کنترل کنید.")</p>
@@ -292,6 +293,11 @@
             {
                 <div class="brand-stat"><strong>مطالب</strong><span>تیتر یک، خبر فوری و زمان‌بندی</span></div>
                 <div class="brand-stat"><strong>نظرات</strong><span>تأیید و پاسخ به خوانندگان</span></div>
+            }
+            else if (kind.IsCampus)
+            {
+                <div class="brand-stat"><strong>کلاس و سالن</strong><span>ثبت‌نام دوره و رزرو ساعتی</span></div>
+                <div class="brand-stat"><strong>مدرس خصوصی</strong><span>جلسه آنلاین یا حضوری</span></div>
             }
             else if (kind.IsBooking)
             {

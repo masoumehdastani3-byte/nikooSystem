@@ -632,6 +632,14 @@ namespace NikooSystem.Services
             RefreshSampleAppointments("CLINIC");
         }
 
+        /// <summary>The demo of the academy and sports-club product, with sample private lessons on the calendar.</summary>
+        internal static void SeedClubDemo()
+        {
+            if (CompanyCodeExists("CLUB")) return;
+            AddDemo("CLUB", "باشگاه و آموزشگاه نیکو", "club");
+            RefreshSampleAppointments("CLUB");
+        }
+
         /// <summary>
         /// Keeps the sample appointments of a demo around the current week: once none of them is upcoming, they are replaced
         /// by a fresh set from three days ago to four days ahead. Bookings made by visitors are left alone.
@@ -777,6 +785,8 @@ namespace NikooSystem.Services
                 NikooDb.SyncList(NikooTables.Posts, code, seed.Posts, tx);
                 NikooDb.SyncList(NikooTables.Staff, code, seed.Staff, tx);
                 NikooDb.SyncList(NikooTables.Services, code, seed.Services, tx);
+                if (seed.Classes.Count > 0) NikooDb.SyncList(NikooTables.Classes, code, seed.Classes, tx);
+                if (seed.Facilities.Count > 0) NikooDb.SyncList(NikooTables.Facilities, code, seed.Facilities, tx);
                 tx.Commit();
             }
         }

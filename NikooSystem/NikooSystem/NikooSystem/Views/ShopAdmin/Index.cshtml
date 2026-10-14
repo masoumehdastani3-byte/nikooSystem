@@ -20,7 +20,7 @@
 {
     <div class="panel-card ob-checklist mb-4">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">آماده‌سازی @(kind.IsContent ? "سایت برای انتشار" : kind.IsBooking ? "سایت برای نوبت‌دهی" : "فروشگاه برای فروش")</h5>
+            <h5 class="mb-0">آماده‌سازی @(kind.IsContent ? "سایت برای انتشار" : kind.IsCampus ? "سایت برای کلاس و رزرو" : kind.IsBooking ? "سایت برای نوبت‌دهی" : "فروشگاه برای فروش")</h5>
             <span class="small text-muted">@doneCount از @required.Count مرحله</span>
         </div>
         <div class="progress"><div class="progress-bar bg-success" style="width:@(percent)%"></div></div>
@@ -82,12 +82,21 @@
         </table>
     </div>
 }
-else if (kind.IsBooking)
+else if (kind.Schedules)
 {
     var agenda = (List<StoreAppointment>)ViewBag.TodayAgenda;
     var now = DateTime.Now;
+    if (kind.IsCampus)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">@StatCard("bi-easel", "کلاس‌ها", ((int)ViewBag.ClassCount).ToFa(), Url.Action("Classes", "ShopAdmin", new { company }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-person-check", "ثبت‌نام امروز", ((int)ViewBag.EnrollmentToday).ToFa(), Url.Action("Enrollments", "ShopAdmin", new { company }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-trophy", "سالن‌ها", ((int)ViewBag.FacilityCount).ToFa(), Url.Action("Facilities", "ShopAdmin", new { company }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-calendar-week", "رزرو سالن امروز", ((int)ViewBag.FacilityToday).ToFa(), Url.Action("FacilityBookings", "ShopAdmin", new { company }))</div>
+        </div>
+    }
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">@StatCard("bi-calendar-day", "نوبت‌های امروز", ((int)ViewBag.TodayCount).ToFa(), Url.Action("Appointments", "ShopAdmin", new { company, when = "today" }))</div>
+        <div class="col-6 col-lg-3">@StatCard("bi-calendar-day", kind.IsCampus ? "جلسات خصوصی امروز" : "نوبت‌های امروز", ((int)ViewBag.TodayCount).ToFa(), Url.Action("Appointments", "ShopAdmin", new { company, when = "today" }))</div>
         <div class="col-6 col-lg-3">@StatCard("bi-calendar-week", "هفت روز آینده", ((int)ViewBag.WeekCount).ToFa(), Url.Action("Calendar", "ShopAdmin", new { company }))</div>
         <div class="col-6 col-lg-3">@StatCard("bi-cash-stack", "درآمد این ماه", ((long)ViewBag.MonthRevenue).ToToman(), null)</div>
         <div class="col-6 col-lg-3">@StatCard("bi-person-x", "عدم مراجعه این ماه", ((int)ViewBag.MonthNoShows).ToFa(), Url.Action("Appointments", "ShopAdmin", new { company, status = AppointmentStatus.NoShow }))</div>
@@ -102,9 +111,9 @@ else if (kind.IsBooking)
     }
     <div class="panel-card">
         <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-            <h5 class="mb-0">برنامه امروز <small class="text-muted fw-normal">@BookingTime.DayNames[BookingTime.DayOf(DateTime.Today)] @DateTime.Today.ToShamsiText()</small></h5>
+            <h5 class="mb-0">@(kind.IsCampus ? "جلسات خصوصی امروز" : "برنامه امروز") <small class="text-muted fw-normal">@BookingTime.DayNames[BookingTime.DayOf(DateTime.Today)] @DateTime.Today.ToShamsiText()</small></h5>
             <div class="d-flex gap-2">
-                <a class="btn-store-sm" href="@Url.Action("NewAppointment","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> نوبت جدید</a>
+                <a class="btn-store-sm" href="@Url.Action("NewAppointment","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> @(kind.IsCampus ? "جلسه جدید" : "نوبت جدید")</a>
                 <a class="btn-outline-store btn-sm" href="@Url.Action("Calendar","ShopAdmin", new { company })"><i class="bi bi-calendar-week"></i> تقویم</a>
             </div>
         </div>

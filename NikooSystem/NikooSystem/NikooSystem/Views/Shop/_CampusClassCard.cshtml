@@ -1,0 +1,20 @@
+@model StoreClass
+@{
+    var company = (string)ViewBag.CompanyCode;
+}
+<article class="bk-service">
+    <span class="bk-service-icon"><i class="bi @(Model.Mode == CampusDelivery.Online ? "bi-camera-video" : "bi-easel")"></i></span>
+    <div class="bk-service-body">
+        <h3>@Model.Title</h3>
+        @if (!string.IsNullOrWhiteSpace(Model.Summary))
+        {
+            <p>@Model.Summary</p>
+        }
+        <div class="bk-service-meta">
+            <span><i class="bi bi-calendar-week"></i> @Model.WhenText</span>
+            <span><i class="bi bi-geo-alt"></i> @CampusDelivery.Text(Model.Mode)</span>
+            <span class="bk-price">@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</span>
+        </div>
+    </div>
+    <a class="btn-wm bk-service-cta" href="@Url.Action("Class","Shop", new { company, id = Model.Id })"><i class="bi bi-person-plus"></i> ثبت‌نام</a>
+</article>

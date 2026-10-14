@@ -190,6 +190,7 @@
     <Compile Include="Controllers\ShopAccountController.cs" />
     <Compile Include="Controllers\ShopAdminController.cs" />
     <Compile Include="Controllers\ShopAdminController.Booking.cs" />
+    <Compile Include="Controllers\ShopAdminController.Campus.cs" />
     <Compile Include="Controllers\ShopAdminController.Catalog.cs" />
     <Compile Include="Controllers\ShopAdminController.Content.cs" />
     <Compile Include="Controllers\ShopAdminController.Quick.cs" />
@@ -206,6 +207,7 @@
     <Compile Include="Controllers\ShopBaseController.cs" />
     <Compile Include="Controllers\ShopController.cs" />
     <Compile Include="Controllers\ShopController.Booking.cs" />
+    <Compile Include="Controllers\ShopController.Campus.cs" />
     <Compile Include="Controllers\ShopController.Seo.cs" />
     <Compile Include="Controllers\SeoController.cs" />
     <Compile Include="Controllers\SolutionsController.cs" />
@@ -234,6 +236,7 @@
     <Compile Include="Models\PagedList.cs" />
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\Store\BookingModels.cs" />
+    <Compile Include="Models\Store\CampusModels.cs" />
     <Compile Include="Models\Store\StoreModels.cs" />
     <Compile Include="Models\Store\StoreImageFit.cs" />
     <Compile Include="Models\StorageModels.cs" />
@@ -269,6 +272,7 @@
     <Compile Include="Services\HomeSamples.cs" />
     <Compile Include="Services\TenantStore.cs" />
     <Compile Include="Services\TenantStore.Booking.cs" />
+    <Compile Include="Services\TenantStore.Campus.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
     <Compile Include="Services\TutorialService.cs" />
@@ -402,6 +406,16 @@
     <Content Include="Views\Shop\Post.cshtml" />
     <Content Include="Views\Shop\Contact.cshtml" />
     <Content Include="Views\Shop\BookingHome.cshtml" />
+    <Content Include="Views\Shop\CampusHome.cshtml" />
+    <Content Include="Views\Shop\Classes.cshtml" />
+    <Content Include="Views\Shop\Class.cshtml" />
+    <Content Include="Views\Shop\Enrollment.cshtml" />
+    <Content Include="Views\Shop\Facilities.cshtml" />
+    <Content Include="Views\Shop\Facility.cshtml" />
+    <Content Include="Views\Shop\FacilityReservation.cshtml" />
+    <Content Include="Views\Shop\CampusTrack.cshtml" />
+    <Content Include="Views\Shop\_CampusClassCard.cshtml" />
+    <Content Include="Views\Shop\_CampusFacilityCard.cshtml" />
     <Content Include="Views\Shop\Services.cshtml" />
     <Content Include="Views\Shop\Book.cshtml" />
     <Content Include="Views\Shop\Track.cshtml" />
@@ -417,6 +431,13 @@
     <Content Include="Views\ShopAdmin\Staff.cshtml" />
     <Content Include="Views\ShopAdmin\EditStaff.cshtml" />
     <Content Include="Views\ShopAdmin\TimeOff.cshtml" />
+    <Content Include="Views\ShopAdmin\Classes.cshtml" />
+    <Content Include="Views\ShopAdmin\EditClass.cshtml" />
+    <Content Include="Views\ShopAdmin\Enrollments.cshtml" />
+    <Content Include="Views\ShopAdmin\Facilities.cshtml" />
+    <Content Include="Views\ShopAdmin\EditFacility.cshtml" />
+    <Content Include="Views\ShopAdmin\FacilityBookings.cshtml" />
+    <Content Include="Views\ShopAdmin\CampusGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Notifications.cshtml" />
     <Content Include="Views\ShopAdmin\SeoGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Torob.cshtml" />

@@ -232,6 +232,7 @@ namespace NikooSystem.Services
             { "grocery", "/Assets/img/products/store-grocery.jpg" },
             { "digital", "/Assets/img/products/store-digital.jpg" },
             { "clinic", "/Assets/img/products/store-booking.jpg" },
+            { "club", "/Assets/img/products/store-booking.jpg" },
             { "corporate", "/Assets/img/products/store-cms.jpg" }
         };
 
@@ -257,6 +258,30 @@ namespace NikooSystem.Services
                 + "و پیگیری و لغو نوبت با کد رهگیری؛ همه روی دامنه و کد شرکت اختصاصی خودتان.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["clinic"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
+        }
+
+        private const string ClubTitle = "سایت آموزشگاه و باشگاه ورزشی";
+
+        /// <summary>Adds the academy and sports-club product, or refreshes its text when the catalogue already has it.</summary>
+        internal static void ApplyClubProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "club")
+                ?? GetProducts().FirstOrDefault(p => string.IsNullOrEmpty(p.DemoSlug) && p.Title != null && p.Title.Contains("باشگاه"));
+            var isNew = product == null;
+            if (isNew) product = new Product { Price = 10000, Title = ClubTitle, IsActive = true };
+
+            product.Title = ClubTitle;
+            product.DemoSlug = "club";
+            product.IsFeatured = true;
+            product.ShortDescription = "سایت آموزشگاه و باشگاه با کلاس گروهی، مدرس خصوصی آنلاین یا حضوری و رزرو ساعتی سالن";
+            product.Description = "کلاس و دوره را با ظرفیت، شهریه، سطح و گروه سنی تعریف کنید و ثبت‌نام آنلاین بگیرید. "
+                + "جلسه با مدرس یا مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
+                + "سالن فوتبال، میز پینگ‌پونگ و هر فضای دیگری را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
+                + "شهریه و اجاره با زرین‌پال به حساب شما می‌آید و هر ثبت‌نام کد پیگیری دارد؛ همه روی دامنه و کد شرکت اختصاصی خودتان.";
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["club"];
             if (isNew) AddProduct(product);
             else UpdateProduct(product);
         }

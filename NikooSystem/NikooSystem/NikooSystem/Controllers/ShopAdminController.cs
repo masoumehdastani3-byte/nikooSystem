@@ -68,7 +68,7 @@ namespace NikooSystem.Controllers
                 ViewBag.LatestPosts = TenantStore.PostGrid(CompanyCode, new PostGridQuery { Size = 10 }).ToList();
                 return View();
             }
-            if (Kind.IsBooking)
+            if (Kind.Schedules)
             {
                 KeepDemoAppointmentsFresh();
                 var today = DateTime.Today;
@@ -81,6 +81,13 @@ namespace NikooSystem.Controllers
                 ViewBag.UnreadMessages = TenantStore.CountUnreadMessages(CompanyCode);
                 ViewBag.TodayAgenda = TenantStore.AppointmentsBetween(CompanyCode, today, today.AddDays(1))
                     .Where(a => a.Status != AppointmentStatus.Cancelled).ToList();
+                if (Kind.IsCampus)
+                {
+                    ViewBag.ClassCount = TenantStore.CountClasses(CompanyCode);
+                    ViewBag.FacilityCount = TenantStore.CountFacilities(CompanyCode);
+                    ViewBag.EnrollmentToday = TenantStore.CountEnrollmentsToday(CompanyCode);
+                    ViewBag.FacilityToday = TenantStore.CountFacilityBookingsToday(CompanyCode);
+                }
                 return View();
             }
 
@@ -134,34 +141,58 @@ namespace NikooSystem.Controllers
                     Url = SetupUrl(3)
                 });
             }
-            else if (Kind.IsBooking)
+            else if (Kind.Schedules)
             {
                 items.Add(new SetupChecklistItem
                 {
-                    Title = "تعریف خدمات واقعی",
-                    Hint = "خدمت خودتان را با مدت و هزینه تعریف کنید تا مراجعان برایش نوبت بگیرند.",
+                    Title = Kind.IsCampus ? "تعریف کلاس خصوصی واقعی" : "تعریف خدمات واقعی",
+                    Hint = Kind.IsCampus
+                        ? "جلسه خصوصی را با مدت، هزینه و حضوری یا آنلاین بودن تعریف کنید."
+                        : "خدمت خودتان را با مدت و هزینه تعریف کنید تا مراجعان برایش نوبت بگیرند.",
                     Done = TenantStore.CountServices(CompanyCode, false) > 0,
                     Url = SetupUrl(3)
                 });
                 items.Add(new SetupChecklistItem
                 {
-                    Title = "معرفی متخصصان و ساعت کاری",
-                    Hint = "متخصصان نمونه را با افراد واقعی و ساعت کاری‌شان جایگزین کنید؛ نوبت‌ها از همین ساعت‌ها ساخته می‌شوند.",
+                    Title = Kind.IsCampus ? "معرفی مدرس‌ها و ساعت کاری" : "معرفی متخصصان و ساعت کاری",
+                    Hint = Kind.IsCampus
+                        ? "مدرس و مربی واقعی را با ساعت کاری‌شان جایگزین کنید؛ کلاس خصوصی از همین ساعت‌ها ساخته می‌شود."
+                        : "متخصصان نمونه را با افراد واقعی و ساعت کاری‌شان جایگزین کنید؛ نوبت‌ها از همین ساعت‌ها ساخته می‌شوند.",
                     Done = TenantStore.CountStaff(CompanyCode, false) > 0 && TenantStore.CountStaff(CompanyCode, true) == 0,
                     Url = Url.Action("Staff", new { company = CompanyCode })
                 });
+                if (Kind.IsCampus)
+                {
+                    items.Add(new SetupChecklistItem
+                    {
+                        Title = "یک کلاس گروهی واقعی",
+                        Hint = "دوره یا کلاس را با روز، ساعت، ظرفیت و شهریه تعریف کنید.",
+                        Done = TenantStore.CountClasses(CompanyCode, false) > 0,
+                        Url = Url.Action("Classes", new { company = CompanyCode })
+                    });
+                    items.Add(new SetupChecklistItem
+                    {
+                        Title = "یک سالن یا زمین واقعی",
+                        Hint = "سالن فوتبال، میز پینگ‌پونگ یا هر فضای ساعتی را با قیمت و ساعت باز بودن تعریف کنید.",
+                        Done = TenantStore.CountFacilities(CompanyCode, false) > 0,
+                        Url = Url.Action("Facilities", new { company = CompanyCode })
+                    });
+                }
                 items.Add(new SetupChecklistItem
                 {
-                    Title = "حذف خدمات نمونه",
-                    Hint = "خدمات نمونه فقط برای نمایش ظاهر سایت هستند.",
-                    Done = TenantStore.CountServices(CompanyCode, true) == 0,
+                    Title = Kind.IsCampus ? "حذف نمونه‌ها" : "حذف خدمات نمونه",
+                    Hint = "موارد نمونه فقط برای نمایش ظاهر سایت هستند.",
+                    Done = TenantStore.CountServices(CompanyCode, true) == 0
+                        && (!Kind.IsCampus || (TenantStore.CountClasses(CompanyCode, true) == 0 && TenantStore.CountFacilities(CompanyCode, true) == 0)),
                     Url = SetupUrl(3)
                 });
                 items.Add(new SetupChecklistItem
                 {
-                    Title = "دریافت بیعانه آنلاین",
-                    Hint = "با اتصال زرین‌پال و تعیین درصد بیعانه، نوبت‌های بدون مراجعه کم می‌شود.",
-                    Done = s.EnablePayment && TenantProvisioningService.HasValidMerchant(s) && s.BookingDepositPercent > 0,
+                    Title = Kind.IsCampus ? "دریافت شهریه و بیعانه" : "دریافت بیعانه آنلاین",
+                    Hint = Kind.IsCampus
+                        ? "با اتصال زرین‌پال، شهریه کلاس و اجاره سالن آنلاین گرفته می‌شود و برای کلاس خصوصی درصد بیعانه را تعیین می‌کنید."
+                        : "با اتصال زرین‌پال و تعیین درصد بیعانه، نوبت‌های بدون مراجعه کم می‌شود.",
+                    Done = s.EnablePayment && TenantProvisioningService.HasValidMerchant(s) && (Kind.IsCampus || s.BookingDepositPercent > 0),
                     Optional = true,
                     Url = SetupUrl(4)
                 });
@@ -219,9 +250,11 @@ namespace NikooSystem.Controllers
             ViewBag.Step = step;
             ViewBag.Categories = TenantStore.GetCategories(CompanyCode);
             ViewBag.SampleCount = Kind.IsContent ? TenantStore.CountPosts(CompanyCode, true)
+                : Kind.IsCampus ? TenantStore.CountServices(CompanyCode, true) + TenantStore.CountStaff(CompanyCode, true) + TenantStore.CountClasses(CompanyCode, true) + TenantStore.CountFacilities(CompanyCode, true)
                 : Kind.IsBooking ? TenantStore.CountServices(CompanyCode, true) + TenantStore.CountStaff(CompanyCode, true)
                 : TenantStore.CountProducts(CompanyCode, true);
             ViewBag.RealCount = Kind.IsContent ? TenantStore.CountPosts(CompanyCode, false)
+                : Kind.IsCampus ? TenantStore.CountServices(CompanyCode, false) + TenantStore.CountClasses(CompanyCode, false) + TenantStore.CountFacilities(CompanyCode, false)
                 : Kind.IsBooking ? TenantStore.CountServices(CompanyCode, false)
                 : TenantStore.CountProducts(CompanyCode, false);
             ViewBag.StoreUrl = TenantProvisioningService.DefaultStoreUrl(CompanyCode, Request);
@@ -358,7 +391,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult SetupService(string title, int? durationMinutes, long? price, bool removeSamples = false)
         {
             if (!string.IsNullOrWhiteSpace(title))
@@ -390,13 +423,20 @@ namespace NikooSystem.Controllers
                 {
                     Fail("خدمات نمونه حذف شد. متخصصان نمونه ماندند تا نوبت‌دهی قطع نشود؛ از صفحه «متخصصان و ساعت کاری» آن‌ها را با افراد واقعی جایگزین کنید.");
                 }
+                if (Kind.IsCampus)
+                {
+                    foreach (var sample in TenantStore.GetClasses(CompanyCode).Where(x => x.IsSample))
+                        TenantStore.DeleteClass(CompanyCode, sample.Id);
+                    foreach (var sample in TenantStore.GetFacilities(CompanyCode).Where(x => x.IsSample))
+                        TenantStore.DeleteFacility(CompanyCode, sample.Id);
+                }
             }
             return ToAction("Setup", new { step = 4 });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult SetupPayment(string merchantId, bool enablePayment = false, int? depositPercent = null)
         {
             var s = CurrentSettings;
@@ -410,7 +450,7 @@ namespace NikooSystem.Controllers
             s.ZarinPalMerchantId = merchantId;
             s.ZarinPalSandbox = false;
             s.EnablePayment = enablePayment && merchantId.Length > 0;
-            if (Kind.IsBooking && depositPercent.HasValue) s.BookingDepositPercent = Math.Max(0, Math.Min(100, depositPercent.Value));
+            if (Kind.Schedules && depositPercent.HasValue) s.BookingDepositPercent = Math.Max(0, Math.Min(100, depositPercent.Value));
             TenantStore.SaveSettings(s);
             return ToAction("Setup", new { step = 5 });
         }
@@ -561,7 +601,7 @@ namespace NikooSystem.Controllers
                 model.ZarinPalMerchantId = existing.ZarinPalMerchantId;
                 model.ZarinPalSandbox = existing.ZarinPalSandbox;
             }
-            if (Kind.IsBooking)
+            if (Kind.Schedules)
             {
                 model.BookingSlotMinutes = Math.Max(5, Math.Min(120, model.BookingSlotMinutes));
                 model.BookingDaysAhead = Math.Max(1, Math.Min(90, model.BookingDaysAhead));

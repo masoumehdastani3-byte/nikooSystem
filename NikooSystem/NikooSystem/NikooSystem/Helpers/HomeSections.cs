@@ -129,7 +129,8 @@ namespace NikooSystem.Helpers
             { "magazine", new[] { "headline", "latest", "topics", "gallery", "about" } },
             { "corporate", new[] { "hero", "stats", "categories", "about", "whyus", "steps", "latest", "reviews", "gallery", "faq", "cta", "contact" } },
             { "clinic", new[] { "hero", "services", "staff", "hours", "about", "gallery", "contact" } },
-            { "salon", new[] { "hero", "services", "staff", "gallery", "hours", "about", "contact" } }
+            { "salon", new[] { "hero", "services", "staff", "gallery", "hours", "about", "contact" } },
+            { "club", new[] { "hero", "services", "staff", "hours", "about", "gallery", "contact" } }
         };
 
         public static HomeSectionType Type(string id)

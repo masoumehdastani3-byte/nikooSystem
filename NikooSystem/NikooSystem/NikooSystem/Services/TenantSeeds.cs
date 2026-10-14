@@ -20,6 +20,8 @@ namespace NikooSystem.Services
         public List<StorePost> Posts = new List<StorePost>();
         public List<StoreService> Services = new List<StoreService>();
         public List<StoreStaff> Staff = new List<StoreStaff>();
+        public List<StoreClass> Classes = new List<StoreClass>();
+        public List<StoreFacility> Facilities = new List<StoreFacility>();
     }
 
     /// <summary>Sample data of a new store, chosen by its store type so the site looks complete from the first visit.</summary>
@@ -40,6 +42,7 @@ namespace NikooSystem.Services
                 case "clinic": Clinic(seed, code); break;
                 case "beauty": Beauty(seed, code); break;
                 case "consulting": Consulting(seed, code); break;
+                case "club": Club(seed, code); break;
                 default: Gadgets(seed, code); break;
             }
             customize?.Invoke(seed.Settings);
@@ -340,6 +343,94 @@ namespace NikooSystem.Services
             };
         }
 
+        private static void Club(TenantSeed seed, string code)
+        {
+            seed.Settings = BaseSettings(code, "باشگاه و آموزشگاه نیکو", "کلاس، مربی خصوصی، رزرو سالن", "#15803d", "#dcfce7",
+                "کلاس گروهی، جلسه خصوصی یا اجاره سالن", "دوره را ثبت‌نام کنید، با مدرس خصوصی آنلاین یا حضوری وقت بگیرید، یا سالن را ساعتی رزرو کنید", "club");
+            seed.Settings.About = "آموزشگاه و باشگاه نیکو کلاس‌های گروهی، جلسه با مدرس خصوصی و اجاره سالن و میز را در یک‌جا ارائه می‌کند. این متن را از «اطلاعات سایت» تغییر دهید.";
+            seed.Settings.Address = "تهران، مجموعه ورزشی نیکو";
+            seed.Settings.BookingSlotMinutes = 30;
+            seed.Settings.BookingNotice = "برای کلاس حضوری ده دقیقه زودتر بیایید. لینک کلاس آنلاین بعد از قطعی شدن ثبت‌نام نشان داده می‌شود.";
+            seed.Staff = new List<StoreStaff>
+            {
+                Staff(1, "رضا محمدی", "مربی فوتبال و پینگ‌پونگ", "team-2", Week(new[] { 0, 1, 2, 3, 4 }, 15 * 60, 21 * 60)),
+                Staff(2, "سارا کاظمی", "مربی بدنسازی", "team-1", Week(new[] { 0, 2, 4, 6 }, 8 * 60, 12 * 60, 17 * 60, 21 * 60)),
+                Staff(3, "نگار حسینی", "مدرس مکالمه انگلیسی", "team-3", Week(new[] { 1, 3, 5 }, 16 * 60, 21 * 60))
+            };
+            seed.Services = new List<StoreService>
+            {
+                Service(1, "کلاس خصوصی فوتبال", "تمرین تکنیک و آمادگی جسمانی، روی چمن مصنوعی", 60, 500000, 1),
+                Service(2, "برنامه تمرین خصوصی بدنسازی", "طراحی برنامه و اصلاح حرکت؛ حضوری در سالن یا آنلاین با ویدیو", 45, 400000, 2),
+                Service(3, "مکالمه خصوصی انگلیسی", "جلسه تصویری یک‌به‌یک روی سطح خودتان", 45, 350000, 3)
+            };
+            seed.Services[0].Mode = CampusDelivery.InPerson;
+            seed.Services[1].Mode = CampusDelivery.Hybrid;
+            seed.Services[2].Mode = CampusDelivery.Online;
+            var termStart = DateTime.Today;
+            seed.Classes = new List<StoreClass>
+            {
+                ClassItem(1, "فوتبال پایه نونهالان", "تمرین بازی و مهارت‌های پایه روی چمن", 1, CampusDelivery.InPerson, 18, 2500000, 0, 16 * 60, 17 * 60 + 30, "مبتدی", "۷ تا ۱۰ سال", "چمن مصنوعی", null, termStart),
+                ClassItem(2, "بدنسازی بانوان", "تمرین قدرتی و هوازی با مربی", 2, CampusDelivery.InPerson, 12, 1800000, 1, 18 * 60, 19 * 60 + 30, "همه سطوح", "بانوان", "سالن بدنسازی", null, termStart),
+                ClassItem(3, "مکالمه انگلیسی", "کلاس گروهی تصویری، سطح متوسط", 3, CampusDelivery.Online, 15, 1600000, 2, 19 * 60, 20 * 60 + 30, "متوسط", "نوجوان و بزرگسال", null, "https://meet.example.com/nikoo-english", termStart),
+                ClassItem(4, "پینگ‌پونگ پیشرفته", "تکنیک، پا و مسابقه؛ حضوری با امکان مرور آنلاین", 1, CampusDelivery.Hybrid, 8, 2000000, 3, 17 * 60, 18 * 60 + 30, "پیشرفته", "۱۲ سال به بالا", "سالن پینگ‌پونگ", "https://meet.example.com/nikoo-pingpong", termStart)
+            };
+            foreach (var item in seed.Classes)
+                item.InstructorName = seed.Staff.FirstOrDefault(s => s.Id == item.InstructorId)?.Name;
+            seed.Facilities = new List<StoreFacility>
+            {
+                Facility(1, "سالن فوتبال چمن مصنوعی", "زمین پنج‌نفره؛ اجاره کل زمین برای یک ساعت", 60, 800000, 1, "زمین شماره ۱", Week(new[] { 0, 1, 2, 3, 4, 5 }, 8 * 60, 23 * 60)),
+                Facility(2, "میز پینگ‌پونگ", "یک میز برای دو نفر؛ راکت از مجموعه", 60, 150000, 1, "سالن پینگ‌پونگ", Week(new[] { 0, 1, 2, 3, 4, 5, 6 }, 10 * 60, 22 * 60)),
+                Facility(3, "سالن بدنسازی", "ورود ساعتی؛ تا ۱۲ نفر همزمان", 60, 120000, 12, "طبقه اول", Week(new[] { 0, 1, 2, 3, 4, 5, 6 }, 6 * 60, 23 * 60))
+            };
+        }
+
+        private static StoreClass ClassItem(int id, string title, string summary, int instructorId, string mode, int capacity, long price,
+            int weekday, int start, int end, string level, string age, string place, string link, DateTime startDate)
+        {
+            return new StoreClass
+            {
+                Id = id,
+                Title = title,
+                Summary = summary,
+                Description = summary + " این کلاس نمونه است؛ روز، شهریه و توضیحات را از پنل عوض کنید.",
+                InstructorId = instructorId,
+                Mode = mode,
+                Capacity = capacity,
+                Price = price,
+                Weekday = weekday,
+                StartMinute = start,
+                EndMinute = end,
+                Sessions = 12,
+                Level = level,
+                AgeGroup = age,
+                Place = place,
+                OnlineLink = link,
+                StartDate = startDate,
+                EndDate = startDate.AddDays(84),
+                SortOrder = id,
+                IsSample = true,
+                IsActive = true
+            };
+        }
+
+        private static StoreFacility Facility(int id, string title, string description, int minutes, long price, int capacity, string place, List<StoreWorkHours> hours)
+        {
+            return new StoreFacility
+            {
+                Id = id,
+                Title = title,
+                Description = description,
+                SlotMinutes = minutes,
+                Price = price,
+                Capacity = capacity,
+                Place = place,
+                Hours = hours,
+                SortOrder = id,
+                IsSample = true,
+                IsActive = true
+            };
+        }
+
         /// <summary>Generated hero images of the booking templates; <c>clinic</c> or <c>salon</c>.</summary>
         private static string BookingHero(string template) => "/Assets/img/booking/hero-" + template + ".jpg";
 
@@ -414,6 +505,14 @@ namespace NikooSystem.Services
                 add("درباره ما", shop + "/Page/about");
                 add("تماس با ما", shop + "/Contact");
             }
+            else if (kind == SiteKinds.Campus)
+            {
+                add("کلاس‌ها", shop + "/Classes");
+                add("کلاس خصوصی", shop + "/Book");
+                add("رزرو سالن", shop + "/Facilities");
+                add("پیگیری", shop + "/CampusTrack");
+                add("تماس با ما", shop + "/Contact");
+            }
             else
             {
                 add(kind == SiteKinds.Digital ? (storeType == "academy" ? "دوره‌ها" : "کتاب‌ها") : "محصولات", shop + "/Catalog");
@@ -427,7 +526,7 @@ namespace NikooSystem.Services
             items.Add(new StoreMenuItem
             {
                 Id = items.Count + 1,
-                Title = kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : "شرایط فروش",
+                Title = kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : kind == SiteKinds.Campus ? "قوانین کلاس و رزرو" : "شرایط فروش",
                 Url = shop + "/Page/terms",
                 SortOrder = 2,
                 Location = "footer"
@@ -461,6 +560,20 @@ namespace NikooSystem.Services
                         + "<li>در صورت تأخیر بیش از ۱۵ دقیقه، ممکن است نوبت به فرد بعدی داده شود.</li></ul>"
                 });
             }
+            else if (kind == SiteKinds.Campus)
+            {
+                pages.Add(new StorePage
+                {
+                    Id = 3,
+                    Title = "قوانین کلاس و رزرو",
+                    Slug = "terms",
+                    BodyHtml = "<ul><li>کد پیگیری ثبت‌نام یا رزرو را نگه دارید؛ با آن و شماره موبایل، وضعیت را در صفحه «پیگیری» می‌بینید.</li>"
+                        + "<li>ظرفیت کلاس و ساعت‌های پر سالن به نفر بعدی نشان داده نمی‌شود.</li>"
+                        + "<li>لغو رزرو سالن تا " + settings.BookingCancelHours.ToString().ToFaDigits() + " ساعت پیش از زمان آن از صفحه پیگیری ممکن است.</li>"
+                        + "<li>اگر شهریه یا اجاره را آنلاین پرداخته‌اید، برای بازگشت مبلغ پس از لغو با ما تماس بگیرید.</li>"
+                        + "<li>لینک کلاس آنلاین فقط بعد از قطعی شدن ثبت‌نام نشان داده می‌شود.</li></ul>"
+                });
+            }
             else
             {
                 var terms = kind == SiteKinds.Digital
@@ -475,6 +588,7 @@ namespace NikooSystem.Services
         {
             var titles = kind == SiteKinds.Content ? new[] { "پروژه اول", "پروژه دوم", "تیم ما" }
                 : kind == SiteKinds.Booking ? new[] { "فضای پذیرش", "اتاق خدمات", "تیم ما" }
+                : kind == SiteKinds.Campus ? new[] { "سالن تمرین", "کلاس گروهی", "تیم مربیان" }
                 : new[] { "نمای فروشگاه", "محصولات منتخب", "تیم ما" };
             return titles.Select((t, i) => new StoreGalleryItem
             {

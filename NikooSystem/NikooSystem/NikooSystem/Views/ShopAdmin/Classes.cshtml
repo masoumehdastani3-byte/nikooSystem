@@ -1,0 +1,39 @@
+@model List<StoreClass>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "کلاس‌ها و دوره‌ها";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">کلاس‌ها و دوره‌ها</h2>
+    <a class="btn-store" href="@Url.Action("EditClass","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> کلاس جدید</a>
+</div>
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>کلاس</th><th>زمان</th><th>برگزاری</th><th>ظرفیت</th><th>شهریه</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="fw-bold">@item.Title</div>
+                        @if (!string.IsNullOrWhiteSpace(item.InstructorName)) { <div class="small text-muted">@item.InstructorName</div> }
+                    </td>
+                    <td>@item.WhenText</td>
+                    <td>@CampusDelivery.Text(item.Mode)</td>
+                    <td>@item.Capacity.ToFa()</td>
+                    <td>@(item.Price > 0 ? item.Price.ToToman() : "رایگان")</td>
+                    <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("EditClass", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                        @Html.IconPost("DeleteClass", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این کلاس حذف شود؟ ثبت‌نام‌ها می‌مانند.")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="7">هنوز کلاسی تعریف نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -18,7 +18,7 @@ namespace NikooSystem.Controllers
 
         // ---- Calendar
 
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Calendar(string start, int? staffId)
         {
             KeepDemoAppointmentsFresh();
@@ -35,7 +35,7 @@ namespace NikooSystem.Controllers
 
         // ---- Appointments
 
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Appointments(AppointmentGridQuery query)
         {
             KeepDemoAppointmentsFresh();
@@ -46,7 +46,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult AppointmentDetails(int id)
         {
             var appointment = TenantStore.GetAppointment(CompanyCode, id);
@@ -58,7 +58,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult UpdateAppointment(int id, AppointmentStatus status, string adminNote)
         {
             var appointment = TenantStore.GetAppointment(CompanyCode, id);
@@ -72,7 +72,7 @@ namespace NikooSystem.Controllers
         /// <summary>The quick status buttons of the appointment list and calendar.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult SetAppointmentStatus(int id, AppointmentStatus status, string back = null)
         {
             var appointment = TenantStore.GetAppointment(CompanyCode, id);
@@ -93,7 +93,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult NewAppointment(string date, string time, int? staffId, int? serviceId)
         {
             ViewBag.Services = TenantStore.GetServices(CompanyCode).Where(s => s.IsActive).ToList();
@@ -109,7 +109,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult NewAppointment(int? serviceId, int? staffId, string date, string time, string customerName,
             string customerMobile, string notes, bool outsideHours = false)
         {
@@ -148,7 +148,7 @@ namespace NikooSystem.Controllers
 
         // ---- Services
 
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Services(GridQuery query)
         {
             var rows = TenantStore.GetServices(CompanyCode).AsEnumerable();
@@ -159,7 +159,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult EditService(int? id)
         {
             var service = id.HasValue
@@ -172,7 +172,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult EditService(StoreService model, HttpPostedFileBase imageFile, bool removeImage = false)
         {
             if (string.IsNullOrWhiteSpace(model.Title))
@@ -196,6 +196,7 @@ namespace NikooSystem.Controllers
             model.Description = Clip(model.Description, 1000);
             model.DurationMinutes = Math.Max(5, Math.Min(480, model.DurationMinutes));
             model.Price = Math.Max(0, model.Price);
+            model.Mode = Kind.IsCampus ? CampusDelivery.Normalize(model.Mode) : existing?.Mode;
             model.StaffIds = (model.StaffIds ?? new List<int>()).Where(staffIds.Contains).Distinct().ToList();
             model.IsSample = false;
             model = TenantStore.SaveService(CompanyCode, model);
@@ -204,7 +205,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult DeleteService(int id)
         {
             TenantStore.DeleteService(CompanyCode, id);
@@ -213,7 +214,7 @@ namespace NikooSystem.Controllers
 
         // ---- Staff and working hours
 
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Staff(GridQuery query)
         {
             var rows = TenantStore.GetStaff(CompanyCode).AsEnumerable();
@@ -224,7 +225,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult EditStaff(int? id)
         {
             var staff = id.HasValue
@@ -269,7 +270,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult EditStaff(StoreStaff model, HttpPostedFileBase photoFile, bool removePhoto = false)
         {
             if (string.IsNullOrWhiteSpace(model.Name))
@@ -304,7 +305,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult DeleteStaff(int id)
         {
             var orphaned = TenantStore.DeleteStaff(CompanyCode, id);
@@ -316,7 +317,7 @@ namespace NikooSystem.Controllers
         // ---- Closed days and leave
 
         [HttpGet]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult TimeOff()
         {
             ViewBag.Staff = TenantStore.GetStaff(CompanyCode);
@@ -326,7 +327,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult AddTimeOff(int? staffId, string date, string startTime, string endTime, string reason, bool wholeDay = true)
         {
             var day = ParseBookingDate(date);
@@ -356,7 +357,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Booking)]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult DeleteTimeOff(int id)
         {
             TenantStore.DeleteTimeOff(CompanyCode, id);

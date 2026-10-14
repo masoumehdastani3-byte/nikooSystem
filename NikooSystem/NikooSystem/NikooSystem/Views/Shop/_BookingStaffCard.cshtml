@@ -21,5 +21,5 @@
     {
         <div class="bk-person-days"><i class="bi bi-calendar3"></i> @(string.Join("، ", days))</div>
     }
-    <a class="bk-btn-ghost" href="@Url.Action("Book","Shop", new { company, staffId = Model.Id })">نوبت از @Model.Name</a>
+    <a class="bk-btn-ghost" href="@Url.Action("Book","Shop", new { company, staffId = Model.Id })">@(((SiteKindInfo)ViewBag.Kind).IsCampus ? "جلسه با " : "نوبت از ")@Model.Name</a>
 </article>

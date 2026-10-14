@@ -194,10 +194,12 @@
             </div>
         }
 
-        @if (kind.IsBooking)
+        @if (kind.Schedules)
         {
-            <div class="col-12"><hr /><h5>نوبت‌دهی</h5>
-                <p class="text-muted small mb-0">ساعت کاری هر متخصص از صفحه <a href="@Url.Action("Staff","ShopAdmin", new { company })">متخصصان</a> و روزهای تعطیل از <a href="@Url.Action("TimeOff","ShopAdmin", new { company })">تعطیلی و مرخصی</a> تنظیم می‌شود.</p>
+            <div class="col-12"><hr /><h5>@(kind.IsCampus ? "کلاس خصوصی و رزرو سالن" : "نوبت‌دهی")</h5>
+                <p class="text-muted small mb-0">@(kind.IsCampus
+                    ? "ساعت کاری هر مدرس از صفحه مدرس‌ها و ساعت باز بودن سالن از صفحه سالن‌ها تنظیم می‌شود. درصد بیعانه فقط برای کلاس خصوصی است؛ شهریه کلاس گروهی و اجاره سالن کامل گرفته می‌شود."
+                    : "ساعت کاری هر متخصص از صفحه متخصصان و روزهای تعطیل از تعطیلی و مرخصی تنظیم می‌شود.")</p>
             </div>
             <div class="col-md-4">
                 <label class="form-label">فاصله شروع نوبت‌ها (دقیقه)</label>

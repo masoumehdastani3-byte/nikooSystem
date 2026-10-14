@@ -23,6 +23,9 @@ namespace NikooSystem.Helpers
         public bool IsDigital => Id == SiteKinds.Digital;
         public bool IsContent => Id == SiteKinds.Content;
         public bool IsBooking => Id == SiteKinds.Booking;
+        public bool IsCampus => Id == SiteKinds.Campus;
+        /// <summary>Staff hours and appointments: clinics, and the private lessons of an academy or sports club.</summary>
+        public bool Schedules => IsBooking || IsCampus;
         /// <summary>Sells something: has a catalogue, cart, checkout, orders and customers.</summary>
         public bool Sells => IsShop || IsDigital;
         /// <summary>Receives money online (orders, or deposits of appointments), so it has a payment gateway.</summary>
@@ -37,6 +40,7 @@ namespace NikooSystem.Helpers
         public const string Digital = "digital";
         public const string Content = "content";
         public const string Booking = "booking";
+        public const string Campus = "campus";
 
         public static readonly IReadOnlyList<SiteKindInfo> All = new List<SiteKindInfo>
         {
@@ -103,6 +107,22 @@ namespace NikooSystem.Helpers
                     "ساعت کاری هفتگی هر متخصص، تعطیلی و مرخصی",
                     "تقویم هفتگی نوبت‌ها و ثبت نوبت تلفنی در پنل",
                     "بیعانه آنلاین با زرین‌پال، پیگیری و لغو نوبت"
+                }
+            },
+            new SiteKindInfo
+            {
+                Id = Campus,
+                Name = "آموزشگاه و باشگاه ورزشی",
+                Description = "کلاس گروهی، کلاس خصوصی آنلاین یا حضوری، و رزرو ساعتی سالن و زمین",
+                Icon = "bi-trophy",
+                ItemsLabel = "کلاس‌ها",
+                Features = new[]
+                {
+                    "تعریف کلاس و دوره با ظرفیت، شهریه، سطح و گروه سنی",
+                    "ثبت‌نام آنلاین و ثبت‌نام تلفنی، با کد پیگیری",
+                    "کلاس خصوصی با مدرس، حضوری یا آنلاین، روی ساعت کاری خودش",
+                    "رزرو ساعتی سالن، زمین و میز؛ مثل فوتبال و پینگ‌پونگ",
+                    "پرداخت شهریه و اجاره با زرین‌پال و خبر فوری در بله"
                 }
             }
         };

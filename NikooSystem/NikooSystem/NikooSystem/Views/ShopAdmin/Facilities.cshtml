@@ -1,0 +1,38 @@
+@model List<StoreFacility>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "سالن‌ها و زمین‌ها";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">سالن‌ها و زمین‌ها</h2>
+    <a class="btn-store" href="@Url.Action("EditFacility","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> سالن جدید</a>
+</div>
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>نام</th><th>مدت هر نوبت</th><th>ظرفیت همزمان</th><th>قیمت هر نوبت</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>
+                        <div class="fw-bold">@item.Title</div>
+                        @if (!string.IsNullOrWhiteSpace(item.Place)) { <div class="small text-muted">@item.Place</div> }
+                    </td>
+                    <td>@BookingTime.Duration(item.SlotMinutes)</td>
+                    <td>@item.Capacity.ToFa()</td>
+                    <td>@(item.Price > 0 ? item.Price.ToToman() : "رایگان")</td>
+                    <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("EditFacility", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                        @Html.IconPost("DeleteFacility", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این سالن حذف شود؟ رزروهای قبلی می‌مانند.")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="6">هنوز سالنی تعریف نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

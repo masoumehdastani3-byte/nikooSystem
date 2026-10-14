@@ -51,8 +51,12 @@
                 new { Key = "Orders", Label = kind.Sells ? "سفارش" : "-", Icon = "bi-receipt" },
                 new { Key = "Customers", Label = kind.Sells ? "مشتری" : "-", Icon = "bi-people" },
                 new { Key = "Posts", Label = kind.IsContent ? "مطلب" : "-", Icon = "bi-file-text" },
-                new { Key = "Services", Label = kind.IsBooking ? "خدمت" : "-", Icon = "bi-clipboard-check" },
-                new { Key = "Appointments", Label = kind.IsBooking ? "نوبت" : "-", Icon = "bi-calendar-check" },
+                new { Key = "Services", Label = kind.Schedules ? (kind.IsCampus ? "کلاس خصوصی" : "خدمت") : "-", Icon = "bi-clipboard-check" },
+                new { Key = "Appointments", Label = kind.Schedules ? (kind.IsCampus ? "جلسه خصوصی" : "نوبت") : "-", Icon = "bi-calendar-check" },
+                new { Key = "Classes", Label = kind.IsCampus ? "کلاس" : "-", Icon = "bi-easel" },
+                new { Key = "Enrollments", Label = kind.IsCampus ? "ثبت‌نام" : "-", Icon = "bi-person-check" },
+                new { Key = "Facilities", Label = kind.IsCampus ? "سالن" : "-", Icon = "bi-trophy" },
+                new { Key = "FacilityBookings", Label = kind.IsCampus ? "رزرو سالن" : "-", Icon = "bi-calendar-week" },
                 new { Key = "ContactMessages", Label = "پیام", Icon = "bi-envelope" }
             }.Where(c => c.Label != "-"))
             {

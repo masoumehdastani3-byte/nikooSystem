@@ -8,7 +8,7 @@
 <input type="hidden" name="LayoutStyle" id="LayoutStyle" value="@current" />
 <p class="text-muted small mb-2">
     <i class="bi bi-info-circle"></i>
-    تصویر هر قالب، صفحه اول <strong>@(ViewBag.PickerSite as string ?? "سایت خودتان")</strong> با همان @(kind.IsContent ? "مطالب" : kind.IsBooking ? "خدمات" : "محصولات") و اطلاعات است. برای دیدن کامل و گشتن در صفحات، «پیش‌نمایش بزرگ» را بزنید.
+    تصویر هر قالب، صفحه اول <strong>@(ViewBag.PickerSite as string ?? "سایت خودتان")</strong> با همان @(kind.IsContent ? "مطالب" : kind.IsCampus ? "کلاس‌ها" : kind.IsBooking ? "خدمات" : "محصولات") و اطلاعات است. برای دیدن کامل و گشتن در صفحات، «پیش‌نمایش بزرگ» را بزنید.
 </p>
 <div class="tpl-grid">
     @foreach (var t in StoreTemplates.ForKind(kind.Id))

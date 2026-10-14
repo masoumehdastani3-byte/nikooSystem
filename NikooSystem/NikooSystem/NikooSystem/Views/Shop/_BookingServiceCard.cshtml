@@ -19,6 +19,10 @@
         }
         <div class="bk-service-meta">
             <span><i class="bi bi-clock"></i> @BookingTime.Duration(Model.DurationMinutes)</span>
+            @if (!string.IsNullOrEmpty(Model.Mode) && CampusDelivery.Normalize(Model.Mode) != CampusDelivery.InPerson)
+            {
+                <span><i class="bi bi-camera-video"></i> @CampusDelivery.Text(Model.Mode)</span>
+            }
             <span class="bk-price">@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</span>
         </div>
     </div>

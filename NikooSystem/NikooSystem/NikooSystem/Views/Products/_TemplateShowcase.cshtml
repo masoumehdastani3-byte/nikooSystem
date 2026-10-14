@@ -4,7 +4,7 @@
     var kind = SiteKinds.Get(type.Kind);
     string demoCode;
     NikooSystem.Services.TenantStore.DemoBySlug.TryGetValue(type.Id, out demoCode);
-    var subject = kind.IsContent ? "سایت" : kind.IsBooking ? "سامانه نوبت‌دهی" : "فروشگاه";
+    var subject = kind.IsContent ? "سایت" : kind.IsCampus ? "آموزشگاه و باشگاه" : kind.IsBooking ? "سامانه نوبت‌دهی" : "فروشگاه";
     // The preview popup and its script are shared by every showcase on the page.
     var first = Context.Items["TemplateShowcase"] == null;
     Context.Items["TemplateShowcase"] = true;

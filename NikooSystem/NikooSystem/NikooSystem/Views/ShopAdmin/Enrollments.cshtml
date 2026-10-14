@@ -1,0 +1,72 @@
+@model List<StoreEnrollment>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "ثبت‌نام‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var classes = (List<StoreClass>)ViewBag.Classes;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">ثبت‌نام کلاس‌ها</h2>
+</div>
+@if (classes.Any())
+{
+    <div class="panel-card mb-3">
+        <h5>ثبت‌نام تلفنی</h5>
+        @using (Html.BeginForm("ManualEnroll", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="col-md-4">
+                <label class="form-label">کلاس</label>
+                <select class="form-select" name="classId" required>
+                    @foreach (var item in classes.Where(c => c.IsActive))
+                    {
+                        <option value="@item.Id">@item.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">نام</label>
+                <input class="form-control" name="customerName" maxlength="80" required />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">موبایل</label>
+                <input class="form-control" name="customerMobile" dir="ltr" maxlength="14" required placeholder="09121234567" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn-store w-100" type="submit">ثبت</button>
+            </div>
+        }
+    </div>
+}
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>کد</th><th>کلاس</th><th>دانشجو</th><th>شهریه</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td dir="ltr" class="font-monospace">@item.Code</td>
+                    <td>@item.ClassTitle</td>
+                    <td>@item.CustomerName<div class="small text-muted" dir="ltr">@item.CustomerMobile</div></td>
+                    <td>@(item.PaidAmount > 0 ? item.PaidAmount.ToToman() : (item.Price > 0 ? item.Price.ToToman() : "رایگان"))</td>
+                    <td><span class="badge @item.Status.StatusBadgeClass()">@item.Status.StatusText()</span></td>
+                    <td class="row-actions">
+                        @if (item.Status == AppointmentStatus.PendingPayment || item.Status == AppointmentStatus.Cancelled)
+                        {
+                            @Html.IconPost("SetEnrollmentStatus", new { id = item.Id, status = AppointmentStatus.Confirmed }, "bi-check2", "تأیید", "is-view")
+                        }
+                        @if (item.Status == AppointmentStatus.Confirmed)
+                        {
+                            @Html.IconPost("SetEnrollmentStatus", new { id = item.Id, status = AppointmentStatus.Completed }, "bi-check2-circle", "پایان دوره", "is-view")
+                            @Html.IconPost("SetEnrollmentStatus", new { id = item.Id, status = AppointmentStatus.Cancelled }, "bi-x-lg", "لغو", "is-delete", "این ثبت‌نام لغو شود؟")
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="6">هنوز ثبت‌نامی نیست.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -285,6 +285,18 @@ namespace NikooSystem.Helpers
                 SecondaryColor = "#fce7f3",
                 PreviewGradient = "linear-gradient(135deg,#be185d,#f9a8d4 55%,#fdf2f8)",
                 Kinds = new[] { SiteKinds.Booking }
+            },
+            new StoreTemplateInfo
+            {
+                Id = "club",
+                Name = "باشگاه و آموزشگاه",
+                Description = "هیرو با سه راه کلاس، جلسه خصوصی و رزرو سالن، کارت کلاس‌ها و معرفی مربی‌ها",
+                PrimaryColor = "#15803d",
+                SecondaryColor = "#dcfce7",
+                PreviewGradient = "linear-gradient(135deg,#14532d,#22c55e 55%,#f0fdf4)",
+                Kinds = new[] { SiteKinds.Campus },
+                Kicker = "کلاس، مربی، سالن",
+                Topbar = "کلاس گروهی · جلسه خصوصی آنلاین یا حضوری · رزرو ساعتی سالن"
             }
         };
 
