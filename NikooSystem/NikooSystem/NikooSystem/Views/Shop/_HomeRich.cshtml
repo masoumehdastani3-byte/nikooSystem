@@ -29,7 +29,6 @@
 {
     case "deals":
         var deals = (ViewBag.Deals as List<StoreProduct>) ?? new List<StoreProduct>();
-        if (deals.Any())
         {
             <section class="rh-deals-wrap" id="sec-deals">
                 <div class="container">
@@ -37,22 +36,28 @@
                         <div class="rh-deals-intro">
                             <span class="rh-deals-icon"><i class="bi bi-lightning-charge"></i></span>
                             <h2>@(sec.Title ?? "پیشنهاد شگفت‌انگیز")</h2>
-                            <p>تخفیف‌های ویژه امروز</p>
-                            <div class="rh-countdown" data-rh-countdown dir="ltr" aria-label="زمان باقی‌مانده تا پایان امروز">
-                                <span><b data-h>۰۰</b><small>ساعت</small></span>
-                                <i>:</i>
-                                <span><b data-m>۰۰</b><small>دقیقه</small></span>
-                                <i>:</i>
-                                <span><b data-s>۰۰</b><small>ثانیه</small></span>
-                            </div>
+                            <p>@(deals.Any() ? "تخفیف‌های ویژه امروز" : "به‌زودی کالاهای تخفیف‌دار اینجا قرار می‌گیرد.")</p>
+                            @if (deals.Any())
+                            {
+                                <div class="rh-countdown" data-rh-countdown dir="ltr" aria-label="زمان باقی‌مانده تا پایان امروز">
+                                    <span><b data-h>۰۰</b><small>ساعت</small></span>
+                                    <i>:</i>
+                                    <span><b data-m>۰۰</b><small>دقیقه</small></span>
+                                    <i>:</i>
+                                    <span><b data-s>۰۰</b><small>ثانیه</small></span>
+                                </div>
+                            }
                             <a class="rh-deals-more" href="@Url.Action("Catalog","Shop", new { company, onSale = true })">همه تخفیف‌ها <i class="bi bi-arrow-left"></i></a>
                         </div>
-                        <div class="rh-deals-track">
-                            @foreach (var p in deals)
-                            {
-                                <div class="rh-deals-item">@Html.Partial("_StoreProductCard", p)</div>
-                            }
-                        </div>
+                        @if (deals.Any())
+                        {
+                            <div class="rh-deals-track">
+                                @foreach (var p in deals)
+                                {
+                                    <div class="rh-deals-item">@Html.Partial("_StoreProductCard", p)</div>
+                                }
+                            </div>
+                        }
                     </div>
                 </div>
             </section>
@@ -117,6 +122,7 @@
 
     case "stats":
         var stats = HomeSections.ItemsOf(sec.Items, 2);
+        if (!stats.Any()) { stats = HomeSections.ItemsOf(HomeSections.Type("stats").ItemsSample, 2); }
         if (stats.Any())
         {
             <section class="rh-section rh-stats-wrap" id="sec-stats">
@@ -138,6 +144,7 @@
 
     case "whyus":
         var perks = HomeSections.ItemsOf(sec.Items, 2);
+        if (!perks.Any()) { perks = HomeSections.ItemsOf(HomeSections.Type("whyus").ItemsSample, 2); }
         if (perks.Any())
         {
             <section class="rh-section" id="sec-whyus">
@@ -181,6 +188,10 @@
     case "reviews":
         var real = kind.IsContent ? null : ViewBag.HomeReviews as List<KeyValuePair<StoreProductReview, StoreProduct>>;
         var written = HomeSections.ItemsOf(sec.Items, 3);
+        if (!written.Any() && (real == null || !real.Any()))
+        {
+            written = HomeSections.ItemsOf(HomeSections.Type("reviews").ItemsSample, 3);
+        }
         if ((real != null && real.Any()) || written.Any())
         {
             <section class="rh-section rh-reviews-wrap" id="sec-reviews">
@@ -231,6 +242,7 @@
     case "faq":
         var faqs = HomeSections.ItemsOf(sec.Items, 2).Where(f => f[1].Length > 0).ToList();
         if (!faqs.Any() && !kind.IsContent) { faqs = HomeSections.DefaultShopFaq(settings, kind); }
+        if (!faqs.Any()) { faqs = HomeSections.ItemsOf(HomeSections.Type("faq").ItemsSample, 2).Where(f => f[1].Length > 0).ToList(); }
         if (faqs.Any())
         {
             Html.Seo().Schemas.Add(SeoPages.Faq(faqs.Select(f => new SiteFaq { Question = f[0], Answer = f[1] })));

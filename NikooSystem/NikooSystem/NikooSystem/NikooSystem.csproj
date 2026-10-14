@@ -415,6 +415,7 @@
     <Content Include="Views\Shop\FacilityReservation.cshtml" />
     <Content Include="Views\Shop\CampusTrack.cshtml" />
     <Content Include="Views\Shop\_CampusClassCard.cshtml" />
+    <Content Include="Views\Shop\_CampusCore.cshtml" />
     <Content Include="Views\Shop\_CampusFacilityCard.cshtml" />
     <Content Include="Views\Shop\Services.cshtml" />
     <Content Include="Views\Shop\Book.cshtml" />

@@ -26,8 +26,8 @@ namespace NikooSystem.Helpers
         internal static readonly string[] Selling = { SiteKinds.Shop, SiteKinds.Digital };
         internal static readonly string[] Marketing = { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content };
         internal static readonly string[] ContentOnly = { SiteKinds.Content };
-        internal static readonly string[] Every = { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Booking };
-        internal static readonly string[] BookingOnly = { SiteKinds.Booking };
+        internal static readonly string[] Every = { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus };
+        internal static readonly string[] BookingOnly = { SiteKinds.Booking, SiteKinds.Campus };
     }
 
     public static class HomeSections
@@ -44,24 +44,24 @@ namespace NikooSystem.Helpers
             new HomeSectionType { Id = "topics", Name = "مطالب هر سرویس", Icon = "bi-columns-gap", Hint = "چند مطلب آخر هر دسته کنار هم", HasTitle = true, Kinds = new[] { SiteKinds.Content } },
             new HomeSectionType { Id = "gallery", Name = "گالری", Icon = "bi-images", Hint = "تصاویر گالری سایت", HasTitle = true, Kinds = HomeSectionType.Every },
             new HomeSectionType { Id = "about", Name = "درباره ما", Icon = "bi-info-circle", Hint = "متن معرفی", Kinds = HomeSectionType.Every },
-            new HomeSectionType { Id = "contact", Name = "فرم تماس", Icon = "bi-envelope", Hint = "اطلاعات تماس و فرم ارسال پیام", HasTitle = true, Kinds = new[] { SiteKinds.Content, SiteKinds.Booking } },
+            new HomeSectionType { Id = "contact", Name = "فرم تماس", Icon = "bi-envelope", Hint = "اطلاعات تماس و فرم ارسال پیام", HasTitle = true, Kinds = new[] { SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus } },
             new HomeSectionType { Id = "services", Name = "خدمات و تعرفه‌ها", Icon = "bi-clipboard-check", Hint = "کارت هر خدمت با مدت، هزینه و دکمه رزرو", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
             new HomeSectionType { Id = "staff", Name = "متخصصان", Icon = "bi-person-badge", Hint = "معرفی پزشکان، آرایشگرها یا مشاوران با دکمه رزرو", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
             new HomeSectionType { Id = "hours", Name = "ساعت کاری و مراحل رزرو", Icon = "bi-clock", Hint = "روزها و ساعت‌های پذیرش و سه قدم رزرو آنلاین", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
-            new HomeSectionType { Id = "deals", Name = "پیشنهاد شگفت‌انگیز", Icon = "bi-lightning-charge", Hint = "کالاهای تخفیف‌دار با درصد تخفیف و شمارش معکوس تا پایان روز", HasTitle = true },
+            new HomeSectionType { Id = "deals", Name = "پیشنهاد شگفت‌انگیز", Icon = "bi-lightning-charge", Hint = "کالاهایی که قیمت قبل از تخفیف دارند، با درصد تخفیف و شمارش معکوس تا پایان روز. اگر چنین کالایی نباشد، فقط عنوان بخش دیده می‌شود.", HasTitle = true },
             new HomeSectionType { Id = "newest", Name = "تازه‌ترین کالاها", Icon = "bi-stars", Hint = "آخرین کالاهایی که به فروشگاه اضافه کرده‌اید", HasTitle = true },
             new HomeSectionType
             {
                 Id = "stats", Name = "آمار و افتخارات", Icon = "bi-bar-chart", Hint = "چند عدد کلیدی مثل سال‌های تجربه یا تعداد مشتریان", HasTitle = true,
                 Kinds = HomeSectionType.Marketing,
-                ItemsHint = "هر خط یک عدد: «عدد | توضیح». تا وقتی خالی است، این بخش در سایت نمایش داده نمی‌شود.",
+                ItemsHint = "هر خط یک عدد: «عدد | توضیح». اگر خالی بماند، چند عدد نمونه در سایت نشان داده می‌شود.",
                 ItemsSample = "+۱۰ | سال تجربه\n+۲۵۰۰ | مشتری راضی\n۲۴ ساعته | پاسخ‌گویی"
             },
             new HomeSectionType
             {
                 Id = "whyus", Name = "چرا ما؟", Icon = "bi-award", Hint = "مزیت‌های شما در کارت‌های آیکون‌دار", HasTitle = true,
                 Kinds = HomeSectionType.ContentOnly,
-                ItemsHint = "هر خط یک مزیت: «عنوان | توضیح کوتاه». تا وقتی خالی است، این بخش نمایش داده نمی‌شود.",
+                ItemsHint = "هر خط یک مزیت: «عنوان | توضیح کوتاه». اگر خالی بماند، چند مزیت نمونه در سایت نشان داده می‌شود.",
                 ItemsSample = "تیم متخصص | کارشناسان باتجربه در همه مراحل کنار شما هستند\nتحویل به‌موقع | برنامه زمانی شفاف و گزارش پیشرفت"
             },
             new HomeSectionType
@@ -75,7 +75,7 @@ namespace NikooSystem.Helpers
             {
                 Id = "reviews", Name = "نظر مشتریان", Icon = "bi-chat-quote", Hint = "در فروشگاه: نظرهای تأییدشده ۴ و ۵ ستاره خریداران؛ در سایت شرکتی: رضایت‌نامه‌هایی که می‌نویسید", HasTitle = true,
                 Kinds = HomeSectionType.Marketing,
-                ItemsHint = "هر خط یک نظر: «نام | سمت یا شهر | متن نظر». در فروشگاه فقط وقتی نمایش داده می‌شود که هنوز نظر تأییدشده‌ای از خریداران ندارید.",
+                ItemsHint = "هر خط یک نظر: «نام | سمت یا شهر | متن نظر». در فروشگاه تا وقتی نظر تأییدشده‌ای از خریداران نباشد همین متن‌ها نشان داده می‌شوند؛ اگر هر دو خالی باشند یک نمونه نمایش داده می‌شود.",
                 ItemsSample = "مهندس رضایی | مدیر فنی، شرکت آلفا | همکاری دقیق و حرفه‌ای بود و پروژه سر وقت تحویل شد."
             },
             new HomeSectionType
@@ -121,9 +121,9 @@ namespace NikooSystem.Helpers
 
         private static readonly Dictionary<string, string[]> TemplateSections = new Dictionary<string, string[]>
         {
-            { "fashion", new[] { "hero", "features", "categories", "deals", "featured", "promo", "newest", "stats", "reviews", "about", "faq", "cta" } },
+            { "fashion", new[] { "hero", "features", "categories", "deals", "featured", "promo", "newest", "stats", "reviews", "about", "gallery", "faq", "cta" } },
             { "minimal", new[] { "hero", "featured", "deals", "newest", "stats", "reviews", "about", "gallery", "faq", "cta" } },
-            { "marketplace", new[] { "hero", "features", "deals", "featured", "promo", "newest", "stats", "reviews", "faq", "cta" } },
+            { "marketplace", new[] { "hero", "features", "deals", "featured", "promo", "newest", "stats", "reviews", "gallery", "faq", "cta" } },
             { "boutique", new[] { "hero", "categories", "featured", "deals", "newest", "stats", "gallery", "reviews", "faq", "cta" } },
             { "organic", new[] { "hero", "categories", "deals", "featured", "promo", "newest", "stats", "reviews", "gallery", "about", "faq", "cta" } },
             { "magazine", new[] { "headline", "latest", "topics", "gallery", "about" } },

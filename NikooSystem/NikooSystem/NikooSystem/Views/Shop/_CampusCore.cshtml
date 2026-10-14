@@ -1,0 +1,40 @@
+@{
+    var company = (string)ViewBag.CompanyCode;
+    var classes = (List<StoreClass>)ViewBag.Classes ?? new List<StoreClass>();
+    var facilities = (List<StoreFacility>)ViewBag.Facilities ?? new List<StoreFacility>();
+}
+@if (classes.Any())
+{
+    <section class="cn-section bk-section">
+        <div class="container">
+            <div class="cn-head">
+                <h2 class="cn-block-title">کلاس‌ها و دوره‌ها</h2>
+                <a class="hs-more" href="@Url.Action("Classes","Shop", new { company })">همه کلاس‌ها <i class="bi bi-arrow-left"></i></a>
+            </div>
+            <div class="bk-services">
+                @foreach (var item in classes.Take(6))
+                {
+                    @Html.Partial("_CampusClassCard", item)
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@if (facilities.Any())
+{
+    <section class="cn-section bk-section bk-section-alt">
+        <div class="container">
+            <div class="cn-head">
+                <h2 class="cn-block-title">سالن‌ها و زمین‌ها</h2>
+                <a class="hs-more" href="@Url.Action("Facilities","Shop", new { company })">رزرو ساعتی <i class="bi bi-arrow-left"></i></a>
+            </div>
+            <div class="bk-services">
+                @foreach (var item in facilities.Take(6))
+                {
+                    @Html.Partial("_CampusFacilityCard", item)
+                }
+            </div>
+        </div>
+    </section>
+}

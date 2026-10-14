@@ -2,113 +2,220 @@
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
-    var classes = (List<StoreClass>)ViewBag.Classes;
-    var facilities = (List<StoreFacility>)ViewBag.Facilities;
-    var services = (List<StoreService>)ViewBag.Services;
-    var staff = (List<StoreStaff>)ViewBag.Staff;
+    var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
+    var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
+    var classes = (List<StoreClass>)ViewBag.Classes ?? new List<StoreClass>();
+    var facilities = (List<StoreFacility>)ViewBag.Facilities ?? new List<StoreFacility>();
+    var services = (List<StoreService>)ViewBag.Services ?? new List<StoreService>();
+    var staff = (List<StoreStaff>)ViewBag.Staff ?? new List<StoreStaff>();
     var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.jpg";
+    var placeCore = true;
     ViewBag.Title = "کلاس، دوره و رزرو سالن";
 }
-<section class="bk-hero">
-    <div class="container">
-        <div class="bk-hero-grid">
-            <div class="bk-hero-copy">
-                @if (!string.IsNullOrWhiteSpace(settings.Tagline))
-                {
-                    <div class="bk-kicker"><i class="bi bi-trophy"></i> @settings.Tagline</div>
-                }
-                <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
-                @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))
-                {
-                    <p>@settings.HeroSubtitle</p>
-                }
-                <div class="bk-hero-actions">
-                    <a class="btn-wm bk-btn-lg" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> کلاس‌ها و دوره‌ها</a>
-                    <a class="bk-btn-ghost" href="@Url.Action("Facilities","Shop", new { company })"><i class="bi bi-calendar-week"></i> رزرو سالن</a>
+
+@foreach (var sec in sections)
+{
+    if (sec.Type == "hero")
+    {
+        <section class="bk-hero">
+            <div class="container">
+                <div class="bk-hero-grid">
+                    <div class="bk-hero-copy">
+                        @if (!string.IsNullOrWhiteSpace(settings.Tagline))
+                        {
+                            <div class="bk-kicker"><i class="bi bi-trophy"></i> @settings.Tagline</div>
+                        }
+                        <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                        @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))
+                        {
+                            <p>@settings.HeroSubtitle</p>
+                        }
+                        <div class="bk-hero-actions">
+                            <a class="btn-wm bk-btn-lg" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> کلاس‌ها و دوره‌ها</a>
+                            <a class="bk-btn-ghost" href="@Url.Action("Facilities","Shop", new { company })"><i class="bi bi-calendar-week"></i> رزرو سالن</a>
+                        </div>
+                        <ul class="bk-hero-facts">
+                            <li><i class="bi bi-people"></i> کلاس گروهی با ظرفیت مشخص</li>
+                            <li><i class="bi bi-camera-video"></i> کلاس خصوصی آنلاین یا حضوری</li>
+                            <li><i class="bi bi-stopwatch"></i> رزرو ساعتی زمین و سالن</li>
+                        </ul>
+                    </div>
+                    <div class="bk-hero-media" style="--bk-hero:url('@heroImg')">
+                        <div class="bk-hero-card">
+                            <strong><i class="bi bi-signpost"></i> از کجا شروع کنید</strong>
+                            <a href="@Url.Action("Classes","Shop", new { company })"><span>ثبت‌نام کلاس گروهی</span><small>@classes.Count.ToFa() کلاس</small></a>
+                            <a href="@Url.Action("Book","Shop", new { company })"><span>کلاس با مدرس خصوصی</span><small>آنلاین یا حضوری</small></a>
+                            <a href="@Url.Action("Facilities","Shop", new { company })"><span>رزرو سالن و میز</span><small>ساعتی</small></a>
+                        </div>
+                    </div>
                 </div>
-                <ul class="bk-hero-facts">
-                    <li><i class="bi bi-people"></i> کلاس گروهی با ظرفیت مشخص</li>
-                    <li><i class="bi bi-camera-video"></i> کلاس خصوصی آنلاین یا حضوری</li>
-                    <li><i class="bi bi-stopwatch"></i> رزرو ساعتی زمین و سالن</li>
-                </ul>
             </div>
-            <div class="bk-hero-media" style="--bk-hero:url('@heroImg')">
-                <div class="bk-hero-card">
-                    <strong><i class="bi bi-signpost"></i> از کجا شروع کنید</strong>
-                    <a href="@Url.Action("Classes","Shop", new { company })"><span>ثبت‌نام کلاس گروهی</span><small>@classes.Count.ToFa() کلاس</small></a>
-                    <a href="@Url.Action("Book","Shop", new { company })"><span>کلاس با مدرس خصوصی</span><small>آنلاین یا حضوری</small></a>
-                    <a href="@Url.Action("Facilities","Shop", new { company })"><span>رزرو سالن و میز</span><small>ساعتی</small></a>
+        </section>
+        placeCore = false;
+        @Html.Partial("_CampusCore")
+    }
+    else if (sec.Type == "services" && services.Any())
+    {
+        <section class="cn-section bk-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? "کلاس خصوصی")</h2>
+                    <a class="hs-more" href="@Url.Action("Book","Shop", new { company })">رزرو وقت <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="bk-services">
+                    @foreach (var s in services.Take(6))
+                    {
+                        @Html.Partial("_BookingServiceCard", s)
+                    }
                 </div>
             </div>
-        </div>
-    </div>
-</section>
-
-@if (classes.Any())
-{
-    <section class="cn-section bk-section">
-        <div class="container">
-            <div class="cn-head">
-                <h2 class="cn-block-title">کلاس‌ها و دوره‌ها</h2>
-                <a class="hs-more" href="@Url.Action("Classes","Shop", new { company })">همه کلاس‌ها <i class="bi bi-arrow-left"></i></a>
+        </section>
+    }
+    else if (sec.Type == "staff" && staff.Any())
+    {
+        <section class="cn-section bk-section bk-section-alt">
+            <div class="container">
+                <h2 class="cn-block-title">@(sec.Title ?? "مدرس‌ها و مربی‌ها")</h2>
+                <div class="bk-staff-grid">
+                    @foreach (var p in staff)
+                    {
+                        @Html.Partial("_BookingStaffCard", p)
+                    }
+                </div>
             </div>
-            <div class="bk-services">
-                @foreach (var item in classes.Take(6))
-                {
-                    @Html.Partial("_CampusClassCard", item)
-                }
+        </section>
+    }
+    else if (sec.Type == "hours" && staff.Any())
+    {
+        var week = Enumerable.Range(0, 7).Select(d => new
+        {
+            Day = d,
+            Hours = staff.SelectMany(p => p.HoursOn(d)).ToList()
+        }).ToList();
+        <section class="cn-section bk-section">
+            <div class="container">
+                <div class="row g-4 align-items-stretch">
+                    <div class="col-lg-6">
+                        <div class="bk-panel h-100">
+                            <h2 class="cn-block-title">@(sec.Title ?? "ساعت کلاس خصوصی")</h2>
+                            <ul class="bk-hours">
+                                @foreach (var d in week)
+                                {
+                                    <li class="@(d.Day == BookingTime.DayOf(DateTime.Today) ? "is-today" : "")">
+                                        <span>@BookingTime.DayNames[d.Day]</span>
+                                        @if (d.Hours.Any())
+                                        {
+                                            <strong>@BookingTime.Clock(d.Hours.Min(h => h.StartMinute)) تا @BookingTime.Clock(d.Hours.Max(h => h.EndMinute))</strong>
+                                        }
+                                        else
+                                        {
+                                            <em>تعطیل</em>
+                                        }
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="bk-panel bk-steps h-100">
+                            <h2 class="cn-block-title">رزرو در سه قدم</h2>
+                            <ol>
+                                <li><i class="bi bi-easel"></i><div><strong>کلاس یا سالن</strong><span>کلاس گروهی، جلسه خصوصی یا زمین را انتخاب کنید.</span></div></li>
+                                <li><i class="bi bi-calendar3"></i><div><strong>روز و ساعت</strong><span>فقط زمان‌های خالی سالن و مدرس نمایش داده می‌شوند.</span></div></li>
+                                <li><i class="bi bi-check2-circle"></i><div><strong>ثبت و کد پیگیری</strong><span>نام و موبایل را وارد کنید و کد پیگیری را بگیرید.</span></div></li>
+                            </ol>
+                            <a class="btn-wm" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> شروع ثبت‌نام</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-        </div>
-    </section>
+        </section>
+    }
+    else if (sec.Type == "gallery" && gallery.Any())
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-head">
+                    <h2 class="cn-block-title">@(sec.Title ?? "گالری تصاویر")</h2>
+                    <a class="hs-more" href="@Url.Action("Gallery","Shop", new { company })">همه تصاویر <i class="bi bi-arrow-left"></i></a>
+                </div>
+                <div class="gallery-grid">
+                    @foreach (var g in gallery)
+                    {
+                        <a class="gallery-item" href="@(g.LargeUrl ?? g.ThumbUrl)" target="_blank" rel="noopener">
+                            <img src="@(g.ThumbUrl ?? g.LargeUrl)" alt="@g.Title" loading="lazy" />
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "about" && !string.IsNullOrWhiteSpace(settings.About))
+    {
+        <section class="cn-section">
+            <div class="container">
+                <div class="cn-about">
+                    <div>
+                        <h2>درباره @settings.StoreName</h2>
+                        <p>@settings.About</p>
+                    </div>
+                    <a class="btn-wm" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر بدانید</a>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "contact")
+    {
+        <section class="cn-section cn-contact-band">
+            <div class="container">
+                <div class="row g-4 align-items-center">
+                    <div class="col-lg-5">
+                        <h2 class="cn-block-title">@(sec.Title ?? "پرسشی دارید؟")</h2>
+                        <p class="text-muted">برای هماهنگی کلاس، سالن یا هر پرسشی پیام بگذارید تا با شما تماس بگیریم.</p>
+                        @if (!string.IsNullOrWhiteSpace(settings.Phone)) { <div class="mb-1"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Email)) { <div class="mb-1"><i class="bi bi-envelope"></i> @settings.Email</div> }
+                        @if (!string.IsNullOrWhiteSpace(settings.Address)) { <div><i class="bi bi-geo-alt"></i> @settings.Address</div> }
+                    </div>
+                    <div class="col-lg-7">
+                        @using (Html.BeginForm("Contact", "Shop", new { company }, FormMethod.Post, new { @class = "cn-contact-form" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <div class="cn-hp" aria-hidden="true">
+                                <label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6"><input class="form-control" name="FullName" placeholder="نام *" maxlength="80" required /></div>
+                                <div class="col-md-6"><input class="form-control" name="Mobile" placeholder="شماره تماس" dir="ltr" maxlength="11" /></div>
+                                <div class="col-12"><textarea class="form-control" name="Message" rows="3" placeholder="پیام شما *" maxlength="4000" required></textarea></div>
+                            </div>
+                            <button class="btn-wm mt-2" type="submit"><i class="bi bi-envelope"></i> ارسال پیام</button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "banner" && !string.IsNullOrWhiteSpace(sec.Title))
+    {
+        <section class="hs-banner-wrap" id="sec-@sec.Id">
+            <div class="container">
+                <div class="hs-banner @(string.IsNullOrWhiteSpace(sec.ImageUrl) ? "" : "has-img")"
+                     style="@(string.IsNullOrWhiteSpace(sec.ImageUrl) ? null : "--hs-img:url('" + sec.ImageUrl + "')")">
+                    <div class="hs-banner-copy">
+                        <h2>@sec.Title</h2>
+                        @if (!string.IsNullOrWhiteSpace(sec.Subtitle)) { <p>@sec.Subtitle</p> }
+                        @if (!string.IsNullOrWhiteSpace(sec.LinkUrl))
+                        {
+                            <a class="btn-wm" href="@sec.LinkUrl">@(sec.ButtonText ?? "مشاهده")</a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </section>
+    }
 }
 
-@if (facilities.Any())
+@if (placeCore)
 {
-    <section class="cn-section bk-section bk-section-alt">
-        <div class="container">
-            <div class="cn-head">
-                <h2 class="cn-block-title">سالن‌ها و زمین‌ها</h2>
-                <a class="hs-more" href="@Url.Action("Facilities","Shop", new { company })">رزرو ساعتی <i class="bi bi-arrow-left"></i></a>
-            </div>
-            <div class="bk-services">
-                @foreach (var item in facilities.Take(6))
-                {
-                    @Html.Partial("_CampusFacilityCard", item)
-                }
-            </div>
-        </div>
-    </section>
-}
-
-@if (services.Any())
-{
-    <section class="cn-section bk-section">
-        <div class="container">
-            <div class="cn-head">
-                <h2 class="cn-block-title">کلاس خصوصی</h2>
-                <a class="hs-more" href="@Url.Action("Book","Shop", new { company })">رزرو وقت <i class="bi bi-arrow-left"></i></a>
-            </div>
-            <div class="bk-services">
-                @foreach (var s in services.Take(6))
-                {
-                    @Html.Partial("_BookingServiceCard", s)
-                }
-            </div>
-        </div>
-    </section>
-}
-
-@if (staff.Any())
-{
-    <section class="cn-section bk-section bk-section-alt">
-        <div class="container">
-            <h2 class="cn-block-title">مدرس‌ها و مربی‌ها</h2>
-            <div class="bk-staff-grid">
-                @foreach (var p in staff)
-                {
-                    @Html.Partial("_BookingStaffCard", p)
-                }
-            </div>
-        </div>
-    </section>
+    @Html.Partial("_CampusCore")
 }

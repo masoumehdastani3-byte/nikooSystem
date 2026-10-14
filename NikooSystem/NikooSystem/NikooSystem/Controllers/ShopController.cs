@@ -58,8 +58,9 @@ namespace NikooSystem.Controllers
             if (sections.Any(s => s.Type == "newest"))
             {
                 var shown = new HashSet<int>(sections.Any(s => s.Type == "featured") ? featured.Select(p => p.Id) : Enumerable.Empty<int>());
-                ViewBag.Newest = TenantStore.TopProducts(CompanyCode, "newest", null, null, 8 + shown.Count)
-                    .Where(p => !shown.Contains(p.Id)).Take(8).ToList();
+                var pool = TenantStore.TopProducts(CompanyCode, "newest", null, null, 8 + shown.Count);
+                var fresh = pool.Where(p => !shown.Contains(p.Id)).Take(8).ToList();
+                ViewBag.Newest = fresh.Any() ? fresh : pool.Take(8).ToList();
             }
             if (sections.Any(s => s.Type == "reviews"))
                 ViewBag.HomeReviews = TenantStore.HomeReviews(CompanyCode, 6);
