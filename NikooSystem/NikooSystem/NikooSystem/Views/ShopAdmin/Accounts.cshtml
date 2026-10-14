@@ -1,23 +1,37 @@
 @model PagedList<StoreLedgerAccount>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "سرفصل‌های حسابداری";
+    ViewBag.Title = "سرفصل حساب‌ها";
     var company = (string)ViewBag.CompanyCode;
+    var byId = (Dictionary<int, StoreLedgerAccount>)ViewBag.ById;
     var kinds = Enum.GetValues(typeof(AccountKind)).Cast<AccountKind>();
+    var levels = new[] { AccountLevel.Group, AccountLevel.General, AccountLevel.Subsidiary };
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">سرفصل‌ها</h2>
-    <a class="btn-store" href="@Url.Action("EditAccount","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> سرفصل جدید</a>
+    <h2 class="mb-0">سرفصل حساب‌ها</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-outline-store" href="@Url.Action("EditAccount","ShopAdmin", new { company, level = AccountLevel.Group })"><i class="bi bi-plus-lg"></i> گروه</a>
+        <a class="btn-outline-store" href="@Url.Action("EditAccount","ShopAdmin", new { company, level = AccountLevel.General })"><i class="bi bi-plus-lg"></i> حساب کل</a>
+        <a class="btn-store" href="@Url.Action("EditAccount","ShopAdmin", new { company, level = AccountLevel.Subsidiary })"><i class="bi bi-plus-lg"></i> حساب معین</a>
+    </div>
+</div>
+<div class="panel-card mb-3 small text-muted">
+    حساب‌ها سه سطح دارند: <b>گروه</b> (کد یک‌رقمی، مثل ۱ دارایی‌های جاری)، <b>کل</b> زیر گروه (کد دورقمی، مثل ۱۱ موجودی نقد و بانک) و <b>معین</b> زیر کل (کد چهاررقمی، مثل ۱۱۰۱ صندوق).
+    سند فقط به حساب معین می‌خورد و هر معین می‌تواند <a href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">حساب تفصیلی</a> سطح ۱ (شخص) و سطح ۲ (مرکز هزینه یا پروژه) بخواهد.
 </div>
 <div class="panel-card">
-    @Html.GridToolbar("جستجو در کد یا عنوان سرفصل…", new GridSelect("kind", "همه نوع‌ها", GridHtml.Options(kinds, k => k, k => AccountingText.Kind(k))))
+    @Html.GridToolbar("جستجو در کد یا عنوان حساب…",
+        new GridSelect("level", "همه سطح‌ها", GridHtml.Options(levels, l => l, l => AccountingText.Level(l))),
+        new GridSelect("kind", "همه نوع‌ها", GridHtml.Options(kinds, k => k, k => AccountingText.Kind(k))))
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
                 <tr>
                     @Html.SortHeader("code", "کد")
                     @Html.SortHeader("title", "عنوان")
+                    @Html.SortHeader("level", "سطح")
                     @Html.SortHeader("kind", "نوع")
+                    <th>تفصیلی</th>
                     <th>وضعیت</th>
                     <th></th>
                 </tr>
@@ -25,29 +39,55 @@
             <tbody>
                 @foreach (var item in Model)
                 {
+                    StoreLedgerAccount parentAccount;
+                    var hasParent = byId.TryGetValue(item.ParentId, out parentAccount);
+                    var indent = item.Level == AccountLevel.Group ? "0" : item.Level == AccountLevel.General ? "1.25rem" : "2.5rem";
                     <tr>
-                        <td dir="ltr">@item.Code</td>
+                        <td dir="ltr" class="@(item.Level == AccountLevel.Group ? "fw-bold" : null)">@item.Code</td>
                         <td>
-                            <div class="fw-bold">@item.Title</div>
-                            @if (item.IsSystem)
+                            <div style="padding-inline-start:@indent" class="@(item.Level != AccountLevel.Subsidiary ? "fw-bold" : null)">@item.Title</div>
+                            @if (hasParent)
                             {
-                                <div class="small text-muted">سرفصل پیش‌فرض</div>
+                                <div class="small text-muted" style="padding-inline-start:@indent">زیر @parentAccount.Code — @parentAccount.Title</div>
                             }
                         </td>
+                        <td><span class="badge @(item.Level == AccountLevel.Group ? "bg-dark" : item.Level == AccountLevel.General ? "bg-secondary" : "bg-light text-dark")">@AccountingText.Level(item.Level)</span></td>
                         <td>@AccountingText.Kind(item.Kind)</td>
-                        <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
+                        <td class="small">
+                            @if (item.IsPosting)
+                            {
+                                <div>سطح ۱: @AccountingText.Use(item.Detail1)</div>
+                                <div>سطح ۲: @AccountingText.Use(item.Detail2)</div>
+                            }
+                        </td>
+                        <td>
+                            @(item.IsActive ? "فعال" : "غیرفعال")
+                            @if (item.IsSystem)
+                            {
+                                <div class="small text-muted">پیش‌فرض</div>
+                            }
+                        </td>
                         <td class="row-actions">
+                            @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, accountId = item.Id }), "bi-journal-text", item.IsPosting ? "دفتر معین" : "دفتر کل", null)
+                            @if (item.Level == AccountLevel.Group)
+                            {
+                                @Html.IconLink(Url.Action("EditAccount", "ShopAdmin", new { company, level = AccountLevel.General, parent = item.Id }), "bi-plus-square", "حساب کل زیر این گروه", null)
+                            }
+                            else if (item.Level == AccountLevel.General)
+                            {
+                                @Html.IconLink(Url.Action("EditAccount", "ShopAdmin", new { company, level = AccountLevel.Subsidiary, parent = item.Id }), "bi-plus-square", "معین زیر این حساب کل", null)
+                            }
                             @Html.IconLink(Url.Action("EditAccount", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
                             @if (!item.IsSystem)
                             {
-                                @Html.IconPost("DeleteAccount", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این سرفصل حذف شود؟")
+                                @Html.IconPost("DeleteAccount", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این حساب حذف شود؟")
                             }
                         </td>
                     </tr>
                 }
                 @if (Model.Count == 0)
                 {
-                    <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-list-check fs-3 d-block mb-1"></i>سرفصلی پیدا نشد.</td></tr>
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-list-check fs-3 d-block mb-1"></i>حسابی پیدا نشد.</td></tr>
                 }
             </tbody>
         </table>

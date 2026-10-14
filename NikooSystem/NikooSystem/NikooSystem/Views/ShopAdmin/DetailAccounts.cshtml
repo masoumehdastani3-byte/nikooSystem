@@ -1,0 +1,87 @@
+@model PagedList<StoreDetailAccount>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "حساب‌های تفصیلی";
+    var company = (string)ViewBag.CompanyCode;
+    var balances = (Dictionary<int, long>)ViewBag.Balances;
+    var partyNames = (Dictionary<int, string>)ViewBag.PartyNames;
+    var kinds = Enum.GetValues(typeof(DetailKind)).Cast<DetailKind>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">حساب‌های تفصیلی</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-outline-store" href="@Url.Action("EditDetail","ShopAdmin", new { company, level = 1 })"><i class="bi bi-plus-lg"></i> تفصیلی سطح ۱</a>
+        <a class="btn-store" href="@Url.Action("EditDetail","ShopAdmin", new { company, level = 2 })"><i class="bi bi-plus-lg"></i> تفصیلی سطح ۲</a>
+    </div>
+</div>
+<div class="panel-card mb-3">
+    <p class="mb-2">حساب تفصیلی ریزِ یک حساب معین است و به هر معینی که بخواهد وصل می‌شود (تفصیلی شناور).</p>
+    <ol class="mb-0 small">
+        <li class="mb-1"><b>سطح ۱ (شخص).</b> هر تامین‌کننده و مشتری خودش یک تفصیلی سطح ۱ می‌گیرد و فاکتور نسیه و دریافت و پرداخت به نام او می‌خورد؛ پس بدهی و طلب هر نفر جدا دیده می‌شود. برای شریک، کارمند یا وام‌دهنده هم از اینجا تفصیلی بسازید.</li>
+        <li class="mb-1"><b>سطح ۲ (مرکز هزینه یا پروژه).</b> مثل «شعبه مرکزی»، «سالن فوتبال» یا «جشنواره نوروز». هزینه و درآمد را به تفکیک آن‌ها ثبت کنید.</li>
+        <li class="mb-1"><b>کدام معین تفصیلی می‌خواهد؟</b> در <a href="@Url.Action("Accounts","ShopAdmin", new { company })">سرفصل حساب‌ها</a> برای هر معین تعیین کنید تفصیلی سطح ۱ و ۲ «ندارد»، «اختیاری» یا «اجباری» باشد.</li>
+        <li><b>دفتر تفصیلی.</b> با آیکن دفتر در هر ردیف، گردش و مانده آن شخص یا مرکز را در همه معین‌ها ببینید؛ تراز تفصیلی هم در <a href="@Url.Action("Books","ShopAdmin", new { company, level = "detail" })">دفاتر</a> هست.</li>
+    </ol>
+</div>
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در کد، عنوان یا یادداشت…",
+        new GridSelect("level", "هر دو سطح", new[] { new KeyValuePair<string, string>("1", "سطح ۱"), new KeyValuePair<string, string>("2", "سطح ۲") }),
+        new GridSelect("kind", "همه نوع‌ها", GridHtml.Options(kinds, k => k, k => AccountingText.Detail(k))))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("code", "کد")
+                    @Html.SortHeader("title", "عنوان")
+                    @Html.SortHeader("level", "سطح")
+                    @Html.SortHeader("kind", "نوع")
+                    <th>مانده</th>
+                    <th>وضعیت</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    long balance;
+                    balances.TryGetValue(item.Id, out balance);
+                    <tr>
+                        <td dir="ltr">@item.Code</td>
+                        <td>
+                            <div class="fw-bold">@item.Title</div>
+                            @if (item.PartyId > 0)
+                            {
+                                <div class="small text-muted">از تامین‌کنندگان و مشتریان@(partyNames.ContainsKey(item.PartyId) ? "" : " (حذف‌شده)")</div>
+                            }
+                            else if (!string.IsNullOrWhiteSpace(item.Note))
+                            {
+                                <div class="small text-muted">@item.Note</div>
+                            }
+                        </td>
+                        <td>@(item.Level == 2 ? "۲" : "۱")</td>
+                        <td>@AccountingText.Detail(item.Kind)</td>
+                        <td>@(Math.Abs(balance).ToToman()) @AccountingText.Side(balance)</td>
+                        <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, detailId = item.Id }), "bi-journal-text", "دفتر تفصیلی", null)
+                            @if (item.PartyId > 0)
+                            {
+                                @Html.IconLink(Url.Action("EditParty", "ShopAdmin", new { company, id = item.PartyId }), "bi-person-lines-fill", "طرف حساب", "is-edit")
+                            }
+                            else
+                            {
+                                @Html.IconLink(Url.Action("EditDetail", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                                @Html.IconPost("DeleteDetail", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این حساب تفصیلی حذف شود؟")
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-diagram-3 fs-3 d-block mb-1"></i>حساب تفصیلی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

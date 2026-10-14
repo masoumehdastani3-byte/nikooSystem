@@ -29,12 +29,13 @@
                 {
                     var amount = (item.Lines ?? new List<StoreJournalLine>()).Sum(l => l.Debit);
                     <tr>
-                        <td dir="ltr">@item.Number</td>
+                        <td dir="ltr"><a href="@Url.Action("Voucher", "ShopAdmin", new { company, id = item.Id })">@item.Number</a></td>
                         <td>@item.EntryDate.ToShamsi()</td>
                         <td>@item.Description @(item.Reversed ? "(برگشت‌خورده)" : "")</td>
                         <td>@(item.DocumentTypeId > 0 && types.ContainsKey(item.DocumentTypeId) ? types[item.DocumentTypeId] : AccountingText.Source(item.Source))</td>
                         <td>@amount.ToToman()</td>
                         <td class="row-actions">
+                            @Html.IconLink(Url.Action("Voucher", "ShopAdmin", new { company, id = item.Id }), "bi-eye", "مشاهده سند", null)
                             @if (item.Source == JournalSource.Manual)
                             {
                                 @Html.IconLink(Url.Action("EditJournal", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")

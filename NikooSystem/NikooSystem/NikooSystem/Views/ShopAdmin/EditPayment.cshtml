@@ -7,6 +7,7 @@
     var types = (List<StoreDocumentType>)ViewBag.Types;
     var parties = (List<StoreParty>)ViewBag.Parties;
     var banks = (List<StoreBankAccount>)ViewBag.Banks;
+    var costCenters = (List<StoreDetailAccount>)ViewBag.CostCenters;
     var payToken = AccountingText.PayToken(Model.PayWith, Model.BankId);
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
 }
@@ -66,17 +67,28 @@
             </select>
         </div>
         <div class="col-md-4">
-            <label class="form-label" for="AccountId">سرفصل مقابل</label>
+            <label class="form-label" for="AccountId">حساب معین مقابل</label>
             <select class="form-select" name="AccountId" id="AccountId" required="required">
                 <option value="">انتخاب کنید</option>
-                @foreach (var account in accounts)
+                @foreach (var account in accounts.OrderBy(a => a.Code))
                 {
-                    <option value="@account.Id.ToString(invariant)" @(Model.AccountId == account.Id ? "selected" : null)>@account.Code — @account.Title</option>
+                    <option value="@account.Id.ToString(invariant)" data-d1="@account.Detail1" data-d2="@account.Detail2" @(Model.AccountId == account.Id ? "selected" : null)>@(account.Code + " — " + account.Title)</option>
                 }
             </select>
-            <div class="form-text">پرداخت معمولاً هزینه یا بدهی است؛ دریافت معمولاً درآمد، سرمایه یا طلب.</div>
+            <div class="form-text">پرداخت معمولاً هزینه یا بدهی است؛ دریافت معمولاً درآمد، سرمایه یا طلب. اگر معین تفصیلی شخص بخواهد، طرف حساب تفصیلی آن می‌شود.</div>
         </div>
-        <div class="col-12">
+        <div class="col-md-4" id="costCenterBox">
+            <label class="form-label" for="Detail2Id">مرکز هزینه یا پروژه (تفصیلی سطح ۲)</label>
+            <select class="form-select" name="Detail2Id" id="Detail2Id">
+                <option value="0">—</option>
+                @foreach (var center in costCenters)
+                {
+                    <option value="@center.Id.ToString(invariant)" @(Model.Detail2Id == center.Id ? "selected" : null)>@(center.Code + " — " + center.Title)</option>
+                }
+            </select>
+            <div class="form-text"><a target="_blank" rel="noopener" href="@Url.Action("EditDetail","ShopAdmin", new { company, level = 2 })">تعریف مرکز هزینه</a></div>
+        </div>
+        <div class="col-md-8">
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "300" })
         </div>
@@ -85,3 +97,19 @@
         </div>
     </div>
 }
+<script>
+    (function () {
+        var account = document.getElementById('AccountId');
+        var box = document.getElementById('costCenterBox');
+        var center = document.getElementById('Detail2Id');
+        function sync() {
+            var option = account.options[account.selectedIndex];
+            var use = option && option.dataset.d2 ? option.dataset.d2 : 'None';
+            box.style.display = use === 'None' ? 'none' : '';
+            center.required = use === 'Required';
+            if (use === 'None') center.value = '0';
+        }
+        account.addEventListener('change', sync);
+        sync();
+    })();
+</script>

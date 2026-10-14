@@ -19,16 +19,21 @@ namespace NikooSystem.Controllers
         [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
         public ActionResult Accounts(AccountGridQuery query)
         {
-            return View(TenantStore.AccountGrid(CompanyCode, query));
+            var page = TenantStore.AccountGrid(CompanyCode, query);
+            ViewBag.ById = TenantStore.GetAccounts(CompanyCode).ToDictionary(a => a.Id);
+            return View(page);
         }
 
         [HttpGet]
         [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
-        public ActionResult EditAccount(int? id)
+        public ActionResult EditAccount(int? id, AccountLevel? level, int? parent)
         {
-            var item = id.HasValue ? TenantStore.GetAccount(CompanyCode, id.Value) : new StoreLedgerAccount { IsActive = true };
+            var accounts = TenantStore.GetAccounts(CompanyCode);
+            var item = id.HasValue ? accounts.FirstOrDefault(a => a.Id == id.Value)
+                : new StoreLedgerAccount { IsActive = true, Level = level ?? AccountLevel.Subsidiary, ParentId = parent ?? 0 };
             if (item == null) return ToAction("Accounts");
-            ViewBag.Parents = TenantStore.GetAccounts(CompanyCode).Where(a => a.Id != item.Id).ToList();
+            ViewBag.Accounts = accounts;
+            ViewBag.Locked = item.IsSystem || (item.Id > 0 && accounts.Any(a => a.ParentId == item.Id));
             return View(item);
         }
 
@@ -40,8 +45,9 @@ namespace NikooSystem.Controllers
             model.Code = Clip(model.Code, 20);
             model.Title = Clip(model.Title, 120);
             var error = TenantStore.SaveAccount(CompanyCode, model);
-            if (error != null) return Fail(error, "EditAccount", model.Id > 0 ? new { id = model.Id } : null);
-            return Ok("سرفصل ذخیره شد.", "Accounts");
+            if (error != null)
+                return Fail(error, "EditAccount", model.Id > 0 ? (object)new { id = model.Id } : new { level = model.Level, parent = model.ParentId });
+            return Ok("حساب " + AccountingText.Level(model.Level) + " «" + model.Title + "» با کد " + model.Code + " ذخیره شد.", "Accounts");
         }
 
         [HttpPost]
@@ -51,8 +57,60 @@ namespace NikooSystem.Controllers
         {
             var error = TenantStore.DeleteAccount(CompanyCode, id);
             if (error != null) Fail(error);
-            else Ok("سرفصل حذف شد.");
+            else Ok("حساب حذف شد.");
             return ToAction("Accounts");
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        public ActionResult DetailAccounts(DetailGridQuery query)
+        {
+            ViewBag.Balances = TenantStore.DetailBalances(CompanyCode);
+            ViewBag.PartyNames = TenantStore.GetParties(CompanyCode).ToDictionary(p => p.Id, p => p.Name);
+            return View(TenantStore.DetailGrid(CompanyCode, query));
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        public ActionResult EditDetail(int? id, int? level)
+        {
+            var item = id.HasValue ? TenantStore.GetDetail(CompanyCode, id.Value)
+                : new StoreDetailAccount { IsActive = true, Level = level == 2 ? 2 : 1, Kind = level == 2 ? DetailKind.CostCenter : DetailKind.Person };
+            if (item == null) return ToAction("DetailAccounts");
+            return View(item);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        public ActionResult EditDetail(StoreDetailAccount model)
+        {
+            model.Code = Clip(model.Code, 20);
+            model.Title = Clip(model.Title, 150);
+            model.Note = Clip(model.Note, 300);
+            var error = TenantStore.SaveDetail(CompanyCode, model);
+            if (error != null) return Fail(error, "EditDetail", model.Id > 0 ? (object)new { id = model.Id } : new { level = model.Level });
+            return Ok("حساب تفصیلی «" + model.Title + "» با کد " + model.Code + " ذخیره شد.", "DetailAccounts");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        public ActionResult DeleteDetail(int id)
+        {
+            var error = TenantStore.DeleteDetail(CompanyCode, id);
+            if (error != null) Fail(error);
+            else Ok("حساب تفصیلی حذف شد.");
+            return ToAction("DetailAccounts");
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        public ActionResult Voucher(int id)
+        {
+            var page = TenantStore.Voucher(CompanyCode, id);
+            if (page == null) return Fail("سند پیدا نشد.", "Journal");
+            return View(page);
         }
 
         [HttpGet]
@@ -72,7 +130,12 @@ namespace NikooSystem.Controllers
             if (item == null) return ToAction("Journal");
             if (item.Id > 0 && item.Source != JournalSource.Manual)
                 return Fail("سندهای خودکار از فاکتور، سفارش یا تعدیل انبار اصلاح می‌شوند.", "Journal");
-            ViewBag.Accounts = TenantStore.GetAccounts(CompanyCode).Where(a => a.IsActive).ToList();
+            var lines = item.Lines ?? new List<StoreJournalLine>();
+            var accounts = TenantStore.GetAccounts(CompanyCode);
+            ViewBag.Accounts = accounts.Where(a => a.IsPosting && (a.IsActive || lines.Any(l => l.AccountId == a.Id))).ToList();
+            ViewBag.Generals = accounts.Where(a => a.Level == AccountLevel.General).ToDictionary(a => a.Id);
+            ViewBag.Details = TenantStore.GetDetails(CompanyCode)
+                .Where(d => d.IsActive || lines.Any(l => l.Detail1Id == d.Id || l.Detail2Id == d.Id)).ToList();
             ViewBag.Types = TenantStore.GetDocumentTypes(CompanyCode).Where(t => t.IsActive || t.Id == item.DocumentTypeId).ToList();
             return View(item);
         }
@@ -300,64 +363,38 @@ namespace NikooSystem.Controllers
         [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
         public ActionResult Books(BooksGridQuery query)
         {
-            var accounts = TenantStore.GetAccounts(CompanyCode);
-            var entries = TenantStore.GetJournal(CompanyCode).Where(e => !e.Reversed).ToList();
-            var page = new BooksPage();
-            var totals = new List<AccountBalance>();
-            foreach (var account in accounts)
-            {
-                long debit = 0, credit = 0;
-                foreach (var entry in entries)
-                    foreach (var line in entry.Lines ?? new List<StoreJournalLine>())
-                        if (line.AccountId == account.Id)
-                        {
-                            debit += line.Debit;
-                            credit += line.Credit;
-                        }
-                if (debit == 0 && credit == 0) continue;
-                totals.Add(new AccountBalance { Account = account, Debit = debit, Credit = credit });
-                page.Debit += debit;
-                page.Credit += credit;
-            }
+            var page = new BooksPage { From = ReadOptionalDate(query.From), To = ReadOptionalDate(query.To) };
             var text = (query.Q ?? "").Trim();
-            if (query.AccountId.HasValue)
-                page.Account = accounts.FirstOrDefault(a => a.Id == query.AccountId.Value);
-            if (page.Account == null)
+            if (query.AccountId.HasValue) page.Account = TenantStore.GetAccount(CompanyCode, query.AccountId.Value);
+            if (query.DetailId.HasValue) page.Detail = TenantStore.GetDetail(CompanyCode, query.DetailId.Value);
+
+            if (page.Account == null && page.Detail == null)
             {
+                page.Level = query.Level == "group" || query.Level == "subsidiary" || query.Level == "detail" ? query.Level : "general";
+                if (query.Parent.HasValue) page.Parent = TenantStore.GetAccount(CompanyCode, query.Parent.Value);
+                var totals = TenantStore.TrialBalance(CompanyCode, page.Level, page.Parent?.Id, page.From, page.To);
+                page.Debit = totals.Sum(t => t.Debit);
+                page.Credit = totals.Sum(t => t.Credit);
+                page.BalanceDebit = totals.Where(t => t.Balance > 0).Sum(t => t.Balance);
+                page.BalanceCredit = totals.Where(t => t.Balance < 0).Sum(t => -t.Balance);
                 if (text.Length > 0)
-                    totals = totals.Where(t => Has(t.Account.Code, text) || Has(t.Account.Title, text)).ToList();
+                    totals = totals.Where(t => Has(t.Code, text) || Has(t.Title, text)).ToList();
                 totals = Sorted(totals, query, "code", new Dictionary<string, Func<AccountBalance, object>>
                 {
-                    ["code"] = t => t.Account.Code,
-                    ["title"] = t => t.Account.Title,
+                    ["code"] = t => t.Code,
+                    ["title"] = t => t.Title,
                     ["debit"] = t => t.Debit,
                     ["credit"] = t => t.Credit,
-                    ["balance"] = t => t.Debit - t.Credit
+                    ["balance"] = t => t.Balance
                 });
                 page.Totals = PagedList<AccountBalance>.From(totals, query.Page, query.PageSize);
                 return View(page);
             }
 
-            var movements = new List<LedgerMovement>();
-            long running = 0;
-            foreach (var entry in entries.OrderBy(e => e.EntryDate).ThenBy(e => e.Id))
-                foreach (var line in entry.Lines ?? new List<StoreJournalLine>())
-                    if (line.AccountId == page.Account.Id)
-                    {
-                        running += page.Account.DebitNormal ? line.Debit - line.Credit : line.Credit - line.Debit;
-                        movements.Add(new LedgerMovement
-                        {
-                            Date = entry.EntryDate,
-                            Number = entry.Number,
-                            Description = entry.Description,
-                            Memo = line.Memo,
-                            Debit = line.Debit,
-                            Credit = line.Credit,
-                            Balance = running
-                        });
-                    }
+            var movements = TenantStore.Ledger(CompanyCode, page);
             if (text.Length > 0)
-                movements = movements.Where(m => Has(m.Number, text) || Has(m.Description, text) || Has(m.Memo, text)).ToList();
+                movements = movements.Where(m => Has(m.Number, text) || Has(m.Description, text) || Has(m.Memo, text)
+                    || Has(m.Account, text) || Has(m.Detail1, text) || Has(m.Detail2, text)).ToList();
             movements = Sorted(movements, query, "date", new Dictionary<string, Func<LedgerMovement, object>>
             {
                 ["date"] = m => m.Date,
@@ -367,6 +404,12 @@ namespace NikooSystem.Controllers
             });
             page.Movements = PagedList<LedgerMovement>.From(movements, query.Page, query.PageSize);
             return View(page);
+        }
+
+        private static DateTime? ReadOptionalDate(string text)
+        {
+            DateTime date;
+            return DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ? date.Date : (DateTime?)null;
         }
 
         private static bool Has(string value, string text) =>
@@ -509,7 +552,8 @@ namespace NikooSystem.Controllers
         {
             var item = id.HasValue ? TenantStore.GetCashItem(CompanyCode, id.Value) : new StoreCashTransaction { TxDate = DateTime.Today, Direction = CashDirection.Out };
             if (item == null) return ToAction("Payments");
-            ViewBag.Accounts = TenantStore.GetAccounts(CompanyCode).Where(a => a.IsActive).ToList();
+            ViewBag.Accounts = TenantStore.GetAccounts(CompanyCode).Where(a => a.IsPosting && (a.IsActive || a.Id == item.AccountId)).ToList();
+            ViewBag.CostCenters = TenantStore.GetDetails(CompanyCode).Where(d => d.Level == 2 && (d.IsActive || d.Id == item.Detail2Id)).ToList();
             ViewBag.Types = TenantStore.GetDocumentTypes(CompanyCode).Where(t => t.IsActive || t.Id == item.DocumentTypeId).ToList();
             ViewBag.Parties = TenantStore.GetParties(CompanyCode).Where(p => p.IsActive || p.Id == item.PartyId).ToList();
             BankBag(item.BankId);
@@ -626,6 +670,8 @@ namespace NikooSystem.Controllers
         private List<StoreJournalLine> ReadJournalLines()
         {
             var accounts = FormValues("lineAccount");
+            var details1 = FormValues("lineDetail1");
+            var details2 = FormValues("lineDetail2");
             var debits = FormValues("lineDebit");
             var credits = FormValues("lineCredit");
             var memos = FormValues("lineMemo");
@@ -636,7 +682,15 @@ namespace NikooSystem.Controllers
                 var debit = ReadMoney(At(debits, i));
                 var credit = ReadMoney(At(credits, i));
                 if (accountId <= 0 && debit == 0 && credit == 0) continue;
-                lines.Add(new StoreJournalLine { AccountId = accountId, Debit = debit, Credit = credit, Memo = Clip(At(memos, i), 150) });
+                lines.Add(new StoreJournalLine
+                {
+                    AccountId = accountId,
+                    Detail1Id = ReadInt(At(details1, i)),
+                    Detail2Id = ReadInt(At(details2, i)),
+                    Debit = debit,
+                    Credit = credit,
+                    Memo = Clip(At(memos, i), 150)
+                });
             }
             return lines;
         }

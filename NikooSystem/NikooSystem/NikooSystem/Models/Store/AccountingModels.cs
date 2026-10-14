@@ -4,19 +4,77 @@ using System.Linq;
 
 namespace NikooSystem.Models.Store
 {
-    /// <summary>One heading in a store's chart of accounts.</summary>
+    /// <summary>
+    /// One heading in a store's chart of accounts: a group (one digit), a general account under a group (two digits)
+    /// or a subsidiary account under a general one (four digits). Documents post to subsidiary accounts only.
+    /// </summary>
     public class StoreLedgerAccount : IStoreEntity
     {
         public int Id { get; set; }
         public string Code { get; set; }
         public string Title { get; set; }
+        /// <summary>Chosen on the group; general and subsidiary accounts take the kind of their group.</summary>
         public AccountKind Kind { get; set; } = AccountKind.Asset;
+        /// <summary>Rows saved before the levels existed read as Subsidiary (the zero value).</summary>
+        public AccountLevel Level { get; set; } = AccountLevel.Subsidiary;
         public int ParentId { get; set; }
-        /// <summary>Seeded headings that documents post to; the code and kind stay fixed.</summary>
+        /// <summary>Seeded headings that documents post to; the code, level, parent and kind stay fixed.</summary>
         public bool IsSystem { get; set; }
         public bool IsActive { get; set; } = true;
+        /// <summary>Whether lines of this subsidiary account name a level-1 detail account (a person).</summary>
+        public DetailUse Detail1 { get; set; } = DetailUse.None;
+        /// <summary>Whether lines of this subsidiary account name a level-2 detail account (a cost center or project).</summary>
+        public DetailUse Detail2 { get; set; } = DetailUse.None;
 
         public bool DebitNormal => Kind == AccountKind.Asset || Kind == AccountKind.Expense;
+        public bool IsPosting => Level == AccountLevel.Subsidiary;
+    }
+
+    public enum AccountLevel
+    {
+        Subsidiary = 0,
+        General = 1,
+        Group = 2
+    }
+
+    public enum DetailUse
+    {
+        None,
+        Optional,
+        Required
+    }
+
+    public enum DetailKind
+    {
+        Person,
+        CostCenter,
+        Project,
+        Other
+    }
+
+    /// <summary>
+    /// A floating detail account (حساب تفصیلی) used beside subsidiary accounts in journal lines. Level 1 is for people
+    /// (each supplier or customer gets one), level 2 for cost centers, projects and the like.
+    /// </summary>
+    public class StoreDetailAccount : IStoreEntity
+    {
+        public int Id { get; set; }
+        public string Code { get; set; }
+        public string Title { get; set; }
+        /// <summary>1 or 2.</summary>
+        public int Level { get; set; } = 1;
+        public DetailKind Kind { get; set; } = DetailKind.Person;
+        /// <summary>The supplier or customer this detail account was made for; its title follows the party's name.</summary>
+        public int PartyId { get; set; }
+        public string Note { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+    }
+
+    public class DetailGridQuery : GridQuery
+    {
+        public int? Level { get; set; }
+        public DetailKind? Kind { get; set; }
     }
 
     public enum AccountKind
@@ -71,7 +129,10 @@ namespace NikooSystem.Models.Store
 
     public class StoreJournalLine
     {
+        /// <summary>A subsidiary account.</summary>
         public int AccountId { get; set; }
+        public int Detail1Id { get; set; }
+        public int Detail2Id { get; set; }
         public long Debit { get; set; }
         public long Credit { get; set; }
         public string Memo { get; set; }
@@ -170,21 +231,31 @@ namespace NikooSystem.Models.Store
         public bool IsActive { get; set; } = true;
     }
 
+    /// <summary>Subsidiary accounts that documents post to by themselves, and the general account bank accounts sit under.</summary>
     public static class AccountCodes
     {
-        public const string Cash = "1010";
-        public const string Bank = "1020";
-        public const string Receivable = "1030";
-        public const string Inventory = "1040";
-        public const string FixedAssets = "1050";
-        public const string Payable = "2010";
-        public const string Capital = "3010";
-        public const string Sales = "4010";
-        public const string OnlineSales = "4020";
-        public const string Tuition = "4030";
-        public const string Cogs = "5010";
-        public const string Expense = "5020";
-        public const string StockAdjust = "5030";
+        public const string CashAndBank = "11";
+        public const string Cash = "1101";
+        public const string Bank = "1102";
+        public const string Receivable = "1201";
+        public const string Inventory = "1301";
+        public const string FixedAssets = "2101";
+        public const string Payable = "3101";
+        public const string Capital = "5101";
+        public const string Sales = "6101";
+        public const string OnlineSales = "6102";
+        public const string Tuition = "6103";
+        public const string Cogs = "7101";
+        public const string StockAdjust = "7102";
+        public const string Expense = "8101";
+
+        /// <summary>Codes of the first, single-level chart and the subsidiary account each became.</summary>
+        public static readonly Dictionary<string, string> Legacy = new Dictionary<string, string>
+        {
+            { "1010", Cash }, { "1020", Bank }, { "1030", Receivable }, { "1040", Inventory }, { "1050", FixedAssets },
+            { "2010", Payable }, { "3010", Capital }, { "4010", Sales }, { "4020", OnlineSales }, { "4030", Tuition },
+            { "5010", Cogs }, { "5020", Expense }, { "5030", StockAdjust }
+        };
     }
 
     public static class DocumentTypeCodes
@@ -221,6 +292,8 @@ namespace NikooSystem.Models.Store
         public string PartyName { get; set; }
         public int DocumentTypeId { get; set; }
         public int AccountId { get; set; }
+        /// <summary>Optional cost center or project of the opposite account.</summary>
+        public int Detail2Id { get; set; }
         public string Note { get; set; }
         public int EntryId { get; set; }
     }
@@ -308,6 +381,7 @@ namespace NikooSystem.Models.Store
     public class AccountGridQuery : GridQuery
     {
         public AccountKind? Kind { get; set; }
+        public AccountLevel? Level { get; set; }
     }
 
     public class JournalGridQuery : GridQuery
@@ -333,7 +407,15 @@ namespace NikooSystem.Models.Store
 
     public class BooksGridQuery : GridQuery
     {
+        /// <summary>Trial balance level: group | general | subsidiary | detail.</summary>
+        public string Level { get; set; }
+        /// <summary>Shows only the accounts under this group or general account.</summary>
+        public int? Parent { get; set; }
         public int? AccountId { get; set; }
+        public int? DetailId { get; set; }
+        /// <summary>yyyy-MM-dd</summary>
+        public string From { get; set; }
+        public string To { get; set; }
     }
 
     /// <summary>A label the owner can add, such as «هزینه اجاره» or «دریافت از مشتری».</summary>
@@ -449,34 +531,121 @@ namespace NikooSystem.Models.Store
                 default: return "تامین‌کننده";
             }
         }
+
+        public static string Level(AccountLevel level)
+        {
+            switch (level)
+            {
+                case AccountLevel.Group: return "گروه";
+                case AccountLevel.General: return "کل";
+                default: return "معین";
+            }
+        }
+
+        public static string Use(DetailUse use)
+        {
+            switch (use)
+            {
+                case DetailUse.Optional: return "اختیاری";
+                case DetailUse.Required: return "اجباری";
+                default: return "ندارد";
+            }
+        }
+
+        public static string Detail(DetailKind kind)
+        {
+            switch (kind)
+            {
+                case DetailKind.CostCenter: return "مرکز هزینه";
+                case DetailKind.Project: return "پروژه";
+                case DetailKind.Other: return "سایر";
+                default: return "شخص";
+            }
+        }
+
+        public static string DetailLevel(int level) => level == 2 ? "تفصیلی سطح ۲" : "تفصیلی سطح ۱";
+
+        /// <summary>«بد» or «بس» after a balance; a dash for zero.</summary>
+        public static string Side(long balance) => balance == 0 ? "—" : balance > 0 ? "بد" : "بس";
     }
 
     public class BooksPage
     {
-        /// <summary>The trial balance; null while one account's ledger is shown.</summary>
+        /// <summary>group | general | subsidiary | detail, for the trial balance.</summary>
+        public string Level { get; set; }
+        /// <summary>The group or general account the trial balance is narrowed to.</summary>
+        public StoreLedgerAccount Parent { get; set; }
+        /// <summary>The trial balance; null while a ledger is shown.</summary>
         public PagedList<AccountBalance> Totals { get; set; }
+        /// <summary>The account of a general or subsidiary ledger.</summary>
         public StoreLedgerAccount Account { get; set; }
+        /// <summary>The detail account of a detail ledger, or the detail a subsidiary ledger is narrowed to.</summary>
+        public StoreDetailAccount Detail { get; set; }
         public PagedList<LedgerMovement> Movements { get; set; }
+        /// <summary>Lines before <see cref="From"/>, as debit minus credit.</summary>
+        public long Opening { get; set; }
         public long Debit { get; set; }
         public long Credit { get; set; }
+        /// <summary>Trial balance: the sum of the debit balances and of the credit balances of all rows.</summary>
+        public long BalanceDebit { get; set; }
+        public long BalanceCredit { get; set; }
+        public DateTime? From { get; set; }
+        public DateTime? To { get; set; }
+        /// <summary>A group or general ledger shows one row per document; a subsidiary or detail ledger one row per line.</summary>
+        public bool PerEntry { get; set; }
+        /// <summary>Detail accounts that appear in the subsidiary ledger, for its filter.</summary>
+        public List<StoreDetailAccount> DetailChoices { get; set; } = new List<StoreDetailAccount>();
     }
 
+    /// <summary>One row of the trial balance: an account at the chosen level, or a detail account.</summary>
     public class AccountBalance
     {
         public StoreLedgerAccount Account { get; set; }
+        public StoreDetailAccount Detail { get; set; }
+        /// <summary>Debit minus credit of the entries before the start of the period.</summary>
+        public long Opening { get; set; }
         public long Debit { get; set; }
         public long Credit { get; set; }
+
+        public string Code => Account != null ? Account.Code : Detail?.Code;
+        public string Title => Account != null ? Account.Title : Detail?.Title;
+        public long Balance => Opening + Debit - Credit;
     }
 
     public class LedgerMovement
     {
+        public int EntryId { get; set; }
         public DateTime Date { get; set; }
         public string Number { get; set; }
         public string Description { get; set; }
         public string Memo { get; set; }
+        /// <summary>Code and title of the subsidiary account, in detail and general ledgers.</summary>
+        public string Account { get; set; }
+        public string Detail1 { get; set; }
+        public string Detail2 { get; set; }
         public long Debit { get; set; }
         public long Credit { get; set; }
-        /// <summary>Running balance on the account's normal side after this line.</summary>
+        /// <summary>Running balance, debit minus credit, after this row.</summary>
         public long Balance { get; set; }
+    }
+
+    /// <summary>A journal entry with the names of its accounts, for the voucher page.</summary>
+    public class VoucherPage
+    {
+        public StoreJournalEntry Entry { get; set; }
+        public string TypeTitle { get; set; }
+        public List<VoucherLine> Lines { get; set; } = new List<VoucherLine>();
+        public long Debit { get; set; }
+        public long Credit { get; set; }
+    }
+
+    public class VoucherLine
+    {
+        public StoreJournalLine Line { get; set; }
+        public StoreLedgerAccount Account { get; set; }
+        public StoreLedgerAccount General { get; set; }
+        public StoreLedgerAccount Group { get; set; }
+        public StoreDetailAccount Detail1 { get; set; }
+        public StoreDetailAccount Detail2 { get; set; }
     }
 }

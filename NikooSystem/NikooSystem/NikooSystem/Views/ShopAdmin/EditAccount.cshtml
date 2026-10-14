@@ -1,13 +1,19 @@
 @model StoreLedgerAccount
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Id > 0 ? "ویرایش سرفصل" : "سرفصل جدید";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش حساب" : "حساب تازه";
     var company = (string)ViewBag.CompanyCode;
-    var parents = (List<StoreLedgerAccount>)ViewBag.Parents;
+    var accounts = (List<StoreLedgerAccount>)ViewBag.Accounts;
+    var locked = (bool)ViewBag.Locked;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var byId = accounts.ToDictionary(a => a.Id);
+    StoreLedgerAccount currentParent;
+    byId.TryGetValue(Model.ParentId, out currentParent);
+    var uses = new[] { DetailUse.None, DetailUse.Optional, DetailUse.Required };
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">@ViewBag.Title</h2>
-    <a class="btn-outline-store" href="@Url.Action("Accounts","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <a class="btn-outline-store" href="@Url.Action("Accounts","ShopAdmin", new { company })">بازگشت به سرفصل‌ها</a>
 </div>
 @using (Html.BeginForm("EditAccount", "ShopAdmin", new { company }, FormMethod.Post))
 {
@@ -16,18 +22,58 @@
     @Html.HiddenFor(m => m.IsSystem)
     <div class="panel-card row g-3 m-0">
         <div class="col-md-3">
-            <label class="form-label" for="Code">کد</label>
-            @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "20", required = "required", dir = "ltr", @readonly = Model.IsSystem ? "readonly" : null })
+            <label class="form-label" for="Level">سطح</label>
+            @if (locked)
+            {
+                <input type="hidden" name="Level" value="@Model.Level" />
+                <input class="form-control" value="@AccountingText.Level(Model.Level)" readonly="readonly" />
+            }
+            else
+            {
+                <select class="form-select" name="Level" id="Level">
+                    @foreach (var level in new[] { AccountLevel.Group, AccountLevel.General, AccountLevel.Subsidiary })
+                    {
+                        <option value="@level" @(Model.Level == level ? "selected" : null)>@AccountingText.Level(level)</option>
+                    }
+                </select>
+            }
         </div>
-        <div class="col-md-5">
+        <div class="col-md-5" id="parentBox">
+            <label class="form-label" for="ParentId">زیر حساب</label>
+            @if (locked)
+            {
+                <input type="hidden" name="ParentId" value="@Model.ParentId.ToString(invariant)" />
+                <input class="form-control" value="@(currentParent == null ? "—" : currentParent.Code + " — " + currentParent.Title)" readonly="readonly" />
+            }
+            else
+            {
+                <select class="form-select" name="ParentId" id="ParentId">
+                    <option value="0">انتخاب کنید</option>
+                    @foreach (var parent in accounts.Where(a => a.Level != AccountLevel.Subsidiary && a.Id != Model.Id).OrderBy(a => a.Code))
+                    {
+                        var forLevel = parent.Level == AccountLevel.Group ? AccountLevel.General : AccountLevel.Subsidiary;
+                        <option value="@parent.Id.ToString(invariant)" data-for="@forLevel" data-code="@parent.Code" @(Model.ParentId == parent.Id ? "selected" : null)>
+                            @((parent.Level == AccountLevel.General ? "\u00A0\u00A0\u00A0" : "") + parent.Code + " — " + parent.Title + " (" + AccountingText.Level(parent.Level) + ")")
+                        </option>
+                    }
+                </select>
+                <div class="form-text">حساب کل زیر یک گروه و معین زیر یک حساب کل می‌نشیند.</div>
+            }
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Code">کد</label>
+            @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "4", dir = "ltr", inputmode = "numeric", @readonly = locked ? "readonly" : null, placeholder = "خالی بگذارید تا خودکار ساخته شود" })
+            <div class="form-text" id="codeHint">گروه یک رقم، کل دو رقم (رقم گروه + یک رقم) و معین چهار رقم (کد کل + دو رقم).</div>
+        </div>
+        <div class="col-md-6">
             <label class="form-label" for="Title">عنوان</label>
             @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "120", required = "required" })
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6" id="kindBox">
             <label class="form-label" for="Kind">نوع</label>
-            @if (Model.IsSystem)
+            @if (Model.IsSystem || Model.Level != AccountLevel.Group && locked)
             {
-                @Html.HiddenFor(m => m.Kind)
+                <input type="hidden" name="Kind" value="@Model.Kind" />
                 <input class="form-control" value="@AccountingText.Kind(Model.Kind)" readonly="readonly" />
             }
             else
@@ -38,23 +84,70 @@
                         <option value="@kind" @(Model.Kind == kind ? "selected" : null)>@AccountingText.Kind(kind)</option>
                     }
                 </select>
+                <div class="form-text" id="kindHint">نوع را روی گروه انتخاب کنید؛ حساب‌های کل و معین نوع گروهشان را می‌گیرند.</div>
             }
         </div>
-        <div class="col-md-6">
-            <label class="form-label" for="ParentId">زیرمجموعه</label>
-            <select class="form-select" name="ParentId" id="ParentId">
-                <option value="0">—</option>
-                @foreach (var parent in parents)
+        <div class="col-md-6" data-subsidiary>
+            <label class="form-label" for="Detail1">تفصیلی سطح ۱ (شخص)</label>
+            <select class="form-select" name="Detail1" id="Detail1">
+                @foreach (var use in uses)
                 {
-                    <option value="@parent.Id" @(Model.ParentId == parent.Id ? "selected" : null)>@parent.Code — @parent.Title</option>
+                    <option value="@use" @(Model.Detail1 == use ? "selected" : null)>@AccountingText.Use(use)</option>
                 }
             </select>
+            <div class="form-text">برای حساب‌های دریافتنی و پرداختنی «اجباری» است؛ فاکتور و دریافت و پرداخت تفصیلی طرف حساب را خودشان می‌زنند.</div>
+        </div>
+        <div class="col-md-6" data-subsidiary>
+            <label class="form-label" for="Detail2">تفصیلی سطح ۲ (مرکز هزینه یا پروژه)</label>
+            <select class="form-select" name="Detail2" id="Detail2">
+                @foreach (var use in uses)
+                {
+                    <option value="@use" @(Model.Detail2 == use ? "selected" : null)>@AccountingText.Use(use)</option>
+                }
+            </select>
+            <div class="form-text">مثلاً هزینه‌ها را به تفکیک «شعبه مرکزی» یا «سالن فوتبال» ببینید.</div>
         </div>
         <div class="col-md-6 d-flex align-items-end">
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
+        @if (locked)
+        {
+            <div class="col-12 small text-muted">
+                @(Model.IsSystem ? "این حساب پیش‌فرض است و سندهای خودکار به آن می‌خورند؛ کد، سطح و جایش ثابت است و فقط عنوان، تفصیلی‌ها و وضعیتش عوض می‌شود." : "این حساب زیرمجموعه دارد؛ کد، سطح و جایش ثابت می‌ماند.")
+            </div>
+        }
         <div class="col-12">
             <button class="btn-store" type="submit">ذخیره</button>
         </div>
     </div>
 }
+<script>
+    (function () {
+        var level = document.getElementById('Level');
+        var parent = document.getElementById('ParentId');
+        if (!level || level.tagName !== 'SELECT') {
+            refresh(level ? level.value : '@Model.Level');
+            return;
+        }
+        level.addEventListener('change', function () { refresh(level.value); });
+        refresh(level.value);
+
+        function refresh(value) {
+            var isGroup = value === 'Group';
+            var parentBox = document.getElementById('parentBox');
+            if (parentBox) parentBox.style.display = isGroup ? 'none' : '';
+            var kindHint = document.getElementById('kindHint');
+            var kind = document.getElementById('Kind');
+            if (kind && kind.tagName === 'SELECT') kind.disabled = !isGroup;
+            if (kindHint) kindHint.style.display = isGroup ? 'none' : '';
+            document.querySelectorAll('[data-subsidiary]').forEach(function (el) { el.style.display = value === 'Subsidiary' ? '' : 'none'; });
+            if (!parent) return;
+            var current = parent.options[parent.selectedIndex];
+            Array.prototype.forEach.call(parent.options, function (option) {
+                if (!option.dataset.for) return;
+                option.hidden = option.dataset.for !== value;
+            });
+            if (current && current.dataset.for && current.dataset.for !== value) parent.value = '0';
+        }
+    })();
+</script>

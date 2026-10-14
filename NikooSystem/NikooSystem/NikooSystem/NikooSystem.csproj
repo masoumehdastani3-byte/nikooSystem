@@ -279,6 +279,8 @@
     <Compile Include="Services\TenantStore.Accounting.cs" />
     <Compile Include="Services\TenantStore.AccountingGrids.cs" />
     <Compile Include="Services\TenantStore.Banks.cs" />
+    <Compile Include="Services\TenantStore.Books.cs" />
+    <Compile Include="Services\TenantStore.Chart.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
     <Compile Include="Services\TutorialService.cs" />
@@ -467,6 +469,9 @@
     <Content Include="Views\ShopAdmin\EditParty.cshtml" />
     <Content Include="Views\ShopAdmin\Banks.cshtml" />
     <Content Include="Views\ShopAdmin\EditBank.cshtml" />
+    <Content Include="Views\ShopAdmin\DetailAccounts.cshtml" />
+    <Content Include="Views\ShopAdmin\EditDetail.cshtml" />
+    <Content Include="Views\ShopAdmin\Voucher.cshtml" />
     <Content Include="Views\ShopAdmin\Notifications.cshtml" />
     <Content Include="Views\ShopAdmin\SeoGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Torob.cshtml" />

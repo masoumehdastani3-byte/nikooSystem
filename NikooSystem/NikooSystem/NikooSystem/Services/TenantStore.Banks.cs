@@ -12,7 +12,7 @@ using NikooSystem.Services.Data;
 namespace NikooSystem.Services
 {
     /// <summary>
-    /// Bank accounts of a store. Each one posts to its own ledger account under «بانک» (1020); the one marked as the site's
+    /// Bank accounts of a store. Each one posts to its own subsidiary account under «موجودی نقد و بانک» (11); the one marked as the site's
     /// gateway receives the online payments and its ZarinPal merchant code is the store's payment setting.
     /// </summary>
     public static partial class TenantStore
@@ -37,18 +37,17 @@ namespace NikooSystem.Services
             return Grid(NikooTables.BankAccounts, companyCode, query, filter, BankSorts, "title", false);
         }
 
-        /// <summary>Balance of each bank's ledger account, from entries that were not reversed.</summary>
+        /// <summary>Balance of each bank's ledger account. A reversed entry and its reversing entry both count, so they cancel out.</summary>
         public static Dictionary<int, long> BankBalances(string companyCode, IEnumerable<StoreBankAccount> banks)
         {
             var ledgerIds = banks.ToDictionary(b => b.Id, b => b.LedgerAccountId);
             var sums = new Dictionary<int, long>();
-            foreach (var entry in GetJournal(companyCode).Where(e => !e.Reversed))
-                foreach (var line in entry.Lines ?? new List<StoreJournalLine>())
-                {
-                    long sum;
-                    sums.TryGetValue(line.AccountId, out sum);
-                    sums[line.AccountId] = sum + line.Debit - line.Credit;
-                }
+            foreach (var line in JournalLines(companyCode))
+            {
+                long sum;
+                sums.TryGetValue(line.AccountId, out sum);
+                sums[line.AccountId] = sum + line.Debit - line.Credit;
+            }
             return ledgerIds.ToDictionary(p => p.Key, p => sums.ContainsKey(p.Value) ? sums[p.Value] : 0);
         }
 
@@ -106,11 +105,14 @@ namespace NikooSystem.Services
             var ledger = existing == null ? null : accounts.FirstOrDefault(a => a.Id == existing.LedgerAccountId);
             if (ledger == null)
             {
-                var parent = accounts.First(a => a.Code == AccountCodes.Bank);
+                var parent = accounts.First(a => a.Code == AccountCodes.CashAndBank && a.Level == AccountLevel.General);
+                var code = NextChildCode(parent.Code, 2, new HashSet<string>(accounts.Select(a => a.Code), StringComparer.OrdinalIgnoreCase));
+                if (code == null) return "زیر «" + parent.Title + "» کد خالی برای حساب تازه نمانده است.";
                 ledger = new StoreLedgerAccount
                 {
-                    Code = NextBankCode(accounts),
-                    Kind = AccountKind.Asset,
+                    Code = code,
+                    Kind = parent.Kind,
+                    Level = AccountLevel.Subsidiary,
                     ParentId = parent.Id,
                     IsSystem = true
                 };
@@ -209,20 +211,6 @@ namespace NikooSystem.Services
                 if (bank != null && bank.LedgerAccountId > 0) return bank.LedgerAccountId;
             }
             return IdOf(companyCode, PayAccount(pay, incoming));
-        }
-
-        private static string NextBankCode(IEnumerable<StoreLedgerAccount> accounts)
-        {
-            var max = 0;
-            foreach (var account in accounts)
-            {
-                var code = account.Code ?? "";
-                int n;
-                if (code.Length == AccountCodes.Bank.Length + 2 && code.StartsWith(AccountCodes.Bank, StringComparison.Ordinal)
-                    && int.TryParse(code.Substring(AccountCodes.Bank.Length), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) && n > max)
-                    max = n;
-            }
-            return AccountCodes.Bank + (max + 1).ToString("00", CultureInfo.InvariantCulture);
         }
 
         private static string Protect(string secret) =>

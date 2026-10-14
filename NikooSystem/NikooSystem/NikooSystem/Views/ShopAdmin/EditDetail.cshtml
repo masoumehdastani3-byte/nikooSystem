@@ -1,0 +1,52 @@
+@model StoreDetailAccount
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش حساب تفصیلی" : "حساب تفصیلی تازه";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditDetail", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0">
+        <div class="col-md-5">
+            <label class="form-label" for="Title">عنوان</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "150", required = "required", placeholder = Model.Level == 2 ? "مثلاً سالن فوتبال" : "مثلاً آقای رضایی (شریک)" })
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="Level">سطح</label>
+            <select class="form-select" name="Level" id="Level">
+                <option value="1" @(Model.Level != 2 ? "selected" : null)>سطح ۱</option>
+                <option value="2" @(Model.Level == 2 ? "selected" : null)>سطح ۲</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Kind">نوع</label>
+            <select class="form-select" name="Kind" id="Kind">
+                @foreach (DetailKind kind in Enum.GetValues(typeof(DetailKind)))
+                {
+                    <option value="@kind" @(Model.Kind == kind ? "selected" : null)>@AccountingText.Detail(kind)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="Code">کد</label>
+            @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "10", dir = "ltr", inputmode = "numeric", placeholder = "خودکار" })
+        </div>
+        <div class="col-md-10">
+            <label class="form-label" for="Note">یادداشت</label>
+            @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "300" })
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال")
+        </div>
+        <div class="col-12 small text-muted">سطح ۱ معمولاً برای اشخاص و سطح ۲ برای مرکز هزینه و پروژه است. کد خودکار سطح ۱ با ۱ و سطح ۲ با ۲ شروع می‌شود.</div>
+        <div class="col-12">
+            <button class="btn-store" type="submit">ذخیره</button>
+        </div>
+    </div>
+}

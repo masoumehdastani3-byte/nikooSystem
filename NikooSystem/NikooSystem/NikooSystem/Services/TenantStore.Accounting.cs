@@ -24,36 +24,6 @@ namespace NikooSystem.Services
         public static StoreLedgerAccount AccountByCode(string companyCode, string code) =>
             GetAccounts(companyCode).FirstOrDefault(a => a.Code == code);
 
-        public static string SaveAccount(string companyCode, StoreLedgerAccount account)
-        {
-            account.Code = (account.Code ?? "").Trim();
-            account.Title = (account.Title ?? "").Trim();
-            if (account.Code.Length == 0 || account.Title.Length == 0) return "کد و عنوان سرفصل لازم است.";
-            var all = GetAccounts(companyCode);
-            if (all.Any(a => a.Id != account.Id && string.Equals(a.Code, account.Code, StringComparison.OrdinalIgnoreCase)))
-                return "این کد سرفصل قبلاً استفاده شده است.";
-            var existing = account.Id > 0 ? all.FirstOrDefault(a => a.Id == account.Id) : null;
-            if (existing != null && existing.IsSystem)
-            {
-                account.Code = existing.Code;
-                account.Kind = existing.Kind;
-                account.IsSystem = true;
-            }
-            Save(NikooTables.LedgerAccounts, companyCode, account);
-            return null;
-        }
-
-        public static string DeleteAccount(string companyCode, int id)
-        {
-            var account = GetAccount(companyCode, id);
-            if (account == null) return null;
-            if (account.IsSystem) return "سرفصل‌های پیش‌فرض حذف نمی‌شوند.";
-            if (GetAccounts(companyCode).Any(a => a.ParentId == id)) return "اول سرفصل‌های زیرمجموعه را حذف کنید.";
-            if (JournalLines(companyCode).Any(l => l.AccountId == id)) return "این سرفصل در سندها آمده و حذف نمی‌شود.";
-            Remove(NikooTables.LedgerAccounts, companyCode, id);
-            return null;
-        }
-
         public static List<StoreJournalEntry> GetJournal(string companyCode) =>
             All(NikooTables.JournalEntries, companyCode, "[EntryDate] DESC, [Id] DESC");
 
@@ -63,6 +33,7 @@ namespace NikooSystem.Services
         {
             entry.Description = (entry.Description ?? "").Trim();
             if (entry.Description.Length == 0) return "شرح سند را بنویسید.";
+            EnsureAccounts(companyCode);
             var lines = CleanLines(entry.Lines);
             var error = Balanced(companyCode, lines);
             if (error != null) return error;
@@ -371,31 +342,6 @@ namespace NikooSystem.Services
             return qty <= 0 ? 0 : inbound.Sum(m => m.UnitCost * m.Qty) / qty;
         }
 
-        private static void EnsureAccounts(string companyCode)
-        {
-            if (All(NikooTables.LedgerAccounts, companyCode).Count > 0) return;
-            var rows = new[]
-            {
-                Row(AccountCodes.Cash, "صندوق", AccountKind.Asset),
-                Row(AccountCodes.Bank, "بانک", AccountKind.Asset),
-                Row(AccountCodes.Receivable, "حساب‌های دریافتنی", AccountKind.Asset),
-                Row(AccountCodes.Inventory, "موجودی کالا", AccountKind.Asset),
-                Row(AccountCodes.FixedAssets, "اموال و دارایی ثابت", AccountKind.Asset),
-                Row(AccountCodes.Payable, "حساب‌های پرداختنی", AccountKind.Liability),
-                Row(AccountCodes.Capital, "سرمایه", AccountKind.Equity),
-                Row(AccountCodes.Sales, "فروش", AccountKind.Income),
-                Row(AccountCodes.OnlineSales, "فروش آنلاین", AccountKind.Income),
-                Row(AccountCodes.Tuition, "درآمد شهریه و رزرو", AccountKind.Income),
-                Row(AccountCodes.Cogs, "بهای تمام‌شده کالا", AccountKind.Expense),
-                Row(AccountCodes.Expense, "هزینه‌های عمومی", AccountKind.Expense),
-                Row(AccountCodes.StockAdjust, "تعدیل موجودی", AccountKind.Expense)
-            };
-            foreach (var row in rows) Save(NikooTables.LedgerAccounts, companyCode, row);
-        }
-
-        private static StoreLedgerAccount Row(string code, string title, AccountKind kind) =>
-            new StoreLedgerAccount { Code = code, Title = title, Kind = kind, IsSystem = true, IsActive = true };
-
         private static int IdOf(string companyCode, string code)
         {
             var account = AccountByCode(companyCode, code);
@@ -426,6 +372,7 @@ namespace NikooSystem.Services
                 Credit = invoice.Lines.Sum(l => l.Amount),
                 Memo = invoice.PartyName
             });
+            TagParty(companyCode, lines, invoice.PartyId);
             return lines;
         }
 
@@ -456,6 +403,7 @@ namespace NikooSystem.Services
                 lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Cogs), Debit = cogs, Memo = "بهای تمام‌شده" });
                 lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Inventory), Credit = cogs, Memo = "بهای تمام‌شده" });
             }
+            TagParty(companyCode, lines, invoice.PartyId);
             return lines;
         }
 
@@ -466,6 +414,7 @@ namespace NikooSystem.Services
             if (party == null) return "تامین‌کننده را از فهرست انتخاب کنید.";
             if (!party.Supplies) return "«" + party.Name + "» در فهرست تامین‌کنندگان نیست.";
             invoice.PartyName = party.Name;
+            PartyDetail(companyCode, party);
             var bankId = invoice.BankId;
             var bankError = ResolveBank(companyCode, invoice.PayWith, ref bankId);
             if (bankError != null) return bankError;
@@ -501,6 +450,7 @@ namespace NikooSystem.Services
             if (party == null) return "مشتری را از فهرست انتخاب کنید.";
             if (!party.Buys) return "«" + party.Name + "» در فهرست مشتریان نیست.";
             invoice.PartyName = party.Name;
+            PartyDetail(companyCode, party);
             var bankId = invoice.BankId;
             var bankError = ResolveBank(companyCode, invoice.PayWith, ref bankId);
             if (bankError != null) return bankError;
@@ -761,20 +711,49 @@ namespace NikooSystem.Services
         private static List<StoreJournalLine> CleanLines(IEnumerable<StoreJournalLine> lines) =>
             (lines ?? Enumerable.Empty<StoreJournalLine>()).Where(l => l.AccountId > 0 && (l.Debit > 0 || l.Credit > 0)).ToList();
 
+        /// <summary>
+        /// Checks a manual entry: two or more lines, each on an active subsidiary account with the detail accounts that
+        /// account asks for, and equal debit and credit. Detail accounts on an account that takes none are dropped.
+        /// </summary>
         private static string Balanced(string companyCode, List<StoreJournalLine> lines)
         {
             if (lines.Count < 2) return "سند حداقل دو ردیف دارد.";
-            var accounts = GetAccounts(companyCode);
+            var accounts = GetAccounts(companyCode).ToDictionary(a => a.Id);
+            var details = GetDetails(companyCode).ToDictionary(d => d.Id);
             long debit = 0, credit = 0;
-            foreach (var line in lines)
+            for (var i = 0; i < lines.Count; i++)
             {
-                if (line.Debit > 0 && line.Credit > 0) return "یک ردیف هم‌زمان بدهکار و بستانکار نیست.";
-                if (line.Debit < 0 || line.Credit < 0) return "مبلغ منفی نیست.";
-                if (accounts.All(a => a.Id != line.AccountId)) return "سرفصل یک ردیف پیدا نشد.";
+                var line = lines[i];
+                var row = "ردیف " + (i + 1).ToString(CultureInfo.InvariantCulture) + ": ";
+                if (line.Debit > 0 && line.Credit > 0) return row + "یک ردیف هم‌زمان بدهکار و بستانکار نیست.";
+                if (line.Debit < 0 || line.Credit < 0) return row + "مبلغ منفی نیست.";
+                StoreLedgerAccount account;
+                if (!accounts.TryGetValue(line.AccountId, out account)) return row + "حساب معین را انتخاب کنید.";
+                if (!account.IsPosting)
+                    return row + "سند فقط به حساب معین می‌خورد؛ «" + account.Title + "» حساب " + AccountingText.Level(account.Level) + " است.";
+                if (!account.IsActive) return row + "حساب «" + account.Title + "» غیرفعال است.";
+                var error = CheckDetail(line.Detail1Id, 1, account.Detail1, account, details, row);
+                if (error != null) return error;
+                error = CheckDetail(line.Detail2Id, 2, account.Detail2, account, details, row);
+                if (error != null) return error;
+                if (account.Detail1 == DetailUse.None) line.Detail1Id = 0;
+                if (account.Detail2 == DetailUse.None) line.Detail2Id = 0;
                 debit += line.Debit;
                 credit += line.Credit;
             }
             if (debit != credit || debit == 0) return "جمع بدهکار و بستانکار باید برابر و بیشتر از صفر باشد.";
+            return null;
+        }
+
+        private static string CheckDetail(int detailId, int level, DetailUse use, StoreLedgerAccount account,
+            Dictionary<int, StoreDetailAccount> details, string row)
+        {
+            var label = AccountingText.DetailLevel(level);
+            if (use == DetailUse.None || detailId <= 0)
+                return use == DetailUse.Required && detailId <= 0 ? row + "حساب «" + account.Title + "» " + label + " لازم دارد." : null;
+            StoreDetailAccount detail;
+            if (!details.TryGetValue(detailId, out detail) || detail.Level != level) return row + label + " انتخاب‌شده پیدا نشد.";
+            if (!detail.IsActive) return row + "تفصیلی «" + detail.Title + "» غیرفعال است.";
             return null;
         }
 
@@ -844,33 +823,47 @@ namespace NikooSystem.Services
         public static string SaveCash(string companyCode, StoreCashTransaction item)
         {
             EnsureAccounts(companyCode);
+            item.PartyName = (item.PartyName ?? "").Trim();
+            item.Note = (item.Note ?? "").Trim();
+            if (item.Amount <= 0) return "مبلغ باید بیشتر از صفر باشد.";
+            if (item.PayWith == PayWith.Credit) return "دریافت و پرداخت نقدی یا بانکی است. نسیه را با فاکتور ثبت کنید.";
+            var account = GetAccount(companyCode, item.AccountId);
+            if (account == null || !account.IsActive || !account.IsPosting) return "حساب معین مقابل را انتخاب کنید.";
+            if (item.PartyId <= 0 && account.Detail1 == DetailUse.Required && item.PartyName.Length > 0)
+            {
+                var named = PartyByName(companyCode, item.PartyName, item.Direction == CashDirection.In ? PartyKind.Customer : PartyKind.Supplier);
+                if (named != null) item.PartyId = named.Id;
+            }
             if (item.PartyId > 0)
             {
                 var party = GetParty(companyCode, item.PartyId);
                 if (party == null) return "طرف حساب انتخاب‌شده پیدا نشد.";
                 item.PartyName = party.Name;
+                PartyDetail(companyCode, party);
             }
-            item.PartyName = (item.PartyName ?? "").Trim();
-            item.Note = (item.Note ?? "").Trim();
             if (item.PartyName.Length == 0) return "طرف حساب را از فهرست انتخاب کنید یا نامش را بنویسید.";
-            if (item.Amount <= 0) return "مبلغ باید بیشتر از صفر باشد.";
-            if (item.PayWith == PayWith.Credit) return "دریافت و پرداخت نقدی یا بانکی است. نسیه را با فاکتور ثبت کنید.";
-            var account = GetAccount(companyCode, item.AccountId);
-            if (account == null || !account.IsActive) return "سرفصل مقابل را انتخاب کنید.";
+            if (account.Detail1 == DetailUse.Required && item.PartyId <= 0)
+                return "حساب «" + account.Title + "» تفصیلی شخص لازم دارد؛ طرف حساب را از فهرست انتخاب کنید.";
+            if (account.Detail2 == DetailUse.None) item.Detail2Id = 0;
+            var detail2Error = CheckDetail(item.Detail2Id, 2, account.Detail2, account, GetDetails(companyCode).ToDictionary(d => d.Id), "");
+            if (detail2Error != null) return detail2Error;
             var bankId = item.BankId;
             var bankError = ResolveBank(companyCode, item.PayWith, ref bankId);
             if (bankError != null) return bankError;
             item.BankId = bankId;
             var money = GetAccount(companyCode, MoneyAccountId(companyCode, item.PayWith, item.BankId, item.Direction == CashDirection.In));
             if (money == null) return "سرفصل صندوق یا بانک پیدا نشد.";
-            if (money.Id == account.Id) return "سرفصل مقابل نباید همان صندوق یا بانک باشد.";
+            if (money.Id == account.Id) return "حساب مقابل نباید همان صندوق یا بانک باشد.";
+            var debit = item.Direction == CashDirection.In ? money.Id : account.Id;
+            var credit = item.Direction == CashDirection.In ? account.Id : money.Id;
+            var cashLines = Pair(debit, credit, item.Amount, item.PartyName).ToList();
+            foreach (var line in cashLines.Where(l => l.AccountId == account.Id)) line.Detail2Id = item.Detail2Id;
+            TagParty(companyCode, cashLines, item.PartyId);
             var types = GetDocumentTypes(companyCode);
             var chosen = types.FirstOrDefault(t => t.Id == item.DocumentTypeId && t.IsActive);
             if (chosen == null)
                 chosen = types.First(t => t.Code == (item.Direction == CashDirection.Out ? DocumentTypeCodes.Payment : DocumentTypeCodes.Receipt));
             item.DocumentTypeId = chosen.Id;
-            var debit = item.Direction == CashDirection.In ? money.Id : account.Id;
-            var credit = item.Direction == CashDirection.In ? account.Id : money.Id;
             var source = item.Direction == CashDirection.In ? JournalSource.Receipt : JournalSource.Payment;
             var prefix = item.Direction == CashDirection.In ? "DR-" : "PD-";
             var description = AccountingText.Direction(item.Direction) + " " + item.PartyName;
@@ -896,7 +889,7 @@ namespace NikooSystem.Services
                     Source = source,
                     SourceId = item.Id,
                     DocumentTypeId = item.DocumentTypeId,
-                    Lines = Pair(debit, credit, item.Amount, item.PartyName).ToList()
+                    Lines = cashLines
                 }, tx);
                 NikooDb.Upsert(NikooTables.CashTransactions, item, companyCode, tx);
                 tx.Commit();

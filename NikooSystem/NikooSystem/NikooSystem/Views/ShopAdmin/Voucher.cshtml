@@ -1,0 +1,81 @@
+@model VoucherPage
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    var entry = Model.Entry;
+    ViewBag.Title = "سند " + entry.Number;
+    var company = (string)ViewBag.CompanyCode;
+    string sourceUrl = null, sourceLabel = null;
+    if (entry.SourceId > 0)
+    {
+        if (entry.Source == JournalSource.Purchase) { sourceUrl = Url.Action("EditPurchase", "ShopAdmin", new { company, id = entry.SourceId }); sourceLabel = "فاکتور خرید"; }
+        else if (entry.Source == JournalSource.Sale) { sourceUrl = Url.Action("EditSaleInvoice", "ShopAdmin", new { company, id = entry.SourceId }); sourceLabel = "فاکتور فروش"; }
+        else if (entry.Source == JournalSource.Receipt || entry.Source == JournalSource.Payment) { sourceUrl = Url.Action("EditPayment", "ShopAdmin", new { company, id = entry.SourceId }); sourceLabel = "تراکنش دریافت و پرداخت"; }
+    }
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
+    <h2 class="mb-0">سند حسابداری <span dir="ltr">@entry.Number</span></h2>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (entry.Source == JournalSource.Manual)
+        {
+            <a class="btn-outline-store" href="@Url.Action("EditJournal","ShopAdmin", new { company, id = entry.Id })"><i class="bi bi-pencil"></i> ویرایش</a>
+        }
+        @if (sourceUrl != null)
+        {
+            <a class="btn-outline-store" href="@sourceUrl"><i class="bi bi-box-arrow-up-left"></i> @sourceLabel</a>
+        }
+        <button class="btn-outline-store" type="button" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
+        <a class="btn-outline-store" href="@Url.Action("Journal","ShopAdmin", new { company })">بازگشت به اسناد</a>
+    </div>
+</div>
+<div class="panel-card mb-3">
+    <div class="row g-2">
+        <div class="col-md-3"><span class="text-muted">شماره:</span> <b dir="ltr">@entry.Number</b></div>
+        <div class="col-md-3"><span class="text-muted">تاریخ:</span> <b>@entry.EntryDate.ToShamsi()</b></div>
+        <div class="col-md-3"><span class="text-muted">نوع سند:</span> <b>@Model.TypeTitle</b></div>
+        <div class="col-md-3"><span class="text-muted">وضعیت:</span> <b>@(entry.Reversed ? "برگشت‌خورده" : Model.Debit == Model.Credit ? "تراز" : "ناتراز")</b></div>
+        <div class="col-12"><span class="text-muted">شرح:</span> @entry.Description</div>
+    </div>
+</div>
+<div class="panel-card">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>کد</th>
+                    <th>حساب (گروه › کل › معین)</th>
+                    <th>تفصیلی سطح ۱</th>
+                    <th>تفصیلی سطح ۲</th>
+                    <th>شرح ردیف</th>
+                    <th>بدهکار</th>
+                    <th>بستانکار</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Lines)
+                {
+                    <tr>
+                        <td dir="ltr">@(row.Account == null ? "—" : row.Account.Code)</td>
+                        <td>
+                            <div class="fw-bold">@(row.Account == null ? "حساب حذف‌شده" : row.Account.Title)</div>
+                            <div class="small text-muted">
+                                @((row.Group == null ? "" : row.Group.Title) + (row.General == null ? "" : " › " + row.General.Title))
+                            </div>
+                        </td>
+                        <td>@(row.Detail1 == null ? "" : row.Detail1.Code + " — " + row.Detail1.Title)</td>
+                        <td>@(row.Detail2 == null ? "" : row.Detail2.Code + " — " + row.Detail2.Title)</td>
+                        <td>@row.Line.Memo</td>
+                        <td>@(row.Line.Debit > 0 ? row.Line.Debit.ToToman() : "")</td>
+                        <td>@(row.Line.Credit > 0 ? row.Line.Credit.ToToman() : "")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <td colspan="5">جمع</td>
+                    <td>@Model.Debit.ToToman()</td>
+                    <td>@Model.Credit.ToToman()</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

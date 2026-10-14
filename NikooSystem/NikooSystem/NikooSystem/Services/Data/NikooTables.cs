@@ -125,6 +125,10 @@ namespace NikooSystem.Services.Data
             .Text("Title", 120).Text("BankName", 60).Text("Branch", 80).Text("AccountNumber", 40).Text("CardNumber", 20)
             .Text("Sheba", 30).Text("Owner", 120).Text("GatewayMerchant", 100).Text("GatewayUsername", 100).Text("GatewaySecret", 300);
 
+        public static readonly EntityMap<StoreDetailAccount> DetailAccounts = Store<StoreDetailAccount>("DetailAccounts")
+            .Text("Code", 20).Text("Title", 150).Text("Note", 300)
+            .Index("IX_DetailAccounts_Code", "CompanyCode", "Code");
+
         public static readonly EntityMap<StoreParty> Parties = Store<StoreParty>("Parties")
             .Text("Code", 40).Text("Name", 150).Text("Mobile", 20).Text("Phone", 30)
             .Index("IX_Parties_Name", "CompanyCode", "Name");
@@ -217,7 +221,7 @@ namespace NikooSystem.Services.Data
             Tenants, Settings, PageLayouts, Categories, AttributeDefs, Products, Collections, MenuItems, Pages,
             GalleryItems, Customers, Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs,
             Appointments, Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
-            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
+            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
             SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
             SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, StoragePurchases
         };
@@ -228,7 +232,7 @@ namespace NikooSystem.Services.Data
             Settings, Categories, AttributeDefs, Products, Collections, MenuItems, Pages, GalleryItems, Customers,
             Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments,
             Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
-            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, Carts,
+            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts,
             NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits
         };
 

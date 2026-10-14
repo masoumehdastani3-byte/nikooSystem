@@ -1,67 +1,211 @@
 @model BooksPage
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Account == null ? "دفاتر حسابداری" : "دفتر معین " + Model.Account.Title;
     var company = (string)ViewBag.CompanyCode;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var from = Model.From.HasValue ? Model.From.Value.ToString("yyyy-MM-dd", invariant) : null;
+    var to = Model.To.HasValue ? Model.To.Value.ToString("yyyy-MM-dd", invariant) : null;
+    var isTrial = Model.Totals != null;
+    string heading;
+    if (isTrial)
+    {
+        heading = Model.Level == "group" ? "تراز گروه‌ها" : Model.Level == "subsidiary" ? "تراز معین" : Model.Level == "detail" ? "تراز تفصیلی" : "تراز کل";
+    }
+    else if (Model.Account != null)
+    {
+        var bookName = Model.Account.Level == AccountLevel.Group ? "دفتر گروه" : Model.Account.Level == AccountLevel.General ? "دفتر کل" : "دفتر معین";
+        heading = bookName + " " + Model.Account.Code + " — " + Model.Account.Title + (Model.Detail == null ? "" : " / تفصیلی " + Model.Detail.Title);
+    }
+    else
+    {
+        heading = "دفتر تفصیلی " + Model.Detail.Code + " — " + Model.Detail.Title;
+    }
+    ViewBag.Title = heading;
+    var tabs = new[]
+    {
+        new KeyValuePair<string, string>("group", "تراز گروه"),
+        new KeyValuePair<string, string>("general", "تراز کل"),
+        new KeyValuePair<string, string>("subsidiary", "تراز معین"),
+        new KeyValuePair<string, string>("detail", "تراز تفصیلی")
+    };
+    var closing = Model.Opening + Model.Debit - Model.Credit;
+    var showAccount = Model.Account == null || Model.PerEntry;
+    var showDetails = Model.Account != null && Model.Account.IsPosting;
 }
-@if (Model.Account == null)
-{
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h2 class="mb-0">تراز آزمایشی</h2>
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@heading</h2>
+    <div class="d-flex gap-2 flex-wrap d-print-none">
+        @if (!isTrial)
+        {
+            var backLevel = Model.Account == null ? "detail" : Model.Account.Level == AccountLevel.Subsidiary ? "subsidiary" : Model.Account.Level == AccountLevel.General ? "general" : "group";
+            <a class="btn-outline-store" href="@Url.Action("Books","ShopAdmin", new { company, level = backLevel, from, to })">بازگشت به تراز</a>
+        }
+        <button class="btn-outline-store" type="button" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
     </div>
-    <div class="panel-card mb-3">
-        @Html.GridToolbar("جستجو در کد یا عنوان سرفصل…")
+</div>
+
+@if (isTrial)
+{
+    <ul class="nav nav-tabs mb-3 d-print-none">
+        @foreach (var tab in tabs)
+        {
+            <li class="nav-item"><a class="nav-link @(Model.Level == tab.Key ? "active" : null)" href="@Url.Action("Books","ShopAdmin", new { company, level = tab.Key, from, to })">@tab.Value</a></li>
+        }
+    </ul>
+}
+
+<form class="panel-card mb-3 d-flex flex-wrap align-items-end gap-2 d-print-none" method="get" action="@Url.Action("Books","ShopAdmin", new { company })">
+    @if (isTrial)
+    {
+        <input type="hidden" name="level" value="@Model.Level" />
+        if (Model.Parent != null)
+        {
+            <input type="hidden" name="parent" value="@Model.Parent.Id.ToString(invariant)" />
+        }
+    }
+    @if (Model.Account != null)
+    {
+        <input type="hidden" name="accountId" value="@Model.Account.Id.ToString(invariant)" />
+    }
+    @if (Model.Detail != null)
+    {
+        <input type="hidden" name="detailId" value="@Model.Detail.Id.ToString(invariant)" />
+    }
+    <div>
+        <label class="form-label small mb-1" for="from">از تاریخ</label>
+        <input class="form-control" type="date" id="from" name="from" dir="ltr" value="@from" />
+    </div>
+    <div>
+        <label class="form-label small mb-1" for="to">تا تاریخ</label>
+        <input class="form-control" type="date" id="to" name="to" dir="ltr" value="@to" />
+    </div>
+    <button class="btn-store-sm" type="submit"><i class="bi bi-calendar-range"></i> اعمال بازه</button>
+    @if (from != null || to != null)
+    {
+        <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["from"] = null, ["to"] = null, ["page"] = null })"><i class="bi bi-x-circle"></i> همه تاریخ‌ها</a>
+    }
+    <span class="small text-muted ms-auto">
+        @(from == null && to == null ? "همه سندها" : "از " + (Model.From.HasValue ? Model.From.Value.ToShamsi() : "ابتدا") + " تا " + (Model.To.HasValue ? Model.To.Value.ToShamsi() : "امروز"))
+    </span>
+</form>
+
+@if (isTrial)
+{
+    <div class="panel-card">
+        @if (Model.Parent != null)
+        {
+            <div class="mb-2">
+                فقط زیر <b>@Model.Parent.Code — @Model.Parent.Title</b>
+                <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["parent"] = null, ["page"] = null })"><i class="bi bi-x-circle"></i> همه حساب‌ها</a>
+            </div>
+        }
+        @Html.GridToolbar(Model.Level == "detail" ? "جستجو در کد یا عنوان تفصیلی…" : "جستجو در کد یا عنوان حساب…")
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        @Html.SortHeader("code", "سرفصل")
-                        @Html.SortHeader("debit", "بدهکار")
-                        @Html.SortHeader("credit", "بستانکار")
-                        @Html.SortHeader("balance", "مانده")
-                        <th></th>
+                        @Html.SortHeader("code", "کد")
+                        @Html.SortHeader("title", "عنوان")
+                        @if (Model.From.HasValue)
+                        {
+                            <th>مانده ابتدای دوره</th>
+                        }
+                        @Html.SortHeader("debit", "گردش بدهکار")
+                        @Html.SortHeader("credit", "گردش بستانکار")
+                        @Html.SortHeader("balance", "مانده بدهکار")
+                        <th>مانده بستانکار</th>
+                        <th class="d-print-none"></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var row in Model.Totals)
                     {
-                        var balance = row.Debit - row.Credit;
-                        var side = balance == 0 ? "—" : (balance > 0 ? "بد" : "بس");
                         <tr>
-                            <td>@row.Account.Code — @row.Account.Title</td>
+                            <td dir="ltr">@row.Code</td>
+                            <td>
+                                @row.Title
+                                <div class="small text-muted">
+                                    @(row.Account != null ? AccountingText.Level(row.Account.Level) + " · " + AccountingText.Kind(row.Account.Kind) : AccountingText.DetailLevel(row.Detail.Level) + " · " + AccountingText.Detail(row.Detail.Kind))
+                                </div>
+                            </td>
+                            @if (Model.From.HasValue)
+                            {
+                                <td>@(row.Opening == 0 ? "" : Math.Abs(row.Opening).ToToman() + " " + AccountingText.Side(row.Opening))</td>
+                            }
                             <td>@row.Debit.ToToman()</td>
                             <td>@row.Credit.ToToman()</td>
-                            <td>@(Math.Abs(balance).ToToman()) @side</td>
-                            <td>@Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, accountId = row.Account.Id }), "bi-journal-text", "دفتر معین", null)</td>
+                            <td>@(row.Balance > 0 ? row.Balance.ToToman() : "")</td>
+                            <td>@(row.Balance < 0 ? (-row.Balance).ToToman() : "")</td>
+                            <td class="row-actions d-print-none">
+                                @if (row.Account != null)
+                                {
+                                    var bookLabel = row.Account.Level == AccountLevel.Group ? "دفتر گروه" : row.Account.Level == AccountLevel.General ? "دفتر کل" : "دفتر معین";
+                                    @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, accountId = row.Account.Id, from, to }), "bi-journal-text", bookLabel, null)
+                                    if (row.Account.Level == AccountLevel.Group)
+                                    {
+                                        @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, level = "general", parent = row.Account.Id, from, to }), "bi-diagram-3", "حساب‌های کل این گروه", null)
+                                    }
+                                    else if (row.Account.Level == AccountLevel.General)
+                                    {
+                                        @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, level = "subsidiary", parent = row.Account.Id, from, to }), "bi-diagram-3", "معین‌های این حساب کل", null)
+                                    }
+                                    else
+                                    {
+                                        @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, level = "detail", parent = row.Account.Id, from, to }), "bi-people", "تفصیلی‌های این معین", null)
+                                    }
+                                }
+                                else
+                                {
+                                    @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, detailId = row.Detail.Id, from, to }), "bi-journal-text", "دفتر تفصیلی", null)
+                                }
+                            </td>
                         </tr>
                     }
                     @if (Model.Totals.Count == 0)
                     {
-                        <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-journal-text fs-3 d-block mb-1"></i>گردشی پیدا نشد.</td></tr>
-                    }
-                    else
-                    {
-                        <tr>
-                            <td class="fw-bold">جمع کل دفاتر</td>
-                            <td class="fw-bold">@Model.Debit.ToToman()</td>
-                            <td class="fw-bold">@Model.Credit.ToToman()</td>
-                            <td colspan="2"></td>
-                        </tr>
+                        <tr class="admin-empty-row"><td colspan="8"><i class="bi bi-journal-text fs-3 d-block mb-1"></i>گردشی پیدا نشد.</td></tr>
                     }
                 </tbody>
+                @if (Model.Totals.TotalCount > 0)
+                {
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="@(Model.From.HasValue ? 3 : 2)">جمع @(Model.Level == "detail" ? "تفصیلی‌ها" : "کل")</td>
+                            <td>@Model.Debit.ToToman()</td>
+                            <td>@Model.Credit.ToToman()</td>
+                            <td>@Model.BalanceDebit.ToToman()</td>
+                            <td>@Model.BalanceCredit.ToToman()</td>
+                            <td class="d-print-none"></td>
+                        </tr>
+                    </tfoot>
+                }
             </table>
         </div>
         @Html.Pager(Model.Totals)
+        <p class="small text-muted mb-0 mt-2">
+            @if (Model.Level == "detail")
+            {
+                @:تراز تفصیلی فقط ردیف‌هایی را می‌آورد که تفصیلی دارند؛ ردیفی که هر دو سطح تفصیلی را دارد در هر دو حساب دیده می‌شود.
+            }
+            else
+            {
+                @:در تراز درست، جمع گردش بدهکار با گردش بستانکار و جمع مانده‌های بدهکار با مانده‌های بستانکار برابر است. سند برگشت‌خورده و سند برگشتِ آن هر دو حساب می‌شوند و اثر هم را خنثی می‌کنند.
+            }
+        </p>
     </div>
 }
 else
 {
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <h2 class="mb-0">دفتر معین @Model.Account.Code — @Model.Account.Title</h2>
-        <a class="btn-outline-store" href="@Url.Action("Books","ShopAdmin", new { company })">بازگشت به تراز آزمایشی</a>
-    </div>
     <div class="panel-card">
-        @Html.GridToolbar("جستجو در شماره سند، شرح یا یادداشت…")
+        @if (showDetails && Model.DetailChoices.Count > 0)
+        {
+            @Html.GridToolbar("جستجو در شماره سند، شرح یا تفصیلی…",
+                new GridSelect("detailId", "همه تفصیلی‌ها", Model.DetailChoices.Select(d => new KeyValuePair<string, string>(d.Id.ToString(invariant), d.Code + " — " + d.Title + " (" + AccountingText.DetailLevel(d.Level) + ")"))))
+        }
+        else
+        {
+            @Html.GridToolbar("جستجو در شماره سند، شرح یا حساب…")
+        }
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
@@ -69,17 +213,36 @@ else
                         @Html.SortHeader("date", "تاریخ")
                         @Html.SortHeader("number", "سند")
                         <th>شرح</th>
+                        @if (showAccount)
+                        {
+                            <th>حساب معین</th>
+                        }
+                        @if (showDetails || Model.Account == null)
+                        {
+                            <th>تفصیلی</th>
+                        }
                         @Html.SortHeader("debit", "بدهکار")
                         @Html.SortHeader("credit", "بستانکار")
                         <th>مانده</th>
                     </tr>
                 </thead>
                 <tbody>
+                    @if (Model.From.HasValue && Model.Movements.Page == 1)
+                    {
+                        <tr class="table-light">
+                            <td>@Model.From.Value.ToShamsi()</td>
+                            <td></td>
+                            <td colspan="@((showAccount ? 2 : 1) + (showDetails || Model.Account == null ? 1 : 0))">مانده از قبل</td>
+                            <td></td>
+                            <td></td>
+                            <td>@(Math.Abs(Model.Opening).ToToman()) @AccountingText.Side(Model.Opening)</td>
+                        </tr>
+                    }
                     @foreach (var line in Model.Movements)
                     {
                         <tr>
                             <td>@line.Date.ToShamsi()</td>
-                            <td dir="ltr">@line.Number</td>
+                            <td dir="ltr"><a href="@Url.Action("Voucher","ShopAdmin", new { company, id = line.EntryId })">@line.Number</a></td>
                             <td>
                                 @line.Description
                                 @if (!string.IsNullOrWhiteSpace(line.Memo))
@@ -87,18 +250,47 @@ else
                                     <span class="text-muted">— @line.Memo</span>
                                 }
                             </td>
+                            @if (showAccount)
+                            {
+                                <td class="small">@line.Account</td>
+                            }
+                            @if (showDetails || Model.Account == null)
+                            {
+                                <td class="small">
+                                    @if (line.Detail1 != null)
+                                    {
+                                        <div>@line.Detail1</div>
+                                    }
+                                    @if (line.Detail2 != null)
+                                    {
+                                        <div class="text-muted">@line.Detail2</div>
+                                    }
+                                </td>
+                            }
                             <td>@(line.Debit > 0 ? line.Debit.ToToman() : "")</td>
                             <td>@(line.Credit > 0 ? line.Credit.ToToman() : "")</td>
-                            <td>@line.Balance.ToToman()</td>
+                            <td>@(Math.Abs(line.Balance).ToToman()) @AccountingText.Side(line.Balance)</td>
                         </tr>
                     }
                     @if (Model.Movements.Count == 0)
                     {
-                        <tr class="admin-empty-row"><td colspan="6">گردشی برای این سرفصل پیدا نشد.</td></tr>
+                        <tr class="admin-empty-row"><td colspan="8">گردشی در این بازه پیدا نشد.</td></tr>
                     }
                 </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="@(3 + (showAccount ? 1 : 0) + (showDetails || Model.Account == null ? 1 : 0))">جمع گردش و مانده پایان</td>
+                        <td>@Model.Debit.ToToman()</td>
+                        <td>@Model.Credit.ToToman()</td>
+                        <td>@(Math.Abs(closing).ToToman()) @AccountingText.Side(closing)</td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
         @Html.Pager(Model.Movements)
+        @if (Model.PerEntry)
+        {
+            <p class="small text-muted mb-0 mt-2">در دفتر کل هر سند یک ردیف است: جمع ردیف‌های آن سند در معین‌های زیر این حساب.</p>
+        }
     </div>
 }

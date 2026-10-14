@@ -4,6 +4,8 @@
     ViewBag.Title = Model.Id > 0 ? "ویرایش سند" : "سند دستی";
     var company = (string)ViewBag.CompanyCode;
     var accounts = (List<StoreLedgerAccount>)ViewBag.Accounts;
+    var details = (List<StoreDetailAccount>)ViewBag.Details;
+    var generals = (Dictionary<int, StoreLedgerAccount>)ViewBag.Generals;
     var types = (List<StoreDocumentType>)ViewBag.Types;
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var lines = Model.Lines ?? new List<StoreJournalLine>();
@@ -37,30 +39,108 @@
         </div>
     </div>
     <div class="panel-card">
-        <table class="table align-middle">
-            <thead><tr><th>سرفصل</th><th>بدهکار</th><th>بستانکار</th><th>یادداشت</th></tr></thead>
-            <tbody>
-                @for (var i = 0; i < 8; i++)
-                {
-                    var line = i < lines.Count ? lines[i] : new StoreJournalLine();
-                    <tr>
-                        <td>
-                            <select class="form-select" name="lineAccount">
-                                <option value="0">—</option>
-                                @foreach (var account in accounts)
-                                {
-                                    <option value="@account.Id.ToString(invariant)" @(line.AccountId == account.Id ? "selected" : null)>@account.Code — @account.Title</option>
-                                }
-                            </select>
-                        </td>
-                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineDebit" value="@(line.Debit > 0 ? line.Debit.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCredit" value="@(line.Credit > 0 ? line.Credit.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" name="lineMemo" maxlength="150" value="@line.Memo" /></td>
+        <div class="table-responsive">
+            <table class="table align-middle" id="journalLines">
+                <thead><tr><th style="min-width:14rem">حساب معین</th><th style="min-width:11rem">تفصیلی سطح ۱</th><th style="min-width:11rem">تفصیلی سطح ۲</th><th style="min-width:8rem">بدهکار</th><th style="min-width:8rem">بستانکار</th><th style="min-width:9rem">شرح ردیف</th></tr></thead>
+                <tbody>
+                    @for (var i = 0; i < 8; i++)
+                    {
+                        var line = i < lines.Count ? lines[i] : new StoreJournalLine();
+                        <tr>
+                            <td>
+                                <select class="form-select" name="lineAccount" data-line-account>
+                                    <option value="0">—</option>
+                                    @foreach (var group in accounts.GroupBy(a => a.ParentId))
+                                    {
+                                        var general = generals.ContainsKey(group.Key) ? generals[group.Key] : null;
+                                        <optgroup label="@(general == null ? "سایر" : general.Code + " — " + general.Title)">
+                                            @foreach (var account in group.OrderBy(a => a.Code))
+                                            {
+                                                <option value="@account.Id.ToString(invariant)" data-d1="@account.Detail1" data-d2="@account.Detail2" @(line.AccountId == account.Id ? "selected" : null)>@(account.Code + " — " + account.Title)</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select" name="lineDetail1" data-line-detail="1">
+                                    <option value="0">—</option>
+                                    @foreach (var detail in details.Where(d => d.Level == 1))
+                                    {
+                                        <option value="@detail.Id.ToString(invariant)" @(line.Detail1Id == detail.Id ? "selected" : null)>@(detail.Code + " — " + detail.Title)</option>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select" name="lineDetail2" data-line-detail="2">
+                                    <option value="0">—</option>
+                                    @foreach (var detail in details.Where(d => d.Level == 2))
+                                    {
+                                        <option value="@detail.Id.ToString(invariant)" @(line.Detail2Id == detail.Id ? "selected" : null)>@(detail.Code + " — " + detail.Title)</option>
+                                    }
+                                </select>
+                            </td>
+                            <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineDebit" value="@(line.Debit > 0 ? line.Debit.ToString(invariant) : "")" /></td>
+                            <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCredit" value="@(line.Credit > 0 ? line.Credit.ToString(invariant) : "")" /></td>
+                            <td><input class="form-control" name="lineMemo" maxlength="150" value="@line.Memo" /></td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="fw-bold">
+                        <td colspan="3">جمع</td>
+                        <td dir="ltr" id="sumDebit">0</td>
+                        <td dir="ltr" id="sumCredit">0</td>
+                        <td id="sumState"></td>
                     </tr>
-                }
-            </tbody>
-        </table>
-        <p class="small text-muted">جمع بدهکار و بستانکار باید برابر باشد. مبلغ‌ها به تومان است.</p>
+                </tfoot>
+            </table>
+        </div>
+        <p class="small text-muted">
+            هر ردیف یا بدهکار است یا بستانکار و جمع دو ستون باید برابر باشد. مبلغ‌ها به تومان است.
+            ستون تفصیلی فقط برای معینی باز است که در <a href="@Url.Action("Accounts","ShopAdmin", new { company })">سرفصل‌ها</a> تفصیلی می‌خواهد؛ اگر «اجباری» باشد پر کردنش لازم است.
+            <a href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">حساب‌های تفصیلی</a>
+        </p>
         <button class="btn-store" type="submit">ثبت سند</button>
     </div>
 }
+<script>
+    (function () {
+        var table = document.getElementById('journalLines');
+        function digits(value) {
+            var n = parseInt(String(value || '').replace(/[^\d۰-۹٠-٩]/g, '').replace(/[۰-۹]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); }).replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }), 10);
+            return isNaN(n) ? 0 : n;
+        }
+        function sync(row) {
+            var account = row.querySelector('[data-line-account]');
+            var option = account.options[account.selectedIndex];
+            [1, 2].forEach(function (level) {
+                var select = row.querySelector('[data-line-detail="' + level + '"]');
+                var use = option && option.dataset['d' + level] ? option.dataset['d' + level] : 'None';
+                var off = use === 'None';
+                // stays enabled so every row still posts one value per column
+                select.style.opacity = off ? '0.45' : '';
+                select.style.pointerEvents = off ? 'none' : '';
+                select.tabIndex = off ? -1 : 0;
+                select.required = use === 'Required';
+                if (off) select.value = '0';
+            });
+        }
+        function totals() {
+            var debit = 0, credit = 0;
+            table.querySelectorAll('input[name="lineDebit"]').forEach(function (i) { debit += digits(i.value); });
+            table.querySelectorAll('input[name="lineCredit"]').forEach(function (i) { credit += digits(i.value); });
+            document.getElementById('sumDebit').textContent = debit.toLocaleString('en-US');
+            document.getElementById('sumCredit').textContent = credit.toLocaleString('en-US');
+            var state = document.getElementById('sumState');
+            state.textContent = debit === credit ? (debit > 0 ? 'تراز است' : '') : 'اختلاف ' + Math.abs(debit - credit).toLocaleString('en-US');
+            state.className = debit === credit ? 'text-success' : 'text-danger';
+        }
+        table.querySelectorAll('tbody tr').forEach(function (row) {
+            sync(row);
+            row.querySelector('[data-line-account]').addEventListener('change', function () { sync(row); });
+        });
+        table.addEventListener('input', totals);
+        totals();
+    })();
+</script>

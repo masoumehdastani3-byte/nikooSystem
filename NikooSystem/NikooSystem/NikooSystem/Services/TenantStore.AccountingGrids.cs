@@ -33,6 +33,7 @@ namespace NikooSystem.Services
             if (party.Id > 0 && existing == null) return "طرف حساب پیدا نشد.";
             if (existing != null) party.CreatedAt = existing.CreatedAt;
             Save(NikooTables.Parties, companyCode, party);
+            PartyDetail(companyCode, party);
             return null;
         }
 
@@ -44,7 +45,11 @@ namespace NikooSystem.Services
                 || NikooDb.Count(NikooTables.SalesInvoices, SqlFilter.ForStore(companyCode).Eq("PartyId", id)) > 0
                 || NikooDb.Count(NikooTables.CashTransactions, SqlFilter.ForStore(companyCode).Eq("PartyId", id)) > 0;
             if (used) return "«" + party.Name + "» در فاکتور یا دریافت و پرداخت آمده و حذف نمی‌شود؛ غیرفعالش کنید.";
+            var detail = GetDetails(companyCode).FirstOrDefault(d => d.PartyId == id);
+            if (detail != null && DetailUsed(companyCode, detail.Id))
+                return "حساب تفصیلی «" + party.Name + "» در سندها آمده و حذف نمی‌شود؛ غیرفعالش کنید.";
             Remove(NikooTables.Parties, companyCode, id);
+            if (detail != null) Remove(NikooTables.DetailAccounts, companyCode, detail.Id);
             return null;
         }
 
@@ -131,7 +136,8 @@ namespace NikooSystem.Services
         {
             { "code", "t.[Code]" },
             { "title", "t.[Title]" },
-            { "kind", "t.[Kind]" }
+            { "kind", "t.[Kind], t.[Code]" },
+            { "level", "t.[Level], t.[Code]" }
         };
 
         public static PagedList<StoreLedgerAccount> AccountGrid(string companyCode, AccountGridQuery query)
@@ -139,6 +145,7 @@ namespace NikooSystem.Services
             EnsureAccounts(companyCode);
             var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Code", "Title");
             if (query.Kind.HasValue) filter.Eq("Kind", query.Kind.Value.ToString());
+            if (query.Level.HasValue) filter.Eq("Level", query.Level.Value.ToString());
             return Grid(NikooTables.LedgerAccounts, companyCode, query, filter, AccountSorts, "code", false);
         }
 
