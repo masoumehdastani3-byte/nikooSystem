@@ -20,6 +20,8 @@ bld/
 [Ll]ogs/
 
 # Publish / package artifacts
+/publish/
+*.rar
 *.pubxml.user
 **/Package/
 **/PackageTmp/
