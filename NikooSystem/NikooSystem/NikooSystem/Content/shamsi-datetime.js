@@ -1,5 +1,6 @@
-// Shamsi date and time fields rendered by Html.ShamsiDateTime. The hidden input keeps the Gregorian
-// "yyyy-MM-ddTHH:mm" value the server parses; the button opens a Shamsi month calendar.
+// Shamsi date and time fields rendered by Html.ShamsiDateTime and Html.ShamsiDate. The hidden input keeps the Gregorian
+// "yyyy-MM-ddTHH:mm" (or "yyyy-MM-dd" without the time selects) value the server parses; the button opens a Shamsi
+// month calendar. A field with data-placeholder may be left empty.
 (function () {
     'use strict';
 
@@ -94,15 +95,37 @@
         var hour = root.querySelector('[data-part=hour]');
         var minute = root.querySelector('[data-part=minute]');
 
+        var placeholder = root.getAttribute('data-placeholder');
+
         var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(hidden.value);
-        var selected = m ? g2d(+m[1], +m[2], +m[3]) : todayJdn();
-        var view = d2j(selected);
+        var selected = m ? g2d(+m[1], +m[2], +m[3]) : placeholder !== null ? null : todayJdn();
+        var view = d2j(selected === null ? todayJdn() : selected);
         var pop = null;
 
         function write() {
+            if (selected === null) {
+                hidden.value = '';
+                label.textContent = placeholder;
+                return;
+            }
             var g = d2g(selected), j = d2j(selected);
-            hidden.value = pad(g.gy, 4) + '-' + pad(g.gm, 2) + '-' + pad(g.gd, 2) + 'T' + pad(hour.value, 2) + ':' + pad(minute.value, 2);
+            hidden.value = pad(g.gy, 4) + '-' + pad(g.gm, 2) + '-' + pad(g.gd, 2)
+                + (hour ? 'T' + pad(hour.value, 2) + ':' + pad(minute.value, 2) : '');
             label.textContent = fa(j.jd + ' ' + MONTHS[j.jm - 1] + ' ' + j.jy);
+        }
+
+        function footButton(text, jdn) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = text;
+            b.addEventListener('click', function () {
+                selected = jdn;
+                if (jdn !== null) view = d2j(jdn);
+                write();
+                close();
+                button.focus();
+            });
+            return b;
         }
 
         function close() {
@@ -178,23 +201,14 @@
 
             var foot = document.createElement('div');
             foot.className = 'shamsi-pop-foot';
-            var now = document.createElement('button');
-            now.type = 'button';
-            now.textContent = 'امروز';
-            now.addEventListener('click', function () {
-                selected = todayJdn();
-                view = d2j(selected);
-                write();
-                close();
-                button.focus();
-            });
-            foot.appendChild(now);
+            foot.appendChild(footButton('امروز', todayJdn()));
+            if (placeholder !== null) foot.appendChild(footButton('پاک کردن', null));
             pop.appendChild(foot);
         }
 
         function open() {
             if (pop) return close();
-            view = d2j(selected);
+            view = d2j(selected === null ? todayJdn() : selected);
             pop = document.createElement('div');
             pop.className = 'shamsi-pop';
             pop.setAttribute('role', 'dialog');
@@ -209,8 +223,10 @@
         }
 
         button.addEventListener('click', open);
-        hour.addEventListener('change', write);
-        minute.addEventListener('change', write);
+        if (hour) {
+            hour.addEventListener('change', write);
+            minute.addEventListener('change', write);
+        }
         document.addEventListener('click', function (e) {
             if (pop && !root.contains(e.target)) close();
         });

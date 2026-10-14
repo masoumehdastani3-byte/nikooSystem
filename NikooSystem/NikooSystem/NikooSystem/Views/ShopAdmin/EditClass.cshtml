@@ -83,11 +83,11 @@
         </div>
         <div class="col-md-3">
             <label class="form-label" for="startDate">شروع دوره</label>
-            <input class="form-control" id="startDate" name="startDate" type="date" dir="ltr" value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd", invariant) : "")" />
+            @Html.ShamsiDate("startDate", Model.StartDate, "startDate", "بدون تاریخ")
         </div>
         <div class="col-md-3">
             <label class="form-label" for="endDate">پایان دوره</label>
-            <input class="form-control" id="endDate" name="endDate" type="date" dir="ltr" value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd", invariant) : "")" />
+            @Html.ShamsiDate("endDate", Model.EndDate, "endDate", "بدون تاریخ")
         </div>
         <div class="col-12">
             <label class="form-label" for="Summary">خلاصه</label>

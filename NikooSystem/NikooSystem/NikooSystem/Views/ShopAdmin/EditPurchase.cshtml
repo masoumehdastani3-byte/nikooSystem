@@ -49,7 +49,7 @@
         </div>
         <div class="col-md-3">
             <label class="form-label" for="invoiceDate">تاریخ</label>
-            <input class="form-control" type="date" id="invoiceDate" name="invoiceDate" dir="ltr" value="@Model.InvoiceDate.ToString("yyyy-MM-dd", invariant)" />
+            @Html.ShamsiDate("invoiceDate", Model.InvoiceDate, "invoiceDate")
         </div>
         <div class="col-md-3">
             <label class="form-label" for="payFrom">پرداخت از</label>

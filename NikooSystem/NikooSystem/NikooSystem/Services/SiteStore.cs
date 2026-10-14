@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using NikooSystem.Helpers;
 using NikooSystem.Models;
 using NikooSystem.Services.Data;
 
@@ -104,7 +105,7 @@ namespace NikooSystem.Services
             using (var tx = NikooDb.Begin())
             {
                 order.Id = NikooDb.NextId(NikooTables.SiteOrders, null, tx);
-                order.OrderNumber = "LF-" + DateTime.Now.ToString("yyyyMMdd") + "-" + order.Id.ToString("D4");
+                order.OrderNumber = "LF-" + DateTime.Now.ToShamsiCompact() + "-" + order.Id.ToString("D4");
                 order.CreatedAt = DateTime.Now;
                 NikooDb.Insert(NikooTables.SiteOrders, order, tx: tx);
                 tx.Commit();

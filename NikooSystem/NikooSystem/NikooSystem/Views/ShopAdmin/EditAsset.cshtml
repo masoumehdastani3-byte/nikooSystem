@@ -24,7 +24,7 @@
         </div>
         <div class="col-md-4">
             <label class="form-label" for="boughtOn">تاریخ خرید</label>
-            <input class="form-control" type="date" id="boughtOn" name="boughtOn" dir="ltr" value="@Model.BoughtOn.ToString("yyyy-MM-dd", invariant)" />
+            @Html.ShamsiDate("boughtOn", Model.BoughtOn, "boughtOn")
         </div>
         <div class="col-md-4">
             <label class="form-label" for="Cost">بهای تمام‌شده (تومان)</label>

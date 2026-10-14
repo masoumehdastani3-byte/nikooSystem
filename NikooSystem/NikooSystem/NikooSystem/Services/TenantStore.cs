@@ -484,7 +484,7 @@ namespace NikooSystem.Services
             return Save(NikooTables.Orders, companyCode, order, (o, stored) =>
             {
                 o.CreatedAt = DateTime.Now;
-                o.OrderNumber = companyCode.ToUpperInvariant() + "-" + o.CreatedAt.ToString("yyyyMMdd") + "-" + o.Id.ToString("D4");
+                o.OrderNumber = companyCode.ToUpperInvariant() + "-" + o.CreatedAt.ToShamsiCompact() + "-" + o.Id.ToString("D4");
             });
         }
 

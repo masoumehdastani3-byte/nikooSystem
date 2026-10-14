@@ -151,7 +151,38 @@ namespace NikooSystem.Helpers
             return MvcHtmlString.Create(wrapper.ToString());
         }
 
-        /// <summary>Whether the page rendered a <see cref="ShamsiDateTime"/> field, so the layout adds its script.</summary>
+        /// <summary>
+        /// A date field picked on the Shamsi calendar that posts <paramref name="name"/> as a Gregorian "yyyy-MM-dd". With a
+        /// <paramref name="placeholder"/> the field may stay empty (it posts ""), and the calendar gets a clear button.
+        /// </summary>
+        public static MvcHtmlString ShamsiDate(this HtmlHelper html, string name, DateTime? value, string id = null, string placeholder = null)
+        {
+            html.ViewContext.HttpContext.Items[ShamsiDateTimeKey] = true;
+            var optional = placeholder != null;
+            if (!value.HasValue && !optional) value = DateTime.Today;
+
+            var hidden = new TagBuilder("input");
+            hidden.MergeAttribute("type", "hidden");
+            hidden.MergeAttribute("name", name);
+            hidden.MergeAttribute("value", value.HasValue ? value.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "");
+
+            var date = new TagBuilder("button")
+            {
+                InnerHtml = Icon("bi-calendar3") + "<span>" + html.Encode(value.HasValue ? value.Value.ToShamsiText() : placeholder) + "</span>"
+            };
+            date.MergeAttribute("type", "button");
+            date.MergeAttribute("aria-haspopup", "dialog");
+            date.AddCssClass("form-control shamsi-dt-date");
+            if (!string.IsNullOrEmpty(id)) date.MergeAttribute("id", id);
+
+            var wrapper = new TagBuilder("div") { InnerHtml = hidden.ToString(TagRenderMode.SelfClosing) + date };
+            wrapper.AddCssClass("shamsi-dt");
+            wrapper.MergeAttribute("data-shamsi-dt", "");
+            if (optional) wrapper.MergeAttribute("data-placeholder", placeholder);
+            return MvcHtmlString.Create(wrapper.ToString());
+        }
+
+        /// <summary>Whether the page rendered a Shamsi date field, so the layout adds its script.</summary>
         public static bool UsesShamsiDateTime(this HtmlHelper html) => html.ViewContext.HttpContext.Items.Contains(ShamsiDateTimeKey);
 
         private static string ClockSelect(string part, string label, int count, int selected)

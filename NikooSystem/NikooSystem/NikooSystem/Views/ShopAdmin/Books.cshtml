@@ -73,11 +73,11 @@
     }
     <div>
         <label class="form-label small mb-1" for="from">از تاریخ</label>
-        <input class="form-control" type="date" id="from" name="from" dir="ltr" value="@from" />
+        @Html.ShamsiDate("from", Model.From, "from", "از ابتدا")
     </div>
     <div>
         <label class="form-label small mb-1" for="to">تا تاریخ</label>
-        <input class="form-control" type="date" id="to" name="to" dir="ltr" value="@to" />
+        @Html.ShamsiDate("to", Model.To, "to", "تا امروز")
     </div>
     <button class="btn-store-sm" type="submit"><i class="bi bi-calendar-range"></i> اعمال بازه</button>
     @if (from != null || to != null)

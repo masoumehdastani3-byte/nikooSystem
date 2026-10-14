@@ -29,7 +29,7 @@
         </div>
         <div class="col-md-3">
             <label class="form-label" for="txDate">تاریخ</label>
-            <input class="form-control" type="date" id="txDate" name="txDate" dir="ltr" value="@Model.TxDate.ToString("yyyy-MM-dd", invariant)" />
+            @Html.ShamsiDate("txDate", Model.TxDate, "txDate")
         </div>
         <div class="col-md-3">
             <label class="form-label" for="Amount">مبلغ (تومان)</label>

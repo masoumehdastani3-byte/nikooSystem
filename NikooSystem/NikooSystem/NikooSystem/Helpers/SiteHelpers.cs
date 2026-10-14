@@ -23,6 +23,12 @@ namespace NikooSystem.Helpers
             return string.Format("{0:0000}/{1:00}/{2:00}", Shamsi.GetYear(date), Shamsi.GetMonth(date), Shamsi.GetDayOfMonth(date));
         }
 
+        /// <summary>تاریخ شمسی فشرده با ارقام لاتین برای شماره‌ها، مثل 14050718</summary>
+        public static string ToShamsiCompact(this DateTime date)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{0:0000}{1:00}{2:00}", Shamsi.GetYear(date), Shamsi.GetMonth(date), Shamsi.GetDayOfMonth(date));
+        }
+
         private static readonly string[] ShamsiMonths =
         {
             "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
