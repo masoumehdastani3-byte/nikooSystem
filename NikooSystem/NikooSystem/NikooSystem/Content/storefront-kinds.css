@@ -181,9 +181,22 @@ body.layout-magazine, body.layout-corporate {
 @media (max-width: 991px) {
   .cn-burger { display: inline-flex; align-items: center; gap: .4rem; }
   .cn-nav { display: none; flex-direction: column; align-items: stretch; width: 100%; padding-bottom: .5rem; }
-  .cn-nav-toggle:checked ~ .cn-nav { display: flex; }
+  .cn-nav-toggle:checked ~ .cn-nav { display: flex; flex: 1 0 100%; }
   .cn-corporate .cn-header-row { flex-wrap: wrap; }
   .cn-corporate .cn-cta { display: none; }
+  .cn-nav .wm-drop-menu {
+    position: static;
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding: 0 .35rem .35rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .cn-sections .cn-nav .wm-drop-menu a { color: rgba(255, 255, 255, .88); }
+  .cn-corporate .cn-nav .wm-drop-menu a { color: var(--store-ink); padding-inline-start: 1.1rem; }
 }
 
 .cn-breaking { background: #fef2f2; border-bottom: 1px solid #fecaca; font-size: .9rem; }

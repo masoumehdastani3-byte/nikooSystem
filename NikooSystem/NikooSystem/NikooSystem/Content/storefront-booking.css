@@ -30,8 +30,20 @@ body.theme-clinic, body.theme-salon {
   .bk-header-row { flex-wrap: wrap; }
   .bk-header .cn-burger { display: inline-flex; }
   .bk-nav { display: none; flex-direction: column; align-items: stretch; width: 100%; order: 5; }
-  .cn-nav-toggle:checked ~ .bk-nav { display: flex; }
+  .cn-nav-toggle:checked ~ .bk-nav { display: flex; flex: 1 0 100%; }
   .bk-cta { display: none; }
+  .bk-nav .wm-drop-menu {
+    position: static;
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding: 0 .35rem .35rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  .bk-nav .wm-drop-menu a { padding-inline-start: 1.1rem; }
 }
 
 /* ========== Buttons ========== */

@@ -933,6 +933,12 @@ body.theme-boutique .wm-life-icon {
   display: flex; justify-content: center; flex-wrap: wrap; gap: 1.35rem;
   padding: .75rem 0 .35rem; border-top: 1px solid #e5eef0; margin-top: .75rem;
 }
+/* Nav sits inside the header row, so the bar underline belongs to skins that opt in. */
+body.store-body .fashion-header .fashion-nav {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
 .fashion-nav a { color: #002c3e; font-size: .92rem; text-decoration: none; font-weight: 600; }
 .fashion-nav a:hover { color: #46d2ad; }
 
@@ -1307,14 +1313,12 @@ body.theme-marketplace .wm-offer { border-radius: 20px; }
   .mp-sidebar a { display: inline-block; }
 }
 @media (max-width: 768px) {
-  .fashion-header-grid { grid-template-columns: auto 1fr auto; }
   .fashion-split-offers, .mp-hero-grid, .boutique-hero-grid, .boutique-life { grid-template-columns: 1fr; }
   .marketplace-header-row { grid-template-columns: 1fr; }
   .grid-fashion, .grid-minimal, .grid-boutique, .grid-marketplace, .grid-organic {
     grid-template-columns: repeat(2, 1fr) !important;
   }
   .minimal-header-row { flex-wrap: wrap; }
-  .minimal-nav { order: 3; width: 100%; justify-content: center; }
 }
 
 /* ========== FASHION HOME REDESIGN (bf-*) ========== */
@@ -1583,5 +1587,236 @@ body.theme-fashion .wm-product .thumb { aspect-ratio: .85; background: #f5fbf9; 
   .bf-cats,
   .bf-strip-grid { grid-template-columns: 1fr; }
   .bf-cat { min-height: 200px; }
+}
+
+/* ========== MOBILE MENUS ==========
+   Phone headers keep logo + icons on one row. The link list opens
+   full-width under the bar instead of squeezing into a middle column. */
+.sf-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+.sf-nav-toggle:focus-visible + .sf-burger {
+  outline: 2px solid var(--store-primary, #46d2ad);
+  outline-offset: 2px;
+}
+.wm-nav-panel { display: contents; }
+
+@media (max-width: 991.98px) {
+  body.store-body .sf-burger { display: inline-flex; }
+  body.store-body .sf-nav-toggle:checked ~ .sf-burger .bi-list::before { content: "\f62a"; }
+
+  body.store-body .fashion-topbar .container > span { overflow-wrap: anywhere; }
+
+  body.store-body .fashion-header,
+  body.store-body .minimal-header,
+  body.store-body .boutique-header { position: relative; z-index: 50; }
+  body.store-body .wm-nav { z-index: 50; }
+
+  body.store-body .fashion-header-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .55rem .7rem;
+    min-width: 0;
+  }
+  body.store-body .fashion-header .fashion-brand {
+    flex: 1 1 auto;
+    min-width: 0;
+    order: 1;
+  }
+  body.store-body .fashion-header .fashion-brand img { flex: none; height: 36px; }
+  body.store-body .fashion-header .fashion-brand strong {
+    font-size: 1.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body.store-body .fashion-header .fashion-side {
+    order: 2;
+    flex: none;
+    flex-wrap: nowrap;
+    gap: .65rem;
+  }
+  body.store-body .fashion-header .wm-icon-link { flex: none; }
+  body.store-body .fashion-header .sf-burger { order: 3; }
+  body.store-body .fashion-header .fashion-nav { display: none; }
+  body.store-body .fashion-header .sf-nav-toggle:checked ~ .fashion-nav {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 0;
+    margin: 0;
+    padding: .25rem 1.15rem .7rem;
+    background: #fff;
+    color: var(--store-ink, #002c3e);
+    border: 0;
+    border-top: 1px solid var(--store-border, #e5eef0);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+    max-height: min(70vh, 28rem);
+    overflow-y: auto;
+  }
+  body.store-body .fashion-header .fashion-nav a {
+    display: block;
+    padding: .85rem .1rem;
+    border-bottom: 1px solid var(--store-border, #eef3f4);
+    text-align: right;
+    letter-spacing: 0;
+    box-shadow: none;
+  }
+
+  body.store-body .minimal-header-row {
+    flex-wrap: nowrap;
+    align-items: center;
+    min-width: 0;
+  }
+  body.store-body .minimal-header .wm-brand { flex: 1 1 auto; min-width: 0; order: 1; }
+  body.store-body .minimal-header .wm-brand strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  body.store-body .minimal-header .minimal-actions { order: 2; flex: none; }
+  body.store-body .minimal-header .sf-burger { order: 3; }
+  body.store-body .minimal-header .minimal-nav { display: none; }
+  body.store-body .minimal-header .sf-nav-toggle:checked ~ .minimal-nav {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    flex-direction: column;
+    align-items: stretch;
+    width: auto;
+    gap: 0;
+    margin: 0;
+    padding: .25rem 1.15rem .7rem;
+    background: #fff;
+    color: #111;
+    border-top: 1px solid #eee;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+    max-height: min(70vh, 28rem);
+    overflow-y: auto;
+    justify-content: flex-start;
+  }
+  body.store-body .minimal-header .minimal-nav a {
+    display: block;
+    padding: .85rem .1rem;
+    border-bottom: 1px solid #f1f1f1;
+    text-align: right;
+  }
+
+  body.store-body .boutique-header .sf-burger {
+    position: absolute;
+    top: 1rem;
+    left: .85rem;
+    z-index: 2;
+    background: #fff;
+  }
+  body.store-body .boutique-header .boutique-nav { display: none; }
+  body.store-body .boutique-header .sf-nav-toggle:checked ~ .boutique-nav {
+    display: flex;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: .25rem 1.15rem .7rem;
+    background: #fff;
+    color: #6d2c4b;
+    text-align: right;
+    border-top: 1px solid #f0e2d8;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+    max-height: min(70vh, 28rem);
+    overflow-y: auto;
+  }
+  body.store-body .boutique-header .boutique-nav a {
+    display: block;
+    padding: .85rem .1rem;
+    border-bottom: 1px solid #f0e2d8;
+  }
+  body.store-body .boutique-search { max-width: 100%; }
+
+  body.store-body .marketplace-header-row { grid-template-columns: 1fr; gap: .75rem; }
+  body.store-body .marketplace-header-row > * { min-width: 0; }
+  body.store-body .wm-header-row > * { min-width: 0; }
+
+  body.store-body .wm-nav .sf-burger { margin-inline-start: auto; background: #fff; }
+  body.store-body .wm-nav-panel { display: none; }
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    background: #fff;
+    color: var(--store-ink, #1b4332);
+    border-top: 1px solid var(--store-border, #e8ece8);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, .14);
+    max-height: min(70vh, 28rem);
+    overflow-y: auto;
+    padding: .25rem 1.15rem .7rem;
+  }
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-menu,
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-nav-right {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    flex: none;
+    width: 100%;
+    gap: 0;
+    margin: 0;
+  }
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-menu > a,
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-drop,
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-drop > a,
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-nav-right a {
+    display: block;
+    padding: .8rem .1rem;
+    border-bottom: 1px solid var(--store-border, #e8ece8);
+    text-align: right;
+    text-transform: none;
+    letter-spacing: 0;
+    box-shadow: none;
+  }
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-drop-menu {
+    position: static;
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding: 0 .2rem .25rem;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+  body.store-body .wm-nav .sf-nav-toggle:checked ~ .wm-nav-panel .wm-drop-menu a {
+    padding-inline-start: 1rem;
+  }
 }
 

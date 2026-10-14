@@ -11,6 +11,9 @@
     var layoutId = template.Layout;
     var kind = (SiteKindInfo)ViewBag.Kind;
     var accountUrl = Url.Action(kind.IsDigital ? "Library" : "Orders", "ShopAccount", new { company });
+    var mainMenus = StoreMenuHelper.Roots(menus, "main").ToList();
+    var catalogHref = Url.Action("Catalog", "Shop", new { company });
+    var menuHasCatalog = mainMenus.Any(m => !string.IsNullOrEmpty(m.Url) && m.Url.IndexOf("/Catalog", StringComparison.OrdinalIgnoreCase) >= 0);
     var seo = Html.Seo();
     if (ViewBag.PreviewTemplate != null) { seo.NoIndex = true; }
     Seo.Defaults(seo, Request, ViewBag.Title as string, settings.StoreName,
@@ -106,12 +109,17 @@ else if (layoutId == "fashion")
         <div class="container">
             <div class="fashion-header-grid">
                 @Html.StoreBrand("wm-brand fashion-brand")
-                <nav class="fashion-nav" style="border:0;margin:0;padding:0;justify-content:center;">
-                    @foreach (var item in StoreMenuHelper.Roots(menus, "main").Take(4))
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <nav class="fashion-nav">
+                    @foreach (var item in mainMenus)
                     {
                         <a href="@item.Url">@item.Title</a>
                     }
-                    <a href="@Url.Action("Catalog","Shop", new { company })">@kind.ItemsLabel</a>
+                    @if (!menuHasCatalog)
+                    {
+                        <a href="@catalogHref">@kind.ItemsLabel</a>
+                    }
                 </nav>
                 <div class="fashion-side fashion-side-end">
                     <a class="wm-icon-link" href="tel:@(settings.Phone)" title="تماس"><i class="bi bi-telephone"></i></a>
@@ -131,12 +139,17 @@ else if (layoutId == "minimal")
         <div class="container">
             <div class="minimal-header-row">
                 @Html.StoreBrand("wm-brand")
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
                 <nav class="minimal-nav">
-                    @foreach (var item in StoreMenuHelper.Roots(menus, "main").Take(5))
+                    @foreach (var item in mainMenus)
                     {
                         <a href="@item.Url">@item.Title</a>
                     }
-                    <a href="@Url.Action("Catalog","Shop", new { company })">@kind.ItemsLabel</a>
+                    @if (!menuHasCatalog)
+                    {
+                        <a href="@catalogHref">@kind.ItemsLabel</a>
+                    }
                 </nav>
                 <div class="minimal-actions">
                     <a href="@accountUrl"><i class="bi bi-person"></i></a>
@@ -151,12 +164,17 @@ else if (layoutId == "boutique")
     <header class="wm-header boutique-header">
         <div class="container text-center">
             @Html.StoreBrand("wm-brand boutique-brand", withTagline: true)
+            <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+            <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
             <nav class="boutique-nav">
-                @foreach (var item in StoreMenuHelper.Roots(menus, "main"))
+                @foreach (var item in mainMenus)
                 {
                     <a href="@item.Url">@item.Title</a>
                 }
-                <a href="@Url.Action("Catalog","Shop", new { company })">کاتالوگ</a>
+                @if (!menuHasCatalog)
+                {
+                    <a href="@catalogHref">کاتالوگ</a>
+                }
                 <a href="@Url.Action("Cart","Shop", new { company })">سبد (@cartCount)</a>
                 <a href="@accountUrl">حساب</a>
             </nav>
@@ -188,8 +206,11 @@ else if (layoutId == "marketplace")
         <div class="container">
             <div class="wm-nav-row">
                 <a class="wm-cats-btn" href="@Url.Action("Catalog","Shop", new { company })"><i class="bi bi-grid"></i> دسته‌ها</a>
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <div class="wm-nav-panel">
                 <div class="wm-menu">
-                    @foreach (var item in StoreMenuHelper.Roots(menus, "main"))
+                    @foreach (var item in mainMenus)
                     {
                         <a href="@item.Url">@item.Title</a>
                     }
@@ -198,6 +219,7 @@ else if (layoutId == "marketplace")
                     <a href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })">پرفروش</a>
                     <a href="@Url.Action("Catalog","Shop", new { company, sort = "price_asc" })">ارزان‌ترین</a>
                     <a href="@Url.Action("Login","ShopAdmin", new { company })">مدیریت</a>
+                </div>
                 </div>
             </div>
         </div>
@@ -237,8 +259,11 @@ else
                 <a class="wm-cats-btn" href="@Url.Action("Catalog","Shop", new { company })">
                     <i class="bi bi-list"></i> همه دسته‌بندی‌ها
                 </a>
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <div class="wm-nav-panel">
                 <div class="wm-menu">
-                    @foreach (var item in StoreMenuHelper.Roots(menus, "main"))
+                    @foreach (var item in mainMenus)
                     {
                         var children = StoreMenuHelper.Children(menus, item.Id).ToList();
                         if (children.Any())
@@ -263,6 +288,7 @@ else
                     <a href="@Url.Action("Catalog","Shop", new { company, sort = "bestseller" })"><i class="bi bi-lightning-charge-fill"></i> پیشنهاد ویژه</a>
                     <a href="@Url.Action("Catalog","Shop", new { company, sort = "price_asc" })"><i class="bi bi-percent"></i> تخفیف هفته</a>
                     <a href="@Url.Action("Login","ShopAdmin", new { company })">مدیریت</a>
+                </div>
                 </div>
             </div>
         </div>
