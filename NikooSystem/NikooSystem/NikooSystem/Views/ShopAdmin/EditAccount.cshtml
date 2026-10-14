@@ -1,0 +1,60 @@
+@model StoreLedgerAccount
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش سرفصل" : "سرفصل جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var parents = (List<StoreLedgerAccount>)ViewBag.Parents;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Accounts","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditAccount", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.HiddenFor(m => m.IsSystem)
+    <div class="panel-card row g-3 m-0">
+        <div class="col-md-3">
+            <label class="form-label" for="Code">کد</label>
+            @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "20", required = "required", dir = "ltr", @readonly = Model.IsSystem ? "readonly" : null })
+        </div>
+        <div class="col-md-5">
+            <label class="form-label" for="Title">عنوان</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "120", required = "required" })
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Kind">نوع</label>
+            @if (Model.IsSystem)
+            {
+                @Html.HiddenFor(m => m.Kind)
+                <input class="form-control" value="@AccountingText.Kind(Model.Kind)" readonly="readonly" />
+            }
+            else
+            {
+                <select class="form-select" name="Kind" id="Kind">
+                    @foreach (AccountKind kind in Enum.GetValues(typeof(AccountKind)))
+                    {
+                        <option value="@kind" @(Model.Kind == kind ? "selected" : null)>@AccountingText.Kind(kind)</option>
+                    }
+                </select>
+            }
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="ParentId">زیرمجموعه</label>
+            <select class="form-select" name="ParentId" id="ParentId">
+                <option value="0">—</option>
+                @foreach (var parent in parents)
+                {
+                    <option value="@parent.Id" @(Model.ParentId == parent.Id ? "selected" : null)>@parent.Code — @parent.Title</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال")
+        </div>
+        <div class="col-12">
+            <button class="btn-store" type="submit">ذخیره</button>
+        </div>
+    </div>
+}

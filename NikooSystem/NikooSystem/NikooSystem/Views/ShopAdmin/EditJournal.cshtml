@@ -1,0 +1,55 @@
+@model StoreJournalEntry
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش سند" : "سند دستی";
+    var company = (string)ViewBag.CompanyCode;
+    var accounts = (List<StoreLedgerAccount>)ViewBag.Accounts;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var lines = Model.Lines ?? new List<StoreJournalLine>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Journal","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditJournal", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0 mb-3">
+        <div class="col-md-3">
+            <label class="form-label" for="entryDate">تاریخ</label>
+            <input class="form-control" type="date" id="entryDate" name="entryDate" dir="ltr" value="@Model.EntryDate.ToString("yyyy-MM-dd", invariant)" />
+        </div>
+        <div class="col-md-9">
+            <label class="form-label" for="Description">شرح</label>
+            @Html.TextBoxFor(m => m.Description, new { @class = "form-control", maxlength = "300", required = "required" })
+        </div>
+    </div>
+    <div class="panel-card">
+        <table class="table align-middle">
+            <thead><tr><th>سرفصل</th><th>بدهکار</th><th>بستانکار</th><th>یادداشت</th></tr></thead>
+            <tbody>
+                @for (var i = 0; i < 8; i++)
+                {
+                    var line = i < lines.Count ? lines[i] : new StoreJournalLine();
+                    <tr>
+                        <td>
+                            <select class="form-select" name="lineAccount">
+                                <option value="0">—</option>
+                                @foreach (var account in accounts)
+                                {
+                                    <option value="@account.Id.ToString(invariant)" @(line.AccountId == account.Id ? "selected" : null)>@account.Code — @account.Title</option>
+                                }
+                            </select>
+                        </td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineDebit" value="@(line.Debit > 0 ? line.Debit.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineCredit" value="@(line.Credit > 0 ? line.Credit.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" name="lineMemo" maxlength="150" value="@line.Memo" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="small text-muted">جمع بدهکار و بستانکار باید برابر باشد. مبلغ‌ها به تومان است.</p>
+        <button class="btn-store" type="submit">ثبت سند</button>
+    </div>
+}

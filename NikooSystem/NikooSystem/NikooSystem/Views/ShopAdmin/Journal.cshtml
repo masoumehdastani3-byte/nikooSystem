@@ -1,0 +1,39 @@
+@model List<StoreJournalEntry>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اسناد حسابداری";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">اسناد</h2>
+    <a class="btn-store" href="@Url.Action("EditJournal","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> سند دستی</a>
+</div>
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>شماره</th><th>تاریخ</th><th>شرح</th><th>مبدأ</th><th>مبلغ</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var amount = (item.Lines ?? new List<StoreJournalLine>()).Sum(l => l.Debit);
+                <tr>
+                    <td dir="ltr">@item.Number</td>
+                    <td>@item.EntryDate.ToShamsi()</td>
+                    <td>@item.Description @(item.Reversed ? "(برگشت‌خورده)" : "")</td>
+                    <td>@AccountingText.Source(item.Source)</td>
+                    <td>@amount.ToToman()</td>
+                    <td class="row-actions">
+                        @if (item.Source == JournalSource.Manual)
+                        {
+                            @Html.IconLink(Url.Action("EditJournal", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                            @Html.IconPost("DeleteJournal", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این سند حذف شود؟")
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="6">هنوز سندی ثبت نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

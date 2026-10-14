@@ -508,6 +508,7 @@ namespace NikooSystem.Services
                 if (!order.StockDeducted) MoveStock(companyCode, order, +1, tx);
                 NikooDb.Update(NikooTables.Orders, order, companyCode, tx);
                 tx.Commit();
+                PostOnlineSale(companyCode, orderId);
                 return true;
             }
         }
@@ -550,6 +551,8 @@ namespace NikooSystem.Services
                 if (paymentMessage != null) order.PaymentMessage = paymentMessage;
                 NikooDb.Update(NikooTables.Orders, order, companyCode, tx);
                 tx.Commit();
+                if (!wasFulfilled && isFulfilled) PostOnlineSale(companyCode, orderId);
+                else if (wasFulfilled && !isFulfilled) VoidOnlineSale(companyCode, orderId);
                 return order;
             }
         }

@@ -117,6 +117,16 @@ namespace NikooSystem.Helpers
             },
             new PlatformModule
             {
+                Id = "accounting",
+                Icon = "bi-journal-text",
+                Name = "حسابداری ساده",
+                Summary = "سرفصل و سند حسابداری، فاکتور خرید و فروش، کنترل موجودی کالا و اموال، و دفتر کل و معین؛ فروش آنلاین، شهریه کلاس و رزرو سالن خودکار در دفاتر ثبت می‌شود",
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus },
+                Only = "فروشگاه، آموزش و باشگاه",
+                Highlight = true
+            },
+            new PlatformModule
+            {
                 Id = "domain",
                 Icon = "bi-globe",
                 Name = "دامنه اختصاصی",

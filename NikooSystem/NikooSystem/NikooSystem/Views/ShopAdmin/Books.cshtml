@@ -1,0 +1,66 @@
+@model BooksPage
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "دفاتر حسابداری";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">تراز آزمایشی</h2>
+</div>
+<div class="panel-card mb-3">
+    <table class="table align-middle">
+        <thead><tr><th>سرفصل</th><th>بدهکار</th><th>بستانکار</th><th>مانده</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var row in Model.Totals)
+            {
+                var balance = row.Debit - row.Credit;
+                var side = balance == 0 ? "—" : (balance > 0 ? "بد" : "بس");
+                <tr>
+                    <td>@row.Account.Code — @row.Account.Title</td>
+                    <td>@row.Debit.ToToman()</td>
+                    <td>@row.Credit.ToToman()</td>
+                    <td>@(Math.Abs(balance).ToToman()) @side</td>
+                    <td>@Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, accountId = row.Account.Id }), "bi-journal-text", "دفتر معین", null)</td>
+                </tr>
+            }
+            @if (!Model.Totals.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="5">هنوز گردشی در دفاتر نیست.</td></tr>
+            }
+            else
+            {
+                <tr>
+                    <td class="fw-bold">جمع</td>
+                    <td class="fw-bold">@Model.Debit.ToToman()</td>
+                    <td class="fw-bold">@Model.Credit.ToToman()</td>
+                    <td colspan="2"></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@if (Model.Account != null)
+{
+    <div class="panel-card">
+        <h5>دفتر معین @Model.Account.Title</h5>
+        <table class="table align-middle">
+            <thead><tr><th>تاریخ</th><th>سند</th><th>شرح</th><th>بدهکار</th><th>بستانکار</th></tr></thead>
+            <tbody>
+                @foreach (var line in Model.Movements)
+                {
+                    <tr>
+                        <td>@line.Date.ToShamsi()</td>
+                        <td dir="ltr">@line.Number</td>
+                        <td>@line.Description @if (!string.IsNullOrWhiteSpace(line.Memo)) { <span class="text-muted">— @line.Memo</span> }</td>
+                        <td>@(line.Debit > 0 ? line.Debit.ToToman() : "")</td>
+                        <td>@(line.Credit > 0 ? line.Credit.ToToman() : "")</td>
+                    </tr>
+                }
+                @if (!Model.Movements.Any())
+                {
+                    <tr class="admin-empty-row"><td colspan="5">گردشی برای این سرفصل نیست.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

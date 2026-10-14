@@ -1,0 +1,36 @@
+@model List<StoreFixedAsset>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اموال";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">اموال و دارایی‌های ثابت</h2>
+    <a class="btn-store" href="@Url.Action("EditAsset","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> مال جدید</a>
+</div>
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>کد</th><th>نام</th><th>تاریخ خرید</th><th>بها</th><th>محل</th><th>وضعیت</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td dir="ltr">@item.Code</td>
+                    <td>@item.Title</td>
+                    <td>@item.BoughtOn.ToShamsi()</td>
+                    <td>@item.Cost.ToToman()</td>
+                    <td>@item.Location</td>
+                    <td>@(item.IsActive ? "در حال استفاده" : "خارج شده")</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("EditAsset", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                        @Html.IconPost("DeleteAsset", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این مال از فهرست حذف شود؟")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="7">هنوز مالی ثبت نشده است. خرید میز، دروازه، دستگاه یا ویترین را اینجا بنویسید.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

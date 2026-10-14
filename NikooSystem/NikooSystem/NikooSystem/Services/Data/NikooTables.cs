@@ -93,6 +93,28 @@ namespace NikooSystem.Services.Data
         public static readonly EntityMap<StoreFacility> Facilities = Store<StoreFacility>("Facilities")
             .Child("Hours", "FacilityHours", "FacilityId");
 
+        public static readonly EntityMap<StoreLedgerAccount> LedgerAccounts = Store<StoreLedgerAccount>("LedgerAccounts")
+            .Text("Code", 20)
+            .Index("IX_LedgerAccounts_Code", "CompanyCode", "Code");
+
+        public static readonly EntityMap<StoreJournalEntry> JournalEntries = Store<StoreJournalEntry>("JournalEntries")
+            .Index("IX_JournalEntries_Source", "CompanyCode", "Source", "SourceId")
+            .Child("Lines", "JournalLines", "EntryId");
+
+        public static readonly EntityMap<StorePurchaseInvoice> PurchaseInvoices = Store<StorePurchaseInvoice>("PurchaseInvoices")
+            .Child("Lines", "PurchaseLines", "InvoiceId");
+
+        public static readonly EntityMap<StoreSalesInvoice> SalesInvoices = Store<StoreSalesInvoice>("SalesInvoices")
+            .Child("Lines", "SaleLines", "InvoiceId");
+
+        public static readonly EntityMap<StoreStockMove> StockMoves = Store<StoreStockMove>("StockMoves")
+            .Index("IX_StockMoves_Product", "CompanyCode", "ProductId");
+
+        public static readonly EntityMap<StoreGoodsItem> GoodsItems = Store<StoreGoodsItem>("GoodsItems")
+            .Text("Title", 150).Text("Unit", 20);
+
+        public static readonly EntityMap<StoreFixedAsset> FixedAssets = Store<StoreFixedAsset>("FixedAssets");
+
         public static readonly EntityMap<StoreFacilityBooking> FacilityBookings = Store<StoreFacilityBooking>("FacilityBookings")
             .Text("Code", 12).Text("Authority", 100).Text("CustomerMobile", 20).Text("Source", 10)
             .Index("IX_FacilityBookings_StartAt", "CompanyCode", "StartAt")
@@ -179,7 +201,8 @@ namespace NikooSystem.Services.Data
         {
             Tenants, Settings, PageLayouts, Categories, AttributeDefs, Products, Collections, MenuItems, Pages,
             GalleryItems, Customers, Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs,
-            Appointments, Classes, Enrollments, Facilities, FacilityBookings, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
+            Appointments, Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
+            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
             SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
             SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, StoragePurchases
         };
@@ -189,7 +212,8 @@ namespace NikooSystem.Services.Data
         {
             Settings, Categories, AttributeDefs, Products, Collections, MenuItems, Pages, GalleryItems, Customers,
             Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments,
-            Classes, Enrollments, Facilities, FacilityBookings, Carts,
+            Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
+            PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, Carts,
             NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits
         };
 

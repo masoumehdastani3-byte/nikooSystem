@@ -1,0 +1,35 @@
+@model List<StorePurchaseInvoice>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "فاکتورهای خرید";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">فاکتور خرید</h2>
+    <a class="btn-store" href="@Url.Action("EditPurchase","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> فاکتور جدید</a>
+</div>
+<div class="panel-card">
+    <table class="table align-middle">
+        <thead><tr><th>شماره</th><th>تاریخ</th><th>فروشنده</th><th>پرداخت</th><th>مبلغ</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td dir="ltr">@item.Number</td>
+                    <td>@item.InvoiceDate.ToShamsi()</td>
+                    <td>@item.PartyName</td>
+                    <td>@AccountingText.Pay(item.PayWith)</td>
+                    <td>@item.Total.ToToman()</td>
+                    <td class="row-actions">
+                        @Html.IconLink(Url.Action("EditPurchase", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                        @Html.IconPost("DeletePurchase", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "فاکتور حذف شود و موجودی برگردد؟")
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="6">هنوز فاکتور خریدی ثبت نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

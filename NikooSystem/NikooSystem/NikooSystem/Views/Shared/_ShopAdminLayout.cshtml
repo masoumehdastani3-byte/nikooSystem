@@ -75,6 +75,18 @@
         add("Reviews", "bi-chat-dots", "نظرات", 0, null);
         add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
     }
+    if (kind.IsShop || kind.IsDigital || kind.IsCampus)
+    {
+        section("حسابداری", "bi-journal-text");
+        add("AccountingGuide", "bi-signpost", "راهنمای حسابداری", 0, null);
+        add("Accounts", "bi-list-check", "سرفصل‌ها", 0, new[] { "EditAccount" });
+        add("Journal", "bi-journal-text", "اسناد حسابداری", 0, new[] { "EditJournal" });
+        add("Purchases", "bi-box", "فاکتور خرید", 0, new[] { "EditPurchase" });
+        add("SaleInvoices", "bi-receipt", "فاکتور فروش", 0, new[] { "EditSaleInvoice" });
+        add("Inventory", "bi-box-seam", "انبار", 0, null);
+        add("Assets", "bi-tags", "اموال", 0, new[] { "EditAsset" });
+        add("Books", "bi-file-earmark-text", "دفاتر", 0, null);
+    }
     section("ظاهر سایت", "bi-palette");
     add("PageLayout", "bi-layout-text-window-reverse", "چیدمان صفحات", 0, null);
     add("Menus", "bi-menu-button-wide", "منوها", 0, new[] { "EditMenu" });

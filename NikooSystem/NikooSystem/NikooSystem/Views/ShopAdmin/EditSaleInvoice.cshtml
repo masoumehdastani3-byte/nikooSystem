@@ -1,0 +1,86 @@
+@model StoreSalesInvoice
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش فاکتور فروش" : "فاکتور فروش";
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<StoreProduct>)ViewBag.Products;
+    var goods = (List<StoreGoodsItem>)ViewBag.Goods;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var lines = Model.Lines ?? new List<StoreSaleLine>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0 mb-3">
+        <div class="col-md-4">
+            <label class="form-label" for="PartyName">خریدار</label>
+            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", maxlength = "120", required = "required" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="invoiceDate">تاریخ</label>
+            <input class="form-control" type="date" id="invoiceDate" name="invoiceDate" dir="ltr" value="@Model.InvoiceDate.ToString("yyyy-MM-dd", invariant)" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="PayWith">دریافت در</label>
+            <select class="form-select" name="PayWith" id="PayWith">
+                @foreach (PayWith pay in Enum.GetValues(typeof(PayWith)))
+                {
+                    <option value="@pay" @(Model.PayWith == pay ? "selected" : null)>@AccountingText.Pay(pay)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-12">
+            <label class="form-label" for="Note">یادداشت</label>
+            @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
+        </div>
+    </div>
+    <div class="panel-card">
+        <table class="table align-middle">
+            <thead><tr><th>شرح</th><th>کالا</th><th>تعداد</th><th>قیمت واحد</th></tr></thead>
+            <tbody>
+                @for (var i = 0; i < 8; i++)
+                {
+                    var line = i < lines.Count ? lines[i] : new StoreSaleLine();
+                    var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+                    <tr>
+                        <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" /></td>
+                        <td>
+                            <select class="form-select" name="lineStock">
+                                <option value="">بدون کسر از موجودی</option>
+                                @if (products.Any())
+                                {
+                                    <optgroup label="محصولات فروشگاه">
+                                        @foreach (var product in products)
+                                        {
+                                            var token = "p-" + product.Id.ToString(invariant);
+                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title (@product.Stock.ToFa())</option>
+                                        }
+                                    </optgroup>
+                                }
+                                @if (goods.Any())
+                                {
+                                    <optgroup label="کالاهای انبار">
+                                        @foreach (var item in goods)
+                                        {
+                                            var token = "g-" + item.Id.ToString(invariant);
+                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title (@item.Qty.ToFa())</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="small text-muted">اگر موجودی کافی نباشد فاکتور ثبت نمی‌شود. بهای تمام‌شده از میانگین خریدها به سند می‌رود. ردیف بدون کالا فقط درآمد است و از انبار کم نمی‌شود.</p>
+        <button class="btn-store" type="submit">ثبت فاکتور</button>
+    </div>
+}

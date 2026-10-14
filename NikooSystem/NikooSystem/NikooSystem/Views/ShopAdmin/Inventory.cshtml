@@ -1,0 +1,136 @@
+@model List<StoreGoodsItem>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "انبار";
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<StoreProduct>)ViewBag.Products;
+    var moves = (List<StoreStockMove>)ViewBag.Moves;
+    var names = new Dictionary<string, string>();
+    foreach (var product in products)
+    {
+        names["p" + product.Id] = product.Title;
+    }
+    foreach (var item in Model)
+    {
+        names["g" + item.Id] = item.Title;
+    }
+}
+@functions {
+    static string MoveKind(string kind)
+    {
+        switch (kind)
+        {
+            case "purchase": return "خرید";
+            case "sale": return "فروش";
+            case "adjust": return "تعدیل";
+            case "online": return "فروش آنلاین";
+            case "online-void": return "برگشت آنلاین";
+            default: return kind;
+        }
+    }
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">انبار</h2>
+</div>
+<div class="panel-card mb-3">
+    <h5>کالاهای انبار</h5>
+    <p class="small text-muted">برای توپ، لباس، لوازم مصرفی و هر چیزی که در ویترین فروشگاه نیست. خرید با نوع «کالا» موجودی را زیاد می‌کند.</p>
+    <table class="table align-middle">
+        <thead><tr><th>کالا</th><th>واحد</th><th>موجودی</th><th>تعدیل</th></tr></thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Unit</td>
+                    <td>@item.Qty.ToFa()</td>
+                    <td>
+                        @using (Html.BeginForm("AdjustGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="goodsId" value="@item.Id" />
+                            <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
+                            <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
+                            <button class="btn-outline-store" type="submit">ثبت</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="4">هنوز کالایی در انبار تعریف نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+    @using (Html.BeginForm("SaveGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-md-5">
+            <label class="form-label">کالای تازه</label>
+            <input class="form-control" name="Title" maxlength="150" required="required" placeholder="مثلاً توپ فوتبال" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">واحد</label>
+            <input class="form-control" name="Unit" maxlength="20" value="عدد" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn-store" type="submit">افزودن</button>
+        </div>
+    }
+</div>
+@if (products.Any())
+{
+    <div class="panel-card mb-3">
+        <h5>محصولات فروشگاه</h5>
+        <table class="table align-middle">
+            <thead><tr><th>محصول</th><th>موجودی</th><th>تعدیل</th></tr></thead>
+            <tbody>
+                @foreach (var product in products)
+                {
+                    <tr>
+                        <td>@product.Title</td>
+                        <td>@product.Stock.ToFa()</td>
+                        <td>
+                            @using (Html.BeginForm("AdjustStock", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@product.Id" />
+                                <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
+                                <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
+                                <button class="btn-outline-store" type="submit">ثبت</button>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+<div class="panel-card">
+    <h5>آخرین گردش‌ها</h5>
+    <table class="table align-middle">
+        <thead><tr><th>تاریخ</th><th>کالا</th><th>تعداد</th><th>نوع</th><th>یادداشت</th></tr></thead>
+        <tbody>
+            @foreach (var move in moves)
+            {
+                var key = move.ProductId > 0 ? "p" + move.ProductId : "g" + move.GoodsId;
+                string title;
+                if (!names.TryGetValue(key, out title))
+                {
+                    title = "کالا";
+                }
+                <tr>
+                    <td>@move.MoveDate.ToShamsi()</td>
+                    <td>@title</td>
+                    <td dir="ltr">@move.Qty.ToFa()</td>
+                    <td>@MoveKind(move.Kind)</td>
+                    <td>@move.Note</td>
+                </tr>
+            }
+            @if (!moves.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="5">هنوز گردشی ثبت نشده است.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

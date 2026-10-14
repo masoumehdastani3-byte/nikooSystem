@@ -191,6 +191,7 @@
     <Compile Include="Controllers\ShopAdminController.cs" />
     <Compile Include="Controllers\ShopAdminController.Booking.cs" />
     <Compile Include="Controllers\ShopAdminController.Campus.cs" />
+    <Compile Include="Controllers\ShopAdminController.Accounting.cs" />
     <Compile Include="Controllers\ShopAdminController.Catalog.cs" />
     <Compile Include="Controllers\ShopAdminController.Content.cs" />
     <Compile Include="Controllers\ShopAdminController.Quick.cs" />
@@ -237,6 +238,7 @@
     <Compile Include="Models\Product.cs" />
     <Compile Include="Models\Store\BookingModels.cs" />
     <Compile Include="Models\Store\CampusModels.cs" />
+    <Compile Include="Models\Store\AccountingModels.cs" />
     <Compile Include="Models\Store\StoreModels.cs" />
     <Compile Include="Models\Store\StoreImageFit.cs" />
     <Compile Include="Models\StorageModels.cs" />
@@ -273,6 +275,7 @@
     <Compile Include="Services\TenantStore.cs" />
     <Compile Include="Services\TenantStore.Booking.cs" />
     <Compile Include="Services\TenantStore.Campus.cs" />
+    <Compile Include="Services\TenantStore.Accounting.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
     <Compile Include="Services\TutorialService.cs" />
@@ -439,6 +442,19 @@
     <Content Include="Views\ShopAdmin\EditFacility.cshtml" />
     <Content Include="Views\ShopAdmin\FacilityBookings.cshtml" />
     <Content Include="Views\ShopAdmin\CampusGuide.cshtml" />
+    <Content Include="Views\ShopAdmin\Accounts.cshtml" />
+    <Content Include="Views\ShopAdmin\EditAccount.cshtml" />
+    <Content Include="Views\ShopAdmin\Journal.cshtml" />
+    <Content Include="Views\ShopAdmin\EditJournal.cshtml" />
+    <Content Include="Views\ShopAdmin\Purchases.cshtml" />
+    <Content Include="Views\ShopAdmin\EditPurchase.cshtml" />
+    <Content Include="Views\ShopAdmin\SaleInvoices.cshtml" />
+    <Content Include="Views\ShopAdmin\EditSaleInvoice.cshtml" />
+    <Content Include="Views\ShopAdmin\Inventory.cshtml" />
+    <Content Include="Views\ShopAdmin\Assets.cshtml" />
+    <Content Include="Views\ShopAdmin\EditAsset.cshtml" />
+    <Content Include="Views\ShopAdmin\Books.cshtml" />
+    <Content Include="Views\ShopAdmin\AccountingGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Notifications.cshtml" />
     <Content Include="Views\ShopAdmin\SeoGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Torob.cshtml" />

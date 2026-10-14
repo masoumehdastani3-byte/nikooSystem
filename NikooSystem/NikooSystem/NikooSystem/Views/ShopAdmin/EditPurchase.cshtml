@@ -1,0 +1,94 @@
+@model StorePurchaseInvoice
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش فاکتور خرید" : "فاکتور خرید";
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<StoreProduct>)ViewBag.Products;
+    var goods = (List<StoreGoodsItem>)ViewBag.Goods;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var lines = Model.Lines ?? new List<StorePurchaseLine>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Purchases","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditPurchase", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0 mb-3">
+        <div class="col-md-4">
+            <label class="form-label" for="PartyName">فروشنده</label>
+            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", maxlength = "120", required = "required" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="invoiceDate">تاریخ</label>
+            <input class="form-control" type="date" id="invoiceDate" name="invoiceDate" dir="ltr" value="@Model.InvoiceDate.ToString("yyyy-MM-dd", invariant)" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="PayWith">پرداخت از</label>
+            <select class="form-select" name="PayWith" id="PayWith">
+                @foreach (PayWith pay in Enum.GetValues(typeof(PayWith)))
+                {
+                    <option value="@pay" @(Model.PayWith == pay ? "selected" : null)>@AccountingText.Pay(pay)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-12">
+            <label class="form-label" for="Note">یادداشت</label>
+            @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
+        </div>
+    </div>
+    <div class="panel-card">
+        <table class="table align-middle">
+            <thead><tr><th>شرح</th><th>کالا</th><th>نوع</th><th>تعداد</th><th>بهای واحد</th></tr></thead>
+            <tbody>
+                @for (var i = 0; i < 8; i++)
+                {
+                    var line = i < lines.Count ? lines[i] : new StorePurchaseLine();
+                    var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+                    <tr>
+                        <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" /></td>
+                        <td>
+                            <select class="form-select" name="lineStock">
+                                <option value="">بدون اتصال به موجودی</option>
+                                @if (products.Any())
+                                {
+                                    <optgroup label="محصولات فروشگاه">
+                                        @foreach (var product in products)
+                                        {
+                                            var token = "p-" + product.Id.ToString(invariant);
+                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title</option>
+                                        }
+                                    </optgroup>
+                                }
+                                @if (goods.Any())
+                                {
+                                    <optgroup label="کالاهای انبار">
+                                        @foreach (var item in goods)
+                                        {
+                                            var token = "g-" + item.Id.ToString(invariant);
+                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </select>
+                        </td>
+                        <td>
+                            <select class="form-select" name="lineKind">
+                                @foreach (PurchaseLineKind kind in Enum.GetValues(typeof(PurchaseLineKind)))
+                                {
+                                    <option value="@kind" @(line.Kind == kind ? "selected" : null)>@AccountingText.Line(kind)</option>
+                                }
+                            </select>
+                        </td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineCost" value="@(line.UnitCost > 0 ? line.UnitCost.ToString(invariant) : "")" /></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <p class="small text-muted">نوع «کالا» موجودی را زیاد می‌کند. اگر نام کالا را بنویسید و از فهرست انتخاب نکنید، یک کالای انبار تازه ساخته می‌شود. «هزینه» و «اموال» موجودی را عوض نمی‌کنند؛ مال را جداگانه در فهرست اموال هم بنویسید.</p>
+        <button class="btn-store" type="submit">ثبت فاکتور</button>
+    </div>
+}

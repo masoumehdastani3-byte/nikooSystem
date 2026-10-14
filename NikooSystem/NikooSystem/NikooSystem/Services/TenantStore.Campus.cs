@@ -95,6 +95,7 @@ namespace NikooSystem.Services
                 if (full)
                     e.Notes = ((e.Notes ?? "") + " پرداخت پس از تکمیل ظرفیت انجام شد؛ با دانشجو هماهنگ کنید.").Trim();
                 Update(NikooTables.Enrollments, companyCode, e);
+                PostIncome(companyCode, JournalSource.Tuition, e.Id, e.PaidAmount, "شهریه ثبت‌نام " + e.Code);
             }
         }
 
@@ -220,6 +221,7 @@ namespace NikooSystem.Services
                 if (clash)
                     b.Notes = ((b.Notes ?? "") + " پرداخت پس از پایان مهلت نگه‌داری انجام شد و این ساعت با رزرو دیگری تداخل دارد؛ با مشتری هماهنگ کنید.").Trim();
                 Update(NikooTables.FacilityBookings, companyCode, b);
+                PostIncome(companyCode, JournalSource.Facility, b.Id, b.PaidAmount, "رزرو سالن " + b.Code);
             }
         }
 
