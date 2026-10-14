@@ -1,19 +1,9 @@
-@model List<StoreGoodsItem>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "انبار";
     var company = (string)ViewBag.CompanyCode;
-    var products = (List<StoreProduct>)ViewBag.Products;
-    var moves = (List<StoreStockMove>)ViewBag.Moves;
-    var names = new Dictionary<string, string>();
-    foreach (var product in products)
-    {
-        names["p" + product.Id] = product.Title;
-    }
-    foreach (var item in Model)
-    {
-        names["g" + item.Id] = item.Title;
-    }
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var tab = (string)ViewBag.Tab;
 }
 @functions {
     static string MoveKind(string kind)
@@ -32,105 +22,170 @@
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">انبار</h2>
 </div>
-<div class="panel-card mb-3">
-    <h5>کالاهای انبار</h5>
-    <p class="small text-muted">برای توپ، لباس، لوازم مصرفی و هر چیزی که در ویترین فروشگاه نیست. خرید با نوع «کالا» موجودی را زیاد می‌کند.</p>
-    <table class="table align-middle">
-        <thead><tr><th>کالا</th><th>واحد</th><th>موجودی</th><th>تعدیل</th></tr></thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
-                <tr>
-                    <td>@item.Title</td>
-                    <td>@item.Unit</td>
-                    <td>@item.Qty.ToFa()</td>
-                    <td>
-                        @using (Html.BeginForm("AdjustGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
-                        {
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="goodsId" value="@item.Id" />
-                            <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
-                            <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
-                            <button class="btn-outline-store" type="submit">ثبت</button>
-                        }
-                    </td>
-                </tr>
-            }
-            @if (!Model.Any())
-            {
-                <tr class="admin-empty-row"><td colspan="4">هنوز کالایی در انبار تعریف نشده است.</td></tr>
-            }
-        </tbody>
-    </table>
-    @using (Html.BeginForm("SaveGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-2 align-items-end" }))
+<div class="d-flex gap-2 flex-wrap mb-3" role="tablist">
+    <a class="@(tab == "goods" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-box-seam"></i> کالاهای انبار</a>
+    @if (kind != null && kind.Sells)
     {
-        @Html.AntiForgeryToken()
-        <div class="col-md-5">
-            <label class="form-label">کالای تازه</label>
-            <input class="form-control" name="Title" maxlength="150" required="required" placeholder="مثلاً توپ فوتبال" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label">واحد</label>
-            <input class="form-control" name="Unit" maxlength="20" value="عدد" />
-        </div>
-        <div class="col-md-2">
-            <button class="btn-store" type="submit">افزودن</button>
-        </div>
+        <a class="@(tab == "products" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company, tab = "products" })"><i class="bi bi-tags"></i> موجودی محصولات</a>
     }
+    <a class="@(tab == "moves" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company, tab = "moves" })"><i class="bi bi-arrow-left-right"></i> گردش انبار</a>
 </div>
-@if (products.Any())
+@if (tab == "products")
 {
+    var stock = (PagedList<StoreProduct>)ViewBag.Stock;
     <div class="panel-card mb-3">
-        <h5>محصولات فروشگاه</h5>
-        <table class="table align-middle">
-            <thead><tr><th>محصول</th><th>موجودی</th><th>تعدیل</th></tr></thead>
-            <tbody>
-                @foreach (var product in products)
-                {
+        <h5>موجودی محصولات فروشگاه</h5>
+        @Html.GridToolbar("جستجو در نام یا کد محصول…")
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
                     <tr>
-                        <td>@product.Title</td>
-                        <td>@product.Stock.ToFa()</td>
-                        <td>
-                            @using (Html.BeginForm("AdjustStock", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
-                            {
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="productId" value="@product.Id" />
-                                <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
-                                <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
-                                <button class="btn-outline-store" type="submit">ثبت</button>
-                            }
-                        </td>
+                        @Html.SortHeader("code", "کد")
+                        @Html.SortHeader("title", "محصول")
+                        @Html.SortHeader("qty", "موجودی")
+                        <th>تعدیل</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @foreach (var product in stock)
+                    {
+                        <tr>
+                            <td dir="ltr">@(string.IsNullOrWhiteSpace(product.Sku) ? "—" : product.Sku)</td>
+                            <td>@product.Title</td>
+                            <td>@product.Stock.ToFa()</td>
+                            <td>
+                                @using (Html.BeginForm("AdjustStock", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@product.Id" />
+                                    <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
+                                    <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
+                                    <button class="btn-outline-store" type="submit">ثبت</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (stock.Count == 0)
+                    {
+                        <tr class="admin-empty-row"><td colspan="4"><i class="bi bi-tags fs-3 d-block mb-1"></i>محصول فیزیکی پیدا نشد.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @Html.Pager(stock)
     </div>
 }
-<div class="panel-card">
-    <h5>آخرین گردش‌ها</h5>
-    <table class="table align-middle">
-        <thead><tr><th>تاریخ</th><th>کالا</th><th>تعداد</th><th>نوع</th><th>یادداشت</th></tr></thead>
-        <tbody>
-            @foreach (var move in moves)
-            {
-                var key = move.ProductId > 0 ? "p" + move.ProductId : "g" + move.GoodsId;
-                string title;
-                if (!names.TryGetValue(key, out title))
-                {
-                    title = "کالا";
-                }
-                <tr>
-                    <td>@move.MoveDate.ToShamsi()</td>
-                    <td>@title</td>
-                    <td dir="ltr">@move.Qty.ToFa()</td>
-                    <td>@MoveKind(move.Kind)</td>
-                    <td>@move.Note</td>
-                </tr>
-            }
-            @if (!moves.Any())
-            {
-                <tr class="admin-empty-row"><td colspan="5">هنوز گردشی ثبت نشده است.</td></tr>
-            }
-        </tbody>
-    </table>
-</div>
+else if (tab == "moves")
+{
+    var moves = (PagedList<StoreStockMove>)ViewBag.Moves;
+    var titles = (Dictionary<string, string>)ViewBag.MoveTitles;
+    <div class="panel-card">
+        <h5>گردش انبار</h5>
+        @Html.GridToolbar("جستجو در نام کالا یا یادداشت…")
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        @Html.SortHeader("date", "تاریخ")
+                        <th>کالا</th>
+                        @Html.SortHeader("qty", "تعداد")
+                        @Html.SortHeader("cost", "بهای واحد")
+                        @Html.SortHeader("kind", "نوع")
+                        <th>یادداشت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var move in moves)
+                    {
+                        var key = move.ProductId > 0 ? "p-" + move.ProductId : "g-" + move.GoodsId;
+                        string title;
+                        if (!titles.TryGetValue(key, out title))
+                        {
+                            title = "کالا";
+                        }
+                        <tr>
+                            <td>@move.MoveDate.ToShamsi()</td>
+                            <td>@title</td>
+                            <td dir="ltr">@move.Qty.ToFa()</td>
+                            <td>@(move.UnitCost > 0 ? move.UnitCost.ToToman() : "—")</td>
+                            <td>@MoveKind(move.Kind)</td>
+                            <td>@move.Note</td>
+                        </tr>
+                    }
+                    @if (moves.Count == 0)
+                    {
+                        <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-arrow-left-right fs-3 d-block mb-1"></i>گردشی پیدا نشد.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @Html.Pager(moves)
+    </div>
+}
+else
+{
+    var goods = (PagedList<StoreGoodsItem>)ViewBag.Goods;
+    <div class="panel-card mb-3">
+        <h5>کالاهای انبار</h5>
+        <p class="small text-muted">برای توپ، لباس، لوازم مصرفی و هر چیزی که در ویترین فروشگاه نیست. خرید با نوع «کالا» موجودی را زیاد می‌کند.</p>
+        @Html.GridToolbar("جستجو در نام یا کد کالا…")
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        @Html.SortHeader("code", "کد")
+                        @Html.SortHeader("title", "کالا")
+                        <th>واحد</th>
+                        @Html.SortHeader("qty", "موجودی")
+                        <th>تعدیل</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in goods)
+                    {
+                        <tr>
+                            <td dir="ltr">@(string.IsNullOrWhiteSpace(item.Code) ? "—" : item.Code)</td>
+                            <td>@item.Title</td>
+                            <td>@item.Unit</td>
+                            <td>@item.Qty.ToFa()</td>
+                            <td>
+                                @using (Html.BeginForm("AdjustGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "d-flex gap-2 flex-wrap" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="goodsId" value="@item.Id" />
+                                    <input class="form-control" style="max-width:7rem" type="number" name="qty" dir="ltr" placeholder="+/-" required="required" />
+                                    <input class="form-control" style="max-width:14rem" name="note" maxlength="200" placeholder="علت" />
+                                    <button class="btn-outline-store" type="submit">ثبت</button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (goods.Count == 0)
+                    {
+                        <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-box-seam fs-3 d-block mb-1"></i>کالایی پیدا نشد.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @Html.Pager(goods)
+        @using (Html.BeginForm("SaveGoods", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-2 align-items-end mt-2" }))
+        {
+            @Html.AntiForgeryToken()
+            <div class="col-md-4">
+                <label class="form-label">کالای تازه</label>
+                <input class="form-control" name="Title" maxlength="150" required="required" placeholder="مثلاً توپ فوتبال" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">کد</label>
+                <input class="form-control" name="Code" maxlength="40" dir="ltr" placeholder="BALL-01" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">واحد</label>
+                <input class="form-control" name="Unit" maxlength="20" value="عدد" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn-store" type="submit">افزودن</button>
+            </div>
+        }
+    </div>
+}

@@ -59,17 +59,17 @@
             </div>
             <div class="form-text">خصوصیات بر اساس گروه کالا فیلتر می‌شوند.</div>
         </div>
-        <div class="col-md-4"><label class="form-label">قیمت (تومان)</label>@Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0" })</div>
+        <div class="col-md-4"><label class="form-label">قیمت (تومان)</label>@Html.TextBoxFor(m => m.Price, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })</div>
         <div class="col-md-4">
             <label class="form-label">قیمت قبل از تخفیف (اختیاری)</label>
-            <input class="form-control" type="number" min="0" name="CompareAtPrice" value="@Model.CompareAtPrice" />
+            <input class="form-control" inputmode="numeric" data-money dir="ltr" name="CompareAtPrice" value="@Model.CompareAtPrice" />
             <div class="form-text">اگر بیشتر از قیمت باشد، خط خورده و با درصد تخفیف نمایش داده می‌شود.</div>
         </div>
         @if (kind.IsShop)
         {
             <div class="col-md-4"><label class="form-label">موجودی انبار</label>@Html.TextBoxFor(m => m.Stock, new { @class = "form-control", type = "number", min = "0" })</div>
-            <div class="col-md-4"><label class="form-label">کد کالا (SKU)</label>@Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr" })</div>
         }
+        <div class="col-md-4"><label class="form-label">کد کالا</label>@Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً BALL-01" })</div>
         @if (kind.IsDigital)
         {
             <div class="col-md-4"><label class="form-label">نویسنده / مدرس</label>@Html.TextBoxFor(m => m.Author, new { @class = "form-control", maxlength = "120" })</div>

@@ -13,13 +13,14 @@
     </div>
 </div>
 <div class="adm-card">
-    @Html.GridToolbar("جستجو در عنوان، دسته یا دمو...")
+    @Html.GridToolbar("جستجو در عنوان، کد، دسته یا دمو...")
     <div class="table-responsive">
         <table class="table align-middle mb-0">
             <thead>
                 <tr>
                     <th>تصویر</th>
                     @Html.SortHeader("title", "عنوان")
+                    @Html.SortHeader("code", "کد")
                     @Html.SortHeader("category", "دسته")
                     @Html.SortHeader("price", "قیمت")
                     <th>دمو</th>
@@ -39,6 +40,7 @@
                             <span class="adm-chip is-orange ms-1"><i class="bi bi-star-fill"></i> پیشنهادی</span>
                         }
                     </td>
+                    <td dir="ltr">@(string.IsNullOrWhiteSpace(p.Code) ? "—" : p.Code)</td>
                     <td>@(p.Category ?? "-")</td>
                     <td>@p.Price.ToToman()</td>
                     <td>
@@ -62,7 +64,7 @@
             }
             @if (!Model.Any())
             {
-                <tr><td colspan="7" class="text-center text-muted py-4">محصولی یافت نشد</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">محصولی یافت نشد</td></tr>
             }
             </tbody>
         </table>

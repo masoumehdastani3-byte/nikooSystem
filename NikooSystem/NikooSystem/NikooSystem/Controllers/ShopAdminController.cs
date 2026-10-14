@@ -452,6 +452,7 @@ namespace NikooSystem.Controllers
             s.EnablePayment = enablePayment && merchantId.Length > 0;
             if (Kind.Schedules && depositPercent.HasValue) s.BookingDepositPercent = Math.Max(0, Math.Min(100, depositPercent.Value));
             TenantStore.SaveSettings(s);
+            TenantStore.SyncGatewayBank(CompanyCode, s.ZarinPalMerchantId);
             return ToAction("Setup", new { step = 5 });
         }
 
@@ -578,6 +579,7 @@ namespace NikooSystem.Controllers
             var verificationRejected = !string.IsNullOrWhiteSpace(model.GoogleVerification) && verification == null;
             model.GoogleVerification = verificationRejected ? existing?.GoogleVerification : verification;
             TenantStore.SaveSettings(model);
+            if (existing?.ZarinPalMerchantId != model.ZarinPalMerchantId) TenantStore.SyncGatewayBank(CompanyCode, model.ZarinPalMerchantId);
 
             return verificationRejected
                 ? Fail("سایر تنظیمات ذخیره شد، اما کد تأیید گوگل شناخته نشد؛ تگ meta یا مقدار content آن را از سرچ کنسول کپی کنید.", "Settings")

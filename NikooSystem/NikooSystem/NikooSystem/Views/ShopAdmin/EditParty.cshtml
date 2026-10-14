@@ -1,0 +1,56 @@
+@model StoreParty
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش طرف حساب" : (Model.Kind == PartyKind.Customer ? "مشتری جدید" : "تامین‌کننده جدید");
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Parties","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditParty", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0">
+        <div class="col-md-5">
+            <label class="form-label" for="Name">نام</label>
+            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً پخش ورزشی آریا" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Kind">نوع</label>
+            <select class="form-select" name="Kind" id="Kind">
+                @foreach (PartyKind kind in Enum.GetValues(typeof(PartyKind)))
+                {
+                    <option value="@kind" @(Model.Kind == kind ? "selected" : null)>@AccountingText.Party(kind)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label" for="Code">کد</label>
+            @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "40", dir = "ltr", placeholder = "خودکار" })
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال")
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Mobile">موبایل</label>
+            @Html.TextBoxFor(m => m.Mobile, new { @class = "form-control", maxlength = "20", dir = "ltr", inputmode = "tel", placeholder = "09xxxxxxxxx" })
+        </div>
+        <div class="col-md-3">
+            <label class="form-label" for="Phone">تلفن</label>
+            @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", maxlength = "30", dir = "ltr", inputmode = "tel" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Address">نشانی</label>
+            @Html.TextBoxFor(m => m.Address, new { @class = "form-control", maxlength = "300" })
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="Note">یادداشت</label>
+            @Html.TextAreaFor(m => m.Note, 2, 40, new { @class = "form-control", maxlength = "500" })
+        </div>
+        <div class="col-12">
+            <button class="btn-store" type="submit">ذخیره</button>
+        </div>
+    </div>
+}

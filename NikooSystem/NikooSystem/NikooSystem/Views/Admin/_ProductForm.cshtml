@@ -12,24 +12,29 @@
     <div class="col-lg-8">
         <div class="adm-card">
             <div class="row g-3">
-                <div class="col-md-8">
+                <div class="col-md-5">
                     @Html.LabelFor(m => m.Title, new { @class = "form-label" })
                     @Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
                     @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger small" })
                 </div>
+                <div class="col-md-3">
+                    @Html.LabelFor(m => m.Code, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.Code, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً SHOP-01" })
+                    @Html.ValidationMessageFor(m => m.Code, "", new { @class = "text-danger small" })
+                </div>
                 <div class="col-md-4">
                     @Html.LabelFor(m => m.Price, new { @class = "form-label" })
-                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "1000", step = "1000", dir = "ltr" })
+                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                     @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger small" })
                 </div>
                 <div class="col-md-6">
                     @Html.LabelFor(m => m.PriceSixMonths, new { @class = "form-label" })
-                    @Html.TextBoxFor(m => m.PriceSixMonths, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                    @Html.TextBoxFor(m => m.PriceSixMonths, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                     <div class="form-text">۰ یعنی خودکار: دو برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.SixMonthDiscount.ToFa()٪ تخفیف.</div>
                 </div>
                 <div class="col-md-6">
                     @Html.LabelFor(m => m.PriceYearly, new { @class = "form-label" })
-                    @Html.TextBoxFor(m => m.PriceYearly, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                    @Html.TextBoxFor(m => m.PriceYearly, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                     <div class="form-text">۰ یعنی خودکار: چهار برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.YearlyDiscount.ToFa()٪ تخفیف. این دو قیمت فقط برای محصولاتی است که دمو دارند (اشتراک سایت).</div>
                 </div>
                 <div class="col-md-6">

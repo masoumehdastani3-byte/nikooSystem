@@ -212,7 +212,7 @@ else if (step == 3 && kind.Schedules)
             </div>
             <div class="col-md-3">
                 <label class="form-label">هزینه (تومان)</label>
-                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
+                <input class="form-control" name="price" inputmode="numeric" data-money dir="ltr" />
             </div>
             @if (sampleCount > 0)
             {
@@ -277,7 +277,7 @@ else if (step == 3)
             </div>
             <div class="col-md-3">
                 <label class="form-label">قیمت (تومان)</label>
-                <input class="form-control" name="price" type="number" min="0" step="1000" dir="ltr" />
+                <input class="form-control" name="price" inputmode="numeric" data-money dir="ltr" />
             </div>
             @if (kind.IsDigital)
             {

@@ -1,0 +1,59 @@
+@model PagedList<StoreCashTransaction>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "دریافت و پرداخت";
+    var company = (string)ViewBag.CompanyCode;
+    var types = ((List<StoreDocumentType>)ViewBag.Types).ToDictionary(t => t.Id, t => t.Title);
+    var directions = Enum.GetValues(typeof(CashDirection)).Cast<CashDirection>();
+    var bankTitles = (Dictionary<int, string>)ViewBag.BankTitles;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">دریافت و پرداخت</h2>
+    <a class="btn-store" href="@Url.Action("EditPayment","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> تراکنش جدید</a>
+</div>
+<div class="panel-card">
+    <p class="small text-muted">پولی که به صندوق یا بانک وارد یا از آن خارج می‌شود، جدا از فاکتور، اینجا ثبت می‌شود و همان لحظه سند می‌خورد.</p>
+    @Html.GridToolbar("جستجو در شماره، طرف حساب یا یادداشت…", new GridSelect("flow", "دریافت و پرداخت", GridHtml.Options(directions, d => d, d => AccountingText.Direction(d))))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("number", "شماره")
+                    @Html.SortHeader("date", "تاریخ")
+                    <th>نوع</th>
+                    @Html.SortHeader("party", "طرف حساب")
+                    <th>از / به</th>
+                    @Html.SortHeader("amount", "مبلغ")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    string typeTitle;
+                    if (!types.TryGetValue(item.DocumentTypeId, out typeTitle))
+                    {
+                        typeTitle = AccountingText.Direction(item.Direction);
+                    }
+                    <tr>
+                        <td dir="ltr">@item.Number</td>
+                        <td>@item.TxDate.ToShamsi()</td>
+                        <td>@typeTitle</td>
+                        <td>@item.PartyName</td>
+                        <td>@(bankTitles.ContainsKey(item.BankId) ? bankTitles[item.BankId] : AccountingText.Pay(item.PayWith))</td>
+                        <td>@item.Amount.ToToman()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("EditPayment", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                            @Html.IconPost("DeletePayment", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این تراکنش حذف شود و سندش برگردد؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-cash-stack fs-3 d-block mb-1"></i>دریافت یا پرداختی پیدا نشد.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

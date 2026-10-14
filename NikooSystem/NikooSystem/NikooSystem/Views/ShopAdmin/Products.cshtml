@@ -53,6 +53,10 @@
                         <td><img class="admin-thumb" src="@(img?.ThumbUrl ?? img?.LargeUrl)" alt="" /></td>
                         <td>
                             <strong>@p.Title</strong>
+                            @if (!string.IsNullOrWhiteSpace(p.Sku))
+                            {
+                                <div class="small text-muted" dir="ltr">@p.Sku</div>
+                            }
                             <div class="small text-muted">
                                 @if (kind.IsDigital)
                                 {

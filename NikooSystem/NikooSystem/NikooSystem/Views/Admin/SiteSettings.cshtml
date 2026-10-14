@@ -233,7 +233,7 @@
                     </div>
                     <div class="col-sm-6">
                         @Html.LabelFor(m => m.StoragePricePerGb, new { @class = "form-label" })
-                        @Html.TextBoxFor(m => m.StoragePricePerGb, new { @class = "form-control", type = "number", min = "0", step = "1000" })
+                        @Html.TextBoxFor(m => m.StoragePricePerGb, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                         @Html.ValidationMessageFor(m => m.StoragePricePerGb, "", new { @class = "text-danger small" })
                     </div>
                 </div>

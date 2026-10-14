@@ -1,0 +1,120 @@
+@model StoreBankAccount
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش حساب بانکی" : "حساب بانکی جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var siteMerchant = (string)ViewBag.SiteMerchant;
+    var merchant = Model.GatewayMerchant;
+    if (Model.Id == 0 && string.IsNullOrEmpty(merchant))
+    {
+        merchant = siteMerchant;
+    }
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("Banks","ShopAdmin", new { company })">بازگشت به لیست</a>
+</div>
+@using (Html.BeginForm("EditBank", "ShopAdmin", new { company }, FormMethod.Post, new { autocomplete = "off" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    <div class="panel-card row g-3 m-0 mb-3">
+        <div class="col-12"><h5 class="mb-0"><i class="bi bi-bank"></i> مشخصات حساب</h5></div>
+        <div class="col-md-4">
+            <label class="form-label" for="Title">نام کوتاه حساب</label>
+            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "120", required = "required", placeholder = "مثلاً ملت جاری" })
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="BankName">بانک</label>
+            @Html.TextBoxFor(m => m.BankName, new { @class = "form-control", maxlength = "60", placeholder = "مثلاً ملت", list = "bankNames" })
+            <datalist id="bankNames">
+                <option value="ملت"></option>
+                <option value="ملی"></option>
+                <option value="صادرات"></option>
+                <option value="تجارت"></option>
+                <option value="سپه"></option>
+                <option value="کشاورزی"></option>
+                <option value="مسکن"></option>
+                <option value="رفاه"></option>
+                <option value="پاسارگاد"></option>
+                <option value="سامان"></option>
+                <option value="پارسیان"></option>
+                <option value="اقتصاد نوین"></option>
+                <option value="سینا"></option>
+                <option value="شهر"></option>
+                <option value="آینده"></option>
+                <option value="رسالت"></option>
+                <option value="بلو"></option>
+            </datalist>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Branch">شعبه</label>
+            @Html.TextBoxFor(m => m.Branch, new { @class = "form-control", maxlength = "80" })
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="AccountNumber">شماره حساب</label>
+            @Html.TextBoxFor(m => m.AccountNumber, new { @class = "form-control", maxlength = "40", dir = "ltr" })
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="CardNumber">شماره کارت</label>
+            @Html.TextBoxFor(m => m.CardNumber, new { @class = "form-control", maxlength = "30", dir = "ltr", inputmode = "numeric", placeholder = "۱۶ رقم" })
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Sheba">شماره شبا</label>
+            @Html.TextBoxFor(m => m.Sheba, new { @class = "form-control", maxlength = "40", dir = "ltr", placeholder = "IR000000000000000000000000" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Owner">صاحب حساب</label>
+            @Html.TextBoxFor(m => m.Owner, new { @class = "form-control", maxlength = "120" })
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال")
+        </div>
+        <div class="col-12">
+            <label class="form-label" for="Note">یادداشت</label>
+            @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
+        </div>
+    </div>
+
+    <div class="panel-card row g-3 m-0 mb-3">
+        <div class="col-12">
+            <h5 class="mb-1"><i class="bi bi-credit-card"></i> درگاه پرداخت (اگر دارد)</h5>
+            <p class="small text-muted mb-0">اگر این حساب درگاه پرداخت اینترنتی دارد، اطلاعاتی که شرکت پرداخت یا بانک داده است را اینجا بنویسید.</p>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="Gateway">نوع درگاه</label>
+            <select class="form-select" name="Gateway" id="Gateway">
+                @foreach (GatewayProvider gateway in Enum.GetValues(typeof(GatewayProvider)))
+                {
+                    <option value="@gateway" @(Model.Gateway == gateway ? "selected" : null)>@AccountingText.Gateway(gateway)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label" for="GatewayMerchant">مرچنت کد / شماره پایانه</label>
+            <input class="form-control font-monospace" name="GatewayMerchant" id="GatewayMerchant" maxlength="100" dir="ltr" value="@merchant" placeholder="زرین‌پال: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="GatewayUsername">نام کاربری درگاه</label>
+            @Html.TextBoxFor(m => m.GatewayUsername, new { @class = "form-control", maxlength = "100", dir = "ltr" })
+            <div class="form-text">برای درگاه‌های بانکی مثل به‌پرداخت ملت.</div>
+        </div>
+        <div class="col-md-8">
+            <label class="form-label" for="gatewaySecretNew">رمز یا کلید درگاه</label>
+            <input class="form-control" type="password" name="gatewaySecretNew" id="gatewaySecretNew" maxlength="120" dir="ltr" autocomplete="new-password"
+                   placeholder="@(string.IsNullOrEmpty(Model.GatewaySecret) ? "" : "ذخیره شده؛ برای تغییر، مقدار تازه را بنویسید")" />
+            <div class="form-text">رمزنگاری‌شده نگه داشته می‌شود و دوباره نمایش داده نمی‌شود.</div>
+        </div>
+        <div class="col-12">
+            @Html.BoolField("IsSiteGateway", Model.IsSiteGateway, "درگاه پرداخت آنلاین سایت همین حساب است")
+            <div class="form-text">
+                فقط برای زرین‌پال. مرچنت کد در تنظیمات پرداخت سایت قرار می‌گیرد و پرداخت‌های آنلاین در دفتر همین حساب ثبت می‌شود.
+                @if (!string.IsNullOrWhiteSpace(siteMerchant))
+                {
+                    <span>مرچنت کد فعلی سایت: <span dir="ltr" class="font-monospace">@siteMerchant</span></span>
+                }
+            </div>
+        </div>
+    </div>
+    <button class="btn-store" type="submit">ذخیره</button>
+}

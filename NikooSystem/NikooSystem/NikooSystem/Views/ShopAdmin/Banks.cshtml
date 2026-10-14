@@ -1,0 +1,84 @@
+@model PagedList<StoreBankAccount>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "بانک‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var balances = (Dictionary<int, long>)ViewBag.Balances;
+    var states = new[] { new KeyValuePair<string, string>("gateway", "دارای درگاه پرداخت"), new KeyValuePair<string, string>("plain", "بدون درگاه") };
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">بانک‌ها و درگاه پرداخت</h2>
+    <a class="btn-store" href="@Url.Action("EditBank","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> حساب بانکی جدید</a>
+</div>
+<div class="panel-card mb-3">
+    <h5><i class="bi bi-bank"></i> راهنمای کوتاه</h5>
+    <ol class="small mb-0">
+        <li class="mb-1">برای هر حساب بانکی یک ردیف بسازید و نام کوتاهی مثل «ملت جاری» بدهید؛ شماره حساب، کارت و شبا اختیاری است. هر حساب یک سرفصل جدا زیر «بانک» در سرفصل‌ها می‌گیرد.</li>
+        <li class="mb-1">اگر روی این حساب درگاه پرداخت دارید (زرین‌پال یا درگاه بانکی)، نوع درگاه و مرچنت کد یا شماره پایانه را بنویسید. رمز یا کلید درگاه رمزنگاری‌شده نگه داشته می‌شود و دوباره نمایش داده نمی‌شود.</li>
+        <li class="mb-1">حسابی که پول پرداخت آنلاین سایت به آن واریز می‌شود را «درگاه سایت» کنید. پرداخت آنلاین سایت با زرین‌پال است؛ مرچنت کد همین حساب در تنظیمات پرداخت سایت قرار می‌گیرد و فروش آنلاین، شهریه و رزرو در دفتر همین حساب ثبت می‌شود.</li>
+        <li>در فاکتور خرید، فاکتور فروش و دریافت و پرداخت، از فهرست «پرداخت از / دریافت در» حساب بانکی را انتخاب کنید. مانده هر حساب در جدول زیر و دفتر معین آن در «دفاتر» دیده می‌شود.</li>
+    </ol>
+</div>
+<div class="panel-card">
+    @Html.GridToolbar("جستجو در نام، بانک، شعبه، شماره حساب، کارت یا شبا…", new GridSelect("state", "همه حساب‌ها", states))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("title", "حساب")
+                    @Html.SortHeader("bank", "بانک")
+                    <th>شماره حساب / کارت</th>
+                    @Html.SortHeader("gateway", "درگاه پرداخت")
+                    <th>مانده</th>
+                    <th>وضعیت</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    long balance;
+                    balances.TryGetValue(item.Id, out balance);
+                    <tr>
+                        <td>
+                            <div class="fw-bold">@item.Title</div>
+                            @if (!string.IsNullOrWhiteSpace(item.Sheba))
+                            {
+                                <div class="small text-muted" dir="ltr">@item.Sheba</div>
+                            }
+                        </td>
+                        <td>@item.BankName @(string.IsNullOrWhiteSpace(item.Branch) ? "" : "— " + item.Branch)</td>
+                        <td dir="ltr" class="small">
+                            @item.AccountNumber
+                            @if (!string.IsNullOrWhiteSpace(item.CardNumber))
+                            {
+                                <div class="text-muted">@item.CardNumber</div>
+                            }
+                        </td>
+                        <td>
+                            @AccountingText.Gateway(item.Gateway)
+                            @if (item.IsSiteGateway)
+                            {
+                                <span class="badge bg-success ms-1">درگاه سایت</span>
+                            }
+                        </td>
+                        <td>
+                            @Math.Abs(balance).ToToman() @(balance < 0 ? "(منفی)" : "")
+                        </td>
+                        <td>@(item.IsActive ? "فعال" : "غیرفعال")</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("Books", "ShopAdmin", new { company, accountId = item.LedgerAccountId }), "bi-journal-text", "دفتر معین", null)
+                            @Html.IconLink(Url.Action("EditBank", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                            @Html.IconPost("DeleteBank", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این حساب بانکی حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-bank fs-3 d-block mb-1"></i>حساب بانکی پیدا نشد. تا حسابی تعریف نکنید، همه پرداخت‌های بانکی در سرفصل عمومی «بانک» ثبت می‌شوند.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

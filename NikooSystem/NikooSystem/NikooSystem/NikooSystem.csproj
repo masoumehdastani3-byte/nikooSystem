@@ -219,6 +219,7 @@
     <Compile Include="Helpers\AdminHtml.cs" />
     <Compile Include="Helpers\AssetHelpers.cs" />
     <Compile Include="Helpers\GridHtml.cs" />
+    <Compile Include="Helpers\MoneyModelBinder.cs" />
     <Compile Include="Helpers\HomeSections.cs" />
     <Compile Include="Helpers\SiteKinds.cs" />
     <Compile Include="Helpers\Seo.cs" />
@@ -276,6 +277,8 @@
     <Compile Include="Services\TenantStore.Booking.cs" />
     <Compile Include="Services\TenantStore.Campus.cs" />
     <Compile Include="Services\TenantStore.Accounting.cs" />
+    <Compile Include="Services\TenantStore.AccountingGrids.cs" />
+    <Compile Include="Services\TenantStore.Banks.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
     <Compile Include="Services\TutorialService.cs" />
@@ -379,6 +382,7 @@
     <Content Include="Content\subscription.css" />
     <Content Include="Content\domain.css" />
     <Content Include="Content\storage-guard.js" />
+    <Content Include="Content\money-input.js" />
     <Content Include="Content\shamsi-datetime.css" />
     <Content Include="Content\shamsi-datetime.js" />
     <Content Include="Content\storefront-images.css" />
@@ -455,6 +459,14 @@
     <Content Include="Views\ShopAdmin\EditAsset.cshtml" />
     <Content Include="Views\ShopAdmin\Books.cshtml" />
     <Content Include="Views\ShopAdmin\AccountingGuide.cshtml" />
+    <Content Include="Views\ShopAdmin\DocumentTypes.cshtml" />
+    <Content Include="Views\ShopAdmin\EditDocumentType.cshtml" />
+    <Content Include="Views\ShopAdmin\Payments.cshtml" />
+    <Content Include="Views\ShopAdmin\EditPayment.cshtml" />
+    <Content Include="Views\ShopAdmin\Parties.cshtml" />
+    <Content Include="Views\ShopAdmin\EditParty.cshtml" />
+    <Content Include="Views\ShopAdmin\Banks.cshtml" />
+    <Content Include="Views\ShopAdmin\EditBank.cshtml" />
     <Content Include="Views\ShopAdmin\Notifications.cshtml" />
     <Content Include="Views\ShopAdmin\SeoGuide.cshtml" />
     <Content Include="Views\ShopAdmin\Torob.cshtml" />

@@ -1,4 +1,4 @@
-@model List<StoreFixedAsset>
+@model PagedList<StoreFixedAsset>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "اموال";
@@ -9,28 +9,42 @@
     <a class="btn-store" href="@Url.Action("EditAsset","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> مال جدید</a>
 </div>
 <div class="panel-card">
-    <table class="table align-middle">
-        <thead><tr><th>کد</th><th>نام</th><th>تاریخ خرید</th><th>بها</th><th>محل</th><th>وضعیت</th><th></th></tr></thead>
-        <tbody>
-            @foreach (var item in Model)
-            {
+    @Html.GridToolbar("جستجو در کد، نام، محل یا یادداشت…")
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
                 <tr>
-                    <td dir="ltr">@item.Code</td>
-                    <td>@item.Title</td>
-                    <td>@item.BoughtOn.ToShamsi()</td>
-                    <td>@item.Cost.ToToman()</td>
-                    <td>@item.Location</td>
-                    <td>@(item.IsActive ? "در حال استفاده" : "خارج شده")</td>
-                    <td class="row-actions">
-                        @Html.IconLink(Url.Action("EditAsset", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
-                        @Html.IconPost("DeleteAsset", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این مال از فهرست حذف شود؟")
-                    </td>
+                    @Html.SortHeader("code", "کد")
+                    @Html.SortHeader("title", "نام")
+                    @Html.SortHeader("date", "تاریخ خرید")
+                    @Html.SortHeader("cost", "بها")
+                    @Html.SortHeader("location", "محل")
+                    <th>وضعیت</th>
+                    <th></th>
                 </tr>
-            }
-            @if (!Model.Any())
-            {
-                <tr class="admin-empty-row"><td colspan="7">هنوز مالی ثبت نشده است. خرید میز، دروازه، دستگاه یا ویترین را اینجا بنویسید.</td></tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td dir="ltr">@item.Code</td>
+                        <td>@item.Title</td>
+                        <td>@item.BoughtOn.ToShamsi()</td>
+                        <td>@item.Cost.ToToman()</td>
+                        <td>@item.Location</td>
+                        <td>@(item.IsActive ? "در حال استفاده" : "خارج شده")</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("EditAsset", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
+                            @Html.IconPost("DeleteAsset", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "این مال از فهرست حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-box fs-3 d-block mb-1"></i>مالی پیدا نشد. خرید میز، دروازه، دستگاه یا ویترین را اینجا بنویسید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
 </div>

@@ -179,12 +179,12 @@
             <div class="col-12"><hr /><h5>ارسال و انبار</h5></div>
             <div class="col-md-4">
                 <label class="form-label">هزینه ارسال (تومان)</label>
-                @Html.TextBoxFor(m => m.ShippingCost, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                @Html.TextBoxFor(m => m.ShippingCost, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                 <div class="form-text">صفر یعنی ارسال رایگان.</div>
             </div>
             <div class="col-md-4">
                 <label class="form-label">ارسال رایگان برای خرید بالای (تومان)</label>
-                @Html.TextBoxFor(m => m.FreeShippingThreshold, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                @Html.TextBoxFor(m => m.FreeShippingThreshold, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                 <div class="form-text">صفر یعنی همیشه هزینه ارسال گرفته شود.</div>
             </div>
             <div class="col-md-4">
@@ -233,7 +233,12 @@
 
         @if (kind.TakesPayments)
         {
-        <div class="col-12"><hr /><h5>درگاه پرداخت</h5></div>
+        <div class="col-12"><hr /><h5>درگاه پرداخت</h5>
+            @if (kind.IsShop || kind.IsDigital || kind.IsCampus)
+            {
+                <p class="text-muted small mb-0">حساب بانکی که پول درگاه به آن واریز می‌شود را در <a href="@Url.Action("Banks","ShopAdmin", new { company })">بانک‌ها</a> ثبت و «درگاه سایت» کنید تا فروش آنلاین در دفتر همان حساب بنشیند.</p>
+            }
+        </div>
         <div class="col-md-6"><label class="form-label">MerchantId</label>@Html.TextBoxFor(m => m.ZarinPalMerchantId, new { @class = "form-control" })</div>
         <div class="col-md-3 form-check mt-4 pt-2">
             <input class="form-check-input" type="checkbox" name="ZarinPalSandbox" value="true" @(Model.ZarinPalSandbox?"checked":"") />

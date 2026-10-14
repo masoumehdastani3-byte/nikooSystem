@@ -21,6 +21,7 @@ namespace NikooSystem
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            Helpers.MoneyModelBinder.Register(ModelBinders.Binders);
 
             _trialCleanupTimer = new System.Threading.Timer(_ =>
             {

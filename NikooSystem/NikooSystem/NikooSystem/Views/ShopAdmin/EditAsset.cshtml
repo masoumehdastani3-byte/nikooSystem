@@ -28,7 +28,7 @@
         </div>
         <div class="col-md-4">
             <label class="form-label" for="Cost">بهای تمام‌شده (تومان)</label>
-            @Html.TextBoxFor(m => m.Cost, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+            @Html.TextBoxFor(m => m.Cost, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
         </div>
         <div class="col-md-4">
             <label class="form-label" for="Location">محل نگهداری</label>

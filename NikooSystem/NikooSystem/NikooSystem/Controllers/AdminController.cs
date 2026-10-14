@@ -201,6 +201,9 @@ namespace NikooSystem.Controllers
         private void NormalizeProduct(Product model)
         {
             model.Title = model.Title?.Trim();
+            model.Code = string.IsNullOrWhiteSpace(model.Code) ? null : model.Code.Trim();
+            if (model.Code != null && SiteStore.GetProducts().Any(p => p.Id != model.Id && string.Equals(p.Code, model.Code, StringComparison.OrdinalIgnoreCase)))
+                ModelState.AddModelError("Code", "این کد محصول قبلاً استفاده شده است.");
             model.Category = string.IsNullOrWhiteSpace(model.Category) ? null : model.Category.Trim();
             model.SeoTitle = string.IsNullOrWhiteSpace(model.SeoTitle) ? null : model.SeoTitle.Trim();
             model.SeoDescription = string.IsNullOrWhiteSpace(model.SeoDescription) ? null : model.SeoDescription.Trim();

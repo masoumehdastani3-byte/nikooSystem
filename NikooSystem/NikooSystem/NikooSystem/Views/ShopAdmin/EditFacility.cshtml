@@ -36,7 +36,7 @@
                 </div>
                 <div class="col-6">
                     <label class="form-label" for="Price">قیمت هر نوبت (تومان)</label>
-                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", type = "number", min = "0", step = "1000", dir = "ltr" })
+                    @Html.TextBoxFor(m => m.Price, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
                 </div>
                 <div class="col-6">
                     <label class="form-label" for="Capacity">ظرفیت همزمان</label>

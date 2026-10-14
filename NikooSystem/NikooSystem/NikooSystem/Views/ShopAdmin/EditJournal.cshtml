@@ -4,6 +4,7 @@
     ViewBag.Title = Model.Id > 0 ? "ویرایش سند" : "سند دستی";
     var company = (string)ViewBag.CompanyCode;
     var accounts = (List<StoreLedgerAccount>)ViewBag.Accounts;
+    var types = (List<StoreDocumentType>)ViewBag.Types;
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var lines = Model.Lines ?? new List<StoreJournalLine>();
 }
@@ -20,7 +21,17 @@
             <label class="form-label" for="entryDate">تاریخ</label>
             <input class="form-control" type="date" id="entryDate" name="entryDate" dir="ltr" value="@Model.EntryDate.ToString("yyyy-MM-dd", invariant)" />
         </div>
-        <div class="col-md-9">
+        <div class="col-md-3">
+            <label class="form-label" for="DocumentTypeId">نوع سند</label>
+            <select class="form-select" name="DocumentTypeId" id="DocumentTypeId">
+                @foreach (var type in types)
+                {
+                    <option value="@type.Id.ToString(invariant)" @(Model.DocumentTypeId == type.Id ? "selected" : null)>@type.Title</option>
+                }
+            </select>
+            <div class="form-text"><a href="@Url.Action("EditDocumentType","ShopAdmin", new { company })">نوع تازه</a></div>
+        </div>
+        <div class="col-md-6">
             <label class="form-label" for="Description">شرح</label>
             @Html.TextBoxFor(m => m.Description, new { @class = "form-control", maxlength = "300", required = "required" })
         </div>
@@ -42,8 +53,8 @@
                                 }
                             </select>
                         </td>
-                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineDebit" value="@(line.Debit > 0 ? line.Debit.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineCredit" value="@(line.Credit > 0 ? line.Credit.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineDebit" value="@(line.Debit > 0 ? line.Debit.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCredit" value="@(line.Credit > 0 ? line.Credit.ToString(invariant) : "")" /></td>
                         <td><input class="form-control" name="lineMemo" maxlength="150" value="@line.Memo" /></td>
                     </tr>
                 }

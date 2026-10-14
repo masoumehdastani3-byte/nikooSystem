@@ -108,6 +108,9 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("site-enamad-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-campus-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-accounting-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-accounting-payments-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-accounting-parties-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-accounting-banks-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-legal-texts", SiteContentStore.ApplyLegalTexts);
                     TutorialService.ApplySeed();
                     _initialized = true;

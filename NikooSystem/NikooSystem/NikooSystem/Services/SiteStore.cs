@@ -23,6 +23,7 @@ namespace NikooSystem.Services
         private static readonly Dictionary<string, string> ProductSorts = new Dictionary<string, string>
         {
             { "title", "t.[Title]" },
+            { "code", "t.[Code]" },
             { "category", "t.[Category]" },
             { "price", "t.[Price]" },
             { "created", "t.[CreatedAt]" }
@@ -30,7 +31,7 @@ namespace NikooSystem.Services
 
         public static PagedList<Product> ProductGrid(GridQuery query)
         {
-            var filter = new SqlFilter().Search(query.Q, "Title", "Category", "DemoSlug");
+            var filter = new SqlFilter().Search(query.Q, "Title", "Code", "Category", "DemoSlug");
             return NikooDb.Page(NikooTables.SiteProducts, filter, query.OrderBy(ProductSorts, "created", true), query.Page, query.PageSize);
         }
 

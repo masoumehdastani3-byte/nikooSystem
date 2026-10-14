@@ -7,6 +7,10 @@
     var goods = (List<StoreGoodsItem>)ViewBag.Goods;
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var lines = Model.Lines ?? new List<StoreSaleLine>();
+    var parties = (List<StoreParty>)ViewBag.Parties;
+    var siteCustomers = (List<StoreCustomer>)ViewBag.SiteCustomers;
+    var banks = (List<StoreBankAccount>)ViewBag.Banks;
+    var payToken = AccountingText.PayToken(Model.PayWith, Model.BankId);
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">@ViewBag.Title</h2>
@@ -18,19 +22,42 @@
     @Html.HiddenFor(m => m.Id)
     <div class="panel-card row g-3 m-0 mb-3">
         <div class="col-md-4">
-            <label class="form-label" for="PartyName">خریدار</label>
-            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", maxlength = "120", required = "required" })
+            <label class="form-label" for="party">مشتری</label>
+            <select class="form-select" name="party" id="party">
+                <option value="">— از فهرست مشتریان انتخاب کنید —</option>
+                <optgroup label="مشتریان حسابداری">
+                    @foreach (var party in parties)
+                    {
+                        <option value="t-@party.Id" @(Model.PartyId == party.Id ? "selected" : null)>@(party.Name + (string.IsNullOrWhiteSpace(party.Mobile) ? "" : " — " + party.Mobile) + (party.IsActive ? "" : " (غیرفعال)"))</option>
+                    }
+                </optgroup>
+                @if (siteCustomers.Any())
+                {
+                    <optgroup label="مشتریان عضو سایت">
+                        @foreach (var customer in siteCustomers)
+                        {
+                            <option value="c-@customer.Id">@(customer.FullName + (string.IsNullOrWhiteSpace(customer.Mobile) ? "" : " — " + customer.Mobile))</option>
+                        }
+                    </optgroup>
+                }
+            </select>
+            <div class="form-text">
+                در فهرست نیست؟
+                <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })">تعریف مشتری</a>
+                یا نامش را پایین بنویسید تا به فهرست اضافه شود.
+            </div>
+            <input class="form-control form-control-sm mt-1" name="newParty" maxlength="150" placeholder="نام مشتری تازه" />
         </div>
         <div class="col-md-3">
             <label class="form-label" for="invoiceDate">تاریخ</label>
             <input class="form-control" type="date" id="invoiceDate" name="invoiceDate" dir="ltr" value="@Model.InvoiceDate.ToString("yyyy-MM-dd", invariant)" />
         </div>
         <div class="col-md-3">
-            <label class="form-label" for="PayWith">دریافت در</label>
-            <select class="form-select" name="PayWith" id="PayWith">
-                @foreach (PayWith pay in Enum.GetValues(typeof(PayWith)))
+            <label class="form-label" for="payFrom">دریافت در</label>
+            <select class="form-select" name="payFrom" id="payFrom">
+                @foreach (var option in AccountingText.PayOptions(banks, true, payToken))
                 {
-                    <option value="@pay" @(Model.PayWith == pay ? "selected" : null)>@AccountingText.Pay(pay)</option>
+                    <option value="@option.Key" @(option.Key == payToken ? "selected" : null)>@option.Value</option>
                 }
             </select>
         </div>
@@ -58,7 +85,7 @@
                                         @foreach (var product in products)
                                         {
                                             var token = "p-" + product.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title (@product.Stock.ToFa())</option>
+                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku) (@product.Stock.ToFa())</option>
                                         }
                                     </optgroup>
                                 }
@@ -68,14 +95,14 @@
                                         @foreach (var item in goods)
                                         {
                                             var token = "g-" + item.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title (@item.Qty.ToFa())</option>
+                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code) (@item.Qty.ToFa())</option>
                                         }
                                     </optgroup>
                                 }
                             </select>
                         </td>
                         <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
+                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
                     </tr>
                 }
             </tbody>

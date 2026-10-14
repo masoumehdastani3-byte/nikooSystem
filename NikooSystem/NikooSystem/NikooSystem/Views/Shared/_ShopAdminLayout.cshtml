@@ -81,6 +81,10 @@
         add("AccountingGuide", "bi-signpost", "راهنمای حسابداری", 0, null);
         add("Accounts", "bi-list-check", "سرفصل‌ها", 0, new[] { "EditAccount" });
         add("Journal", "bi-journal-text", "اسناد حسابداری", 0, new[] { "EditJournal" });
+        add("DocumentTypes", "bi-bookmark", "انواع سند", 0, new[] { "EditDocumentType" });
+        add("Parties", "bi-person-lines-fill", "تامین‌کنندگان و مشتریان", 0, new[] { "EditParty" });
+        add("Banks", "bi-bank", "بانک‌ها و درگاه", 0, new[] { "EditBank" });
+        add("Payments", "bi-cash-stack", "دریافت و پرداخت", 0, new[] { "EditPayment" });
         add("Purchases", "bi-box", "فاکتور خرید", 0, new[] { "EditPurchase" });
         add("SaleInvoices", "bi-receipt", "فاکتور فروش", 0, new[] { "EditSaleInvoice" });
         add("Inventory", "bi-box-seam", "انبار", 0, null);
@@ -268,6 +272,7 @@
 </div>
 <script src="~/Assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="@Url.Asset("~/Content/storage-guard.js")"></script>
+<script src="@Url.Asset("~/Content/money-input.js")"></script>
 @if (Html.UsesQuickManage())
 {
     @Html.Partial("_QuickManage")

@@ -11,6 +11,10 @@ namespace NikooSystem.Models
         [Display(Name = "عنوان")]
         public string Title { get; set; }
 
+        [Display(Name = "کد محصول")]
+        [StringLength(40, ErrorMessage = "حداکثر ۴۰ حرف")]
+        public string Code { get; set; }
+
         [Display(Name = "توضیح کوتاه")]
         public string ShortDescription { get; set; }
 
