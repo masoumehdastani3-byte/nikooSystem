@@ -35,7 +35,8 @@ namespace NikooSystem.Controllers
         {
             var post = SiteBlogStore.GetLive(slug);
             if (post == null) return HttpNotFound();
-            SiteBlogStore.CountView(post.Id);
+            if (VisitStats.CountsItemView(HttpContext, VisitStats.MainSite, "b" + post.Id))
+                SiteBlogStore.CountView(post.Id);
 
             var site = SiteContentStore.Settings;
             ViewBag.Related = SiteBlogStore.Latest(3, post.Id);

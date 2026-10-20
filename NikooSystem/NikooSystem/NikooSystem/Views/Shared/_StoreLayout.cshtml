@@ -55,6 +55,7 @@
         <link href="@Url.Asset("~/Content/storefront-booking.css")" rel="stylesheet" />
     }
     <link href="@Url.Asset("~/Content/storefront-images.css")" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/nk-alert.css")" rel="stylesheet" />
     @if (kind.IsContent)
     {
         <link rel="alternate" type="application/rss+xml" title="@settings.StoreName" href="@Url.Action("Rss","Shop", new { company })" />
@@ -483,6 +484,7 @@ else
 </footer>
 }
 <script src="~/Assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="@Url.Asset("~/Content/nk-alert.js")"></script>
 <script src="@Url.Asset("~/Content/storefront-images.js")"></script>
 <script src="@Url.Asset("~/Content/money-input.js")"></script>
 @if (NikooSystem.Services.TenantStore.IsDemo(company))

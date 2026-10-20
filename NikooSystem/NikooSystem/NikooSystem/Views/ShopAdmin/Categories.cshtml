@@ -11,7 +11,16 @@
     @Html.GridToolbar("جستجو در عنوان گروه…")
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>عنوان</th><th>والد</th><th>اسلاگ</th><th>ترتیب</th><th>وضعیت</th><th></th></tr></thead>
+            <thead>
+                <tr>
+                    @Html.SortHeader("title", "عنوان")
+                    <th>والد</th>
+                    @Html.SortHeader("slug", "اسلاگ")
+                    @Html.SortHeader("sort", "ترتیب")
+                    @Html.SortHeader("status", "وضعیت")
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
                 @foreach (var row in Model)
                 {

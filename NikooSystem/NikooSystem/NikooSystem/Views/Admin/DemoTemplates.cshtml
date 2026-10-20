@@ -1,4 +1,4 @@
-@model List<NikooSystem.Models.DemoTemplateRow>
+@model PagedList<NikooSystem.Models.DemoTemplateRow>
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.Title = "قالب دموها";
@@ -19,6 +19,11 @@
         <li>از این به بعد دکمه «مشاهده دمو» در صفحه محصول، دمو را با همین قالب و رنگ‌هایش باز می‌کند.</li>
         <li>بازدیدکننده‌ها داخل دمو هم دکمه شناور «قالب دمو» را دارند و بدون تغییر دادن انتخاب شما، بقیه قالب‌ها را امتحان می‌کنند و با همان قالب سایتشان را می‌سازند.</li>
     </ol>
+</div>
+
+<div class="adm-card mb-3">
+    @Html.GridToolbar("جستجو در نوع سایت، قالب یا محصول…")
+    <div class="grid-sortbar"><span>مرتب‌سازی</span> @Html.SortLink("name", "نوع سایت") @Html.SortLink("template", "قالب فعلی")</div>
 </div>
 
 <div class="tpl-grid">
@@ -64,6 +69,11 @@
         </div>
     }
 </div>
+@if (Model.Count == 0)
+{
+    <div class="adm-card text-center text-muted py-4">دمویی با این جستجو پیدا نشد.</div>
+}
+@Html.Pager(Model)
 
 <script>
 (function () {

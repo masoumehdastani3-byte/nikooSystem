@@ -10,9 +10,9 @@ namespace NikooSystem.Controllers
     /// <summary>The main site's blog articles.</summary>
     public partial class AdminController
     {
-        public ActionResult BlogPosts()
+        public ActionResult BlogPosts(GridQuery query, string state = null)
         {
-            return View(SiteBlogStore.All());
+            return View(SiteBlogStore.Grid(query, state));
         }
 
         [HttpGet]

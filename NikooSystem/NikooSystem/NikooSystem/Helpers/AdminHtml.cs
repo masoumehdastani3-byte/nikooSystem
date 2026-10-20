@@ -98,7 +98,7 @@ namespace NikooSystem.Helpers
             button.AddCssClass("icon-btn" + (tone == null ? "" : " " + tone));
             button.MergeAttribute("title", title);
             button.MergeAttribute("aria-label", title);
-            return PostForm(html, action, fields, button.ToString(), confirm);
+            return PostForm(html, action, fields, button.ToString(), confirm, tone == "is-delete" ? "danger" : "warning");
         }
 
         /// <summary>
@@ -111,7 +111,8 @@ namespace NikooSystem.Helpers
             button.MergeAttribute("type", "submit");
             button.AddCssClass(buttonClass);
             button.SetInnerText(text);
-            return PostForm(html, action, fields, button.ToString(), confirm);
+            return PostForm(html, action, fields, button.ToString(), confirm,
+                (buttonClass ?? "").Contains("danger") || text.Contains("حذف") ? "danger" : "warning");
         }
 
         private const string ShamsiDateTimeKey = "NikooSystem.ShamsiDateTime";
@@ -225,7 +226,8 @@ namespace NikooSystem.Helpers
 
         private static string Icon(string icon) => "<i class=\"bi " + icon + "\" aria-hidden=\"true\"></i>";
 
-        private static MvcHtmlString PostForm(HtmlHelper html, string action, object fields, string buttonHtml, string confirm)
+        /// <summary>The question is asked in the project's dialog (nk-alert.js); <paramref name="confirmTone"/> is its color.</summary>
+        private static MvcHtmlString PostForm(HtmlHelper html, string action, object fields, string buttonHtml, string confirm, string confirmTone)
         {
             var inner = new StringBuilder(html.AntiForgeryToken().ToString());
             foreach (var field in new RouteValueDictionary(fields))
@@ -243,7 +245,11 @@ namespace NikooSystem.Helpers
             form.MergeAttribute("method", "post");
             form.AddCssClass("d-inline");
             if (!string.IsNullOrEmpty(confirm))
-                form.MergeAttribute("onsubmit", "return confirm(" + System.Web.HttpUtility.JavaScriptStringEncode(confirm, true) + ");");
+            {
+                form.MergeAttribute("data-confirm", confirm);
+                form.MergeAttribute("data-confirm-tone", confirmTone);
+                if (confirmTone == "danger") form.MergeAttribute("data-confirm-ok", "بله، حذف شود");
+            }
             return MvcHtmlString.Create(form.ToString());
         }
 

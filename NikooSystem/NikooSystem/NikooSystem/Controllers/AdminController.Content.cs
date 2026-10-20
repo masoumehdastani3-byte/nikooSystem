@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
@@ -119,9 +121,17 @@ namespace NikooSystem.Controllers
 
         // ---- FAQ
 
-        public ActionResult Faqs()
+        public ActionResult Faqs(GridQuery query, string state = null)
         {
-            return View(SiteContentStore.GetFaqs());
+            var rows = SiteContentStore.GetFaqs().AsEnumerable();
+            if (state == "active") rows = rows.Where(f => f.IsActive);
+            else if (state == "hidden") rows = rows.Where(f => !f.IsActive);
+            return View(query.Slice(rows, f => f.Question + " " + f.Answer, new Dictionary<string, Func<SiteFaq, object>>
+            {
+                ["question"] = f => f.Question,
+                ["sort"] = f => f.SortOrder,
+                ["status"] = f => f.IsActive
+            }, "sort"));
         }
 
         [HttpGet]
@@ -169,9 +179,18 @@ namespace NikooSystem.Controllers
 
         // ---- Testimonials
 
-        public ActionResult Testimonials()
+        public ActionResult Testimonials(GridQuery query, string state = null)
         {
-            return View(SiteContentStore.GetTestimonials());
+            var rows = SiteContentStore.GetTestimonials().AsEnumerable();
+            if (state == "active") rows = rows.Where(t => t.IsActive);
+            else if (state == "hidden") rows = rows.Where(t => !t.IsActive);
+            return View(query.Slice(rows, t => t.Name + " " + t.Role + " " + t.Text, new Dictionary<string, Func<SiteTestimonial, object>>
+            {
+                ["name"] = t => t.Name,
+                ["rating"] = t => t.Rating,
+                ["sort"] = t => t.SortOrder,
+                ["status"] = t => t.IsActive
+            }, "sort"));
         }
 
         [HttpGet]

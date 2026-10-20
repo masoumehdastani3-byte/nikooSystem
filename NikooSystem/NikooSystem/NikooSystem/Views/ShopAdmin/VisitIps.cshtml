@@ -1,0 +1,18 @@
+@model PagedList<NikooSystem.Models.SiteVisitIp>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "آی‌پی بازدیدکنندگان";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var company = (string)ViewBag.CompanyCode;
+}
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">آی‌پی بازدیدکنندگان</h2>
+        <p class="text-muted small mb-0">آی‌پی کسانی که به @kind.SiteNoun شما سر زده‌اند، با تعداد صفحه‌ها، ساعت بازدید و مرورگرشان.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Visits","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> آمار بازدید</a>
+</div>
+<div class="panel-card">
+    @Html.Partial("_VisitIps", Model)
+</div>

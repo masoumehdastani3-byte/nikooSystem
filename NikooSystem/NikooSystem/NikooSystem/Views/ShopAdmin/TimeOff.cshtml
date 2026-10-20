@@ -1,4 +1,4 @@
-@model List<StoreTimeOff>
+@model PagedList<StoreTimeOff>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "تعطیلی و مرخصی";
@@ -63,8 +63,18 @@
     <div class="col-lg-7">
         <div class="panel-card">
             <h5 class="mb-3">تعطیلی‌ها و مرخصی‌های پیش رو</h5>
+            @Html.GridToolbar("جستجو در علت یا نام متخصص…")
+            <div class="table-responsive">
             <table class="table align-middle">
-                <thead><tr><th>روز</th><th>برای</th><th>بازه</th><th>علت</th><th></th></tr></thead>
+                <thead>
+                    <tr>
+                        @Html.SortHeader("date", "روز")
+                        @Html.SortHeader("who", "برای")
+                        <th>بازه</th>
+                        @Html.SortHeader("reason", "علت")
+                        <th></th>
+                    </tr>
+                </thead>
                 <tbody>
                     @foreach (var t in Model)
                     {
@@ -76,12 +86,14 @@
                             <td class="row-actions">@Html.DeleteButton("DeleteTimeOff", t.Id, "این تعطیلی حذف شود؟ نوبت‌دهی در آن زمان دوباره باز می‌شود.")</td>
                         </tr>
                     }
-                    @if (!Model.Any())
+                    @if (Model.Count == 0)
                     {
-                        <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-calendar-check fs-3 d-block mb-1"></i>تعطیلی یا مرخصی ثبت نشده است.</td></tr>
+                        <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-calendar-check fs-3 d-block mb-1"></i>تعطیلی یا مرخصی پیدا نشد.</td></tr>
                     }
                 </tbody>
             </table>
+            </div>
+            @Html.Pager(Model)
         </div>
     </div>
 </div>

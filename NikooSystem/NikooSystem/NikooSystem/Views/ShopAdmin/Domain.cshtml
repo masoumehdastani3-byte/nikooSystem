@@ -120,7 +120,7 @@
                 <div class="form-text">بدون http و www بنویسید؛ هر دو آدرس <span dir="ltr">@shownDomain</span> و <span dir="ltr">www.@shownDomain</span> به @site شما وصل می‌شوند. اگر دامنه ندارید، اول آن را از یکی از فروشندگان دامنه بخرید.</div>
                 if (domain != null && !isDemo)
                 {
-                    <button class="btn btn-link btn-sm text-danger px-0 mt-2" type="submit" name="remove" value="true" onclick="return confirm('دامنه از @site جدا شود؟ سایت با آدرس رایگان در دسترس می‌ماند.');"><i class="bi bi-trash"></i> حذف دامنه</button>
+                    <button class="btn btn-link btn-sm text-danger px-0 mt-2" type="submit" name="remove" value="true" data-confirm="دامنه از @site جدا شود؟ سایت با آدرس رایگان در دسترس می‌ماند." data-confirm-ok="بله، جدا شود"><i class="bi bi-trash"></i> حذف دامنه</button>
                 }
             }
         </div>

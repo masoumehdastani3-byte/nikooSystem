@@ -124,7 +124,8 @@ namespace NikooSystem.Controllers
         {
             var product = ActiveProduct(TenantStore.GetProductBySlug(CompanyCode, slug));
             if (product == null) return HttpNotFound();
-            TenantStore.CountProductView(CompanyCode, product.Id);
+            if (VisitStats.CountsItemView(HttpContext, CompanyCode, "p" + product.Id))
+                TenantStore.CountProductView(CompanyCode, product.Id);
 
             var options = HomeSections.LayoutOf(CurrentSettings);
             var productTags = product.CollectionIds ?? new List<int>();
@@ -446,7 +447,8 @@ namespace NikooSystem.Controllers
         {
             var post = TenantStore.GetLivePostBySlug(CompanyCode, slug);
             if (post == null) return HttpNotFound();
-            TenantStore.CountPostView(CompanyCode, post.Id);
+            if (VisitStats.CountsItemView(HttpContext, CompanyCode, "n" + post.Id))
+                TenantStore.CountPostView(CompanyCode, post.Id);
 
             ViewBag.Category = post.CategoryId.HasValue ? TenantStore.GetCategory(CompanyCode, post.CategoryId.Value) : null;
             ViewBag.Comments = post.AllowComments ? TenantStore.ApprovedComments(CompanyCode, post.Id) : new List<StorePostComment>();

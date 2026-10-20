@@ -31,8 +31,11 @@
     function warn(message) {
         var modal = document.getElementById('storageFullModal');
         if (!modal || !window.bootstrap) {
-            if (window.confirm(message + '\n\nبرای خرید حجم بیشتر به صفحه فضای ذخیره‌سازی می‌روید؟'))
-                location.href = body.getAttribute('data-storage-url');
+            var question = message + '\n\nبرای خرید حجم بیشتر به صفحه فضای ذخیره‌سازی می‌روید؟';
+            (window.nk ? nk.confirm(question, { tone: 'warning', title: 'فضای ذخیره‌سازی پر است', ok: 'خرید حجم', cancel: 'بعداً' })
+                : Promise.resolve(window.confirm(question))).then(function (yes) {
+                if (yes) location.href = body.getAttribute('data-storage-url');
+            });
             return;
         }
         modal.querySelector('[data-storage-message]').textContent = message;

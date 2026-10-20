@@ -115,7 +115,8 @@
     var question = '«' + item.Title + '» حذف شود؟' +
       (hasChildren ? '\nزیرمجموعه‌های آن هم حذف می‌شوند.' : '') +
       (item.Warn ? '\n' + item.Warn : '');
-    if (confirm(question)) post(urls.del, { id: item.Id });
+    var ask = window.nk ? nk.confirm(question, { ok: 'بله، حذف شود' }) : Promise.resolve(confirm(question));
+    ask.then(function (yes) { if (yes) post(urls.del, { id: item.Id }); });
   }
 
   /* ---- Controls on the page that show the list */

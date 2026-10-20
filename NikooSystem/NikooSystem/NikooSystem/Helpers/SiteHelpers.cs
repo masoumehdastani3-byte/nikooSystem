@@ -201,7 +201,8 @@ namespace NikooSystem.Helpers
                 var message = html.ViewContext.TempData[flash.Key] as string;
                 if (string.IsNullOrEmpty(message)) continue;
                 var alert = new TagBuilder("div");
-                alert.AddCssClass("alert " + flash.Css);
+                alert.AddCssClass("alert nk-flash " + flash.Css);
+                alert.MergeAttribute("role", flash.Key == "Error" ? "alert" : "status");
                 alert.SetInnerText(message);
                 if (string.IsNullOrEmpty(wrapperClass))
                 {

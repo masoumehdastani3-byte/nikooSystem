@@ -91,9 +91,12 @@
     } else if (btn.hasAttribute('data-edit')) {
       toggleEdit(li);
     } else if (btn.hasAttribute('data-remove')) {
-      if (!confirm('این بخش از صفحه اول حذف شود؟')) return;
-      li.remove();
-      markDirty();
+      var question = 'این بخش از صفحه اول حذف شود؟';
+      (window.nk ? nk.confirm(question, { ok: 'بله، حذف شود' }) : Promise.resolve(confirm(question))).then(function (yes) {
+        if (!yes) return;
+        li.remove();
+        markDirty();
+      });
     } else if (btn.hasAttribute('data-clear-image')) {
       field(li, 'ImageUrl').value = '';
       btn.closest('.ls-img').remove();
@@ -201,7 +204,8 @@
       toggleEdit(problem.li, true);
       flash(problem.li);
       problem.li.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      alert(problem.msg);
+      if (window.nk) nk.alert(problem.msg, { tone: 'warning', title: 'یک مورد را کامل کنید' });
+      else alert(problem.msg);
       return;
     }
     document.getElementById('sectionsJson').value = JSON.stringify(sections);

@@ -1,4 +1,11 @@
-@model List<StoreEnrollment>
+@model PagedList<StoreEnrollment>
+@{
+    var statuses = new Dictionary<string, string>();
+    foreach (AppointmentStatus s in Enum.GetValues(typeof(AppointmentStatus)))
+    {
+        statuses[s.ToString()] = s.StatusText();
+    }
+}
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "ثبت‌نام‌ها";
@@ -39,8 +46,19 @@
     </div>
 }
 <div class="panel-card">
+    @Html.GridToolbar("جستجو در کد، کلاس، نام یا موبایل…", new GridSelect("status", "همه وضعیت‌ها", statuses))
+    <div class="table-responsive">
     <table class="table align-middle">
-        <thead><tr><th>کد</th><th>کلاس</th><th>دانشجو</th><th>شهریه</th><th>وضعیت</th><th></th></tr></thead>
+        <thead>
+            <tr>
+                @Html.SortHeader("code", "کد")
+                @Html.SortHeader("class", "کلاس")
+                @Html.SortHeader("name", "دانشجو")
+                @Html.SortHeader("price", "شهریه")
+                @Html.SortHeader("status", "وضعیت")
+                <th></th>
+            </tr>
+        </thead>
         <tbody>
             @foreach (var item in Model)
             {
@@ -63,10 +81,12 @@
                     </td>
                 </tr>
             }
-            @if (!Model.Any())
+            @if (Model.Count == 0)
             {
-                <tr class="admin-empty-row"><td colspan="6">هنوز ثبت‌نامی نیست.</td></tr>
+                <tr class="admin-empty-row"><td colspan="6">ثبت‌نامی پیدا نشد.</td></tr>
             }
         </tbody>
     </table>
+    </div>
+    @Html.Pager(Model)
 </div>

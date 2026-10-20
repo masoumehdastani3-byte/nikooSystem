@@ -1,0 +1,26 @@
+@model PagedList<NikooSystem.Models.SiteVisitIp>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "آی‌پی بازدیدکنندگان";
+    var store = ViewBag.Store as TenantInfo;
+}
+<link href="@Url.Asset("~/Content/visits.css")" rel="stylesheet" />
+<div class="adm-head">
+    <div>
+        <h1>آی‌پی بازدیدکنندگان @(store == null ? "سایت نیکو" : "«" + store.Name + "»")</h1>
+        <p>آی‌پی کسانی که به @(store == null ? "سایت نیکو" : "این سایت") سر زده‌اند، با تعداد صفحه‌ها، ساعت بازدید و مرورگرشان</p>
+    </div>
+    <div class="adm-head-actions">
+        @if (store == null)
+        {
+            <a class="btn btn-outline-secondary" href="@Url.Action("Visits","Admin")"><i class="bi bi-arrow-right"></i> آمار بازدید</a>
+        }
+        else
+        {
+            <a class="btn btn-outline-secondary" href="@Url.Action("Visits","Admin", new { site = store.CompanyCode })"><i class="bi bi-arrow-right"></i> آمار بازدید این سایت</a>
+        }
+    </div>
+</div>
+<div class="adm-card">
+    @Html.Partial("_VisitIps", Model)
+</div>

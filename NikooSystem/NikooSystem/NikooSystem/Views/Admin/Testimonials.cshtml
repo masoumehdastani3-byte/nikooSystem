@@ -1,8 +1,9 @@
-@model List<NikooSystem.Models.SiteTestimonial>
+@model PagedList<NikooSystem.Models.SiteTestimonial>
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewBag.Title = "نظرات مشتریان";
     var shown = NikooSystem.Services.SiteContentStore.Settings.ShowTestimonials;
+    var states = new Dictionary<string, string> { ["active"] = "در حال نمایش", ["hidden"] = "پنهان" };
 }
 <div class="adm-head">
     <div>
@@ -20,9 +21,19 @@
     </div>
 </div>
 <div class="adm-card">
+    @Html.GridToolbar("جستجو در نام، سمت یا متن نظر…", new GridSelect("state", "همه وضعیت‌ها", states))
     <div class="table-responsive">
         <table class="table align-middle mb-0">
-            <thead><tr><th style="width:4rem">ترتیب</th><th>مشتری</th><th>نظر</th><th>امتیاز</th><th>وضعیت</th><th></th></tr></thead>
+            <thead>
+                <tr>
+                    @Html.SortHeader("sort", "ترتیب")
+                    @Html.SortHeader("name", "مشتری")
+                    <th>نظر</th>
+                    @Html.SortHeader("rating", "امتیاز")
+                    @Html.SortHeader("status", "وضعیت")
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
             @foreach (var t in Model)
             {
@@ -47,11 +58,12 @@
                     </td>
                 </tr>
             }
-            @if (!Model.Any())
+            @if (Model.Count == 0)
             {
-                <tr><td colspan="6" class="text-center text-muted py-4">هنوز نظری ثبت نشده است. نظر واقعی مشتریان راضی را با اجازه خودشان اضافه کنید.</td></tr>
+                <tr><td colspan="6" class="text-center text-muted py-4">نظری پیدا نشد</td></tr>
             }
             </tbody>
         </table>
     </div>
+    @Html.Pager(Model)
 </div>

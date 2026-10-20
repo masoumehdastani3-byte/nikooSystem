@@ -9,7 +9,16 @@
     @Html.GridToolbar("جستجو در عنوان منو…", new GridSelect("location", "همه محل‌ها", locations))
     <div class="table-responsive">
         <table class="table align-middle">
-            <thead><tr><th>عنوان</th><th>محل</th><th>لینک</th><th>والد</th><th>ترتیب</th><th></th></tr></thead>
+            <thead>
+                <tr>
+                    @Html.SortHeader("title", "عنوان")
+                    @Html.SortHeader("location", "محل")
+                    @Html.SortHeader("link", "لینک")
+                    <th>والد</th>
+                    @Html.SortHeader("sort", "ترتیب")
+                    <th></th>
+                </tr>
+            </thead>
             <tbody>
                 @foreach (var row in Model)
                 {

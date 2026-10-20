@@ -1,0 +1,50 @@
+@model PagedList<NikooSystem.Models.SiteVisitIp>
+@using NikooSystem.Services
+@{
+    var totals = (NikooSystem.Models.VisitCount)ViewBag.IpTotals;
+    var searched = !string.IsNullOrWhiteSpace(Request.QueryString["q"]);
+}
+<div class="vs-ip-totals">
+    <span><i class="bi bi-hdd-network"></i> <b>@totals.Visitors.ToFa()</b> آی‌پی متفاوت</span>
+    <span><i class="bi bi-eye"></i> <b>@totals.Views.ToFa()</b> صفحه دیده‌شده</span>
+</div>
+@Html.GridToolbar("جستجوی آی‌پی، صفحه یا مرورگر…", new GridSelect("period", "امروز", VisitStats.IpPeriods))
+<div class="table-responsive">
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                @Html.SortHeader("ip", "آی‌پی")
+                @Html.SortHeader("day", "روز")
+                @Html.SortHeader("views", "صفحه دیده‌شده")
+                @Html.SortHeader("first", "اولین بازدید")
+                @Html.SortHeader("last", "آخرین بازدید")
+                <th>آخرین صفحه</th>
+                <th>مرورگر</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var v in Model)
+            {
+                <tr>
+                    <td><code dir="ltr" class="vs-ip">@v.Ip</code></td>
+                    <td class="text-nowrap">@v.Day.ToShamsi().ToFaDigits()</td>
+                    <td class="fw-bold">@v.Views.ToFa()</td>
+                    <td class="text-nowrap small">@v.FirstSeen.ToString("HH:mm").ToFaDigits()</td>
+                    <td class="text-nowrap small">@v.LastSeen.ToString("HH:mm").ToFaDigits()</td>
+                    <td class="small"><span class="vs-ip-page" dir="ltr" title="@v.LastPage">@v.LastPage</span></td>
+                    <td class="small text-muted" title="@v.UserAgent">@VisitStats.DeviceText(v.UserAgent)</td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-hdd-network fs-3 d-block mb-1"></i>@(searched ? "آی‌پی‌ای با این جستجو پیدا نشد." : "در این بازه بازدیدی ثبت نشده است.")</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+@Html.Pager(Model)
+<p class="small text-muted mt-3 mb-0">
+    <i class="bi bi-info-circle"></i>
+    هر ردیف یک آی‌پی در یک روز است. آی‌پی‌ها @VisitStats.IpDays.ToFa() روز نگه داشته می‌شوند و بعد خودکار پاک می‌شوند.
+    ربات‌ها و بازدید مدیران سایت ثبت نمی‌شوند. چند نفر که از یک اینترنت (مثلاً یک اداره یا اپراتور موبایل) وصل‌اند ممکن است یک آی‌پی داشته باشند.
+</p>

@@ -151,11 +151,15 @@ namespace NikooSystem.Controllers
         [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Services(GridQuery query)
         {
-            var rows = TenantStore.GetServices(CompanyCode).AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(query.Q))
-                rows = rows.Where(s => (s.Title ?? "").IndexOf(query.Q.Trim(), StringComparison.OrdinalIgnoreCase) >= 0);
             ViewBag.Staff = TenantStore.GetStaff(CompanyCode);
-            return View(PagedList<StoreService>.From(rows, query.Page, query.PageSize));
+            return View(query.Slice(TenantStore.GetServices(CompanyCode), s => s.Title, new Dictionary<string, Func<StoreService, object>>
+            {
+                ["title"] = s => s.Title,
+                ["duration"] = s => s.DurationMinutes,
+                ["price"] = s => s.Price,
+                ["status"] = s => s.IsActive,
+                ["sort"] = s => s.SortOrder
+            }, "sort"));
         }
 
         [HttpGet]
@@ -217,11 +221,16 @@ namespace NikooSystem.Controllers
         [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
         public ActionResult Staff(GridQuery query)
         {
-            var rows = TenantStore.GetStaff(CompanyCode).AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(query.Q))
-                rows = rows.Where(s => ((s.Name ?? "") + " " + (s.Title ?? "")).IndexOf(query.Q.Trim(), StringComparison.OrdinalIgnoreCase) >= 0);
             ViewBag.Services = TenantStore.GetServices(CompanyCode);
-            return View(PagedList<StoreStaff>.From(rows, query.Page, query.PageSize));
+            return View(query.Slice(TenantStore.GetStaff(CompanyCode),
+                s => (s.Name ?? "") + " " + (s.Title ?? ""),
+                new Dictionary<string, Func<StoreStaff, object>>
+                {
+                    ["name"] = s => s.Name,
+                    ["title"] = s => s.Title,
+                    ["status"] = s => s.IsActive,
+                    ["sort"] = s => s.SortOrder
+                }, "sort"));
         }
 
         [HttpGet]
@@ -318,11 +327,26 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
-        public ActionResult TimeOff()
+        public ActionResult TimeOff(GridQuery query)
         {
-            ViewBag.Staff = TenantStore.GetStaff(CompanyCode);
+            var staff = TenantStore.GetStaff(CompanyCode);
+            ViewBag.Staff = staff;
             ViewBag.Days = BookingDayOptions(0, 180);
-            return View(TenantStore.GetTimeOffs(CompanyCode, DateTime.Today, DateTime.Today.AddYears(1)));
+            var names = staff.ToDictionary(s => s.Id, s => s.Name);
+            return View(query.Slice(TenantStore.GetTimeOffs(CompanyCode, DateTime.Today, DateTime.Today.AddYears(1)),
+                t => (t.Reason ?? "") + " " + StaffName(names, t.StaffId),
+                new Dictionary<string, Func<StoreTimeOff, object>>
+                {
+                    ["date"] = t => t.Date,
+                    ["who"] = t => StaffName(names, t.StaffId),
+                    ["reason"] = t => t.Reason
+                }, "date"));
+        }
+
+        private static string StaffName(Dictionary<int, string> names, int? staffId)
+        {
+            string name;
+            return staffId.HasValue && names.TryGetValue(staffId.Value, out name) ? name : "کل مجموعه";
         }
 
         [HttpPost]

@@ -1,4 +1,11 @@
-@model List<StoreFacilityBooking>
+@model PagedList<StoreFacilityBooking>
+@{
+    var statuses = new Dictionary<string, string>();
+    foreach (AppointmentStatus s in Enum.GetValues(typeof(AppointmentStatus)))
+    {
+        statuses[s.ToString()] = s.StatusText();
+    }
+}
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "رزرو سالن‌ها";
@@ -54,10 +61,21 @@
     </div>
 }
 <div class="panel-card">
+    @Html.GridToolbar("جستجو در کد، سالن، نام یا موبایل…", new GridSelect("status", "همه وضعیت‌ها", statuses))
+    <div class="table-responsive">
     <table class="table align-middle">
-        <thead><tr><th>زمان</th><th>سالن</th><th>رزروکننده</th><th>مبلغ</th><th>وضعیت</th><th></th></tr></thead>
+        <thead>
+            <tr>
+                @Html.SortHeader("start", "زمان")
+                @Html.SortHeader("facility", "سالن")
+                @Html.SortHeader("name", "رزروکننده")
+                @Html.SortHeader("price", "مبلغ")
+                @Html.SortHeader("status", "وضعیت")
+                <th></th>
+            </tr>
+        </thead>
         <tbody>
-            @foreach (var item in Model.Take(200))
+            @foreach (var item in Model)
             {
                 <tr>
                     <td>@item.StartAt.ToShamsiText()<div class="small">@BookingTime.Clock(item.StartAt) تا @BookingTime.Clock(item.EndAt)</div></td>
@@ -75,10 +93,12 @@
                     </td>
                 </tr>
             }
-            @if (!Model.Any())
+            @if (Model.Count == 0)
             {
-                <tr class="admin-empty-row"><td colspan="6">هنوز رزروی نیست.</td></tr>
+                <tr class="admin-empty-row"><td colspan="6">رزروی پیدا نشد.</td></tr>
             }
         </tbody>
     </table>
+    </div>
+    @Html.Pager(Model)
 </div>

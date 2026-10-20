@@ -209,6 +209,11 @@ namespace NikooSystem.Services.Data
             .Text("CompanyCode", 40)
             .Index("IX_SiteVisits_Day", "Day");
 
+        // ---- IP addresses that visited each site, per day (kept for VisitStats.IpDays days)
+        public static readonly EntityMap<SiteVisitIp> SiteVisitIps = new EntityMap<SiteVisitIp>("SiteVisitIps", "CompanyCode", "Day", "Ip")
+            .Text("CompanyCode", 40).Text("Ip", 45).Text("LastPage", 400).Text("UserAgent", 400)
+            .Index("IX_SiteVisitIps_Day", "Day");
+
         // ---- Upload space bought by the stores; kept with the site's payments when a store is deleted
         public static readonly EntityMap<StoragePurchase> StoragePurchases = new EntityMap<StoragePurchase>("StoragePurchases", "Id")
             .Text("CompanyCode", 40).Text("Authority", 100)
@@ -223,7 +228,7 @@ namespace NikooSystem.Services.Data
             Appointments, Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
             PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
             SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
-            SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, StoragePurchases
+            SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, SiteVisitIps, StoragePurchases
         };
 
         /// <summary>Tables holding one store's data; their rows are removed when the store is deleted.</summary>
@@ -233,7 +238,7 @@ namespace NikooSystem.Services.Data
             Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments,
             Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
             PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts,
-            NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits
+            NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, SiteVisitIps
         };
 
         static NikooTables()

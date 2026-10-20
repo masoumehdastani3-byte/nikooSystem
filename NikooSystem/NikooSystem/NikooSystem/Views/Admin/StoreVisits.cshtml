@@ -12,6 +12,7 @@
     </div>
     <div class="adm-head-actions">
         <a class="btn btn-outline-secondary" href="@Url.Action("Visits","Admin")"><i class="bi bi-arrow-right"></i> همه سایت‌ها</a>
+        <a class="btn btn-outline-primary" href="@Url.Action("VisitIps","Admin", new { site = store.CompanyCode })"><i class="bi bi-hdd-network"></i> آی‌پی بازدیدکنندگان</a>
         <a class="btn btn-outline-primary" href="@Url.Action("Store","Admin", new { id = store.CompanyCode })"><i class="bi bi-shop"></i> پرونده سایت</a>
     </div>
 </div>

@@ -26,8 +26,30 @@ namespace NikooSystem.Services
             return post != null && post.IsLive() ? post : null;
         }
 
-        /// <summary>Every article for the admin list, newest first.</summary>
+        /// <summary>Every article, newest first. The admin list uses <see cref="Grid"/>.</summary>
         public static List<SitePost> All() => NikooDb.List(NikooTables.SitePosts, orderBy: "[PublishedAt] DESC, [Id] DESC");
+
+        private static readonly Dictionary<string, string> AdminSorts = new Dictionary<string, string>
+        {
+            { "title", "t.[Title]" },
+            { "published", "t.[PublishedAt]" },
+            { "views", "t.[ViewCount]" },
+            { "status", "t.[IsPublished], t.[PublishedAt]" }
+        };
+
+        /// <summary>The admin article list: search, status and sort happen in the database.</summary>
+        public static PagedList<SitePost> Grid(GridQuery query, string state)
+        {
+            var filter = new SqlFilter().Search(query.Q, "Title", "Slug", "Summary", "Author", "Tags");
+            var now = DateTime.Now;
+            switch ((state ?? "").Trim().ToLowerInvariant())
+            {
+                case "published": filter.Eq("IsPublished", true).AtMost("PublishedAt", now); break;
+                case "scheduled": filter.Eq("IsPublished", true).Where("t.[PublishedAt] > {0}", now); break;
+                case "draft": filter.Eq("IsPublished", false); break;
+            }
+            return NikooDb.Page(NikooTables.SitePosts, filter, query.OrderBy(AdminSorts, "published", true), query.Page, query.PageSize);
+        }
 
         private static SqlFilter Live() => new SqlFilter().Eq("IsPublished", true).AtMost("PublishedAt", DateTime.Now);
 

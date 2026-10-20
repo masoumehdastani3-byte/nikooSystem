@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Web.Mvc;
 using NikooSystem.Models;
@@ -9,10 +10,25 @@ namespace NikooSystem.Controllers
     /// <summary>The payment hub: the apps allowed to take payments through it and their transactions.</summary>
     public partial class AdminController
     {
-        public ActionResult PaymentApps()
+        public ActionResult PaymentApps(GridQuery query)
         {
-            ViewBag.Stats = SiteStore.HubStatsByApp();
-            return View(SiteStore.GetPaymentClients());
+            var stats = SiteStore.HubStatsByApp();
+            ViewBag.Stats = stats;
+            return View(query.Slice(SiteStore.GetPaymentClients(),
+                c => c.Name + " " + c.AppId + " " + string.Join(" ", c.AllowedReturnHosts ?? new string[0]),
+                new Dictionary<string, Func<PaymentClient, object>>
+                {
+                    ["name"] = c => c.Name,
+                    ["app"] = c => c.AppId,
+                    ["count"] = c => Stat(stats, c.AppId).PaidCount,
+                    ["amount"] = c => Stat(stats, c.AppId).PaidAmount
+                }, "name"));
+        }
+
+        private static HubAppStats Stat(Dictionary<string, HubAppStats> stats, string appId)
+        {
+            HubAppStats stat;
+            return stats != null && stats.TryGetValue(appId ?? "", out stat) ? stat : new HubAppStats();
         }
 
         [HttpGet]

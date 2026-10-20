@@ -11,7 +11,10 @@
         <h2 class="mb-1">آمار بازدید</h2>
         <p class="text-muted small mb-0">چند نفر به @kind.SiteNoun شما سر زده‌اند و چند صفحه دیده‌اند؛ روزانه و ماهانه.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn-outline-store" href="@Url.Action("VisitIps","ShopAdmin", new { company })"><i class="bi bi-hdd-network"></i> آی‌پی بازدیدکنندگان</a>
+        <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده سایت</a>
+    </div>
 </div>
 @if ((bool)ViewBag.IsDemo)
 {

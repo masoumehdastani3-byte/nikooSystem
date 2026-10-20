@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Web.Mvc;
+using NikooSystem.Models;
+using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
@@ -11,10 +15,35 @@ namespace NikooSystem.Controllers
     /// </summary>
     public partial class AdminController
     {
-        public ActionResult Domains()
+        public ActionResult Domains(GridQuery query)
         {
             ViewBag.ServerIpSetting = SiteContentStore.Settings.ServerIp;
-            return View(CustomDomains.WithDomains());
+            var all = CustomDomains.WithDomains();
+            ViewBag.WaitingSupport = all.Count(t => t.DomainStatus() == DomainState.WaitingSupport);
+            ViewBag.WaitingDns = all.Count(t => t.DomainStatus() == DomainState.WaitingDns);
+            ViewBag.Active = all.Count(t => t.DomainStatus() == DomainState.Active);
+            return View(query.Slice(all,
+                t => t.Name + " " + t.CompanyCode + " " + t.CustomDomain,
+                new Dictionary<string, Func<TenantInfo, object>>
+                {
+                    ["name"] = t => t.Name,
+                    ["domain"] = t => t.CustomDomain,
+                    ["status"] = t => DomainRank(t.DomainStatus()),
+                    ["checked"] = t => CustomDomains.LastCheck(t) == null ? (DateTime?)null : CustomDomains.LastCheck(t).CheckedAt,
+                    ["set"] = t => t.DomainSetAt
+                }, "status"));
+        }
+
+        /// <summary>Waiting for SSL first, then DNS, then active — the order support works through.</summary>
+        private static int DomainRank(DomainState state)
+        {
+            switch (state)
+            {
+                case DomainState.WaitingSupport: return 0;
+                case DomainState.WaitingDns: return 1;
+                case DomainState.Active: return 2;
+                default: return 3;
+            }
         }
 
         [HttpPost]

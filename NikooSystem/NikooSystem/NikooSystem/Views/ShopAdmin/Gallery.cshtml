@@ -39,6 +39,7 @@
 
 <div class="panel-card">
     @Html.GridToolbar("جستجو در عنوان تصویر…", new GridSelect("album", "همه آلبوم‌ها", GridHtml.Options(albums, a => a, a => a)))
+    <div class="grid-sortbar"><span>مرتب‌سازی</span> @Html.SortLink("title", "عنوان") @Html.SortLink("sort", "ترتیب")</div>
     <div class="row g-3">
         @foreach (var g in Model)
         {

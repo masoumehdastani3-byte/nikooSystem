@@ -16,6 +16,21 @@ namespace NikooSystem.Models
         public int MonthVisitors { get; set; }
     }
 
+    /// <summary>One IP address that visited a site on a day.</summary>
+    public class SiteVisitIp
+    {
+        public string CompanyCode { get; set; }
+        public DateTime Day { get; set; }
+        public string Ip { get; set; }
+        /// <summary>Pages viewed from this IP that day.</summary>
+        public int Views { get; set; }
+        public DateTime FirstSeen { get; set; }
+        public DateTime LastSeen { get; set; }
+        /// <summary>Address of the last page seen, without the host.</summary>
+        public string LastPage { get; set; }
+        public string UserAgent { get; set; }
+    }
+
     /// <summary>Views and different visitors of a day or a month.</summary>
     public class VisitCount
     {

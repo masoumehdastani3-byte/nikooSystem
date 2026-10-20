@@ -61,16 +61,26 @@ namespace NikooSystem.Helpers
             var query = html.ViewContext.HttpContext.Request.QueryString;
             var active = string.Equals(query["sort"], key, System.StringComparison.OrdinalIgnoreCase);
             var desc = active && string.Equals(query["dir"], "desc", System.StringComparison.OrdinalIgnoreCase);
+            var th = new TagBuilder("th") { InnerHtml = SortAnchor(html, key, label).ToString() };
+            if (active) th.MergeAttribute("aria-sort", desc ? "descending" : "ascending");
+            return MvcHtmlString.Create(th.ToString());
+        }
 
+        /// <summary>The same sort control as <see cref="SortHeader"/>, for lists that are not a table (the gallery).</summary>
+        public static MvcHtmlString SortLink(this HtmlHelper html, string key, string label) =>
+            MvcHtmlString.Create(SortAnchor(html, key, label).ToString());
+
+        private static TagBuilder SortAnchor(HtmlHelper html, string key, string label)
+        {
+            var query = html.ViewContext.HttpContext.Request.QueryString;
+            var active = string.Equals(query["sort"], key, System.StringComparison.OrdinalIgnoreCase);
+            var desc = active && string.Equals(query["dir"], "desc", System.StringComparison.OrdinalIgnoreCase);
             var link = new TagBuilder("a");
             link.AddCssClass("grid-sort" + (active ? " is-active" : ""));
             link.MergeAttribute("href", html.QueryUrl(new Dictionary<string, object> { ["sort"] = key, ["dir"] = active && !desc ? "desc" : "asc", ["page"] = null }));
             link.MergeAttribute("title", "مرتب‌سازی بر اساس " + label);
             link.InnerHtml = html.Encode(label) + " <i class=\"bi " + (!active ? "bi-arrow-down-up" : desc ? "bi-sort-down" : "bi-sort-up") + "\"></i>";
-
-            var th = new TagBuilder("th") { InnerHtml = link.ToString() };
-            if (active) th.MergeAttribute("aria-sort", desc ? "descending" : "ascending");
-            return MvcHtmlString.Create(th.ToString());
+            return link;
         }
 
         /// <summary>The search box and filters above a table, sent to the server as a GET form.</summary>

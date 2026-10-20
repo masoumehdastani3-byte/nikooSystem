@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
+using NikooSystem.Models;
 using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
@@ -14,9 +16,20 @@ namespace NikooSystem.Controllers
     {
         [HttpGet]
         [ForKinds(SiteKinds.Campus)]
-        public ActionResult Classes()
+        public ActionResult Classes(GridQuery query)
         {
-            return View(TenantStore.GetClasses(CompanyCode));
+            return View(query.Slice(TenantStore.GetClasses(CompanyCode),
+                c => c.Title + " " + c.InstructorName + " " + c.Place,
+                new Dictionary<string, Func<StoreClass, object>>
+                {
+                    ["title"] = c => c.Title,
+                    ["when"] = c => c.Weekday * 10000 + c.StartMinute,
+                    ["mode"] = c => c.Mode,
+                    ["capacity"] = c => c.Capacity,
+                    ["price"] = c => c.Price,
+                    ["status"] = c => c.IsActive,
+                    ["sort"] = c => c.SortOrder
+                }, "sort"));
         }
 
         [HttpGet]
@@ -97,10 +110,23 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [ForKinds(SiteKinds.Campus)]
-        public ActionResult Enrollments()
+        public ActionResult Enrollments(GridQuery query, string status = null)
         {
             ViewBag.Classes = TenantStore.GetClasses(CompanyCode);
-            return View(TenantStore.GetEnrollments(CompanyCode));
+            var rows = TenantStore.GetEnrollments(CompanyCode).AsEnumerable();
+            AppointmentStatus parsed;
+            if (Enum.TryParse(status, true, out parsed)) rows = rows.Where(e => e.Status == parsed);
+            return View(query.Slice(rows,
+                e => e.Code + " " + e.ClassTitle + " " + e.CustomerName + " " + e.CustomerMobile,
+                new Dictionary<string, Func<StoreEnrollment, object>>
+                {
+                    ["code"] = e => e.Code,
+                    ["class"] = e => e.ClassTitle,
+                    ["name"] = e => e.CustomerName,
+                    ["price"] = e => e.PaidAmount > 0 ? e.PaidAmount : e.Price,
+                    ["status"] = e => e.Status,
+                    ["date"] = e => e.CreatedAt
+                }, "date", true));
         }
 
         [HttpPost]
@@ -144,9 +170,19 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [ForKinds(SiteKinds.Campus)]
-        public ActionResult Facilities()
+        public ActionResult Facilities(GridQuery query)
         {
-            return View(TenantStore.GetFacilities(CompanyCode));
+            return View(query.Slice(TenantStore.GetFacilities(CompanyCode),
+                f => f.Title + " " + f.Place,
+                new Dictionary<string, Func<StoreFacility, object>>
+                {
+                    ["title"] = f => f.Title,
+                    ["slot"] = f => f.SlotMinutes,
+                    ["capacity"] = f => f.Capacity,
+                    ["price"] = f => f.Price,
+                    ["status"] = f => f.IsActive,
+                    ["sort"] = f => f.SortOrder
+                }, "sort"));
         }
 
         [HttpGet]
@@ -211,11 +247,23 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [ForKinds(SiteKinds.Campus)]
-        public ActionResult FacilityBookings()
+        public ActionResult FacilityBookings(GridQuery query, string status = null)
         {
             ViewBag.Facilities = TenantStore.GetFacilities(CompanyCode);
             ViewBag.Days = BookingDayOptions(0, Math.Max(CurrentSettings.BookingDaysAhead, 30));
-            return View(TenantStore.GetFacilityBookings(CompanyCode));
+            var rows = TenantStore.GetFacilityBookings(CompanyCode).AsEnumerable();
+            AppointmentStatus parsed;
+            if (Enum.TryParse(status, true, out parsed)) rows = rows.Where(b => b.Status == parsed);
+            return View(query.Slice(rows,
+                b => b.Code + " " + b.FacilityTitle + " " + b.CustomerName + " " + b.CustomerMobile,
+                new Dictionary<string, Func<StoreFacilityBooking, object>>
+                {
+                    ["start"] = b => b.StartAt,
+                    ["facility"] = b => b.FacilityTitle,
+                    ["name"] = b => b.CustomerName,
+                    ["price"] = b => b.Price,
+                    ["status"] = b => b.Status
+                }, "start", true));
         }
 
         [HttpPost]

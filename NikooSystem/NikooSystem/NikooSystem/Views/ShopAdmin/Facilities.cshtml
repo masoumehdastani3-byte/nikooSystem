@@ -1,4 +1,4 @@
-@model List<StoreFacility>
+@model PagedList<StoreFacility>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "سالن‌ها و زمین‌ها";
@@ -9,8 +9,19 @@
     <a class="btn-store" href="@Url.Action("EditFacility","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> سالن جدید</a>
 </div>
 <div class="panel-card">
+    @Html.GridToolbar("جستجو در نام یا محل سالن…")
+    <div class="table-responsive">
     <table class="table align-middle">
-        <thead><tr><th>نام</th><th>مدت هر نوبت</th><th>ظرفیت همزمان</th><th>قیمت هر نوبت</th><th>وضعیت</th><th></th></tr></thead>
+        <thead>
+            <tr>
+                @Html.SortHeader("title", "نام")
+                @Html.SortHeader("slot", "مدت هر نوبت")
+                @Html.SortHeader("capacity", "ظرفیت همزمان")
+                @Html.SortHeader("price", "قیمت هر نوبت")
+                @Html.SortHeader("status", "وضعیت")
+                <th></th>
+            </tr>
+        </thead>
         <tbody>
             @foreach (var item in Model)
             {
@@ -29,10 +40,12 @@
                     </td>
                 </tr>
             }
-            @if (!Model.Any())
+            @if (Model.Count == 0)
             {
-                <tr class="admin-empty-row"><td colspan="6">هنوز سالنی تعریف نشده است.</td></tr>
+                <tr class="admin-empty-row"><td colspan="6">سالنی پیدا نشد.</td></tr>
             }
         </tbody>
     </table>
+    </div>
+    @Html.Pager(Model)
 </div>

@@ -1,0 +1,184 @@
+/* Messages of the whole project: Bootstrap .alert boxes, the toasts of FlashMessages and the nk.alert / nk.confirm dialogs (nk-alert.js). */
+
+.alert {
+  --nk-tone: #4f46e5;
+  --nk-soft: #eef2ff;
+  --nk-line: #c7d2fe;
+  --nk-ink: #312e81;
+  --nk-icon: "\f430";
+  position: relative;
+  padding: .85rem 1rem;
+  padding-inline-start: 2.85rem;
+  border: 1px solid var(--nk-line);
+  border-inline-start: 4px solid var(--nk-tone);
+  border-radius: 12px;
+  background: var(--nk-soft);
+  color: var(--nk-ink);
+  line-height: 1.8;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+}
+.alert::before {
+  content: var(--nk-icon);
+  font-family: "bootstrap-icons";
+  position: absolute;
+  inset-inline-start: .9rem;
+  top: .85rem;
+  font-size: 1.15rem;
+  line-height: 1.55;
+  color: var(--nk-tone);
+}
+/* The alert already starts with its own icon: use it in place of the automatic one. */
+.alert:has(> .bi:first-child)::before,
+.alert:has(> :first-child:not(.nk-toast-close) > .bi:first-child)::before { content: none; }
+.alert:has(> .bi:first-child),
+.alert:has(> :first-child:not(.nk-toast-close) > .bi:first-child) { padding-inline-start: 1rem; }
+.alert > .bi:first-child,
+.alert > :first-child:not(.nk-toast-close) > .bi:first-child { color: var(--nk-tone); margin-inline-end: .2rem; }
+
+.alert a:not(.btn), .alert .alert-link { color: var(--nk-tone); font-weight: 600; }
+.alert .alert-heading { color: inherit; font-weight: 700; }
+.alert hr { border-color: var(--nk-line); opacity: 1; }
+.alert > :last-child { margin-bottom: 0; }
+.alert-dismissible { padding-inline-end: 3rem; }
+
+.alert-success { --nk-tone: #059669; --nk-soft: #ecfdf5; --nk-line: #a7f3d0; --nk-ink: #065f46; --nk-icon: "\f26a"; }
+.alert-info { --nk-tone: #0284c7; --nk-soft: #f0f9ff; --nk-line: #bae6fd; --nk-ink: #075985; --nk-icon: "\f430"; }
+.alert-warning { --nk-tone: #d97706; --nk-soft: #fffbeb; --nk-line: #fde68a; --nk-ink: #92400e; --nk-icon: "\f33a"; }
+.alert-danger { --nk-tone: #dc2626; --nk-soft: #fef2f2; --nk-line: #fecaca; --nk-ink: #991b1b; --nk-icon: "\f336"; }
+.alert-primary { --nk-tone: #4f46e5; --nk-soft: #eef2ff; --nk-line: #c7d2fe; --nk-ink: #3730a3; --nk-icon: "\f430"; }
+.alert-secondary, .alert-light { --nk-tone: #64748b; --nk-soft: #f8fafc; --nk-line: #e2e8f0; --nk-ink: #334155; --nk-icon: "\f430"; }
+.alert-dark { --nk-tone: #1f2937; --nk-soft: #f3f4f6; --nk-line: #d1d5db; --nk-ink: #111827; --nk-icon: "\f430"; }
+
+/* ---- Toasts (FlashMessages and nk.toast) */
+
+.nk-toasts {
+  position: fixed;
+  z-index: 2000;
+  top: 1rem;
+  inset-inline-end: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  width: min(380px, calc(100vw - 2rem));
+  pointer-events: none;
+}
+.nk-toasts .alert {
+  pointer-events: auto;
+  margin: 0;
+  padding-inline-end: 2.6rem;
+  background: #fff;
+  box-shadow: 0 12px 32px -8px rgba(15, 23, 42, .25);
+  animation: nk-toast-in .28s cubic-bezier(.2, .9, .3, 1.2);
+  overflow: hidden;
+}
+.nk-toasts .alert.is-leaving { animation: nk-toast-out .22s ease-in forwards; }
+.nk-toast-close {
+  position: absolute;
+  top: .55rem;
+  inset-inline-end: .5rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #9ca3af;
+  line-height: 1;
+  cursor: pointer;
+}
+.nk-toast-close:hover { background: var(--nk-soft); color: var(--nk-tone); }
+.nk-toast-bar {
+  position: absolute;
+  inset-inline-start: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: var(--nk-tone);
+  opacity: .35;
+  transform-origin: right;
+  animation: nk-toast-bar linear forwards;
+}
+[dir="ltr"] .nk-toast-bar { transform-origin: left; }
+.nk-toasts .alert:hover .nk-toast-bar { animation-play-state: paused; }
+
+@keyframes nk-toast-in { from { opacity: 0; transform: translateY(-12px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes nk-toast-out { to { opacity: 0; transform: translateY(-8px) scale(.97); } }
+@keyframes nk-toast-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+@media (max-width: 575.98px) {
+  .nk-toasts { top: auto; bottom: 1rem; inset-inline: 1rem; width: auto; }
+}
+
+/* ---- Dialogs (nk.alert / nk.confirm and forms with data-confirm) */
+
+.nk-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, .45);
+  backdrop-filter: blur(3px);
+  animation: nk-fade .18s ease-out;
+}
+.nk-dialog-backdrop.is-leaving { animation: nk-fade .16s ease-in reverse forwards; }
+
+.nk-dialog {
+  --nk-tone: #4f46e5;
+  --nk-soft: #eef2ff;
+  width: min(420px, 100%);
+  background: #fff;
+  border-radius: 18px;
+  padding: 1.6rem 1.5rem 1.25rem;
+  text-align: center;
+  box-shadow: 0 24px 60px -12px rgba(15, 23, 42, .35);
+  animation: nk-pop .24s cubic-bezier(.2, .9, .3, 1.25);
+}
+.nk-dialog-backdrop.is-leaving .nk-dialog { animation: nk-pop .16s ease-in reverse forwards; }
+.nk-dialog.is-danger { --nk-tone: #dc2626; --nk-soft: #fef2f2; }
+.nk-dialog.is-warning { --nk-tone: #d97706; --nk-soft: #fffbeb; }
+.nk-dialog.is-success { --nk-tone: #059669; --nk-soft: #ecfdf5; }
+.nk-dialog.is-info { --nk-tone: #0284c7; --nk-soft: #f0f9ff; }
+
+.nk-dialog-icon {
+  width: 3.6rem;
+  height: 3.6rem;
+  margin: 0 auto .9rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.7rem;
+  color: var(--nk-tone);
+  background: var(--nk-soft);
+  box-shadow: 0 0 0 8px color-mix(in srgb, var(--nk-soft) 55%, transparent);
+}
+.nk-dialog-title { margin: 0 0 .35rem; font-size: 1.1rem; font-weight: 700; color: #111827; }
+.nk-dialog-text { margin: 0; color: #4b5563; line-height: 1.9; white-space: pre-line; overflow-wrap: anywhere; }
+.nk-dialog-actions { display: flex; gap: .5rem; justify-content: center; margin-top: 1.35rem; }
+.nk-dialog-actions button {
+  flex: 1 1 0;
+  max-width: 11rem;
+  min-height: 2.6rem;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: .95rem;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .12s;
+}
+.nk-dialog-actions button:active { transform: scale(.97); }
+.nk-dialog-ok { background: var(--nk-tone); color: #fff; }
+.nk-dialog-ok:hover { box-shadow: 0 6px 16px -6px var(--nk-tone); filter: brightness(1.05); }
+.nk-dialog-cancel { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+.nk-dialog-cancel:hover { background: #e5e7eb; }
+.nk-dialog-actions button:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--nk-tone) 35%, transparent); }
+
+body.nk-dialog-open { overflow: hidden; }
+
+@keyframes nk-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nk-pop { from { opacity: 0; transform: translateY(10px) scale(.95); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .nk-toasts .alert, .nk-dialog-backdrop, .nk-dialog, .nk-toast-bar { animation-duration: .01ms !important; }
+}

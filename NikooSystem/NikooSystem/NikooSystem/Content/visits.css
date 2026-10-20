@@ -1,4 +1,4 @@
-/* Visit statistics (_VisitReport, _VisitMini) in both the store panel and Nikoo's admin */
+/* Visit statistics (_VisitReport, _VisitMini, _VisitIps) in both the store panel and Nikoo's admin */
 .vs-report { --vs-views: #c7d2fe; --vs-visitors: #4f46e5; --vs-now: #f59e0b; }
 .vs-mini { --vs-views: #c7d2fe; --vs-visitors: #4f46e5; --vs-now: #f59e0b; }
 .vs-title { font-size: 1.1rem; font-weight: 700; margin: 0 0 .75rem; }
@@ -59,6 +59,19 @@
 .vs-mini-nums small { color: #6b7280; font-size: .74rem; }
 .vs-chart.is-mini { flex: 1; height: 100px; padding-top: 0; gap: 3px; }
 .vs-chart.is-mini .vs-col b { max-width: 18px; }
+
+/* IP list (_VisitIps) */
+.vs-ip-totals { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; margin-bottom: .9rem; color: #4b5563; font-size: .9rem; }
+.vs-ip-totals i { color: var(--vs-visitors, #4f46e5); }
+.vs-ip-totals b { color: #111827; font-size: 1.05rem; }
+.vs-ip { color: #3730a3; background: #eef2ff; border-radius: 6px; padding: .1rem .4rem; font-size: .85rem; }
+.vs-ip-page {
+  display: inline-block; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  vertical-align: bottom; color: #4b5563;
+}
+@media (max-width: 767.98px) {
+  .vs-ip-page { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+}
 
 @media (max-width: 991.98px) {
   .vs-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }

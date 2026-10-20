@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace NikooSystem.Models
@@ -85,6 +86,49 @@ namespace NikooSystem.Models
                 desc = defaultDescending;
             }
             return string.Join(", ", column.Split(',').Select(c => c.Trim() + (desc ? " DESC" : " ASC")));
+        }
+
+        /// <summary>
+        /// Search, sort and page a list already in memory. An unknown sort key, or no <paramref name="defaultSort"/>,
+        /// keeps the order of <paramref name="source"/> (tree lists stay in their structure until a column is chosen).
+        /// </summary>
+        public PagedList<T> Slice<T>(IEnumerable<T> source, Func<T, string> search, IDictionary<string, Func<T, object>> sorts,
+            string defaultSort = null, bool defaultDescending = false)
+        {
+            IEnumerable<T> rows = source ?? Enumerable.Empty<T>();
+            var text = (Q ?? "").Trim();
+            if (text.Length > 0 && search != null)
+                rows = rows.Where(item => (search(item) ?? "").IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0);
+
+            Func<T, object> key = null;
+            var desc = defaultDescending;
+            if (sorts != null && !string.IsNullOrEmpty(Sort) && sorts.TryGetValue(Sort, out key))
+                desc = Descending;
+            else if (sorts != null && !string.IsNullOrEmpty(defaultSort))
+                sorts.TryGetValue(defaultSort, out key);
+
+            if (key != null)
+                rows = desc
+                    ? rows.OrderByDescending(item => key(item), GridValueComparer.Instance)
+                    : rows.OrderBy(item => key(item), GridValueComparer.Instance);
+            return PagedList<T>.From(rows, Page, PageSize);
+        }
+
+        private sealed class GridValueComparer : IComparer<object>
+        {
+            public static readonly GridValueComparer Instance = new GridValueComparer();
+
+            public int Compare(object x, object y)
+            {
+                if (ReferenceEquals(x, y)) return 0;
+                if (x == null) return -1;
+                if (y == null) return 1;
+                if (x is string || y is string)
+                    return string.Compare(Convert.ToString(x, CultureInfo.CurrentCulture), Convert.ToString(y, CultureInfo.CurrentCulture), CultureInfo.CurrentCulture, CompareOptions.IgnoreCase);
+                var comparable = x as IComparable;
+                if (comparable != null && x.GetType() == y.GetType()) return comparable.CompareTo(y);
+                return string.Compare(Convert.ToString(x, CultureInfo.InvariantCulture), Convert.ToString(y, CultureInfo.InvariantCulture), StringComparison.OrdinalIgnoreCase);
+            }
         }
     }
 }

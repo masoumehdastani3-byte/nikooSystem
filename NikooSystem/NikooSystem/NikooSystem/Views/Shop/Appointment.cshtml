@@ -56,7 +56,7 @@
                 <button type="button" class="bk-btn-ghost" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
                 @if (canCancel)
                 {
-                    using (Html.BeginForm("CancelAppointment", "Shop", new { company, id = Model.Code }, FormMethod.Post, new { onsubmit = "return confirm('این نوبت لغو شود؟');" }))
+                    using (Html.BeginForm("CancelAppointment", "Shop", new { company, id = Model.Code }, FormMethod.Post, new { data_confirm = "این نوبت لغو شود؟", data_confirm_ok = "بله، لغو شود" }))
                     {
                         @Html.AntiForgeryToken()
                         <button class="btn btn-outline-danger" type="submit"><i class="bi bi-x-circle"></i> لغو نوبت</button>

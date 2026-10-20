@@ -1,4 +1,4 @@
-/* Admin tables: search/filter toolbar, sortable headers, pager and icon buttons. Paging happens on the server. */
+/* Admin tables: shared table look, phone cards, search/filter toolbar, sortable headers, pager and icon buttons. Paging happens on the server. */
 
 .grid-toolbar {
   display: flex;
@@ -52,14 +52,106 @@
 
 .grid-clear:hover { color: #dc2626; }
 
-.panel-card .table { margin-bottom: 0; }
+/* One look for every panel table (both the main panel and the store panel). */
 
-.panel-card .table thead th {
-  white-space: nowrap;
+.table {
+  --bs-table-hover-bg: #f8faff;
+  margin-bottom: 0;
+  color: #1f2937;
+}
+.table > :not(:first-child) { border-top: 0; }
+.table:not(:last-child),
+.table-responsive:not(:last-child) { margin-bottom: 1rem; }
+
+.table > thead > tr > th {
+  background: #f8fafc;
   color: #6b7280;
   font-weight: 600;
   font-size: .85rem;
-  border-bottom-width: 1px;
+  white-space: nowrap;
+  border-bottom: 1px solid #e5e7eb;
+}
+.table > thead > tr > th:first-child { border-start-start-radius: 10px; }
+.table > thead > tr > th:last-child { border-start-end-radius: 10px; }
+
+.table:not(.table-sm) > thead > tr > th,
+.table:not(.table-sm) > tbody > tr > *,
+.table:not(.table-sm) > tfoot > tr > * { padding: .7rem .75rem; }
+
+.table > tbody > tr > * { border-bottom-color: #f1f5f9; }
+.table > tbody > tr:last-child > * { border-bottom-width: 0; }
+.table > tbody > tr:hover > * { background-color: #f8faff; }
+.table > tfoot > tr > * { background: #f8fafc; font-weight: 600; border-top: 1px solid #e5e7eb; border-bottom-width: 0; }
+.table.table-bordered > tbody > tr > * { border: 1px solid #e5e7eb; }
+
+/* Phones: each row is a card with its column titles beside the values, so the page never scrolls sideways.
+   admin-table.js adds .is-stack and the data-label of each cell. */
+@media (max-width: 767.98px) {
+  .table-responsive:has(> .table.is-stack) { overflow: visible; }
+
+  .table.is-stack,
+  .table.is-stack > tbody,
+  .table.is-stack > tfoot,
+  .table.is-stack > tbody > tr,
+  .table.is-stack > tfoot > tr { display: block; width: 100%; }
+
+  .table.is-stack > thead { display: none; }
+
+  .table.is-stack > tbody > tr,
+  .table.is-stack > tfoot > tr {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: .25rem .85rem;
+    margin-bottom: .65rem;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+  }
+  .table.is-stack > tfoot > tr { background: #f8fafc; }
+
+  .table.is-stack > tbody > tr > *,
+  .table.is-stack > tfoot > tr > * {
+    display: block;
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    padding: .55rem 0 !important;
+    padding-inline-start: 38% !important;
+    min-height: 2.4rem;
+    text-align: start;
+    white-space: normal !important;
+    overflow-wrap: anywhere;
+    background: none !important;
+    box-shadow: none;
+    border: 0;
+    border-bottom: 1px dashed #eef0f3;
+  }
+  .table.is-stack > tbody > tr > *:last-child,
+  .table.is-stack > tfoot > tr > *:last-child { border-bottom: 0; }
+
+  .table.is-stack [data-label]::before {
+    content: attr(data-label);
+    position: absolute;
+    inset-inline-start: 0;
+    top: .55rem;
+    width: 34%;
+    color: #6b7280;
+    font-size: .8rem;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .table.is-stack > tbody > tr > *:not([data-label]),
+  .table.is-stack > tfoot > tr > *:not([data-label]) { padding-inline-start: 0 !important; }
+  .table.is-stack .is-wide { text-align: center; }
+
+  .table.is-stack .row-actions { text-align: start; padding-top: .65rem !important; }
+  .table.is-stack .row-actions:not([data-label]) { display: flex; flex-wrap: wrap; gap: .35rem; justify-content: flex-end; }
+  .table.is-stack .row-actions:not([data-label]) > * + * { margin-inline-start: 0; }
+
+  .table.is-stack .form-control,
+  .table.is-stack .form-select { width: 100%; max-width: 100%; min-width: 0; }
+
+  .table.is-stack > tbody > tr.admin-empty-row { border-style: dashed; box-shadow: none; }
 }
 
 .grid-sort {
@@ -68,6 +160,16 @@
   display: inline-flex;
   gap: .3rem;
   align-items: center;
+}
+
+.grid-sortbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  align-items: center;
+  margin-bottom: .75rem;
+  color: #6b7280;
+  font-size: .85rem;
 }
 
 .grid-sort i { font-size: .8em; opacity: .45; }

@@ -365,6 +365,9 @@
     <Content Include="App_Data\README.txt" />
     <Content Include="App_Data\Seed\tutorials.sql" />
     <Content Include="Content\admin-table.css" />
+    <Content Include="Content\admin-table.js" />
+    <Content Include="Content\nk-alert.css" />
+    <Content Include="Content\nk-alert.js" />
     <Content Include="Content\infinite-scroll.js" />
     <Content Include="Content\storefront.css" />
     <Content Include="Content\storefront-themes.css" />
@@ -529,6 +532,9 @@
     <Content Include="Views\ShopAdmin\NewTicket.cshtml" />
     <Content Include="Views\Shared\_SupportUpload.cshtml" />
     <Content Include="Views\Shared\_VisitReport.cshtml" />
+    <Content Include="Views\Shared\_VisitIps.cshtml" />
+    <Content Include="Views\Admin\VisitIps.cshtml" />
+    <Content Include="Views\ShopAdmin\VisitIps.cshtml" />
     <Content Include="Views\Shared\_VisitMini.cshtml" />
     <Content Include="Views\ShopAdmin\Visits.cshtml" />
     <Content Include="Views\ShopAdmin\Storage.cshtml" />

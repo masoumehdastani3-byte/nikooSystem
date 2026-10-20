@@ -12,7 +12,7 @@ namespace NikooSystem.Controllers
     public partial class AdminController
     {
         [HttpGet]
-        public ActionResult DemoTemplates()
+        public ActionResult DemoTemplates(GridQuery query)
         {
             var products = SiteStore.GetProducts();
             var demos = TenantStore.DemoBySlug
@@ -29,9 +29,14 @@ namespace NikooSystem.Controllers
                         TemplateCount = StoreTemplates.ForKind(type.Kind).Count(),
                         Products = products.Where(p => string.Equals(p.DemoSlug, d.Key, StringComparison.OrdinalIgnoreCase)).ToList()
                     };
-                })
-                .ToList();
-            return View(demos);
+                });
+            return View(query.Slice(demos,
+                d => d.Type.Name + " " + d.Template.Name + " " + d.Slug + " " + string.Join(" ", d.Products.Select(p => p.Title)),
+                new Dictionary<string, Func<DemoTemplateRow, object>>
+                {
+                    ["name"] = d => d.Type.Name,
+                    ["template"] = d => d.Template.Name
+                }, "name"));
         }
 
         [HttpGet]

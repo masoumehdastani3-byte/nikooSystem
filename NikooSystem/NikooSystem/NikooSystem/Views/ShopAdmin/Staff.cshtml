@@ -11,7 +11,13 @@
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
-                <tr><th>نام</th><th>روزهای کاری</th><th>خدمات</th><th>وضعیت</th><th></th></tr>
+                <tr>
+                    @Html.SortHeader("name", "نام")
+                    <th>روزهای کاری</th>
+                    <th>خدمات</th>
+                    @Html.SortHeader("status", "وضعیت")
+                    <th></th>
+                </tr>
             </thead>
             <tbody>
                 @foreach (var p in Model)

@@ -167,15 +167,15 @@ namespace NikooSystem.Controllers
 
         public ActionResult Categories(GridQuery query)
         {
-            return View(TreePage(TenantStore.GetCategories(CompanyCode), query));
-        }
-
-        private static PagedList<TreeRow<T>> TreePage<T>(IEnumerable<T> all, GridQuery query) where T : ITreeNode
-        {
-            var rows = TreeHelper.Flatten(all).AsEnumerable();
-            if (!string.IsNullOrWhiteSpace(query.Q))
-                rows = rows.Where(r => (r.Node.Title ?? "").IndexOf(query.Q.Trim(), StringComparison.OrdinalIgnoreCase) >= 0);
-            return PagedList<TreeRow<T>>.From(rows, query.Page, query.PageSize);
+            return View(query.Slice(TreeHelper.Flatten(TenantStore.GetCategories(CompanyCode)),
+                r => r.Node.Title + " " + r.Node.Slug,
+                new Dictionary<string, Func<TreeRow<StoreCategory>, object>>
+                {
+                    ["title"] = r => r.Node.Title,
+                    ["slug"] = r => r.Node.Slug,
+                    ["sort"] = r => r.Node.SortOrder,
+                    ["status"] = r => r.Node.IsActive
+                }));
         }
 
         [HttpGet]
@@ -208,7 +208,15 @@ namespace NikooSystem.Controllers
         {
             var menus = TenantStore.GetMenus(CompanyCode).AsEnumerable();
             if (!string.IsNullOrEmpty(location)) menus = menus.Where(m => m.Location == location);
-            return View(TreePage(menus.OrderBy(m => m.Location).ThenBy(m => m.SortOrder), query));
+            return View(query.Slice(TreeHelper.Flatten(menus.OrderBy(m => m.Location).ThenBy(m => m.SortOrder)),
+                r => r.Node.Title + " " + r.Node.Url,
+                new Dictionary<string, Func<TreeRow<StoreMenuItem>, object>>
+                {
+                    ["title"] = r => r.Node.Title,
+                    ["location"] = r => r.Node.Location,
+                    ["link"] = r => r.Node.Url,
+                    ["sort"] = r => r.Node.SortOrder
+                }));
         }
 
         [HttpGet]
