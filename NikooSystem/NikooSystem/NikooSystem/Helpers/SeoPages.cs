@@ -275,6 +275,25 @@ namespace NikooSystem.Helpers
             return article;
         }
 
+        /// <summary>A free browser tool on the main site (schema.org WebApplication).</summary>
+        public static Dictionary<string, object> FreeWebTool(SeoInfo seo, string name, string description, string url)
+        {
+            var app = Schema("WebApplication");
+            app["name"] = name;
+            app["description"] = Seo.Text(description, 300);
+            app["url"] = url;
+            app["applicationCategory"] = "UtilityApplication";
+            app["operatingSystem"] = "Web";
+            app["inLanguage"] = "fa-IR";
+            app["offers"] = new Dictionary<string, object>
+            {
+                { "@type", "Offer" },
+                { "price", "0" },
+                { "priceCurrency", "IRR" }
+            };
+            return app;
+        }
+
         public static Dictionary<string, object> Faq(IEnumerable<SiteFaq> faqs)
         {
             var list = faqs.Where(f => !string.IsNullOrWhiteSpace(f.Question) && !string.IsNullOrWhiteSpace(f.Answer)).ToList();

@@ -212,6 +212,7 @@
     <Compile Include="Controllers\ShopController.Seo.cs" />
     <Compile Include="Controllers\SeoController.cs" />
     <Compile Include="Controllers\SolutionsController.cs" />
+    <Compile Include="Controllers\ToolsController.cs" />
     <Compile Include="Controllers\SignupController.cs" />
     <Compile Include="Controllers\TorobApiController.cs" />
     <Compile Include="Filters\AdminAuthorizeAttribute.cs" />
@@ -226,6 +227,7 @@
     <Compile Include="Helpers\SeoPages.cs" />
     <Compile Include="Helpers\PlatformModules.cs" />
     <Compile Include="Helpers\ProductLandings.cs" />
+    <Compile Include="Helpers\SiteTools.cs" />
     <Compile Include="Helpers\SiteHelpers.cs" />
     <Compile Include="Helpers\StoreHtml.cs" />
     <Compile Include="Helpers\StoreMenuHelper.cs" />
@@ -390,6 +392,14 @@
     <Content Include="Content\money-input.js" />
     <Content Include="Content\shamsi-datetime.css" />
     <Content Include="Content\shamsi-datetime.js" />
+    <Content Include="Content\tools.css" />
+    <Content Include="Content\tools\jalali.js" />
+    <Content Include="Content\tools\tools-util.js" />
+    <Content Include="Content\tools\tool-converter.js" />
+    <Content Include="Content\tools\tool-age.js" />
+    <Content Include="Content\tools\tool-qr.js" />
+    <Content Include="Content\tools\tool-image.js" />
+    <Content Include="Content\tools\qrcode.min.js" />
     <Content Include="Content\storefront-images.css" />
     <Content Include="Content\storefront-images.js" />
     <Content Include="Content\support.js" />
@@ -552,6 +562,14 @@
     <Content Include="Views\Shared\_ModuleGrid.cshtml" />
     <Content Include="Views\Shared\_SolutionLinks.cshtml" />
     <Content Include="Views\Solutions\Show.cshtml" />
+    <Content Include="Views\Tools\Index.cshtml" />
+    <Content Include="Views\Tools\Show.cshtml" />
+    <Content Include="Views\Tools\_Age.cshtml" />
+    <Content Include="Views\Tools\_Converter.cshtml" />
+    <Content Include="Views\Tools\_Image.cshtml" />
+    <Content Include="Views\Tools\_Qr.cshtml" />
+    <Content Include="Views\Tools\_ToolCta.cshtml" />
+    <Content Include="Views\Tools\_ToolFaq.cshtml" />
     <Content Include="Views\Shared\_DemoTemplateBar.cshtml" />
     <Content Include="Views\Demo\Fashion.cshtml" />
     <Content Include="Views\Demo\Grocery.cshtml" />

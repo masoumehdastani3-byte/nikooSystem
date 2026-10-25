@@ -107,8 +107,10 @@ namespace NikooSystem.Controllers
                 UrlEntry(site + Url.Action("Guide", "Pay")),
                 UrlEntry(site + Url.Action("BuyGuide", "Home")),
                 UrlEntry(site + Url.Action("Terms", "Home")),
-                UrlEntry(site + Url.Action("Privacy", "Home"))
+                UrlEntry(site + Url.Action("Privacy", "Home")),
+                UrlEntry(site + Url.RouteUrl("Tools"))
             };
+            urls.AddRange(SiteTools.All.Select(t => UrlEntry(site + Url.RouteUrl("Tool", new { slug = t.Slug }))));
             urls.AddRange(ProductLandings.All.Select(p => UrlEntry(site + Url.RouteUrl("Solution", new { slug = p.Slug }), null,
                 Images(main.Asset, p.Image))));
             foreach (var product in SiteStore.GetProducts().Where(p => p.IsActive).OrderBy(p => p.Id))

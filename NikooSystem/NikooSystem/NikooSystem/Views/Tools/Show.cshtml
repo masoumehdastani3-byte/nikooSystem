@@ -1,0 +1,77 @@
+@model NikooSystem.Helpers.SiteTool
+@{
+    ViewBag.Title = Model.Name;
+    ViewBag.Nav = "tools";
+}
+<link href="@Url.Asset("~/Content/tools.css")" rel="stylesheet" />
+<main id="main">
+    <div class="page-hero">
+        <div class="container">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="@Url.Action("Index","Home")">خانه</a></li>
+                    <li class="breadcrumb-item"><a href="@Url.RouteUrl("Tools")">ابزارهای رایگان</a></li>
+                    <li class="breadcrumb-item active">@Model.Name</li>
+                </ol>
+            </nav>
+            <h1><i class="bi @Model.Icon"></i> @Model.Name</h1>
+            <p class="text-muted mb-0">@Model.Summary</p>
+        </div>
+    </div>
+    <section class="pb-5">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-8">
+                    @switch (Model.Id)
+                    {
+                        case "converter":
+                            @Html.Partial("_Converter")
+                            break;
+                        case "age":
+                            @Html.Partial("_Age")
+                            break;
+                        case "qr":
+                            @Html.Partial("_Qr")
+                            break;
+                        case "image":
+                            @Html.Partial("_Image")
+                            break;
+                    }
+                    @Html.Partial("_ToolFaq", Model.Faqs)
+                </div>
+                <div class="col-lg-4">
+                    <div class="inner-card mb-3">
+                        <h2 class="h6 mb-3">سایر ابزارها</h2>
+                        <ul class="list-unstyled mb-0">
+                            @foreach (var t in NikooSystem.Helpers.SiteTools.All.Where(x => x.Id != Model.Id))
+                            {
+                                <li class="mb-2"><a href="@Url.RouteUrl("Tool", new { slug = t.Slug })"><i class="bi @t.Icon"></i> @t.Name</a></li>
+                            }
+                        </ul>
+                    </div>
+                    @Html.Partial("_ToolCta")
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+@section scripts {
+    <script src="@Url.Asset("~/Content/tools/jalali.js")"></script>
+    <script src="@Url.Asset("~/Content/tools/tools-util.js")"></script>
+    @switch (Model.Id)
+    {
+        case "converter":
+            <script src="@Url.Asset("~/Content/tools/tool-converter.js")"></script>
+            break;
+        case "age":
+            <script src="@Url.Asset("~/Content/tools/tool-age.js")"></script>
+            break;
+        case "qr":
+            <script src="@Url.Asset("~/Content/tools/qrcode.min.js")"></script>
+            <script src="@Url.Asset("~/Content/tools/tool-qr.js")"></script>
+            break;
+        case "image":
+            <script src="@Url.Asset("~/Content/tools/tool-image.js")"></script>
+            break;
+    }
+}

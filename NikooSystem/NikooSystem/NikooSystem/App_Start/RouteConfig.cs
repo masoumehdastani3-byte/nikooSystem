@@ -96,6 +96,10 @@ namespace NikooSystem
             routes.MapRoute(name: "Solution", url: "{slug}", defaults: new { controller = "Solutions", action = "Show" },
                 constraints: new { slug = Helpers.ProductLandings.SlugPattern });
 
+            routes.MapRoute(name: "Tools", url: "tools", defaults: new { controller = "Tools", action = "Index" });
+            routes.MapRoute(name: "Tool", url: "tools/{slug}", defaults: new { controller = "Tools", action = "Show" },
+                constraints: new { slug = Helpers.SiteTools.SlugPattern });
+
             routes.MapRoute(name: "Blog", url: "blog", defaults: new { controller = "Blog", action = "Index" });
             routes.MapRoute(name: "BlogPost", url: "blog/{slug}", defaults: new { controller = "Blog", action = "Post" });
 

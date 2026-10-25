@@ -1,0 +1,131 @@
+<div class="nk-tool-panel" id="tool-converter">
+    <div class="nk-tool-tabs" role="tablist">
+        <button type="button" class="active" data-nk-tab="date" aria-selected="true">تاریخ شمسی ↔ میلادی</button>
+        <button type="button" data-nk-tab="fx" aria-selected="false">ارز</button>
+        <button type="button" data-nk-tab="unit" aria-selected="false">واحد</button>
+    </div>
+
+    <div data-nk-panel="date">
+        <p class="text-muted small">تاریخ را وارد کنید و جهت تبدیل را انتخاب کنید.</p>
+        <div class="mb-3">
+            <label class="form-label d-block">جهت</label>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="dateMode" id="dateJ2g" value="j2g" checked />
+                <label class="form-check-label" for="dateJ2g">شمسی → میلادی</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="dateMode" id="dateG2j" value="g2j" />
+                <label class="form-check-label" for="dateG2j">میلادی → شمسی</label>
+            </div>
+        </div>
+        <div class="row g-2 mb-2">
+            <div class="col-4 col-md-3">
+                <label class="form-label">سال شمسی</label>
+                <input type="text" class="form-control" data-jy inputmode="numeric" placeholder="۱۴۰۳" />
+            </div>
+            <div class="col-4 col-md-3">
+                <label class="form-label">ماه</label>
+                <input type="text" class="form-control" data-jm inputmode="numeric" placeholder="۱" />
+            </div>
+            <div class="col-4 col-md-3">
+                <label class="form-label">روز</label>
+                <input type="text" class="form-control" data-jd inputmode="numeric" placeholder="۱" />
+            </div>
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-4 col-md-3">
+                <label class="form-label">سال میلادی</label>
+                <input type="text" class="form-control" data-gy inputmode="numeric" placeholder="2024" dir="ltr" />
+            </div>
+            <div class="col-4 col-md-3">
+                <label class="form-label">ماه</label>
+                <input type="text" class="form-control" data-gm inputmode="numeric" placeholder="3" dir="ltr" />
+            </div>
+            <div class="col-4 col-md-3">
+                <label class="form-label">روز</label>
+                <input type="text" class="form-control" data-gd inputmode="numeric" placeholder="20" dir="ltr" />
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn-primary-shop" data-date-convert>تبدیل تاریخ</button>
+            <button type="button" class="btn btn-outline-shop" data-date-today>امروز</button>
+        </div>
+        <p class="text-danger small mt-2 mb-0" data-date-err></p>
+        <div class="nk-tool-out" data-date-out></div>
+    </div>
+
+    <div data-nk-panel="fx" hidden>
+        <p class="text-muted small">نرخ‌ها تقریبی و قابل ویرایش‌اند (در مرورگر شما ذخیره می‌شوند). مبنای محاسبه: ریال.</p>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">مبلغ</label>
+                <input type="text" class="form-control" data-fx-amount inputmode="decimal" placeholder="۱۰۰" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">از</label>
+                <select class="form-select" data-fx-from>
+                    <option value="TMN">تومان</option>
+                    <option value="IRR">ریال</option>
+                    <option value="USD">دلار آمریکا</option>
+                    <option value="EUR">یورو</option>
+                    <option value="GBP">پوند</option>
+                    <option value="TRY">لیر ترکیه</option>
+                    <option value="AED">درهم امارات</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">به</label>
+                <select class="form-select" data-fx-to>
+                    <option value="TMN">تومان</option>
+                    <option value="IRR">ریال</option>
+                    <option value="USD">دلار آمریکا</option>
+                    <option value="EUR">یورو</option>
+                    <option value="GBP">پوند</option>
+                    <option value="TRY">لیر ترکیه</option>
+                    <option value="AED">درهم امارات</option>
+                </select>
+            </div>
+        </div>
+        <details class="mb-3">
+            <summary class="small">ویرایش نرخ (ریال برای هر ۱ واحد ارز)</summary>
+            <div class="row g-2 mt-2">
+                <div class="col-6 col-md-4"><label class="form-label small">USD</label><input class="form-control form-control-sm" data-fx-rate="USD" dir="ltr" /></div>
+                <div class="col-6 col-md-4"><label class="form-label small">EUR</label><input class="form-control form-control-sm" data-fx-rate="EUR" dir="ltr" /></div>
+                <div class="col-6 col-md-4"><label class="form-label small">GBP</label><input class="form-control form-control-sm" data-fx-rate="GBP" dir="ltr" /></div>
+                <div class="col-6 col-md-4"><label class="form-label small">TRY</label><input class="form-control form-control-sm" data-fx-rate="TRY" dir="ltr" /></div>
+                <div class="col-6 col-md-4"><label class="form-label small">AED</label><input class="form-control form-control-sm" data-fx-rate="AED" dir="ltr" /></div>
+            </div>
+        </details>
+        <button type="button" class="btn-primary-shop" data-fx-convert>محاسبه ارز</button>
+        <div class="nk-tool-out mt-3" data-fx-out></div>
+    </div>
+
+    <div data-nk-panel="unit" hidden>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">نوع</label>
+                <select class="form-select" data-unit-kind>
+                    <option value="length">طول</option>
+                    <option value="weight">وزن</option>
+                    <option value="temp">دما</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">مقدار</label>
+                <input type="text" class="form-control" data-unit-val inputmode="decimal" />
+            </div>
+        </div>
+        <div class="row g-2 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">از واحد</label>
+                <select class="form-select" data-unit-from></select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">به واحد</label>
+                <select class="form-select" data-unit-to></select>
+            </div>
+        </div>
+        <button type="button" class="btn-primary-shop" data-unit-convert>تبدیل واحد</button>
+        <div class="nk-tool-out mt-3" data-unit-out></div>
+    </div>
+</div>

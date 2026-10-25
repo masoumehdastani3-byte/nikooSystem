@@ -59,6 +59,7 @@
                             <li><a href="@Url.Action("Index","Products")"><i class="bi bi-grid"></i> همه محصولات</a></li>
                         </ul>
                     </li>
+                    <li><a class="nav-link @(ViewBag.Nav=="tools"?"active":"")" href="@Url.RouteUrl("Tools")">ابزارها</a></li>
                     @if (hasBlog)
                     {
                         <li><a class="nav-link @(ViewBag.Nav=="blog"?"active":"")" href="@Url.RouteUrl("Blog")">وبلاگ</a></li>
@@ -125,6 +126,7 @@
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Home")">خانه</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products")">محصولات</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("BuyGuide","Home")">راهنمای خرید</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.RouteUrl("Tools")">ابزارهای رایگان</a></li>
                             @if (hasBlog)
                             {
                                 <li><i class="bi bi-chevron-left"></i> <a href="@Url.RouteUrl("Blog")">وبلاگ و مقالات</a></li>

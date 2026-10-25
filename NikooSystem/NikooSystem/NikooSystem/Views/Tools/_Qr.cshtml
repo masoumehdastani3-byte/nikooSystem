@@ -1,0 +1,21 @@
+<div class="nk-tool-panel" id="tool-qr">
+    <div class="mb-3">
+        <label class="form-label">متن یا لینک</label>
+        <textarea class="form-control" rows="3" data-qr-text dir="ltr" placeholder="https://example.com"></textarea>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <button type="button" class="btn btn-sm btn-outline-shop" data-qr-preset="https://">https://</button>
+        <button type="button" class="btn btn-sm btn-outline-shop" data-qr-preset="tel:+989121234567">tel:</button>
+        <button type="button" class="btn btn-sm btn-outline-shop" data-qr-preset="mailto:info@example.com">mailto:</button>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">اندازه: <span data-qr-size-label>۲۰۰</span> پیکسل</label>
+        <input type="range" class="form-range" data-qr-size min="128" max="512" step="16" value="200" />
+    </div>
+    <div class="d-flex flex-wrap gap-2 align-items-start mb-2">
+        <button type="button" class="btn-primary-shop" data-qr-build>ساخت QR</button>
+        <button type="button" class="btn btn-outline-shop" data-qr-download>دانلود PNG</button>
+    </div>
+    <p class="text-danger small" data-qr-err></p>
+    <div class="nk-qr-box mt-2" data-qr-box aria-live="polite"></div>
+</div>

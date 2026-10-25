@@ -1,0 +1,49 @@
+<div class="nk-tool-panel" id="tool-age">
+    <p class="text-muted small">تاریخ تولد را با تقویم شمسی یا میلادی وارد کنید.</p>
+    <div class="mb-3">
+        <label class="form-label d-block">تقویم ورودی</label>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="birthCal" id="birthSh" value="shamsi" checked />
+            <label class="form-check-label" for="birthSh">شمسی</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="birthCal" id="birthGr" value="gregorian" />
+            <label class="form-check-label" for="birthGr">میلادی</label>
+        </div>
+    </div>
+    <div data-birth-shamsi>
+        <div class="row g-2 mb-3">
+            <div class="col-4">
+                <label class="form-label">سال</label>
+                <input type="text" class="form-control" data-b-jy inputmode="numeric" placeholder="۱۳۶۵" />
+            </div>
+            <div class="col-4">
+                <label class="form-label">ماه</label>
+                <input type="text" class="form-control" data-b-jm inputmode="numeric" placeholder="۵" />
+            </div>
+            <div class="col-4">
+                <label class="form-label">روز</label>
+                <input type="text" class="form-control" data-b-jd inputmode="numeric" placeholder="۱۵" />
+            </div>
+        </div>
+    </div>
+    <div data-birth-greg hidden>
+        <div class="row g-2 mb-3">
+            <div class="col-4">
+                <label class="form-label">سال</label>
+                <input type="text" class="form-control" data-b-gy inputmode="numeric" dir="ltr" placeholder="1986" />
+            </div>
+            <div class="col-4">
+                <label class="form-label">ماه</label>
+                <input type="text" class="form-control" data-b-gm inputmode="numeric" dir="ltr" placeholder="8" />
+            </div>
+            <div class="col-4">
+                <label class="form-label">روز</label>
+                <input type="text" class="form-control" data-b-gd inputmode="numeric" dir="ltr" placeholder="6" />
+            </div>
+        </div>
+    </div>
+    <button type="button" class="btn-primary-shop" data-age-calc>محاسبه سن</button>
+    <p class="text-danger small mt-2 mb-0" data-age-err></p>
+    <div class="nk-tool-out" data-age-out></div>
+</div>

@@ -1,0 +1,24 @@
+@model NikooSystem.Models.SiteFaq[]
+@if (Model != null && Model.Length > 0)
+{
+    <div class="nk-tool-faq mt-5">
+        <h2 class="h4 mb-3">سوالات متداول</h2>
+        <div class="accordion" id="toolFaq">
+            @for (var i = 0; i < Model.Length; i++)
+            {
+                var f = Model[i];
+                var id = "faq" + i;
+                <div class="accordion-item">
+                    <h3 class="accordion-header" id="@(id)-h">
+                        <button class="accordion-button @(i > 0 ? "collapsed" : "")" type="button" data-bs-toggle="collapse" data-bs-target="#@id" aria-expanded="@(i == 0 ? "true" : "false")">
+                            @f.Question
+                        </button>
+                    </h3>
+                    <div id="@id" class="accordion-collapse collapse @(i == 0 ? "show" : "")" aria-labelledby="@(id)-h" data-bs-parent="#toolFaq">
+                        <div class="accordion-body">@f.Answer</div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
