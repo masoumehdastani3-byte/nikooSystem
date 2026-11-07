@@ -487,6 +487,7 @@ namespace NikooSystem.Models.Store
         public int Id { get; set; }
         public string FullName { get; set; }
         public string Mobile { get; set; }
+        public long? BaleChatId { get; set; }
         public string Email { get; set; }
         public string PasswordHash { get; set; }
         public string Address { get; set; }
@@ -663,6 +664,10 @@ namespace NikooSystem.Models.Store
 
         [EmailAddress]
         public string Email { get; set; }
+
+        [Required(ErrorMessage = "شناسه چت بله الزامی است")]
+        [Range(1, long.MaxValue, ErrorMessage = "شناسه چت بله معتبر نیست")]
+        public long? BaleChatId { get; set; }
 
         [Required(ErrorMessage = "رمز عبور الزامی است")]
         [MinLength(6)]

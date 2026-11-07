@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
@@ -22,6 +23,12 @@ namespace NikooSystem.Controllers
         public ActionResult Login()
         {
             if (IsShopAdmin) return ToAction("Index");
+            Response.Cookies.Add(new HttpCookie("nk_last_company", CompanyCode ?? "")
+            {
+                Expires = DateTime.Now.AddMonths(6),
+                HttpOnly = true,
+                Path = "/"
+            });
             return View(new StoreLoginVm());
         }
 
@@ -41,9 +48,58 @@ namespace NikooSystem.Controllers
             return View(model);
         }
 
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ForgotPassword(string mobile)
+        {
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null)
+            {
+                ModelState.AddModelError("", "شماره موبایل معتبر نیست.");
+                return View("Login", new StoreLoginVm());
+            }
+            if (string.IsNullOrWhiteSpace(Tenant?.OwnerMobile) || !string.Equals(Tenant.OwnerMobile.Trim(), mobile, StringComparison.Ordinal))
+            {
+                ModelState.AddModelError("", "این موبایل با مالک فروشگاه تطبیق ندارد.");
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+            if (BaleNotifier.Recipients(CompanyCode).Count == 0)
+            {
+                ModelState.AddModelError("", "ابتدا باید حساب بله را در بخش «اطلاع‌رسانی بله» پنل مدیریت وصل کنید.");
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+
+            var temporary = PasswordHelper.GenerateTemporaryPassword();
+            var settings = CurrentSettings;
+            settings.AdminPasswordHash = PasswordHelper.Hash(temporary);
+            TenantStore.SaveSettings(settings);
+
+            var text = "🔐 بازیابی رمز مدیر فروشگاه\n"
+                + "فروشگاه: " + BaleNotifier.SiteName(CompanyCode) + "\n"
+                + "موبایل مالک: " + mobile + "\n"
+                + "رمز موقت جدید: " + temporary + "\n"
+                + "بعد از ورود، رمز را عوض کنید.";
+            var error = await BaleNotifier.SendToRecipientsAsync(CompanyCode, text);
+            if (error != null)
+            {
+                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+
+            Ok("رمز موقت مدیر در بله ارسال شد.");
+            return ToAction("Login");
+        }
+
         [AllowAnonymous]
         public ActionResult Logout()
         {
+            Response.Cookies.Add(new HttpCookie("nk_last_company", CompanyCode ?? "")
+            {
+                Expires = DateTime.Now.AddMonths(6),
+                HttpOnly = true,
+                Path = "/"
+            });
             IsShopAdmin = false;
             return ToAction("Login");
         }

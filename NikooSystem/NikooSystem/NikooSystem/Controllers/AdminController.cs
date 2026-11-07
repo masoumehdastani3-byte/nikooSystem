@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
@@ -45,6 +46,42 @@ namespace NikooSystem.Controllers
 
             ModelState.AddModelError("", "نام کاربری یا رمز عبور اشتباه است.");
             return View(model);
+        }
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ForgotPassword(string username)
+        {
+            username = (username ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                ModelState.AddModelError("", "نام کاربری را وارد کنید.");
+                return View("Login", new LoginViewModel());
+            }
+
+            if (!string.Equals(username, SiteContentStore.AdminUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError("", "نام کاربری مدیریت یافت نشد.");
+                return View("Login", new LoginViewModel { Username = username });
+            }
+
+            var temporary = PasswordHelper.GenerateTemporaryPassword();
+            SiteContentStore.ChangeAdminCredentials(SiteContentStore.AdminUsername, temporary);
+
+            var text = "🔐 بازیابی رمز پنل مدیریت نیکو\n"
+                + "نام کاربری: " + SiteContentStore.AdminUsername + "\n"
+                + "رمز موقت جدید: " + temporary + "\n"
+                + "بعد از ورود، رمز را تغییر دهید.";
+            var error = await BaleNotifier.SendToRecipientsAsync(BaleNotifier.SiteScope, text);
+            if (error != null)
+            {
+                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                return View("Login", new LoginViewModel { Username = username });
+            }
+
+            TempData["Ok"] = "رمز موقت جدید در بله ارسال شد.";
+            return RedirectToAction("Login");
         }
 
         [AllowAnonymous]

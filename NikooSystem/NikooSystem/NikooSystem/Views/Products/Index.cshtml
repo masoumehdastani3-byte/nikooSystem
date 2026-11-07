@@ -46,9 +46,9 @@
                                     <div>
                                         @if (!string.IsNullOrEmpty(p.DemoSlug))
                                         {
-                                            <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">دمو</a>
+                                            <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">مشاهده دمو</a>
                                         }
-                                        <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Details","Products", new { id = p.Id })">خرید</a>
+                                        <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات و قیمت</a>
                                     </div>
                                 </div>
                             </div>

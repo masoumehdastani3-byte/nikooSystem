@@ -8,6 +8,10 @@
         new { Url = site.LinkedInUrl, Icon = "bi-linkedin", Name = "لینکدین" }
     }.Where(s => !string.IsNullOrWhiteSpace(s.Url)).ToList();
     var hasBlog = NikooSystem.Services.SiteBlogStore.AnyLive;
+    var lastCompany = (Request?.Cookies["nk_last_company"]?.Value ?? "").Trim();
+    var businessLoginUrl = string.IsNullOrEmpty(lastCompany)
+        ? Url.Action("Login", "Signup")
+        : Url.Action("Login", "ShopAdmin", new { company = lastCompany });
     var seo = NikooSystem.Helpers.SeoHtml.Seo(Html);
     seo.GoogleVerification = seo.GoogleVerification ?? site.GoogleVerification;
     if (!string.IsNullOrEmpty(site.EnamadMeta))
@@ -67,8 +71,9 @@
                     <li><a class="nav-link @(ViewBag.Nav=="about"?"active":"")" href="@Url.Action("About","Home")">درباره ما</a></li>
                     <li class="lf-nav-extra"><a class="nav-link @(ViewBag.Nav=="terms"?"active":"")" href="@Url.Action("Terms","Home")">قوانین و مقررات</a></li>
                     <li><a class="nav-link @(ViewBag.Nav=="contact"?"active":"")" href="@Url.Action("Contact","Home")">تماس با ما</a></li>
-                    <li><a class="nav-link" href="@Url.Action("Login","Signup")">ورود فروشندگان</a></li>
-                    <li><a class="getstarted" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان</a></li>
+                    <li><a class="nav-link" href="@businessLoginUrl">ورود مدیر کسب‌وکار</a></li>
+                    <li class="lf-nav-extra"><a class="nav-link" href="@Url.Action("Login","Admin")">ورود مدیر سیستم</a></li>
+                    <li><a class="getstarted" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت سایت رایگان</a></li>
                 </ul>
                 <i class="bi bi-list mobile-nav-toggle"></i>
             </nav>
@@ -140,8 +145,8 @@
                     <div class="col-lg-2 col-6 footer-links">
                         <h4>محصولات</h4>
                         <ul>
-                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Signup")">ساخت فروشگاه رایگان</a></li>
-                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Login","Signup")">ورود فروشندگان</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Signup")">ساخت سایت رایگان</a></li>
+                            <li><i class="bi bi-chevron-left"></i> <a href="@businessLoginUrl">ورود مدیر کسب‌وکار</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products", new { category = "فروشگاه آنلاین" })">فروشگاه‌های نمونه</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Index","Products")">همه محصولات</a></li>
                             <li><i class="bi bi-chevron-left"></i> <a href="@Url.Action("Login","Admin")">ورود پنل</a></li>

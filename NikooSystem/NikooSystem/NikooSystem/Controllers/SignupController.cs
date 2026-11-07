@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Filters;
 using NikooSystem.Helpers;
@@ -22,7 +23,11 @@ namespace NikooSystem.Controllers
             ViewBag.Nav = "signup";
             Seo.Of(HttpContext).Description = "ساخت رایگان فروشگاه اینترنتی، سایت خبری یا شرکتی و سامانه نوبت‌دهی آنلاین در چند دقیقه؛ بدون نیاز به برنامه‌نویسی، با درگاه پرداخت و پشتیبانی.";
             var chosen = StoreTemplates.All.FirstOrDefault(t => t.Id == template);
-            return View(new StoreSignupVm { StoreType = Helpers.StoreTypes.Get(type).Id, Template = chosen?.Id });
+            var resolvedType = type;
+            if (string.IsNullOrWhiteSpace(resolvedType))
+                resolvedType = GuessTypeFromReferrer(Request?.UrlReferrer);
+            ViewBag.PrefilledStoreType = !string.IsNullOrWhiteSpace(resolvedType);
+            return View(new StoreSignupVm { StoreType = Helpers.StoreTypes.Get(resolvedType).Id, Template = chosen?.Id });
         }
 
         [HttpPost]
@@ -86,10 +91,21 @@ namespace NikooSystem.Controllers
 
         [HttpGet]
         [NoIndex]
-        public ActionResult Login()
+        public ActionResult Login(string company = null)
         {
             ViewBag.Nav = "signup";
-            return View(new OwnerLoginVm());
+            company = (company ?? "").Trim();
+            if (string.IsNullOrEmpty(company))
+                company = (Request.Cookies["nk_last_company"]?.Value ?? "").Trim();
+
+            if (!string.IsNullOrEmpty(company))
+            {
+                var tenant = TenantStore.GetTenant(company);
+                if (tenant != null)
+                    return RedirectToAction("Login", "ShopAdmin", new { company = tenant.CompanyCode });
+            }
+            TempData["Error"] = "برای ورود مدیر کسب‌وکار، از لینک ورود اختصاصی سایت خود استفاده کنید.";
+            return RedirectToAction("Index");
         }
 
         [HttpPost]
@@ -137,6 +153,13 @@ namespace NikooSystem.Controllers
                 list.Add(now);
                 return true;
             }
+        }
+
+        private static string GuessTypeFromReferrer(Uri referrer)
+        {
+            var path = (referrer?.AbsolutePath ?? "").Trim('/');
+            if (string.IsNullOrEmpty(path) || path.Contains("/")) return null;
+            return ProductLandings.Get(path)?.MainType;
         }
     }
 }

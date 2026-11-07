@@ -323,7 +323,9 @@
             <div class="eyebrow">خوش آمدید</div>
             <h2>ورود به پنل مدیریت</h2>
             <p class="sub">برای ادامه، اطلاعات حساب مدیر @siteNoun را وارد کنید.</p>
-            <div class="code-pill"><i class="bi bi-building"></i> کد شرکت: @company</div>
+            <div class="small text-muted mb-2">
+                در این پنل می‌توانید مدیریت @siteNoun، سفارش‌ها/رزروها، پیام‌ها و تنظیمات ظاهر سایت را انجام دهید.
+            </div>
 
             @using (Html.BeginForm())
             {
@@ -345,6 +347,17 @@
                 <button class="btn-login" type="submit">
                     ورود به پنل <i class="bi bi-arrow-left"></i>
                 </button>
+            }
+
+            @using (Html.BeginForm("ForgotPassword", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "mt-3" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="small text-muted mb-2">فراموشی رمز مدیر: موبایل مالک فروشگاه را وارد کنید تا رمز موقت در بله ارسال شود.</div>
+                <div class="input-wrap" style="margin-bottom:.6rem;">
+                    <i class="bi bi-phone"></i>
+                    <input type="text" name="mobile" class="form-control" placeholder="09121234567" />
+                </div>
+                <button class="btn btn-outline-secondary w-100" type="submit">ارسال رمز موقت در بله</button>
             }
 
             <div class="login-links">

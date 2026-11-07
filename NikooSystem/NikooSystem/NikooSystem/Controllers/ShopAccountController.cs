@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using System.Web.Mvc;
 using NikooSystem.Filters;
 using NikooSystem.Helpers;
@@ -35,6 +36,51 @@ namespace NikooSystem.Controllers
             return AfterSignIn(returnUrl);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ForgotPassword(string mobile, string returnUrl)
+        {
+            mobile = BookingTime.NormalizeMobile(mobile);
+            ViewBag.ReturnUrl = returnUrl;
+            if (mobile == null)
+            {
+                ModelState.AddModelError("", "شماره موبایل معتبر نیست.");
+                return View("Login", new StoreLoginVm());
+            }
+
+            var customer = TenantStore.GetCustomerByMobile(CompanyCode, mobile);
+            if (customer == null)
+            {
+                ModelState.AddModelError("", "مشتری با این موبایل پیدا نشد.");
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+            if (!customer.BaleChatId.HasValue || customer.BaleChatId <= 0)
+            {
+                ModelState.AddModelError("", "برای بازیابی رمز باید شناسه چت بله در حساب مشتری ثبت شده باشد.");
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+
+            var temporary = PasswordHelper.GenerateTemporaryPassword();
+            customer.PasswordHash = PasswordHelper.Hash(temporary);
+            TenantStore.SaveCustomer(CompanyCode, customer);
+
+            var text = "🔐 بازیابی رمز ورود مشتری\n"
+                + "فروشگاه: " + BaleNotifier.SiteName(CompanyCode) + "\n"
+                + "موبایل: " + mobile + "\n"
+                + "رمز موقت جدید: " + temporary + "\n"
+                + "بعد از ورود، رمز را عوض کنید.";
+
+            var error = await BaleNotifier.SendDirectAsync(CompanyCode, customer.BaleChatId.Value, text);
+            if (error != null)
+            {
+                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                return View("Login", new StoreLoginVm { Username = mobile });
+            }
+
+            Ok("رمز موقت جدید در بله ارسال شد.");
+            return ToAction("Login", new { returnUrl });
+        }
+
         [HttpGet]
         public ActionResult Register(string returnUrl)
         {
@@ -58,6 +104,7 @@ namespace NikooSystem.Controllers
             {
                 FullName = model.FullName,
                 Mobile = model.Mobile,
+                BaleChatId = model.BaleChatId,
                 Email = model.Email,
                 Address = model.Address,
                 PasswordHash = PasswordHelper.Hash(model.Password)
@@ -102,6 +149,7 @@ namespace NikooSystem.Controllers
             customer.FullName = model.FullName;
             customer.Email = model.Email;
             customer.Address = model.Address;
+            customer.BaleChatId = model.BaleChatId;
             if (!string.IsNullOrWhiteSpace(newPassword))
                 customer.PasswordHash = PasswordHelper.Hash(newPassword);
             TenantStore.SaveCustomer(CompanyCode, customer);

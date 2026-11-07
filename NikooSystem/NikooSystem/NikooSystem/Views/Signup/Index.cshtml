@@ -4,20 +4,36 @@
     var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
     var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
     var codeSuffix = string.IsNullOrEmpty(rootDomain) ? null : "." + rootDomain;
+    var lastCompany = (Request?.Cookies["nk_last_company"]?.Value ?? "").Trim();
+    var businessLoginUrl = string.IsNullOrEmpty(lastCompany)
+        ? Url.Action("Login", "Signup")
+        : Url.Action("Login", "ShopAdmin", new { company = lastCompany });
+    var prefilledType = (ViewBag.PrefilledStoreType as bool?) ?? false;
+    var selectedKindId = StoreTypes.Get(Model.StoreType).Kind;
 }
 <link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
 <main id="main" class="ob-page">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-lg-7">
-                <div class="ob-card">
-                    <h1>فروشگاه، آکادمی یا سایت خبری خودت را بساز</h1>
-                    <p class="ob-sub">بدون نیاز به برنامه‌نویس و پشتیبان؛ @trialDays روز رایگان امتحان کن، اگر راضی بودی اشتراک سه‌ماهه، شش‌ماهه یا یک‌ساله را پرداخت کن.</p>
+        <div class="ob-tabs-bar" id="siteTypeStep">
+            <div class="ob-kind-tabs" role="tablist" aria-label="گروه‌های محصول">
+                @foreach (var kind in SiteKinds.All)
+                {
+                    var tabActive = selectedKindId == kind.Id;
+                    <button type="button" class="ob-kind-tab @(tabActive ? "active" : "")" data-kind-target="@kind.Id" role="tab" aria-selected="@(tabActive ? "true" : "false")">
+                        <i class="bi @kind.Icon"></i>
+                        <span>@kind.Name</span>
+                    </button>
+                }
+            </div>
+        </div>
 
+        <div class="row g-4">
+            <div class="col-lg-7 order-lg-2">
+                <div class="ob-card">
                     @using (Html.BeginForm("Index", "Signup", FormMethod.Post, new { id = "signupForm", novalidate = "novalidate" }))
                     {
                         @Html.AntiForgeryToken()
-                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
 
                         <div class="ob-hp" aria-hidden="true">
                             <label for="Website">وب‌سایت</label>
@@ -35,34 +51,20 @@
                         }
 
                         <div class="mb-4">
-                            <span class="ob-label">۱. چه نوع سایتی می‌خواهید؟</span>
+                            <span class="ob-label">۱. @(prefilledType ? "نوع سایت شما از صفحه قبلی انتخاب شد" : "نوع سایت را انتخاب کنید")</span>
+                            @if (prefilledType)
+                            {
+                                <div class="ob-help mb-2">اگر لازم باشد، از همین بخش می‌توانید نوع سایت را تغییر دهید.</div>
+                            }
                             @foreach (var kind in SiteKinds.All)
                             {
-                                <div class="ob-kind">
-                                    <div class="ob-kind-head">
-                                        <i class="bi @kind.Icon"></i>
-                                        <div>
-                                            <strong>@kind.Name</strong>
-                                            <span>@kind.Description</span>
-                                        </div>
-                                    </div>
-                                    <ul class="ob-kind-features">
-                                        @foreach (var f in kind.Features)
-                                        {
-                                            <li><i class="bi bi-check2"></i> @f</li>
-                                        }
-                                    </ul>
-                                    <div class="ob-kind-modules">
-                                        @foreach (var m in PlatformModules.For(kind).Where(m => m.Highlight))
-                                        {
-                                            <span><i class="bi @m.Icon"></i> @m.Name</span>
-                                        }
-                                    </div>
+                                var panelActive = selectedKindId == kind.Id;
+                                <div class="ob-kind-panel @(panelActive ? "active" : "")" data-kind-panel="@kind.Id" role="tabpanel">
                                     <div class="ob-types">
                                         @foreach (var t in StoreTypes.OfKind(kind.Id))
                                         {
                                             var active = Model.StoreType == t.Id;
-                                            <label class="ob-type @(active ? "active" : "")">
+                                            <label class="ob-type @(active ? "active" : "")" data-kind="@kind.Id">
                                                 <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
                                                 <i class="bi @t.Icon"></i>
                                                 <div><strong>@t.Name</strong><span>@t.Description</span></div>
@@ -74,73 +76,108 @@
                             <div class="ob-help">نگران نباش؛ بعداً همه‌چیز از جمله قالب و دسته‌بندی‌ها قابل تغییر است.</div>
                         </div>
 
-                        <span class="ob-label">۲. مشخصات فروشگاه</span>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label" for="StoreName">نام فروشگاه</label>
-                                @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control", placeholder = "مثلاً پوشاک آریا" })
-                                @Html.ValidationMessageFor(m => m.StoreName, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="StoreCode">آدرس فروشگاه (انگلیسی)</label>
-                                <div class="ob-code">
-                                    @Html.TextBoxFor(m => m.StoreCode, new { @class = "form-control", placeholder = "aryashop", autocomplete = "off", spellcheck = "false" })
-                                    @if (codeSuffix != null)
-                                    {
-                                        <span class="ob-code-suffix">@codeSuffix</span>
-                                    }
+                        <div class="ob-form-section ob-form-section-store mb-4">
+                            <span class="ob-label">۲. مشخصات فروشگاه</span>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="StoreName">نام فروشگاه</label>
+                                    @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control", placeholder = "مثلاً پوشاک آریا" })
+                                    @Html.ValidationMessageFor(m => m.StoreName, "", new { @class = "text-danger small" })
                                 </div>
-                                <div class="ob-code-status" id="codeStatus"></div>
-                                @Html.ValidationMessageFor(m => m.StoreCode, "", new { @class = "text-danger small" })
+                                <div class="col-md-6">
+                                    <label class="form-label" for="StoreCode">آدرس فروشگاه (انگلیسی)</label>
+                                    <div class="ob-code">
+                                        @Html.TextBoxFor(m => m.StoreCode, new { @class = "form-control", placeholder = "aryashop", autocomplete = "off", spellcheck = "false" })
+                                        @if (codeSuffix != null)
+                                        {
+                                            <span class="ob-code-suffix">@codeSuffix</span>
+                                        }
+                                    </div>
+                                    <div class="ob-code-status" id="codeStatus"></div>
+                                    @Html.ValidationMessageFor(m => m.StoreCode, "", new { @class = "text-danger small" })
+                                </div>
                             </div>
                         </div>
 
-                        <span class="ob-label">۳. مشخصات شما (مدیر فروشگاه)</span>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label" for="FullName">نام و نام خانوادگی</label>
-                                @Html.TextBoxFor(m => m.FullName, new { @class = "form-control" })
-                                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="Mobile">شماره موبایل</label>
-                                @Html.TextBoxFor(m => m.Mobile, new { @class = "form-control", placeholder = "09121234567", dir = "ltr", inputmode = "numeric" })
-                                <div class="ob-help">نام کاربری ورود به پنل شما همین شماره است.</div>
-                                @Html.ValidationMessageFor(m => m.Mobile, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="Password">رمز عبور</label>
-                                <div class="input-group" dir="ltr">
-                                    @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password" })
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePass" title="نمایش رمز"><i class="bi bi-eye"></i></button>
+                        <div class="ob-form-section">
+                            <span class="ob-label">۳. مشخصات شما (مدیر فروشگاه)</span>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label" for="FullName">نام و نام خانوادگی</label>
+                                    @Html.TextBoxFor(m => m.FullName, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger small" })
                                 </div>
-                                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label" for="Email">ایمیل (اختیاری)</label>
-                                @Html.TextBoxFor(m => m.Email, new { @class = "form-control", dir = "ltr" })
-                                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
-                            </div>
-                            <div class="col-12 form-check ms-1">
-                                @Html.CheckBoxFor(m => m.AcceptTerms, new { @class = "form-check-input" })
-                                <label class="form-check-label" for="AcceptTerms">
-                                    <a href="@Url.Action("Terms","Home")" target="_blank">قوانین و مقررات</a> و <a href="@Url.Action("Privacy","Home")" target="_blank">حریم خصوصی</a> را خواندم و می‌پذیرم
-                                </label>
-                                @Html.ValidationMessageFor(m => m.AcceptTerms, "", new { @class = "text-danger small d-block" })
-                            </div>
-                            <div class="col-12">
-                                <button type="submit" class="btn-primary-shop w-100 py-3">
-                                    <i class="bi bi-rocket-takeoff"></i> ساخت فروشگاه رایگان
-                                </button>
-                                <div class="text-center mt-3 small">
-                                    قبلاً فروشگاه ساخته‌اید؟ <a href="@Url.Action("Login","Signup")">ورود فروشندگان</a>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="Mobile">شماره موبایل</label>
+                                    @Html.TextBoxFor(m => m.Mobile, new { @class = "form-control", placeholder = "09121234567", dir = "ltr", inputmode = "numeric" })
+                                    <div class="ob-help">نام کاربری ورود به پنل شما همین شماره است.</div>
+                                    @Html.ValidationMessageFor(m => m.Mobile, "", new { @class = "text-danger small" })
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="Password">رمز عبور</label>
+                                    <div class="input-group" dir="ltr">
+                                        @Html.PasswordFor(m => m.Password, new { @class = "form-control", autocomplete = "new-password" })
+                                        <button class="btn btn-outline-secondary" type="button" id="togglePass" title="نمایش رمز"><i class="bi bi-eye"></i></button>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label" for="Email">ایمیل (اختیاری)</label>
+                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", dir = "ltr" })
+                                    @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger small" })
+                                </div>
+                                <div class="col-12 form-check ms-1">
+                                    @Html.CheckBoxFor(m => m.AcceptTerms, new { @class = "form-check-input" })
+                                    <label class="form-check-label" for="AcceptTerms">
+                                        <a href="@Url.Action("Terms","Home")" target="_blank">قوانین و مقررات</a> و <a href="@Url.Action("Privacy","Home")" target="_blank">حریم خصوصی</a> را خواندم و می‌پذیرم
+                                    </label>
+                                    @Html.ValidationMessageFor(m => m.AcceptTerms, "", new { @class = "text-danger small d-block" })
+                                </div>
+                                <div class="col-12">
+                                    <button type="submit" class="btn-primary-shop w-100 py-3">
+                                        <i class="bi bi-rocket-takeoff"></i> شروع آزمایشی رایگان و ساخت سایت
+                                    </button>
+                                    <div class="text-center mt-3 small">
+                                        قبلاً سایت ساخته‌اید؟ <a href="@businessLoginUrl">ورود مدیر کسب‌وکار</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     }
                 </div>
             </div>
-            <div class="col-lg-5">
+            <div class="col-lg-5 order-lg-1">
+                <div class="ob-card mb-4">
+                    <h1>فروشگاه، آکادمی یا سایت خبری خودت را بساز</h1>
+                    <p class="ob-sub">بدون نیاز به برنامه‌نویس و پشتیبان؛ @trialDays روز رایگان امتحان کن، اگر راضی بودی اشتراک سه‌ماهه، شش‌ماهه یا یک‌ساله را پرداخت کن.</p>
+                    @foreach (var kind in SiteKinds.All)
+                    {
+                        var detailActive = selectedKindId == kind.Id;
+                        <div class="ob-kind-detail-panel @(detailActive ? "active" : "")" data-kind-detail="@kind.Id">
+                            <div class="ob-kind">
+                                <div class="ob-kind-head">
+                                    <i class="bi @kind.Icon"></i>
+                                    <div>
+                                        <strong>@kind.Name</strong>
+                                        <span>@kind.Description</span>
+                                    </div>
+                                </div>
+                                <ul class="ob-kind-features">
+                                    @foreach (var f in kind.Features)
+                                    {
+                                        <li><i class="bi bi-check2"></i> @f</li>
+                                    }
+                                </ul>
+                                <div class="ob-kind-modules">
+                                    @foreach (var m in PlatformModules.For(kind).Where(m => m.Highlight))
+                                    {
+                                        <span><i class="bi @m.Icon"></i> @m.Name</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
                 <div class="ob-card">
                     <h5 class="mb-3">بعد از ثبت‌نام چه اتفاقی می‌افتد؟</h5>
                     <ul class="ob-benefits">
@@ -164,11 +201,36 @@
 @section scripts {
 <script>
 (function () {
+  function activateKindTab(kindId) {
+    if (!kindId) return;
+    document.querySelectorAll('.ob-kind-tab').forEach(function (btn) {
+      var active = btn.getAttribute('data-kind-target') === kindId;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('.ob-kind-panel').forEach(function (panel) {
+      panel.classList.toggle('active', panel.getAttribute('data-kind-panel') === kindId);
+    });
+
+    document.querySelectorAll('.ob-kind-detail-panel').forEach(function (panel) {
+      panel.classList.toggle('active', panel.getAttribute('data-kind-detail') === kindId);
+    });
+  }
+
+  document.querySelectorAll('.ob-kind-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      activateKindTab(btn.getAttribute('data-kind-target'));
+    });
+  });
+
   document.querySelectorAll('.ob-type').forEach(function (card) {
     card.addEventListener('click', function () {
       document.querySelectorAll('.ob-type').forEach(function (c) { c.classList.remove('active'); });
       card.classList.add('active');
-      card.querySelector('input').checked = true;
+      var input = card.querySelector('input');
+      if (input) input.checked = true;
+      activateKindTab(card.getAttribute('data-kind'));
     });
   });
 

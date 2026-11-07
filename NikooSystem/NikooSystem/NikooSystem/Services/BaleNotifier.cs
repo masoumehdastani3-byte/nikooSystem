@@ -404,6 +404,38 @@ namespace NikooSystem.Services
             return await SendToAllAsync(scope, token, recipients, text, null).ConfigureAwait(false);
         }
 
+        /// <summary>Sends a text message to all linked Bale recipients of a scope now; returns an error text, or null.</summary>
+        public static async Task<string> SendToRecipientsAsync(string scope, string text)
+        {
+            var token = BotToken;
+            if (token == null) return "بازوی بله هنوز تنظیم نشده است.";
+            var recipients = Recipients(scope);
+            if (recipients.Count == 0) return "هیچ حساب بله‌ای برای این پنل وصل نشده است.";
+            return await SendToAllAsync(scope, token, recipients, text, null).ConfigureAwait(false);
+        }
+
+        /// <summary>Sends a direct text message to one Bale chat id now; returns an error text, or null.</summary>
+        public static async Task<string> SendDirectAsync(string scope, long chatId, string text)
+        {
+            var token = BotToken;
+            if (token == null) return "بازوی بله هنوز تنظیم نشده است.";
+            if (chatId <= 0) return "شناسه چت بله معتبر نیست.";
+            try
+            {
+                await SendAsync(token, chatId, text, null).ConfigureAwait(false);
+                if (!string.IsNullOrEmpty(scope))
+                    Patch(scope, new Row { ["LastSentAt"] = DateTime.Now, ["LastError"] = null, ["LastErrorAt"] = null });
+                return null;
+            }
+            catch (Exception ex)
+            {
+                var error = Describe(ex);
+                if (!string.IsNullOrEmpty(scope))
+                    Patch(scope, new Row { ["LastError"] = Clip(error, 500), ["LastErrorAt"] = DateTime.Now });
+                return error;
+            }
+        }
+
         private static async Task SendEventAsync(string scope, NotifyEvent e, string text, string link, Action<long, long> sent,
             IReadOnlyList<BalePhoto> photos)
         {

@@ -1,6 +1,9 @@
 /* ثبت‌نام، ویزارد راه‌اندازی و چک‌لیست شروع فروشگاه */
 
 .ob-page { padding: 7rem 0 4rem; background: linear-gradient(180deg, #f3f7ff 0%, #fff 60%); }
+.ob-tabs-bar {
+    margin-bottom: 1rem;
+}
 .ob-card {
     background: #fff;
     border: 1px solid #e6ebf3;
@@ -12,6 +15,67 @@
 .ob-card .ob-sub { color: #6b7280; margin-bottom: 1.5rem; }
 .ob-label { font-weight: 700; font-size: .9rem; margin-bottom: .4rem; display: block; }
 .ob-help { font-size: .8rem; color: #6b7280; margin-top: .3rem; }
+
+.ob-kind-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: .35rem;
+    margin: 0;
+    border-bottom: 1px solid #e6ebf3;
+    padding-bottom: 0;
+    overflow-x: auto;
+    scrollbar-width: thin;
+}
+.ob-kind-tab {
+    border: 1px solid transparent;
+    border-bottom: 0;
+    border-radius: 12px 12px 0 0;
+    background: #f7f9ff;
+    color: #64748b;
+    font-size: .78rem;
+    font-weight: 700;
+    padding: .48rem .8rem;
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+    cursor: pointer;
+    position: relative;
+    top: 1px;
+    transition: color .15s, background .15s, border-color .15s;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+.ob-kind-tab i { font-size: .95rem; }
+.ob-kind-tab:hover {
+    background: #eef2ff;
+    color: #334155;
+}
+.ob-kind-tab.active {
+    border-color: #d8e0f3;
+    background: #fff;
+    color: #1f2da8;
+    box-shadow: 0 -2px 0 #4154f1 inset;
+}
+
+.ob-kind-panel { display: none; }
+.ob-kind-panel.active { display: block; }
+.ob-kind-detail-panel { display: none; }
+.ob-kind-detail-panel.active { display: block; }
+
+.ob-form-section {
+    border: 1px solid #e6ebf3;
+    border-radius: 14px;
+    background: #fbfdff;
+    padding: 1rem;
+    margin-top: .35rem;
+}
+.ob-form-section-store {
+    border-color: #dbe5ff;
+    background: linear-gradient(180deg, #f7faff 0%, #fbfdff 100%);
+}
+.ob-form-section .ob-label {
+    margin-bottom: .75rem;
+}
 
 .ob-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .ob-kind { border: 1px solid #e5e7eb; border-radius: 14px; padding: 1rem; margin-bottom: .9rem; }
@@ -67,6 +131,9 @@
 
 .ob-page .validation-summary-valid { display: none !important; }
 .ob-page .validation-summary-errors ul { margin: 0; padding-inline-start: 1.1rem; }
+
+.ob-page .ob-alert-plain::before { content: none; }
+.ob-page .ob-alert-plain { padding-inline-start: 1rem; }
 
 .ob-hp { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 

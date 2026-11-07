@@ -95,10 +95,27 @@ namespace NikooSystem.Services
 
         public static bool CheckAdminLogin(string username, string password)
         {
-            if (!string.Equals(username ?? "", AdminUsername, StringComparison.Ordinal)) return false;
-            var hash = Settings.AdminPasswordHash;
-            if (!string.IsNullOrEmpty(hash)) return PasswordHelper.Verify(password, hash);
-            return string.Equals(password ?? "", ConfigurationManager.AppSettings["Admin.Password"] ?? "Admin@123", StringComparison.Ordinal);
+            var user = (username ?? "").Trim();
+            var pass = password ?? "";
+
+            var adminUser = (AdminUsername ?? "").Trim();
+            if (string.Equals(user, adminUser, StringComparison.OrdinalIgnoreCase))
+            {
+                var hash = Settings.AdminPasswordHash;
+                if (!string.IsNullOrEmpty(hash))
+                {
+                    if (PasswordHelper.Verify(pass, hash)) return true;
+                }
+                else if (string.Equals(pass, ConfigurationManager.AppSettings["Admin.Password"] ?? "Admin@123", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            var fallbackUser = (ConfigurationManager.AppSettings["Admin.Username"] ?? "admin").Trim();
+            var fallbackPass = ConfigurationManager.AppSettings["Admin.Password"] ?? "Admin@123";
+            return string.Equals(user, fallbackUser, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(pass, fallbackPass, StringComparison.Ordinal);
         }
 
         /// <summary>رمز هنوز همان رمز پیش‌فرض Web.config است (صفحه ورود آن را نشان می‌دهد)</summary>
