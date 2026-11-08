@@ -2,18 +2,23 @@
 @{
     ViewBag.Title = "پرداخت ناموفق";
     ViewBag.Nav = "products";
+    var failed = Model != null && Model.Status == NikooSystem.Models.OrderStatus.Failed;
 }
 <main id="main">
     <div class="page-hero">
         <div class="container text-center">
             <div class="fail-icon"><i class="bi bi-x-circle"></i></div>
-            <h1>پرداخت انجام نشد</h1>
-            <p class="text-muted">@(Model?.PaymentMessage ?? "پرداخت لغو شد یا با خطا مواجه شد.")</p>
+            <h1>نتیجه پرداخت نیاز به بررسی دارد</h1>
+            <p class="text-muted">پرداخت تأیید نشد. اگر مبلغی از حساب شما کسر شده، پیش از پرداخت مجدد وضعیت سفارش را با پشتیبانی بررسی کنید.</p>
             @if (Model != null)
             {
                 <p>شماره سفارش: <strong>@Model.OrderNumber</strong></p>
-                <a href="@Url.Action("Buy","Checkout", new { productId = Model.ProductId })" class="btn-primary-shop">تلاش مجدد</a>
+                if (failed && string.IsNullOrWhiteSpace(Model.CompanyCode))
+                {
+                    <a href="@Url.Action("Buy","Checkout", new { productId = Model.ProductId })" class="btn-primary-shop">بازگشت به فرم خرید و تلاش مجدد</a>
+                }
             }
+            <a href="@Url.Action("Contact","Home")" class="btn-outline-shop ms-2">تماس با پشتیبانی</a>
             <a href="@Url.Action("Index","Products")" class="btn-outline-shop ms-2">بازگشت به محصولات</a>
         </div>
     </div>
