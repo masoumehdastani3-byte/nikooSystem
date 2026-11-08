@@ -10,9 +10,11 @@
         : Url.Action("Login", "ShopAdmin", new { company = lastCompany });
     var prefilledType = (ViewBag.PrefilledStoreType as bool?) ?? false;
     var selectedKindId = StoreTypes.Get(Model.StoreType).Kind;
+    var selectedLanding = ProductLandings.ForType(Model.StoreType);
+    var selectedLandingUrl = selectedLanding != null ? Url.RouteUrl("Solution", new { slug = selectedLanding.Slug }) : null;
 }
 <link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
-<main id="main" class="ob-page">
+<main id="main" class="ob-page ob-signup-page">
     <div class="container">
         <div class="ob-tabs-bar" id="siteTypeStep">
             <div class="ob-kind-tabs" role="tablist" aria-label="گروه‌های محصول">
@@ -27,9 +29,9 @@
             </div>
         </div>
 
-        <div class="row g-4">
-            <div class="col-lg-7 order-lg-2">
-                <div class="ob-card">
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-8 order-lg-1">
+                <div class="ob-card ob-form-card">
                     @using (Html.BeginForm("Index", "Signup", FormMethod.Post, new { id = "signupForm", novalidate = "novalidate" }))
                     {
                         @Html.AntiForgeryToken()
@@ -64,7 +66,9 @@
                                         @foreach (var t in StoreTypes.OfKind(kind.Id))
                                         {
                                             var active = Model.StoreType == t.Id;
-                                            <label class="ob-type @(active ? "active" : "")" data-kind="@kind.Id">
+                                            var landing = ProductLandings.ForType(t.Id);
+                                            var landingUrl = landing != null ? Url.RouteUrl("Solution", new { slug = landing.Slug }) : null;
+                                            <label class="ob-type @(active ? "active" : "")" data-kind="@kind.Id" data-landing-url="@landingUrl">
                                                 <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
                                                 <i class="bi @t.Icon"></i>
                                                 <div><strong>@t.Name</strong><span>@t.Description</span></div>
@@ -76,8 +80,8 @@
                             <div class="ob-help">نگران نباش؛ بعداً همه‌چیز از جمله قالب و دسته‌بندی‌ها قابل تغییر است.</div>
                         </div>
 
-                        <div class="ob-form-section ob-form-section-store mb-4">
-                            <span class="ob-label">۲. مشخصات فروشگاه</span>
+                        <div class="ob-form-section ob-form-section-store ob-form-section-compact">
+                            <span class="ob-label">۲. اطلاعات لازم را وارد کنید</span>
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label" for="StoreName">نام فروشگاه</label>
@@ -85,7 +89,7 @@
                                     @Html.ValidationMessageFor(m => m.StoreName, "", new { @class = "text-danger small" })
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="StoreCode">آدرس فروشگاه (انگلیسی)</label>
+                                    <label class="form-label" for="StoreCode">نام فروشگاه (انگلیسی)</label>
                                     <div class="ob-code">
                                         @Html.TextBoxFor(m => m.StoreCode, new { @class = "form-control", placeholder = "aryashop", autocomplete = "off", spellcheck = "false" })
                                         @if (codeSuffix != null)
@@ -96,12 +100,6 @@
                                     <div class="ob-code-status" id="codeStatus"></div>
                                     @Html.ValidationMessageFor(m => m.StoreCode, "", new { @class = "text-danger small" })
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="ob-form-section">
-                            <span class="ob-label">۳. مشخصات شما (مدیر فروشگاه)</span>
-                            <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label" for="FullName">نام و نام خانوادگی</label>
                                     @Html.TextBoxFor(m => m.FullName, new { @class = "form-control" })
@@ -146,53 +144,17 @@
                     }
                 </div>
             </div>
-            <div class="col-lg-5 order-lg-1">
-                <div class="ob-card mb-4">
-                    <h1>فروشگاه، آکادمی یا سایت خبری خودت را بساز</h1>
-                    <p class="ob-sub">@trialDays روز رایگان استفاده کن؛ اگر راضی بودی اشتراک را سه‌ماهه، شش‌ماهه یا یک‌ساله از داخل پنل تمدید کن.</p>
-                    @foreach (var kind in SiteKinds.All)
-                    {
-                        var detailActive = selectedKindId == kind.Id;
-                        <div class="ob-kind-detail-panel @(detailActive ? "active" : "")" data-kind-detail="@kind.Id">
-                            <div class="ob-kind">
-                                <div class="ob-kind-head">
-                                    <i class="bi @kind.Icon"></i>
-                                    <div>
-                                        <strong>@kind.Name</strong>
-                                        <span>@kind.Description</span>
-                                    </div>
-                                </div>
-                                <ul class="ob-kind-features">
-                                    @foreach (var f in kind.Features)
-                                    {
-                                        <li><i class="bi bi-check2"></i> @f</li>
-                                    }
-                                </ul>
-                                <div class="ob-kind-modules">
-                                    @foreach (var m in PlatformModules.For(kind).Where(m => m.Highlight))
-                                    {
-                                        <span><i class="bi @m.Icon"></i> @m.Name</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    }
+            <div class="col-lg-4 order-lg-2">
+                <div class="ob-start-banner mb-3">
+                    <div class="ob-start-title"><i class="bi bi-exclamation-triangle-fill"></i> دوره آزمایشی @trialDays روزه است</div>
+                    <div class="ob-start-sub">اگر تا پایان دوره اشتراک را تمدید نکنید، فروشگاه و داده‌ها حذف می‌شود. بعد از آن می‌توانید اشتراک را سه‌ماهه، شش‌ماهه یا یک‌ساله از داخل پنل تمدید کنید.</div>
                 </div>
-                <div class="ob-card">
-                    <h5 class="mb-3">بعد از ثبت‌نام چه اتفاقی می‌افتد؟</h5>
-                    <ul class="ob-benefits">
-                        <li><i class="bi bi-lightning-charge"></i><div><strong>فروشگاه شما فوراً ساخته می‌شود</strong><span>با قالب آماده، منو، صفحات و چند محصول نمونه</span></div></li>
-                        <li><i class="bi bi-signpost-split"></i><div><strong>راهنمای قدم‌به‌قدم</strong><span>لوگو، رنگ، اولین محصول، درگاه پرداخت و دامنه را در چند دقیقه تنظیم می‌کنید</span></div></li>
-                        <li><i class="bi bi-palette"></i><div><strong>ظاهر دلخواه</strong><span>چند قالب آماده، رنگ‌ها، منوها و صفحات قابل تغییر</span></div></li>
-                        <li><i class="bi bi-credit-card"></i><div><strong>درگاه پرداخت خودتان</strong><span>پول فروش مستقیم به حساب زرین‌پال شما واریز می‌شود</span></div></li>
-                        <li><i class="bi bi-globe"></i><div><strong>دامنه اختصاصی</strong><span>دامنه خودتان را با راهنمای پنل وصل کنید؛ گواهی SSL را پشتیبانی نیکو فعال می‌کند</span></div></li>
-                        <li><i class="bi bi-google"></i><div><strong>دیده شدن در گوگل و ترب</strong><span>سئوی خودکار همه صفحات و اتصال کالاهای فروشگاه به ترب با API رسمی</span></div></li>
-                        <li><i class="bi bi-bell"></i><div><strong>خبر فوری در بله</strong><span>هر سفارش، نوبت یا پیام تازه همان لحظه در اپلیکیشن بله</span></div></li>
-                    </ul>
-                    <div class="alert alert-warning small mb-0">
-                        دوره آزمایشی @trialDays روزه است. اگر تا پایان دوره اشتراک را تمدید نکنید، سایت و اطلاعات آن حذف می‌شود.
-                        برای ادامه، اشتراک را به‌صورت سه‌ماهه، شش‌ماهه یا یک‌ساله از داخل پنل تمدید کنید.
-                    </div>
+                <div class="ob-card ob-quick-card">
+                    <h1 class="ob-quick-title">ثبت‌نام سریع</h1>
+                    <p class="ob-sub mb-3">در این صفحه فقط ثبت‌نام را انجام دهید. توضیحات کامل هر محصول در صفحه اختصاصی همان محصول قرار دارد.</p>
+                    <a id="productInfoLink" class="ob-product-link" href="@(selectedLandingUrl ?? Url.Action("Index", "Home"))">
+                        مشاهده ویژگی های محصول
+                    </a>
                 </div>
             </div>
         </div>
@@ -224,6 +186,13 @@
     });
   });
 
+  function syncProductInfoLink(card) {
+    var link = document.getElementById('productInfoLink');
+    if (!link || !card) return;
+    var landingUrl = card.getAttribute('data-landing-url');
+    if (landingUrl) link.setAttribute('href', landingUrl);
+  }
+
   document.querySelectorAll('.ob-type').forEach(function (card) {
     card.addEventListener('click', function () {
       document.querySelectorAll('.ob-type').forEach(function (c) { c.classList.remove('active'); });
@@ -231,8 +200,14 @@
       var input = card.querySelector('input');
       if (input) input.checked = true;
       activateKindTab(card.getAttribute('data-kind'));
+      syncProductInfoLink(card);
     });
   });
+
+  var selectedTypeCard = document.querySelector('.ob-type input:checked');
+  if (selectedTypeCard) {
+    syncProductInfoLink(selectedTypeCard.closest('.ob-type'));
+  }
 
   var toggle = document.getElementById('togglePass');
   var pass = document.getElementById('Password');

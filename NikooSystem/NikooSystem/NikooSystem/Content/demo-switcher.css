@@ -7,9 +7,28 @@
   direction: rtl;
   font-family: 'Far_Yekan', Tahoma, sans-serif;
   color: #0f172a;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .5rem;
 }
 .ds-root[hidden],
 .ds-panel[hidden] { display: none; }
+
+.ds-quick-build {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem .85rem;
+  border-radius: 999px;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(120deg, #0ea5e9, #2563eb);
+  box-shadow: 0 10px 24px -10px rgba(37, 99, 235, .75);
+  font-size: .82rem;
+  font-weight: 700;
+}
+.ds-quick-build:hover { color: #fff; background: linear-gradient(120deg, #0284c7, #1d4ed8); }
 
 .ds-toggle {
   display: flex;
@@ -168,6 +187,7 @@
   .ds-label strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 42vw; }
   .ds-label small { display: none; }
   .ds-panel { width: min(360px, calc(100vw - 24px)); }
+  .ds-quick-build { font-size: .78rem; max-width: calc(100vw - 24px); }
 }
 @media (max-width: 991.98px) {
   body:has(#demoSwitcher:not([hidden])) .bf-hero-content,

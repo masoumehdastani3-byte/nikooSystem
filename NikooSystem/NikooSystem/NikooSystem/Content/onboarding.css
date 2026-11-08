@@ -16,6 +16,119 @@
 .ob-label { font-weight: 700; font-size: .9rem; margin-bottom: .4rem; display: block; }
 .ob-help { font-size: .8rem; color: #6b7280; margin-top: .3rem; }
 
+.ob-start-banner {
+    border: 1px solid #cfe0ff;
+    background: linear-gradient(180deg, #f3f8ff 0%, #ffffff 100%);
+    border-radius: 14px;
+    padding: .85rem 1rem;
+}
+.ob-start-title {
+    color: #1f2da8;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    margin-bottom: .2rem;
+}
+.ob-start-sub {
+    font-size: .85rem;
+    color: #475569;
+}
+
+.ob-signup-page {
+    background: linear-gradient(180deg, var(--bs-light) 0%, var(--bs-white) 55%);
+}
+.ob-signup-page .ob-tabs-bar {
+    background: var(--bs-white);
+    border: 1px solid var(--bs-gray-300);
+    border-radius: 14px;
+    padding: .55rem .6rem .4rem;
+    box-shadow: 0 10px 25px rgba(var(--bs-primary-rgb), .06);
+}
+.ob-signup-page .ob-card {
+    border-color: var(--bs-gray-300);
+    box-shadow: 0 16px 40px rgba(var(--bs-primary-rgb), .08);
+}
+.ob-signup-page .ob-form-card {
+    border-radius: 20px;
+}
+.ob-signup-page .ob-start-banner {
+    border: 2px solid var(--bs-success);
+    background: var(--bs-white);
+    border-radius: 12px;
+    box-shadow: none;
+}
+.ob-signup-page .ob-start-title {
+    color: var(--bs-success);
+    font-weight: 800;
+    margin-bottom: .3rem;
+}
+.ob-signup-page .ob-start-title i {
+    color: var(--bs-success);
+}
+.ob-signup-page .ob-start-sub {
+    color: var(--bs-success);
+    font-size: .95rem;
+    line-height: 1.9;
+    font-weight: 700;
+}
+.ob-signup-page .ob-kind-tabs {
+    border-bottom: 0;
+    gap: .45rem;
+}
+.ob-signup-page .ob-kind-tab {
+    border: 1px solid var(--bs-gray-300);
+    border-radius: 10px;
+    background: var(--bs-white);
+    top: 0;
+    padding: .5rem .85rem;
+}
+.ob-signup-page .ob-kind-tab.active {
+    border-color: var(--bs-primary);
+    background: rgba(var(--bs-primary-rgb), .08);
+    box-shadow: inset 0 0 0 1px rgba(var(--bs-primary-rgb), .2);
+}
+.ob-signup-page .ob-form-section-store {
+    border-color: rgba(var(--bs-primary-rgb), .25);
+    background: var(--bs-white);
+}
+.ob-signup-page .ob-quick-card {
+    border-radius: 20px;
+    position: sticky;
+    top: 6.5rem;
+    background: var(--bs-primary);
+    border: 1px solid var(--bs-primary);
+    color: var(--bs-white);
+}
+.ob-signup-page .ob-quick-card .ob-sub {
+    color: rgba(var(--bs-white-rgb), .86);
+}
+.ob-signup-page .ob-quick-title {
+    font-size: 1.35rem;
+    margin-bottom: .55rem;
+    color: var(--bs-white);
+}
+.ob-product-link {
+    display: inline-flex;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    border: 0;
+    color: var(--bs-white);
+    border-radius: 10px;
+    font-weight: 800;
+    text-decoration: none;
+    padding: .78rem .9rem;
+    background: var(--bs-orange);
+    box-shadow: none;
+    transition: all .15s ease;
+}
+.ob-product-link:hover {
+    color: var(--bs-white);
+    background: var(--bs-warning);
+    transform: translateY(-1px);
+}
+
 .ob-kind-tabs {
     display: flex;
     flex-wrap: nowrap;
@@ -73,21 +186,33 @@
     border-color: #dbe5ff;
     background: linear-gradient(180deg, #f7faff 0%, #fbfdff 100%);
 }
+.ob-form-section-compact {
+    padding: .95rem;
+}
 .ob-form-section .ob-label {
     margin-bottom: .75rem;
 }
 
 .ob-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .ob-kind { border: 1px solid #e5e7eb; border-radius: 14px; padding: 1rem; margin-bottom: .9rem; }
+.ob-kind-compact { padding: .85rem; margin-bottom: .65rem; }
 .ob-kind-head { display: flex; gap: .75rem; align-items: center; margin-bottom: .5rem; }
 .ob-kind-head > i { font-size: 1.6rem; color: #4154f1; width: 44px; height: 44px; border-radius: 12px; background: #f2f4ff; display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .ob-kind-head strong { display: block; font-size: 1rem; }
 .ob-kind-head span { font-size: .8rem; color: #6b7280; }
 .ob-kind-features { list-style: none; padding: 0; margin: 0 0 .75rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .2rem .75rem; font-size: .78rem; color: #374151; }
+.ob-kind-features-compact { grid-template-columns: 1fr; gap: .2rem; margin-bottom: 0; }
 .ob-kind-features i { color: #16a34a; }
 @media (max-width: 575px) { .ob-kind-features { grid-template-columns: 1fr; } }
 .ob-kind-modules { display: flex; flex-wrap: wrap; gap: .35rem; margin: 0 0 .75rem; }
 .ob-kind-modules span { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 600; color: #1d4ed8; background: #e8f0ff; border-radius: 999px; padding: .15rem .6rem; }
+
+@media (max-width: 991px) {
+    .ob-signup-page .ob-quick-card {
+        position: static;
+        top: auto;
+    }
+}
 .ob-type {
     position: relative;
     display: flex;
@@ -125,6 +250,7 @@
 
 .ob-benefits { list-style: none; padding: 0; margin: 0; }
 .ob-benefits li { display: flex; gap: .6rem; margin-bottom: .9rem; }
+.ob-benefits-compact li { margin-bottom: .65rem; }
 .ob-benefits i { color: #16a34a; font-size: 1.15rem; }
 .ob-benefits strong { display: block; }
 .ob-benefits span { color: #6b7280; font-size: .85rem; }
