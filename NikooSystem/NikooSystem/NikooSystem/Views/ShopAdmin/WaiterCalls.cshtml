@@ -1,0 +1,56 @@
+@model List<WaiterCall>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "فراخوان گارسون";
+    var company = (string)ViewBag.CompanyCode;
+    var open = Model.Where(c => !c.IsDone).ToList();
+    var done = Model.Where(c => c.IsDone).Take(30).ToList();
+}
+<h2 class="mb-3">فراخوان گارسون</h2>
+<div class="panel-card mb-3">
+    <h5>باز (@open.Count.ToFa())</h5>
+    <table class="table align-middle">
+        <thead><tr><th>میز</th><th>یادداشت</th><th>زمان</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var call in open)
+            {
+                <tr>
+                    <td>میز @call.TableLabel.ToFaDigits()</td>
+                    <td>@(string.IsNullOrWhiteSpace(call.Note) ? "—" : call.Note)</td>
+                    <td class="small text-muted">@call.CreatedAt.ToShamsi().ToFaDigits() @call.CreatedAt.ToString("HH:mm").ToFaDigits()</td>
+                    <td>
+                        @using (Html.BeginForm("CloseWaiterCall", "ShopAdmin", new { company }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@call.Id" />
+                            <button class="btn-store btn-sm" type="submit">انجام شد</button>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!open.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="4">فراخوان بازی نیست.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+@if (done.Any())
+{
+    <div class="panel-card">
+        <h5>انجام‌شده</h5>
+        <table class="table align-middle table-sm mb-0">
+            <thead><tr><th>میز</th><th>یادداشت</th><th>زمان</th></tr></thead>
+            <tbody>
+                @foreach (var call in done)
+                {
+                    <tr class="text-muted">
+                        <td>میز @call.TableLabel.ToFaDigits()</td>
+                        <td>@(string.IsNullOrWhiteSpace(call.Note) ? "—" : call.Note)</td>
+                        <td>@call.CreatedAt.ToShamsi().ToFaDigits()</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

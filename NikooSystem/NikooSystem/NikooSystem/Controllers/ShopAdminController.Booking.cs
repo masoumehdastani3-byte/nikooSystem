@@ -53,7 +53,34 @@ namespace NikooSystem.Controllers
             if (appointment == null) return ToAction("Appointments");
             ViewBag.History = TenantStore.AppointmentGrid(CompanyCode, new AppointmentGridQuery { Q = appointment.CustomerMobile, Size = 20 })
                 .Where(a => a.Id != id && a.CustomerMobile == appointment.CustomerMobile).ToList();
+            ViewBag.Banks = TenantStore.GetBanks(CompanyCode).Where(b => b.IsActive).ToList();
             return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
+        public ActionResult CollectAppointmentPayment(int id, string amount, string payFrom)
+        {
+            var appointment = TenantStore.GetAppointment(CompanyCode, id);
+            if (appointment == null) return ToAction("Appointments");
+            long money;
+            if (!long.TryParse((amount ?? "").Replace(",", "").Trim(), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out money))
+                money = Math.Max(0, appointment.Price - appointment.PaidAmount);
+            PayWith pay;
+            int bankId = 0;
+            var token = (payFrom ?? "").Trim();
+            if (token.StartsWith("bank-", StringComparison.Ordinal))
+            {
+                int.TryParse(token.Substring(5), System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out bankId);
+                pay = PayWith.Bank;
+            }
+            else if (!Enum.TryParse(token, true, out pay))
+                pay = PayWith.Cash;
+
+            var error = TenantStore.RecordAppointmentPayment(CompanyCode, id, money, pay, bankId);
+            if (error != null) return Fail(error, "AppointmentDetails", new { id });
+            return Ok("مبلغ به صندوق/بانک نشست و در دفاتر ثبت شد.", "AppointmentDetails", new { id });
         }
 
         [HttpPost]
@@ -143,6 +170,8 @@ namespace NikooSystem.Controllers
             var error = TenantStore.BookAppointment(CompanyCode, appointment, CurrentSettings, !outsideHours);
             if (error != null)
                 return Fail(error + (outsideHours ? "" : " اگر می‌خواهید خارج از ساعت کاری نوبت بدهید، گزینه آن را بزنید."), "NewAppointment", back);
+            if (appointment.Status == AppointmentStatus.Confirmed)
+                SmsService.QueueAppointmentConfirm(CompanyCode, appointment);
             return Ok("نوبت " + appointment.CustomerName + " ثبت شد. کد پیگیری: " + appointment.Code, "AppointmentDetails", new { id = appointment.Id });
         }
 
@@ -332,8 +361,12 @@ namespace NikooSystem.Controllers
             var staff = TenantStore.GetStaff(CompanyCode);
             ViewBag.Staff = staff;
             ViewBag.Days = BookingDayOptions(0, 180);
+            var until = DateTime.Today.AddYears(1);
+            var offs = TenantStore.GetTimeOffs(CompanyCode, DateTime.Today, until);
+            ViewBag.Holidays = OfficialHolidays.Between(DateTime.Today, until);
+            ViewBag.SavedHolidayDates = new HashSet<DateTime>(offs.Where(t => !t.StaffId.HasValue && t.IsWholeDay()).Select(t => t.Date.Date));
             var names = staff.ToDictionary(s => s.Id, s => s.Name);
-            return View(query.Slice(TenantStore.GetTimeOffs(CompanyCode, DateTime.Today, DateTime.Today.AddYears(1)),
+            return View(query.Slice(offs,
                 t => (t.Reason ?? "") + " " + StaffName(names, t.StaffId),
                 new Dictionary<string, Func<StoreTimeOff, object>>
                 {
@@ -388,6 +421,27 @@ namespace NikooSystem.Controllers
             return OkBack("حذف شد.", "TimeOff");
         }
 
+        /// <summary>Writes the official holidays of the coming year as whole-site closures, skipping days already closed.</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Booking, SiteKinds.Campus)]
+        public ActionResult AddOfficialHolidays()
+        {
+            var until = DateTime.Today.AddYears(1);
+            var saved = new HashSet<DateTime>(TenantStore.GetTimeOffs(CompanyCode, DateTime.Today, until)
+                .Where(t => !t.StaffId.HasValue && t.IsWholeDay()).Select(t => t.Date.Date));
+            var added = 0;
+            foreach (var holiday in OfficialHolidays.Between(DateTime.Today, until))
+            {
+                if (!saved.Add(holiday.Date)) continue;
+                TenantStore.AddTimeOff(CompanyCode, new StoreTimeOff { Date = holiday.Date, Reason = Clip(holiday.Name, 200) });
+                added++;
+            }
+            return Ok(added == 0
+                ? "تعطیل رسمی تازه‌ای در تقویم یک سال پیش رو پیدا نشد."
+                : added.ToFa() + " تعطیل رسمی از روی تقویم ثبت شد؛ در این روزها نوبت آنلاین گرفته نمی‌شود.", "TimeOff");
+        }
+
         // ---- Helpers
 
         /// <summary>The sample appointments of a demo follow the calendar, so visitors always see a busy week.</summary>
@@ -404,8 +458,10 @@ namespace NikooSystem.Controllers
             {
                 var d = today.AddDays(offset);
                 var prefix = offset == 0 ? "امروز، " : offset == 1 ? "فردا، " : "";
-                return new KeyValuePair<string, string>(d.ToString(BookingDateFormat, CultureInfo.InvariantCulture),
-                    prefix + BookingTime.DayNames[BookingTime.DayOf(d)] + " " + d.ToShamsiText());
+                var holiday = OfficialHolidays.Name(d);
+                var label = prefix + BookingTime.DayNames[BookingTime.DayOf(d)] + " " + d.ToShamsiText();
+                if (holiday != null) label += " · " + holiday;
+                return new KeyValuePair<string, string>(d.ToString(BookingDateFormat, CultureInfo.InvariantCulture), label);
             }).ToList();
         }
 

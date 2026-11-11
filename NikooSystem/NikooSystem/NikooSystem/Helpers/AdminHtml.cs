@@ -9,23 +9,59 @@ namespace NikooSystem.Helpers
     /// <summary>Markup shared by the store admin pages. Links and forms target the current controller and store.</summary>
     public static class AdminHtml
     {
+        /// <summary>Styled page title bar used on edit forms that have no primary action button.</summary>
+        public static MvcHtmlString PageTitle(this HtmlHelper html, string title = null)
+        {
+            if (string.IsNullOrEmpty(title)) title = Convert.ToString(html.ViewContext.ViewBag.Title) ?? "";
+            return PageHeader(html, title);
+        }
+
         /// <summary>Page title with an optional "add new" button on the opposite side.</summary>
         public static MvcHtmlString PageHeader(this HtmlHelper html, string title, string newLabel = null, string newAction = null)
         {
             var heading = new TagBuilder("h2");
             heading.SetInnerText(title);
-            var inner = heading.ToString();
+            var titleWrap = new TagBuilder("div")
+            {
+                InnerHtml = "<span class=\"admin-page-head-accent\" aria-hidden=\"true\"></span>" + heading
+            };
+            titleWrap.AddCssClass("admin-page-head-title");
+
+            var inner = titleWrap.ToString();
             if (!string.IsNullOrEmpty(newLabel))
             {
-                var button = new TagBuilder("a");
-                button.AddCssClass("btn-store");
+                var button = new TagBuilder("a")
+                {
+                    InnerHtml = Icon("bi-plus-lg") + "<span>" + html.Encode(newLabel) + "</span>"
+                };
+                button.AddCssClass("btn-store admin-page-head-action");
                 button.MergeAttribute("href", StoreUrl(html, newAction));
-                button.SetInnerText(newLabel);
-                inner += button.ToString();
+                inner += "<div class=\"admin-page-head-actions\">" + button + "</div>";
             }
             var header = new TagBuilder("div") { InnerHtml = inner };
-            header.AddCssClass("d-flex justify-content-between mb-3");
+            header.AddCssClass("admin-page-head");
             return MvcHtmlString.Create(header.ToString());
+        }
+
+        /// <summary>
+        /// Tree label with circular +/- toggle and guide lines (categories, menus, chart of accounts).
+        /// </summary>
+        public static MvcHtmlString TreeNode(this HtmlHelper html, string title, int depth, bool hasChildren, bool isLast = true, string extraClass = null)
+        {
+            var css = "nk-tree" + (depth > 0 ? " is-nested" : "") + (isLast ? " is-last" : "") + (string.IsNullOrEmpty(extraClass) ? "" : " " + extraClass);
+            var toggleCss = "nk-tree-toggle" + (hasChildren ? "" : " is-leaf");
+            var toggleInner = hasChildren
+                ? "<i class=\"bi bi-dash-lg\" aria-hidden=\"true\"></i>"
+                : "";
+            var sb = new StringBuilder();
+            sb.Append("<div class=\"").Append(html.AttributeEncode(css)).Append("\" style=\"--depth:")
+                .Append(depth.ToString(CultureInfo.InvariantCulture)).Append("\">");
+            sb.Append("<button type=\"button\" class=\"").Append(toggleCss).Append("\"")
+                .Append(hasChildren ? " aria-expanded=\"true\" aria-label=\"باز و بسته کردن\"" : " tabindex=\"-1\" aria-hidden=\"true\"")
+                .Append(">").Append(toggleInner).Append("</button>");
+            sb.Append("<span class=\"nk-tree-label\">").Append(html.Encode(title)).Append("</span>");
+            sb.Append("</div>");
+            return MvcHtmlString.Create(sb.ToString());
         }
 
         /// <summary>

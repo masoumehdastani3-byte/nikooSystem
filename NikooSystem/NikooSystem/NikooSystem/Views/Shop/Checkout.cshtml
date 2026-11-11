@@ -28,7 +28,17 @@
                     <div class="d-flex justify-content-between mb-2"><span>جمع جزء</span><span>@subtotal.ToToman()</span></div>
                     @if (hasPhysical)
                     {
-                        <div class="d-flex justify-content-between mb-2"><span>هزینه ارسال</span><span>@(shipping == 0 ? "رایگان" : shipping.ToToman())</span></div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>
+                                هزینه ارسال
+                                @if (!string.IsNullOrWhiteSpace(settings.ShippingMethod)) { <span class="text-muted small">(@settings.ShippingMethod)</span> }
+                            </span>
+                            <span>@(shipping == 0 ? "رایگان" : shipping.ToToman())</span>
+                        </div>
+                        if (!string.IsNullOrWhiteSpace(settings.ShippingNote))
+                        {
+                            <p class="small text-muted mb-2"><i class="bi bi-truck"></i> @settings.ShippingNote</p>
+                        }
                     }
                     <div class="d-flex justify-content-between"><span>مبلغ قابل پرداخت</span><strong class="price">@total.ToToman()</strong></div>
                     @if (!hasPhysical)
@@ -50,6 +60,10 @@
                             <div class="col-md-6">
                                 <label class="form-label">موبایل *</label>
                                 <input class="form-control" name="customerMobile" value="@(customer?.Mobile)" placeholder="09121234567" dir="ltr" required />
+                                @if (customer == null)
+                                {
+                                    <div class="form-text">با همین موبایل حساب مشتری ساخته می‌شود تا بتوانید سفارش را پیگیری کنید.</div>
+                                }
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">ایمیل</label>

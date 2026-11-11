@@ -75,6 +75,14 @@ namespace NikooSystem.Controllers
                 CurrentSettings = TenantStore.GetSettings(CompanyCode);
             }
 
+            if (Requires<ShopAdminOnlyAttribute>(filterContext) && IsShopAdmin
+                && !PanelAccess.Allows(CurrentPanelRole, filterContext.ActionDescriptor.ActionName))
+            {
+                Fail("دسترسی به این بخش برای نقش شما مجاز نیست.");
+                filterContext.Result = ToAction("Index", "ShopAdmin");
+                return;
+            }
+
             ApplyTemplatePreview();
 
             if (Tenant != null)
@@ -93,6 +101,9 @@ namespace NikooSystem.Controllers
             ViewBag.Kind = Kind;
             ViewBag.Menus = TenantStore.GetMenus(CompanyCode).Where(m => m.IsActive).ToList();
             ViewBag.CartCount = GetCart().Sum(x => x.Quantity);
+            ViewBag.PanelRole = CurrentPanelRole;
+            ViewBag.PanelDisplayName = CurrentPanelDisplayName;
+            ViewBag.IsPanelOwner = PanelAccess.IsOwner(CurrentPanelRole);
 
             if (Tenant != null && Tenant.IsSubscriptionLocked() && !OpenWhenClosed(filterContext.ActionDescriptor.ActionName))
             {
@@ -194,7 +205,59 @@ namespace NikooSystem.Controllers
         protected bool IsShopAdmin
         {
             get { return Session["shop_admin_" + CompanyCode] as bool? == true; }
-            set { Session["shop_admin_" + CompanyCode] = value; }
+            set
+            {
+                Session["shop_admin_" + CompanyCode] = value;
+                if (!value) ClearPanelSession();
+            }
+        }
+
+        /// <summary>Role of the signed-in panel user; missing session (legacy) counts as Owner.</summary>
+        protected PanelRole CurrentPanelRole
+        {
+            get
+            {
+                var raw = Session["shop_admin_role_" + CompanyCode];
+                if (raw is PanelRole) return (PanelRole)raw;
+                if (raw is int) return (PanelRole)(int)raw;
+                return IsShopAdmin ? PanelRole.Owner : PanelRole.Owner;
+            }
+            set { Session["shop_admin_role_" + CompanyCode] = value; }
+        }
+
+        protected int? CurrentPanelUserId
+        {
+            get { return Session["shop_admin_uid_" + CompanyCode] as int?; }
+            set { Session["shop_admin_uid_" + CompanyCode] = value; }
+        }
+
+        protected string CurrentPanelDisplayName
+        {
+            get { return Session["shop_admin_name_" + CompanyCode] as string; }
+            set { Session["shop_admin_name_" + CompanyCode] = value; }
+        }
+
+        protected void SignInOwner(string displayName)
+        {
+            IsShopAdmin = true;
+            CurrentPanelRole = PanelRole.Owner;
+            CurrentPanelUserId = null;
+            CurrentPanelDisplayName = displayName;
+        }
+
+        protected void SignInPanelUser(StorePanelUser user)
+        {
+            IsShopAdmin = true;
+            CurrentPanelRole = user.Role;
+            CurrentPanelUserId = user.Id;
+            CurrentPanelDisplayName = user.DisplayName;
+        }
+
+        protected void ClearPanelSession()
+        {
+            Session.Remove("shop_admin_role_" + CompanyCode);
+            Session.Remove("shop_admin_uid_" + CompanyCode);
+            Session.Remove("shop_admin_name_" + CompanyCode);
         }
 
         private static bool Requires<TAttribute>(ActionExecutingContext context) where TAttribute : Attribute

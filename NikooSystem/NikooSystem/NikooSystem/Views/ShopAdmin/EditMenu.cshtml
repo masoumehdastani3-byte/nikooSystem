@@ -1,16 +1,23 @@
 @model StoreMenuItem
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Id > 0 ? "ویرایش منو" : "آیتم منوی جدید";
     var company = (string)ViewBag.CompanyCode;
     var menus = (IEnumerable<StoreMenuItem>)ViewBag.Menus;
+    var excludeIds = Model.Id > 0 ? TreeHelper.SubtreeIds(menus, Model.Id) : new HashSet<int>();
+    var parentOptions = TreeHelper.Flatten(menus).Where(r => !excludeIds.Contains(r.Node.Id)).ToList();
+    var parentTitle = Model.ParentId.HasValue ? menus.FirstOrDefault(m => m.Id == Model.ParentId.Value)?.Title : null;
+    ViewBag.Title = Model.Id > 0 ? "ویرایش منو" : (parentTitle != null ? "زیرمنوی جدید" : "آیتم منوی جدید");
 }
-<h2 class="mb-3">@ViewBag.Title</h2>
+@Html.PageTitle()
 @using (Html.BeginForm("SaveMenu", "ShopAdmin", new { company }, FormMethod.Post))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
     <div class="panel-card row g-3">
+        @if (Model.Id == 0 && parentTitle != null)
+        {
+            <div class="col-12"><div class="alert alert-light border mb-0 py-2">زیرمجموعهٔ «@parentTitle»</div></div>
+        }
         <div class="col-md-6"><label class="form-label">عنوان</label>@Html.TextBoxFor(m => m.Title, new { @class = "form-control" })</div>
         <div class="col-md-6"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Url, new { @class = "form-control", placeholder = "/Shop/" + company + "/Catalog" })</div>
         <div class="col-md-4">
@@ -23,11 +30,12 @@
         <div class="col-md-4">
             <label class="form-label" for="ParentId">والد</label>
             <div class="qm-field">
-                <select class="form-select" name="ParentId" id="ParentId" data-qm="menus" data-qm-roots data-qm-except="@Model.Id">
+                <select class="form-select" name="ParentId" id="ParentId" data-qm="menus" data-qm-except="@Model.Id">
                     <option value="">بدون والد</option>
-                    @foreach (var m in menus.Where(x => x.Id != Model.Id && x.ParentId == null))
+                    @foreach (var row in parentOptions)
                     {
-                        <option value="@m.Id" @(Model.ParentId == m.Id ? "selected" : "")>@m.Title</option>
+                        var pad = new string('\u2003', row.Depth);
+                        <option value="@row.Node.Id" @(Model.ParentId == row.Node.Id ? "selected" : "")>@pad@row.Node.Title</option>
                     }
                 </select>
                 @Html.QuickManage("menus", "آیتم‌های منو", "#Location")

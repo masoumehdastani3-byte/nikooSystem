@@ -289,14 +289,28 @@ namespace NikooSystem.Helpers
             new StoreTemplateInfo
             {
                 Id = "club",
-                Name = "باشگاه و آموزشگاه",
-                Description = "هیرو با سه راه کلاس، جلسه خصوصی و رزرو سالن، کارت کلاس‌ها و معرفی مربی‌ها",
+                Name = "کلاس و سالن",
+                Description = "هیرو با کلاس گروهی، جلسه خصوصی و رزرو فضا؛ مناسب آموزشگاه و باشگاه ورزشی",
                 PrimaryColor = "#15803d",
                 SecondaryColor = "#dcfce7",
                 PreviewGradient = "linear-gradient(135deg,#14532d,#22c55e 55%,#f0fdf4)",
                 Kinds = new[] { SiteKinds.Campus },
                 Kicker = "کلاس، مربی، سالن",
                 Topbar = "کلاس گروهی · جلسه خصوصی آنلاین یا حضوری · رزرو ساعتی سالن"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "cafe",
+                Name = "منوی کافه",
+                Description = "منوی گرم و خوانا برای موبایل؛ مناسب کافه و رستوران",
+                PrimaryColor = "#1c3d30",
+                SecondaryColor = "#c6a15b",
+                PreviewGradient = "linear-gradient(135deg,#1c3d30,#c6a15b 70%,#f6f1e7)",
+                Kinds = new[] { SiteKinds.Menu },
+                Layout = "minimal",
+                Kicker = "منوی دیجیتال",
+                KickerIcon = "bi-upc-scan",
+                Topbar = "اسکن کنید و منو را روی موبایل ببینید"
             }
         };
 

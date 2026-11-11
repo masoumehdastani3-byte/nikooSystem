@@ -4,9 +4,12 @@
     ViewBag.Title = "سفارش " + Model.OrderNumber;
     var company = (string)ViewBag.CompanyCode;
     var customer = (StoreCustomer)ViewBag.Customer;
-    var statuses = Enum.GetValues(typeof(StoreOrderStatus)).Cast<StoreOrderStatus>();
+    var statuses = Enum.GetValues(typeof(StoreOrderStatus)).Cast<StoreOrderStatus>()
+        .Where(s => s != StoreOrderStatus.Returned || Model.Status == StoreOrderStatus.Returned);
     var subtotal = Model.Items.Sum(i => i.UnitPrice * i.Quantity);
     var hasPhysical = Model.Items.Any(i => !i.IsDigital);
+    var returns = (List<StoreReturnRequest>)ViewBag.Returns ?? new List<StoreReturnRequest>();
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
 }
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h2 class="mb-0">سفارش <span dir="ltr">@Model.OrderNumber</span> @Html.StatusBadge(Model.Status)</h2>
@@ -35,7 +38,13 @@
                     <tr><td colspan="4" class="text-end">جمع کالاها</td><td>@subtotal.ToToman()</td></tr>
                     @if (hasPhysical)
                     {
-                        <tr><td colspan="4" class="text-end">هزینه ارسال</td><td>@(Model.ShippingCost > 0 ? Model.ShippingCost.ToToman() : "رایگان")</td></tr>
+                        <tr>
+                            <td colspan="4" class="text-end">
+                                هزینه ارسال
+                                @if (!string.IsNullOrWhiteSpace(Model.ShippingMethod)) { <span class="text-muted small">(@Model.ShippingMethod)</span> }
+                            </td>
+                            <td>@(Model.ShippingCost > 0 ? Model.ShippingCost.ToToman() : "رایگان")</td>
+                        </tr>
                     }
                     <tr class="fw-bold"><td colspan="4" class="text-end">مبلغ کل</td><td>@Model.Amount.ToToman()</td></tr>
                 </tfoot>
@@ -64,6 +73,26 @@
                             <label class="form-label">کد رهگیری مرسوله</label>
                             <input class="form-control" name="trackingCode" value="@Model.TrackingCode" dir="ltr" maxlength="60" />
                         </div>
+                        if (!Model.FreightPosted)
+                        {
+                            <div class="col-md-6">
+                                <label class="form-label">هزینه حمل فروشگاه (تومان)</label>
+                                <input class="form-control" name="freightCost" inputmode="numeric" data-money="true" dir="ltr" placeholder="پولی که به پست/پیک داده‌اید" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">پرداخت هزینه حمل از</label>
+                                <select class="form-select" name="freightPayFrom">
+                                    @foreach (var option in AccountingText.PayOptions(banks, false, "Cash"))
+                                    {
+                                        <option value="@option.Key">@option.Value</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+                        else if (Model.FreightCost > 0)
+                        {
+                            <div class="col-12 small text-muted">هزینه حمل ثبت‌شده: @Model.FreightCost.ToToman()</div>
+                        }
                     }
                     <div class="col-12">
                         <label class="form-label">یادداشت داخلی (مشتری نمی‌بیند)</label>
@@ -73,7 +102,7 @@
                 <p class="small text-muted mt-2 mb-3">
                     @if (hasPhysical)
                     {
-                        <span><i class="bi bi-info-circle"></i> با رفتن سفارش به «پرداخت شده» یا بعد از آن، موجودی کالاها کم می‌شود و با لغو یا ناموفق شدن برمی‌گردد.</span>
+                        <span><i class="bi bi-info-circle"></i> با رفتن سفارش به «پرداخت شده» یا بعد از آن، موجودی کالاها کم می‌شود و با لغو یا ناموفق شدن برمی‌گردد. مرجوعی از منوی «مرجوعی‌ها» انجام می‌شود.</span>
                     }
                     @if (Model.Items.Any(i => i.IsDigital))
                     {
@@ -83,6 +112,23 @@
                 <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
             }
         </div>
+
+        @if (returns.Count > 0)
+        {
+            <div class="panel-card mt-3">
+                <h5 class="mb-3">درخواست‌های مرجوعی</h5>
+                <ul class="mb-0">
+                    @foreach (var r in returns)
+                    {
+                        <li class="mb-1">
+                            <a href="@Url.Action("ReturnDetails","ShopAdmin", new { company, id = r.Id })">@r.CreatedAt.ToShamsi()</a>
+                            — @(r.Status == ReturnRequestStatus.Pending ? "در انتظار" : r.Status == ReturnRequestStatus.Approved ? "تأیید شده" : "رد شده")
+                            @if (r.RefundAmount > 0) { <span class="text-muted">(@r.RefundAmount.ToToman())</span> }
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
     </div>
 
     <div class="col-lg-4">

@@ -1,0 +1,47 @@
+@model StorePanelUser
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = Model.Id > 0 ? "ویرایش کاربر پنل" : "کاربر پنل جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var roles = (PanelRole[])ViewBag.Roles ?? PanelRoleText.StaffRoles;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@ViewBag.Title</h2>
+    <a class="btn-outline-store" href="@Url.Action("PanelUsers","ShopAdmin", new { company })">بازگشت</a>
+</div>
+@using (Html.BeginForm("EditPanelUser", "ShopAdmin", new { company }, FormMethod.Post))
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(m => m.Id)
+    @Html.HiddenFor(m => m.CreatedAt)
+    <div class="panel-card row g-3">
+        <div class="col-md-6">
+            <label class="form-label" for="DisplayName">نام نمایشی</label>
+            @Html.TextBoxFor(m => m.DisplayName, new { @class = "form-control", maxlength = "80", required = "required" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Username">نام کاربری</label>
+            @Html.TextBoxFor(m => m.Username, new { @class = "form-control", maxlength = "40", required = "required", dir = "ltr" })
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="Role">نقش</label>
+            <select class="form-select" name="Role" id="Role">
+                @foreach (var role in roles)
+                {
+                    <option value="@role" @(Model.Role == role ? "selected" : null)>@role.Label()</option>
+                }
+            </select>
+            <div class="form-text">مدیر: تقریباً همه بخش‌ها. صندوقدار: فروش و صندوق. منشی: نوبت، ثبت‌نام و پیام‌ها.</div>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label" for="newPassword">@(Model.Id > 0 ? "رمز جدید (اختیاری)" : "رمز عبور")</label>
+            <input class="form-control" type="password" name="newPassword" id="newPassword" maxlength="80" dir="ltr" @(Model.Id > 0 ? null : "required") />
+        </div>
+        <div class="col-md-6 mt-4">
+            @Html.BoolField("IsActive", Model.IsActive, "فعال (اجازه ورود)")
+        </div>
+        <div class="col-12">
+            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+        </div>
+    </div>
+}

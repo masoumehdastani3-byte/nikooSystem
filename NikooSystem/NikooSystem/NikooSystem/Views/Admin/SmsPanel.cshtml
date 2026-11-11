@@ -1,0 +1,104 @@
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewBag.Title = "پیامک پاپوس";
+    var ready = (bool)ViewBag.Ready;
+    var hasKey = (bool)ViewBag.HasApiKey;
+    var apiKeyMasked = (string)ViewBag.ApiKey;
+    var sender = (string)ViewBag.Sender;
+    var fromConfig = (bool)ViewBag.FromConfig;
+    var balanceOk = ViewBag.BalanceOk as bool?;
+    var balanceToman = ViewBag.BalanceToman as long?;
+    var balanceError = ViewBag.BalanceError as string;
+}
+<div class="adm-head">
+    <div>
+        <h1>اتصال به پنل پیامک</h1>
+        <p>سامانه پیامکی پاپوس برای ارسال رمز عبور و صورتحساب خرید مشتریان فروشگاه‌ها؛ هر فروشگاه اعتبار خودش را از پنل شارژ می‌کند.</p>
+    </div>
+</div>
+
+<div class="adm-card mb-3">
+    <h5 class="mb-1"><i class="bi bi-chat-dots"></i> حساب پاپوس نیکو سیستم</h5>
+    <p class="text-muted small">
+        همین حساب برای همه فروشگاه‌ها استفاده می‌شود. هزینه هر پیامک از موجودی پاپوس شما کم می‌شود و معادل تومان از اعتبار همان فروشگاه کسر می‌گردد.
+        کلید را از <a href="https://my.pappus.ir/api-docs" target="_blank" rel="noopener">پنل پاپوس</a> بسازید.
+    </p>
+
+    @if (ready)
+    {
+        <p class="mb-3">
+            <i class="bi bi-check2-circle text-success"></i>
+            وصل به پاپوس
+            @if (!string.IsNullOrEmpty(sender))
+            {
+                <span>— خط فرستنده <b dir="ltr">@sender</b></span>
+            }
+            @if (fromConfig)
+            {
+                <span class="text-muted small"> (از Web.config)</span>
+            }
+        </p>
+        if (balanceOk == true && balanceToman.HasValue)
+        {
+            <div class="alert alert-success py-2"><i class="bi bi-wallet2"></i> موجودی کیف پول پاپوس: <strong>@balanceToman.Value.ToToman()</strong></div>
+        }
+        else if (!string.IsNullOrEmpty(balanceError))
+        {
+            <div class="alert alert-warning py-2"><i class="bi bi-exclamation-triangle"></i> @balanceError</div>
+        }
+    }
+    else
+    {
+        <ol class="small mb-3">
+            <li>در <a href="https://my.pappus.ir" target="_blank" rel="noopener">my.pappus.ir</a> وارد شوید و حساب را شارژ کنید.</li>
+            <li>از بخش «کلید و دسترسی» یک API Key بسازید و در صورت نیاز IP سرور را محدود کنید.</li>
+            <li>یکی از خطوط ارسال مجاز را همراه کلید در فرم زیر ثبت کنید.</li>
+        </ol>
+    }
+
+    @using (Html.BeginForm("SavePappus", "Admin", FormMethod.Post, new { @class = "row g-3", style = "max-width:720px" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-md-8">
+            <label class="form-label" for="pappusKey">@(hasKey ? "کلید API تازه (برای تعویض)" : "کلید API")</label>
+            <input class="form-control" type="password" name="apiKey" id="pappusKey" dir="ltr" autocomplete="off"
+                   placeholder="@(hasKey ? apiKeyMasked : "x-api-key")" @(hasKey ? null : "required") />
+            @if (hasKey)
+            {
+                <div class="form-text">خالی بگذارید تا کلید فعلی عوض نشود.</div>
+            }
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="pappusSender">خط فرستنده</label>
+            <input class="form-control" type="text" name="sender" id="pappusSender" dir="ltr" required
+                   value="@sender" placeholder="مثلاً 1000…" />
+        </div>
+        <div class="col-12 d-flex flex-wrap gap-2">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-plug"></i> ذخیره اتصال</button>
+        </div>
+    }
+
+    @if (ready)
+    {
+        <div class="mt-3 d-flex flex-wrap gap-2">
+            @using (Html.BeginForm("TestPappus", "Admin", FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <button class="btn btn-outline-secondary btn-sm" type="submit"><i class="bi bi-wifi"></i> تست اتصال و موجودی</button>
+            }
+            @if (!fromConfig)
+            {
+                @Html.PostButton("SavePappus", new { remove = true }, "برداشتن اتصال", "btn btn-outline-danger btn-sm", "کلید و خط فرستنده از تنظیمات سایت پاک شود؟")
+            }
+        </div>
+    }
+</div>
+
+<div class="adm-card">
+    <h5 class="mb-2"><i class="bi bi-info-circle"></i> فروشگاه‌ها چطور استفاده می‌کنند؟</h5>
+    <ul class="small mb-0 pe-3">
+        <li class="mb-2">هر فروشگاه از منوی <b>پیامک مشتریان</b> اعتبار می‌خرد و با دکمه «ارسال آزمایشی» تست می‌کند.</li>
+        <li class="mb-2">بازیابی رمز مشتری/مدیر و صورتحساب خرید پس از پرداخت، از همین حساب پاپوس ارسال می‌شود.</li>
+        <li>اگر موجودی پاپوس یا اعتبار فروشگاه تمام شود، سفارش‌ها ثبت می‌مانند ولی پیامک نمی‌رود.</li>
+    </ul>
+</div>

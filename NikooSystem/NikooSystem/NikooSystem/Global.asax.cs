@@ -33,6 +33,8 @@ namespace NikooSystem
                 catch { }
                 try { CartStore.PurgeOlderThan(DateTime.Now.AddDays(-30)); }
                 catch { }
+                try { SmsService.SendDueBookingReminders(); }
+                catch { }
             }, null, TimeSpan.FromMinutes(1), TimeSpan.FromHours(1));
 
             // replies to support tickets written in Bale arrive even when no panel page is open

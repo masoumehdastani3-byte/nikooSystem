@@ -10,14 +10,21 @@ namespace NikooSystem.Controllers
     [CountVisits]
     public class ProductsController : Controller
     {
+        /// <summary>Demo shops in this category looked like a storefront and were removed from the public catalog.</summary>
+        const string HiddenCatalogCategory = "فروشگاه آنلاین";
+
         public ActionResult Index(string category = null)
         {
-            var products = SiteStore.GetProducts().Where(p => p.IsActive).AsEnumerable();
+            if (string.Equals(category, HiddenCatalogCategory, StringComparison.Ordinal))
+                return RedirectToAction("Index");
+
+            var visible = SiteStore.GetProducts().Where(p => p.IsActive && p.Category != HiddenCatalogCategory);
+            var products = visible.AsEnumerable();
             if (!string.IsNullOrWhiteSpace(category))
                 products = products.Where(p => p.Category == category);
 
             ViewBag.Category = category;
-            ViewBag.Categories = SiteStore.GetProducts().Where(p => p.IsActive).Select(p => p.Category).Distinct().ToList();
+            ViewBag.Categories = visible.Select(p => p.Category).Distinct().ToList();
             var list = products.OrderByDescending(p => p.IsFeatured).ThenBy(p => p.Title).ToList();
 
             var seo = Seo.Of(HttpContext);

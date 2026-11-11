@@ -159,7 +159,8 @@ namespace NikooSystem.Services
         public static PagedList<StoreJournalEntry> JournalGrid(string companyCode, JournalGridQuery query)
         {
             EnsureDocumentTypes(companyCode);
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "Description");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "Description")
+                .DateRange("EntryDate", query.From, query.To);
             if (query.Type.HasValue) filter.Eq("DocumentTypeId", query.Type.Value);
             return Grid(NikooTables.JournalEntries, companyCode, query, filter, JournalSorts, "date", true);
         }
@@ -175,14 +176,16 @@ namespace NikooSystem.Services
 
         public static PagedList<StorePurchaseInvoice> PurchaseGrid(string companyCode, InvoiceGridQuery query)
         {
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note")
+                .DateRange("InvoiceDate", query.From, query.To);
             if (query.Pay.HasValue) filter.Eq("PayWith", query.Pay.Value.ToString());
             return Grid(NikooTables.PurchaseInvoices, companyCode, query, filter, InvoiceSorts, "date", true);
         }
 
         public static PagedList<StoreSalesInvoice> SaleGrid(string companyCode, InvoiceGridQuery query)
         {
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note")
+                .DateRange("InvoiceDate", query.From, query.To);
             if (query.Pay.HasValue) filter.Eq("PayWith", query.Pay.Value.ToString());
             return Grid(NikooTables.SalesInvoices, companyCode, query, filter, InvoiceSorts, "date", true);
         }
@@ -197,7 +200,8 @@ namespace NikooSystem.Services
 
         public static PagedList<StoreCashTransaction> CashGrid(string companyCode, CashGridQuery query)
         {
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Number", "PartyName", "Note")
+                .DateRange("TxDate", query.From, query.To);
             if (query.Flow.HasValue) filter.Eq("Direction", query.Flow.Value.ToString());
             return Grid(NikooTables.CashTransactions, companyCode, query, filter, CashSorts, "date", true);
         }
@@ -227,7 +231,8 @@ namespace NikooSystem.Services
 
         public static PagedList<StoreFixedAsset> AssetGrid(string companyCode, GridQuery query) =>
             Grid(NikooTables.FixedAssets, companyCode, query,
-                SqlFilter.ForStore(companyCode).Search(query.Q, "Code", "Title", "Location", "Note"),
+                SqlFilter.ForStore(companyCode).Search(query.Q, "Code", "Title", "Location", "Note")
+                    .DateRange("BoughtOn", query.From, query.To),
                 AssetSorts, "code", false);
 
         private static readonly Dictionary<string, string> GoodsSorts = new Dictionary<string, string>
@@ -288,6 +293,7 @@ namespace NikooSystem.Services
                 }
                 filter.Where(string.Join(" OR ", clauses), values.ToArray());
             }
+            filter.DateRange("MoveDate", query.From, query.To);
             return Grid(NikooTables.StockMoves, companyCode, query, filter, MoveSorts, "date", true);
         }
 

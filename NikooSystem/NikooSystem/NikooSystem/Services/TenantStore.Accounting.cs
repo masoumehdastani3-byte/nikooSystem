@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using NikooSystem.Helpers;
 using NikooSystem.Models.Store;
 using NikooSystem.Services.Data;
 
@@ -33,6 +34,8 @@ namespace NikooSystem.Services
         {
             entry.Description = (entry.Description ?? "").Trim();
             if (entry.Description.Length == 0) return "شرح سند را بنویسید.";
+            var fiscalError = CheckFiscalDate(companyCode, entry.EntryDate);
+            if (fiscalError != null) return fiscalError;
             EnsureAccounts(companyCode);
             var lines = CleanLines(entry.Lines);
             var error = Balanced(companyCode, lines);
@@ -52,7 +55,7 @@ namespace NikooSystem.Services
                 if (stored.Source != JournalSource.Manual) return "سندهای خودکار از خود فاکتور یا سفارش اصلاح می‌شوند.";
                 entry.Number = stored.Number;
             }
-            else entry.Number = NextNumber(GetJournal(companyCode).Select(e => e.Number), "SN-");
+            else entry.Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-");
             Save(NikooTables.JournalEntries, companyCode, entry);
             return null;
         }
@@ -73,6 +76,8 @@ namespace NikooSystem.Services
 
         public static string SavePurchase(string companyCode, StorePurchaseInvoice invoice)
         {
+            var fiscalError = CheckFiscalDate(companyCode, invoice.InvoiceDate);
+            if (fiscalError != null) return fiscalError;
             var error = PreparePurchase(companyCode, invoice);
             if (error != null) return error;
             lock (LockFor(companyCode))
@@ -89,13 +94,14 @@ namespace NikooSystem.Services
                 else
                 {
                     invoice.Id = NikooDb.NextId(NikooTables.PurchaseInvoices, companyCode, tx);
-                    invoice.Number = NextNumber(NikooDb.List(NikooTables.PurchaseInvoices, companyCode, tx: tx).Select(p => p.Number), "KH-");
+                    invoice.Number = NextSerial(NikooTables.PurchaseInvoices, companyCode, "Number", "KH-", tx);
                 }
                 error = ApplyPurchase(companyCode, invoice, +1, tx);
                 if (error != null) return error;
+                ApplyInvoiceTax(invoice);
                 invoice.EntryId = WriteEntry(companyCode, new StoreJournalEntry
                 {
-                    Number = NextNumber(NikooDb.List(NikooTables.JournalEntries, companyCode, tx: tx).Select(e => e.Number), "SN-"),
+                    Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-", tx),
                     EntryDate = invoice.InvoiceDate,
                     Description = "فاکتور خرید " + invoice.Number + " — " + invoice.PartyName,
                     Source = JournalSource.Purchase,
@@ -103,7 +109,6 @@ namespace NikooSystem.Services
                     DocumentTypeId = TypeId(companyCode, DocumentTypeCodes.Purchase),
                     Lines = PurchaseLines(companyCode, invoice)
                 }, tx);
-                invoice.Total = invoice.Lines.Sum(l => l.Amount);
                 NikooDb.Upsert(NikooTables.PurchaseInvoices, invoice, companyCode, tx);
                 tx.Commit();
                 return null;
@@ -133,6 +138,8 @@ namespace NikooSystem.Services
 
         public static string SaveSale(string companyCode, StoreSalesInvoice invoice)
         {
+            var fiscalError = CheckFiscalDate(companyCode, invoice.InvoiceDate);
+            if (fiscalError != null) return fiscalError;
             var error = PrepareSale(companyCode, invoice);
             if (error != null) return error;
             lock (LockFor(companyCode))
@@ -149,21 +156,21 @@ namespace NikooSystem.Services
                 else
                 {
                     invoice.Id = NikooDb.NextId(NikooTables.SalesInvoices, companyCode, tx);
-                    invoice.Number = NextNumber(NikooDb.List(NikooTables.SalesInvoices, companyCode, tx: tx).Select(p => p.Number), "FR-");
+                    invoice.Number = NextSerial(NikooTables.SalesInvoices, companyCode, "Number", "FR-", tx);
                 }
                 error = ApplySale(companyCode, invoice, +1, tx);
                 if (error != null) return error;
+                ApplyInvoiceTax(invoice);
                 invoice.EntryId = WriteEntry(companyCode, new StoreJournalEntry
                 {
-                    Number = NextNumber(NikooDb.List(NikooTables.JournalEntries, companyCode, tx: tx).Select(e => e.Number), "SN-"),
+                    Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-", tx),
                     EntryDate = invoice.InvoiceDate,
                     Description = "فاکتور فروش " + invoice.Number + " — " + invoice.PartyName,
                     Source = JournalSource.Sale,
                     SourceId = invoice.Id,
                     DocumentTypeId = TypeId(companyCode, DocumentTypeCodes.Sale),
-                    Lines = SaleLines(companyCode, invoice)
+                    Lines = SaleLines(companyCode, invoice, tx)
                 }, tx);
-                invoice.Total = invoice.Lines.Sum(l => l.Amount);
                 NikooDb.Upsert(NikooTables.SalesInvoices, invoice, companyCode, tx);
                 tx.Commit();
                 return null;
@@ -218,11 +225,29 @@ namespace NikooSystem.Services
                 var product = NikooDb.Get(NikooTables.Products, NikooDb.Key(companyCode, productId), tx);
                 if (product == null || product.IsDigital()) return "این کالا در انبار ردیابی نمی‌شود.";
                 if (product.Stock + qty < 0) return "موجودی «" + product.Title + "» کافی نیست.";
-                var cost = AverageCost(companyCode, productId);
+                var cost = AverageCost(companyCode, productId, tx);
                 NikooDb.Increment(NikooTables.Products, NikooDb.Key(companyCode, productId), "Stock", qty, tx);
                 PostAdjust(companyCode, productId, 0, qty, cost, note, product.Title, tx);
                 tx.Commit();
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Opening quantity already written on a new product row; only the stock move (and journal when cost is known)
+        /// is posted so انبار stays in sync.
+        /// </summary>
+        internal static void RecordProductOpening(string companyCode, int productId, int qty, string title)
+        {
+            if (qty <= 0 || productId <= 0) return;
+            EnsureAccounts(companyCode);
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var product = NikooDb.Get(NikooTables.Products, NikooDb.Key(companyCode, productId), tx);
+                if (product == null || product.IsDigital()) return;
+                PostAdjust(companyCode, productId, 0, qty, 0, "موجودی اولیه", string.IsNullOrWhiteSpace(title) ? product.Title : title, tx);
+                tx.Commit();
             }
         }
 
@@ -237,7 +262,7 @@ namespace NikooSystem.Services
                 var item = NikooDb.Get(NikooTables.GoodsItems, NikooDb.Key(companyCode, goodsId), tx);
                 if (item == null) return "کالا پیدا نشد.";
                 if (item.Qty + qty < 0) return "موجودی «" + item.Title + "» کافی نیست.";
-                var cost = AverageGoodsCost(companyCode, goodsId);
+                var cost = AverageGoodsCost(companyCode, goodsId, tx);
                 NikooDb.Increment(NikooTables.GoodsItems, NikooDb.Key(companyCode, goodsId), "Qty", qty, tx);
                 PostAdjust(companyCode, 0, goodsId, qty, cost, note, item.Title, tx);
                 tx.Commit();
@@ -266,13 +291,32 @@ namespace NikooSystem.Services
         /// <summary>Posts a paid online order once. Stock itself was already moved with the order.</summary>
         public static void PostOnlineSale(string companyCode, int orderId)
         {
+            PostOrderIncome(companyCode, orderId, PayWith.Bank, 0, true, "فروش آنلاین ");
+        }
+
+        /// <summary>Posts a manual (cash/bank) digital sale for an already-completed order.</summary>
+        public static void PostManualDigitalSale(string companyCode, int orderId, PayWith payWith, int bankId)
+        {
+            PostOrderIncome(companyCode, orderId, payWith, bankId, false, "فروش دستی ");
+        }
+
+        private static void PostOrderIncome(string companyCode, int orderId, PayWith payWith, int bankId, bool gatewayBank, string descriptionPrefix)
+        {
             var order = GetOrder(companyCode, orderId);
             if (order == null || !StoreOrder.Fulfilled.Contains(order.Status) || order.Amount <= 0) return;
             if (FindEntry(companyCode, JournalSource.Online, orderId) != null) return;
             EnsureAccounts(companyCode);
+            var debitAccount = gatewayBank
+                ? OnlineBankAccountId(companyCode)
+                : MoneyAccountId(companyCode, payWith == PayWith.Credit ? PayWith.Cash : payWith, bankId, true);
+            var shipping = Math.Max(0, Math.Min(order.ShippingCost, order.Amount));
+            var goods = order.Amount - shipping;
             var lines = new List<StoreJournalLine>();
-            lines.Add(new StoreJournalLine { AccountId = OnlineBankAccountId(companyCode), Debit = order.Amount, Memo = order.OrderNumber });
-            lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.OnlineSales), Credit = order.Amount, Memo = order.OrderNumber });
+            lines.Add(new StoreJournalLine { AccountId = debitAccount, Debit = order.Amount, Memo = order.OrderNumber });
+            if (goods > 0)
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.OnlineSales), Credit = goods, Memo = order.OrderNumber });
+            if (shipping > 0)
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.ShippingIncome), Credit = shipping, Memo = "ارسال " + order.OrderNumber });
             long cogs = 0;
             foreach (var item in order.Items ?? new List<StoreOrderItem>())
             {
@@ -283,14 +327,14 @@ namespace NikooSystem.Services
             }
             if (cogs > 0)
             {
-                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Cogs), Debit = cogs, Memo = "بهای آنلاین" });
-                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Inventory), Credit = cogs, Memo = "بهای آنلاین" });
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Cogs), Debit = cogs, Memo = "بهای فروش" });
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Inventory), Credit = cogs, Memo = "بهای فروش" });
             }
             Save(NikooTables.JournalEntries, companyCode, new StoreJournalEntry
             {
-                Number = NextNumber(GetJournal(companyCode).Select(e => e.Number), "SN-"),
+                Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-"),
                 EntryDate = (order.PaidAt ?? order.CreatedAt).Date,
-                Description = "فروش آنلاین " + order.OrderNumber,
+                Description = descriptionPrefix + order.OrderNumber,
                 Source = JournalSource.Online,
                 SourceId = orderId,
                 DocumentTypeId = TypeId(companyCode, DocumentTypeCodes.Online),
@@ -306,7 +350,7 @@ namespace NikooSystem.Services
             Save(NikooTables.JournalEntries, companyCode, entry);
             Save(NikooTables.JournalEntries, companyCode, new StoreJournalEntry
             {
-                Number = NextNumber(GetJournal(companyCode).Select(e => e.Number), "SN-"),
+                Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-"),
                 EntryDate = DateTime.Today,
                 Description = "برگشت " + entry.Description,
                 Source = JournalSource.Online,
@@ -314,7 +358,7 @@ namespace NikooSystem.Services
                 DocumentTypeId = entry.DocumentTypeId,
                 Lines = entry.Lines.Select(l => new StoreJournalLine { AccountId = l.AccountId, Debit = l.Credit, Credit = l.Debit, Memo = l.Memo }).ToList()
             });
-            foreach (var move in GetStockMoves(companyCode).Where(m => m.Kind == "online" && m.RefId == orderId))
+            foreach (var move in MovesFor(companyCode, "online", orderId))
                 AddMove(companyCode, move.ProductId, -move.Qty, move.UnitCost, "online-void", orderId, "برگشت سفارش");
         }
 
@@ -323,24 +367,84 @@ namespace NikooSystem.Services
             if (amount <= 0) return;
             if (FindEntry(companyCode, source, sourceId) != null) return;
             EnsureAccounts(companyCode);
+            EnsureDocumentTypes(companyCode);
             Save(NikooTables.JournalEntries, companyCode, new StoreJournalEntry
             {
-                Number = NextNumber(GetJournal(companyCode).Select(e => e.Number), "SN-"),
+                Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-"),
                 EntryDate = DateTime.Today,
                 Description = description,
                 Source = source,
                 SourceId = sourceId,
-                DocumentTypeId = TypeId(companyCode, source == JournalSource.Facility ? DocumentTypeCodes.Facility : DocumentTypeCodes.Tuition),
-                Lines = Pair(OnlineBankAccountId(companyCode), IdOf(companyCode, AccountCodes.Tuition), amount, description).ToList()
+                DocumentTypeId = TypeId(companyCode, IncomeDocumentType(source)),
+                Lines = Pair(OnlineBankAccountId(companyCode), IdOf(companyCode, IncomeAccount(source)), amount, description).ToList()
             });
         }
 
-        public static long AverageCost(string companyCode, int productId)
+        /// <summary>Visit fees are their own income; class tuition and hall bookings stay on the tuition account.</summary>
+        private static string IncomeAccount(JournalSource source) =>
+            source == JournalSource.Appointment ? AccountCodes.Visit : AccountCodes.Tuition;
+
+        private static string IncomeDocumentType(JournalSource source)
         {
-            var inbound = GetStockMoves(companyCode).Where(m => m.ProductId == productId && m.Qty > 0 && m.UnitCost > 0).ToList();
-            var qty = inbound.Sum(m => m.Qty);
-            return qty <= 0 ? 0 : inbound.Sum(m => m.UnitCost * m.Qty) / qty;
+            if (source == JournalSource.Facility) return DocumentTypeCodes.Facility;
+            if (source == JournalSource.Appointment) return DocumentTypeCodes.Appointment;
+            return DocumentTypeCodes.Tuition;
         }
+
+        /// <summary>
+        /// Records cash/bank payment for a booking appointment: updates PaidAmount and writes a cash receipt
+        /// against visit income, so a clinic visit is not posted as tuition.
+        /// </summary>
+        public static string RecordAppointmentPayment(string companyCode, int appointmentId, long amount, PayWith payWith, int bankId)
+        {
+            if (amount <= 0) return "مبلغ دریافت باید بیشتر از صفر باشد.";
+            StoreAppointment appointment;
+            lock (LockFor(companyCode))
+            {
+                appointment = GetAppointment(companyCode, appointmentId);
+                if (appointment == null) return "نوبت پیدا نشد.";
+                if (appointment.Status == AppointmentStatus.Cancelled) return "نوبت لغوشده قابل تسویه نیست.";
+                var due = Math.Max(0, appointment.Price - appointment.PaidAmount);
+                if (due <= 0) return "مبلغ این نوبت کامل دریافت شده است.";
+                if (amount > due) amount = due;
+            }
+
+            EnsureAccounts(companyCode);
+            var visit = AccountByCode(companyCode, AccountCodes.Visit);
+            if (visit == null) return "سرفصل درآمد ویزیت پیدا نشد.";
+            var party = PartyByName(companyCode, string.IsNullOrWhiteSpace(appointment.CustomerName) ? "مراجع نوبت" : appointment.CustomerName, PartyKind.Customer);
+            var cash = new StoreCashTransaction
+            {
+                Direction = CashDirection.In,
+                Amount = amount,
+                PayWith = payWith == PayWith.Credit ? PayWith.Cash : payWith,
+                BankId = bankId,
+                AccountId = visit.Id,
+                PartyId = party == null ? 0 : party.Id,
+                PartyName = appointment.CustomerName,
+                Note = "نوبت " + appointment.Code + " — " + appointment.ServiceTitle,
+                TxDate = DateTime.Today
+            };
+            var error = SaveCash(companyCode, cash);
+            if (error != null) return error;
+
+            lock (LockFor(companyCode))
+            {
+                appointment = GetAppointment(companyCode, appointmentId);
+                if (appointment == null) return null;
+                appointment.PaidAmount += amount;
+                if (!appointment.PaidAt.HasValue) appointment.PaidAt = DateTime.Now;
+                if (appointment.Status == AppointmentStatus.PendingPayment)
+                    appointment.Status = AppointmentStatus.Confirmed;
+                if (string.IsNullOrWhiteSpace(appointment.PaymentMessage))
+                    appointment.PaymentMessage = "دریافت حضوری " + amount.ToString("N0") + " از صندوق/بانک";
+                UpdateAppointment(companyCode, appointment);
+            }
+            return null;
+        }
+
+        public static long AverageCost(string companyCode, int productId, DbTx tx = null) =>
+            AverageInboundCost(companyCode, "ProductId", productId, tx);
 
         private static int IdOf(string companyCode, string code)
         {
@@ -358,46 +462,95 @@ namespace NikooSystem.Services
 
         private static List<StoreJournalLine> PurchaseLines(string companyCode, StorePurchaseInvoice invoice)
         {
+            var subtotal = invoice.Subtotal;
+            var net = invoice.NetAmount;
             var lines = new List<StoreJournalLine>();
-            foreach (var line in invoice.Lines)
+            long allocated = 0;
+            for (var i = 0; i < invoice.Lines.Count; i++)
             {
+                var line = invoice.Lines[i];
                 var code = line.Kind == PurchaseLineKind.Expense ? AccountCodes.Expense
                     : line.Kind == PurchaseLineKind.Asset ? AccountCodes.FixedAssets
                     : AccountCodes.Inventory;
-                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, code), Debit = line.Amount, Memo = line.Title });
+                long share;
+                if (i == invoice.Lines.Count - 1) share = Math.Max(0, net - allocated);
+                else if (subtotal <= 0) share = 0;
+                else
+                {
+                    share = (long)Math.Round((decimal)line.Amount * net / subtotal, MidpointRounding.AwayFromZero);
+                    allocated += share;
+                }
+                if (share > 0)
+                    lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, code), Debit = share, Memo = line.Title });
             }
+            if (invoice.VatAmount > 0)
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Vat), Debit = invoice.VatAmount, Memo = "مالیات ارزش افزوده" });
             lines.Add(new StoreJournalLine
             {
                 AccountId = MoneyAccountId(companyCode, invoice.PayWith, invoice.BankId, false),
-                Credit = invoice.Lines.Sum(l => l.Amount),
+                Credit = invoice.Total,
                 Memo = invoice.PartyName
             });
             TagParty(companyCode, lines, invoice.PartyId);
             return lines;
         }
 
-        private static List<StoreJournalLine> SaleLines(string companyCode, StoreSalesInvoice invoice)
+        private static List<StoreJournalLine> SaleLines(string companyCode, StoreSalesInvoice invoice, DbTx tx = null)
         {
-            var total = invoice.Lines.Sum(l => l.Amount);
-            var lines = new List<StoreJournalLine>
-            {
-                new StoreJournalLine { AccountId = MoneyAccountId(companyCode, invoice.PayWith, invoice.BankId, true), Debit = total, Memo = invoice.PartyName },
-                new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Sales), Credit = total, Memo = invoice.PartyName }
-            };
+            var subtotal = invoice.Subtotal;
+            var net = invoice.NetAmount;
+            var kind = SiteKinds.Of(GetTenant(companyCode));
+            var serviceKind = kind.ServiceBusiness;
+            var serviceIncome = kind.IsBooking ? AccountCodes.Visit : AccountCodes.Tuition;
+            long stockTotal = 0;
+            long serviceTotal = 0;
             long cogs = 0;
             foreach (var line in invoice.Lines)
             {
+                if (line.ProductId > 0 || line.GoodsId > 0) stockTotal += line.Amount;
+                else serviceTotal += line.Amount;
+
                 if (line.ProductId > 0)
                 {
-                    var product = GetProduct(companyCode, line.ProductId);
+                    var product = tx != null
+                        ? NikooDb.Get(NikooTables.Products, NikooDb.Key(companyCode, line.ProductId), tx)
+                        : GetProduct(companyCode, line.ProductId);
                     if (product == null || product.IsDigital()) continue;
-                    cogs += AverageCost(companyCode, line.ProductId) * line.Qty;
+                    cogs += AverageCost(companyCode, line.ProductId, tx) * line.Qty;
                 }
                 else if (line.GoodsId > 0)
                 {
-                    cogs += AverageGoodsCost(companyCode, line.GoodsId) * line.Qty;
+                    cogs += AverageGoodsCost(companyCode, line.GoodsId, tx) * line.Qty;
                 }
             }
+
+            long stockNet = 0;
+            long serviceNet = 0;
+            if (subtotal > 0 && net > 0)
+            {
+                stockNet = (long)Math.Round((decimal)stockTotal * net / subtotal, MidpointRounding.AwayFromZero);
+                if (stockNet > net) stockNet = net;
+                serviceNet = net - stockNet;
+            }
+
+            var lines = new List<StoreJournalLine>
+            {
+                new StoreJournalLine { AccountId = MoneyAccountId(companyCode, invoice.PayWith, invoice.BankId, true), Debit = invoice.Total, Memo = invoice.PartyName }
+            };
+            // Booking: a service line is visit income. Campus: it stays on tuition. Stocked lines stay on Sales.
+            if (serviceKind)
+            {
+                if (stockNet > 0)
+                    lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Sales), Credit = stockNet, Memo = invoice.PartyName });
+                if (serviceNet > 0)
+                    lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, serviceIncome), Credit = serviceNet, Memo = invoice.PartyName });
+            }
+            else if (net > 0)
+            {
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Sales), Credit = net, Memo = invoice.PartyName });
+            }
+            if (invoice.VatAmount > 0)
+                lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Vat), Credit = invoice.VatAmount, Memo = "مالیات ارزش افزوده" });
             if (cogs > 0)
             {
                 lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Cogs), Debit = cogs, Memo = "بهای تمام‌شده" });
@@ -405,6 +558,31 @@ namespace NikooSystem.Services
             }
             TagParty(companyCode, lines, invoice.PartyId);
             return lines;
+        }
+
+        /// <summary>Clamps discount and VAT percent, then fills VatAmount and Total.</summary>
+        private static void ApplyInvoiceTax(StoreSalesInvoice invoice)
+        {
+            var subtotal = invoice.Subtotal;
+            if (invoice.DiscountAmount < 0) invoice.DiscountAmount = 0;
+            if (invoice.DiscountAmount > subtotal) invoice.DiscountAmount = subtotal;
+            if (invoice.VatPercent < 0) invoice.VatPercent = 0;
+            if (invoice.VatPercent > 100) invoice.VatPercent = 100;
+            var net = subtotal - invoice.DiscountAmount;
+            invoice.VatAmount = (long)Math.Round(net * invoice.VatPercent / 100.0, MidpointRounding.AwayFromZero);
+            invoice.Total = net + invoice.VatAmount;
+        }
+
+        private static void ApplyInvoiceTax(StorePurchaseInvoice invoice)
+        {
+            var subtotal = invoice.Subtotal;
+            if (invoice.DiscountAmount < 0) invoice.DiscountAmount = 0;
+            if (invoice.DiscountAmount > subtotal) invoice.DiscountAmount = subtotal;
+            if (invoice.VatPercent < 0) invoice.VatPercent = 0;
+            if (invoice.VatPercent > 100) invoice.VatPercent = 100;
+            var net = subtotal - invoice.DiscountAmount;
+            invoice.VatAmount = (long)Math.Round(net * invoice.VatPercent / 100.0, MidpointRounding.AwayFromZero);
+            invoice.Total = net + invoice.VatAmount;
         }
 
         private static string PreparePurchase(string companyCode, StorePurchaseInvoice invoice)
@@ -440,6 +618,7 @@ namespace NikooSystem.Services
                 }
                 else if (string.IsNullOrWhiteSpace(line.Title)) line.Title = "ردیف خرید";
             }
+            ApplyInvoiceTax(invoice);
             return null;
         }
 
@@ -475,6 +654,7 @@ namespace NikooSystem.Services
                 }
                 else if (string.IsNullOrWhiteSpace(line.Title)) line.Title = "ردیف فروش";
             }
+            ApplyInvoiceTax(invoice);
             return null;
         }
 
@@ -531,9 +711,21 @@ namespace NikooSystem.Services
             {
                 var onHand = OnHand(companyCode, line.ProductId, line.GoodsId, tx);
                 if (onHand == null) continue;
-                var cost = line.ProductId > 0 ? AverageCost(companyCode, line.ProductId) : AverageGoodsCost(companyCode, line.GoodsId);
+                var cost = line.ProductId > 0
+                    ? AverageCost(companyCode, line.ProductId, tx)
+                    : AverageGoodsCost(companyCode, line.GoodsId, tx);
                 if (line.ProductId > 0)
-                    NikooDb.Increment(NikooTables.Products, NikooDb.Key(companyCode, line.ProductId), "Stock", -sign * line.Qty, tx);
+                {
+                    var productKey = NikooDb.Key(companyCode, line.ProductId);
+                    NikooDb.Increment(NikooTables.Products, productKey, "Stock", -sign * line.Qty, tx);
+                    if (sign > 0)
+                        NikooDb.Increment(NikooTables.Products, productKey, "SoldCount", line.Qty, tx);
+                    else
+                        NikooDb.Execute("UPDATE " + NikooDb.Table(NikooTables.Products.Name)
+                            + " SET [SoldCount] = CASE WHEN [SoldCount] - @Amount < 0 THEN 0 ELSE [SoldCount] - @Amount END"
+                            + " WHERE [CompanyCode] = @CompanyCode AND [Id] = @Id",
+                            new Row(productKey) { ["Amount"] = line.Qty }, tx);
+                }
                 else
                     NikooDb.Increment(NikooTables.GoodsItems, NikooDb.Key(companyCode, line.GoodsId), "Qty", -sign * line.Qty, tx);
                 if (sign > 0)
@@ -652,7 +844,7 @@ namespace NikooSystem.Services
             var adjust = IdOf(companyCode, AccountCodes.StockAdjust);
             WriteEntry(companyCode, new StoreJournalEntry
             {
-                Number = NextNumber(NikooDb.List(NikooTables.JournalEntries, companyCode, tx: tx).Select(e => e.Number), "SN-"),
+                Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-", tx),
                 EntryDate = DateTime.Today,
                 Description = note + " — " + title,
                 Source = JournalSource.Adjust,
@@ -662,16 +854,27 @@ namespace NikooSystem.Services
             }, tx);
         }
 
-        public static long AverageGoodsCost(string companyCode, int goodsId)
+        public static long AverageGoodsCost(string companyCode, int goodsId, DbTx tx = null) =>
+            AverageInboundCost(companyCode, "GoodsId", goodsId, tx);
+
+        private static long AverageInboundCost(string companyCode, string column, int id, DbTx tx)
         {
-            var inbound = GetStockMoves(companyCode).Where(m => m.GoodsId == goodsId && m.Qty > 0 && m.UnitCost > 0).ToList();
-            var qty = inbound.Sum(m => (long)m.Qty);
-            return qty <= 0 ? 0 : inbound.Sum(m => m.UnitCost * m.Qty) / qty;
+            var totals = NikooDb.Select(
+                "SELECT ISNULL(SUM(CAST([Qty] AS BIGINT)), 0), ISNULL(SUM(CAST([UnitCost] AS BIGINT) * [Qty]), 0) FROM "
+                + NikooDb.Table(NikooTables.StockMoves.Name)
+                + " WHERE [CompanyCode] = @CompanyCode AND " + NikooDb.Name(column) + " = @Id AND [Qty] > 0 AND [UnitCost] > 0",
+                new Row { ["CompanyCode"] = companyCode, ["Id"] = id },
+                r => new[] { Convert.ToInt64(r.GetValue(0)), Convert.ToInt64(r.GetValue(1)) }, tx);
+            var row = totals.Count == 0 ? null : totals[0];
+            return row == null || row[0] <= 0 ? 0 : row[1] / row[0];
         }
+
+        private static List<StoreStockMove> MovesFor(string companyCode, string kind, int refId, DbTx tx = null) =>
+            NikooDb.Query(NikooTables.StockMoves, new Row { ["CompanyCode"] = companyCode, ["Kind"] = kind, ["RefId"] = refId }, tx: tx);
 
         private static void DeleteMoves(string companyCode, string kind, int refId, DbTx tx)
         {
-            foreach (var move in NikooDb.List(NikooTables.StockMoves, companyCode, tx: tx).Where(m => m.Kind == kind && m.RefId == refId))
+            foreach (var move in MovesFor(companyCode, kind, refId, tx))
                 NikooDb.Delete(NikooTables.StockMoves, NikooDb.Key(companyCode, move.Id), tx);
         }
 
@@ -703,10 +906,35 @@ namespace NikooSystem.Services
         }
 
         private static StoreJournalEntry FindEntry(string companyCode, JournalSource source, int sourceId) =>
-            GetJournal(companyCode).FirstOrDefault(e => e.Source == source && e.SourceId == sourceId && !e.Reversed);
+            NikooDb.Query(NikooTables.JournalEntries, new Row
+            {
+                ["CompanyCode"] = companyCode,
+                ["Source"] = source.ToString(),
+                ["SourceId"] = sourceId,
+                ["Reversed"] = false
+            }, "[EntryDate] DESC, [Id] DESC").FirstOrDefault();
 
-        private static IEnumerable<StoreJournalLine> JournalLines(string companyCode) =>
-            GetJournal(companyCode).SelectMany(e => e.Lines ?? new List<StoreJournalLine>());
+        private static bool JournalLineExists(string companyCode, string column, int id)
+        {
+            if (id <= 0) return false;
+            var found = NikooDb.Column<int>(
+                "SELECT CASE WHEN EXISTS (SELECT 1 FROM " + NikooDb.Table("JournalLines")
+                + " WHERE [CompanyCode] = @CompanyCode AND " + NikooDb.Name(column) + " = @Id) THEN 1 ELSE 0 END",
+                new Row { ["CompanyCode"] = companyCode, ["Id"] = id });
+            return found.Count > 0 && found[0] == 1;
+        }
+
+        /// <summary>Next <paramref name="prefix"/> number (SN-0007) from the column itself, without loading the rows.</summary>
+        private static string NextSerial(TableMap map, string companyCode, string column, string prefix, DbTx tx = null)
+        {
+            var max = NikooDb.Column<int>(
+                "SELECT ISNULL(MAX(TRY_CAST(SUBSTRING(" + NikooDb.Name(column) + ", @Start, 20) AS INT)), 0) FROM "
+                + NikooDb.Table(map.Name) + " WITH (UPDLOCK, HOLDLOCK) WHERE [CompanyCode] = @CompanyCode AND "
+                + NikooDb.Name(column) + " LIKE @Prefix",
+                new Row { ["Start"] = prefix.Length + 1, ["CompanyCode"] = companyCode, ["Prefix"] = prefix + "%" }, tx);
+            var n = max.Count == 0 ? 0 : max[0];
+            return prefix + (n + 1).ToString("0000", CultureInfo.InvariantCulture);
+        }
 
         private static List<StoreJournalLine> CleanLines(IEnumerable<StoreJournalLine> lines) =>
             (lines ?? Enumerable.Empty<StoreJournalLine>()).Where(l => l.AccountId > 0 && (l.Debit > 0 || l.Credit > 0)).ToList();
@@ -809,8 +1037,10 @@ namespace NikooSystem.Services
             var item = GetDocumentType(companyCode, id);
             if (item == null) return null;
             if (item.IsSystem) return "نوع‌های پیش‌فرض حذف نمی‌شوند.";
-            if (GetJournal(companyCode).Any(e => e.DocumentTypeId == id)) return "این نوع در سندها آمده و حذف نمی‌شود.";
-            if (GetCash(companyCode).Any(t => t.DocumentTypeId == id)) return "این نوع در دریافت و پرداخت آمده و حذف نمی‌شود.";
+            if (NikooDb.Count(NikooTables.JournalEntries, SqlFilter.ForStore(companyCode).Eq("DocumentTypeId", id)) > 0)
+                return "این نوع در سندها آمده و حذف نمی‌شود.";
+            if (NikooDb.Count(NikooTables.CashTransactions, SqlFilter.ForStore(companyCode).Eq("DocumentTypeId", id)) > 0)
+                return "این نوع در دریافت و پرداخت آمده و حذف نمی‌شود.";
             Remove(NikooTables.DocumentTypes, companyCode, id);
             return null;
         }
@@ -822,6 +1052,8 @@ namespace NikooSystem.Services
 
         public static string SaveCash(string companyCode, StoreCashTransaction item)
         {
+            var fiscalError = CheckFiscalDate(companyCode, item.TxDate);
+            if (fiscalError != null) return fiscalError;
             EnsureAccounts(companyCode);
             item.PartyName = (item.PartyName ?? "").Trim();
             item.Note = (item.Note ?? "").Trim();
@@ -879,11 +1111,11 @@ namespace NikooSystem.Services
                 else
                 {
                     item.Id = NikooDb.NextId(NikooTables.CashTransactions, companyCode, tx);
-                    item.Number = NextNumber(NikooDb.List(NikooTables.CashTransactions, companyCode, tx: tx).Select(t => t.Number), prefix);
+                    item.Number = NextSerial(NikooTables.CashTransactions, companyCode, "Number", prefix, tx);
                 }
                 item.EntryId = WriteEntry(companyCode, new StoreJournalEntry
                 {
-                    Number = NextNumber(NikooDb.List(NikooTables.JournalEntries, companyCode, tx: tx).Select(e => e.Number), "SN-"),
+                    Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-", tx),
                     EntryDate = item.TxDate,
                     Description = description,
                     Source = source,
@@ -917,25 +1149,165 @@ namespace NikooSystem.Services
             return type == null ? 0 : type.Id;
         }
 
+        private static readonly StoreDocumentType[] SystemDocumentTypes =
+        {
+            Doc(DocumentTypeCodes.Manual, "سند دستی"),
+            Doc(DocumentTypeCodes.Purchase, "فاکتور خرید"),
+            Doc(DocumentTypeCodes.Sale, "فاکتور فروش"),
+            Doc(DocumentTypeCodes.Online, "فروش آنلاین"),
+            Doc(DocumentTypeCodes.Tuition, "شهریه و ثبت‌نام"),
+            Doc(DocumentTypeCodes.Facility, "رزرو سالن"),
+            Doc(DocumentTypeCodes.Appointment, "نوبت و ویزیت"),
+            Doc(DocumentTypeCodes.Adjust, "تعدیل انبار"),
+            Doc(DocumentTypeCodes.Receipt, "دریافت"),
+            Doc(DocumentTypeCodes.Payment, "پرداخت"),
+            Doc(DocumentTypeCodes.Return, "مرجوعی کالا"),
+            Doc(DocumentTypeCodes.Freight, "هزینه حمل"),
+            Doc(DocumentTypeCodes.Closing, "بستن سال مالی")
+        };
+
         private static void EnsureDocumentTypes(string companyCode)
         {
-            if (All(NikooTables.DocumentTypes, companyCode).Count > 0) return;
-            var rows = new[]
+            var existing = All(NikooTables.DocumentTypes, companyCode);
+            if (existing.Count == 0)
             {
-                Doc(DocumentTypeCodes.Manual, "سند دستی"),
-                Doc(DocumentTypeCodes.Purchase, "فاکتور خرید"),
-                Doc(DocumentTypeCodes.Sale, "فاکتور فروش"),
-                Doc(DocumentTypeCodes.Online, "فروش آنلاین"),
-                Doc(DocumentTypeCodes.Tuition, "شهریه و ثبت‌نام"),
-                Doc(DocumentTypeCodes.Facility, "رزرو سالن"),
-                Doc(DocumentTypeCodes.Adjust, "تعدیل انبار"),
-                Doc(DocumentTypeCodes.Receipt, "دریافت"),
-                Doc(DocumentTypeCodes.Payment, "پرداخت")
-            };
-            foreach (var row in rows) Save(NikooTables.DocumentTypes, companyCode, row);
+                foreach (var row in SystemDocumentTypes) Save(NikooTables.DocumentTypes, companyCode, row);
+                return;
+            }
+            var codes = new HashSet<string>(existing.Select(t => t.Code), StringComparer.OrdinalIgnoreCase);
+            foreach (var row in SystemDocumentTypes)
+            {
+                if (codes.Contains(row.Code)) continue;
+                Save(NikooTables.DocumentTypes, companyCode, new StoreDocumentType
+                {
+                    Code = row.Code,
+                    Title = row.Title,
+                    IsSystem = true,
+                    IsActive = true
+                });
+            }
         }
 
         private static StoreDocumentType Doc(string code, string title) =>
             new StoreDocumentType { Code = code, Title = title, IsSystem = true, IsActive = true };
+
+        /// <summary>Rejects dates in a closed fiscal year, or in a future year when locking is on.</summary>
+        public static string CheckFiscalDate(string companyCode, DateTime date)
+        {
+            var settings = GetSettings(companyCode);
+            if (settings == null || !settings.FiscalLockDates) return null;
+            var period = FiscalPeriod.For(date, settings.FiscalStartMonth);
+            if (FiscalPeriod.IsClosed(settings, period.StartYear))
+                return "سال مالی " + period.StartYear.ToString(CultureInfo.InvariantCulture).ToFaDigits()
+                    + " بسته شده است؛ تاریخ را در سال باز بگذارید یا از صفحه سال مالی آن را باز کنید.";
+            var current = FiscalPeriod.Current(settings);
+            if (period.StartYear > current.StartYear)
+                return "تاریخ در سال مالی آینده («" + period.Label + "») ثبت نمی‌شود.";
+            return null;
+        }
+
+        /// <summary>
+        /// Closes a finished fiscal year: zeros income/expense subsidiaries into retained earnings and locks that year.
+        /// </summary>
+        public static string CloseFiscalYear(string companyCode, int startYear)
+        {
+            var settings = GetSettings(companyCode);
+            if (settings == null) return "تنظیمات پیدا نشد.";
+            settings.FiscalStartMonth = FiscalPeriod.NormalizeMonth(settings.FiscalStartMonth);
+            if (FiscalPeriod.IsClosed(settings, startYear))
+                return "این سال مالی قبلاً بسته شده است.";
+            var current = FiscalPeriod.Current(settings);
+            if (startYear >= current.StartYear)
+                return "فقط سال مالی تمام‌شده را می‌شود بست؛ سال جاری هنوز باز است.";
+            var period = FiscalPeriod.OfYear(startYear, settings.FiscalStartMonth);
+            EnsureAccounts(companyCode);
+            EnsureDocumentTypes(companyCode);
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var retained = IdOf(companyCode, AccountCodes.RetainedEarnings);
+                if (retained <= 0) return "سرفصل «سود و زیان انباشته» پیدا نشد.";
+                var accounts = NikooDb.List(NikooTables.LedgerAccounts, companyCode, tx: tx)
+                    .Where(a => a.IsPosting && (a.Kind == AccountKind.Income || a.Kind == AccountKind.Expense))
+                    .ToDictionary(a => a.Id);
+                var summed = NikooDb.Pairs<int, long>(
+                    "SELECT l.[AccountId], SUM(l.[Debit] - l.[Credit]) FROM " + NikooDb.Table("JournalLines")
+                    + " l INNER JOIN " + NikooDb.Table(NikooTables.JournalEntries.Name)
+                    + " e ON e.[CompanyCode] = l.[CompanyCode] AND e.[Id] = l.[EntryId]"
+                    + " WHERE e.[CompanyCode] = @CompanyCode AND e.[EntryDate] >= @Start AND e.[EntryDate] <= @End"
+                    + " GROUP BY l.[AccountId]",
+                    new Row { ["CompanyCode"] = companyCode, ["Start"] = period.Start, ["End"] = period.End }, tx);
+                var nets = new Dictionary<int, long>();
+                foreach (var pair in summed)
+                    if (accounts.ContainsKey(pair.Key) && pair.Value != 0) nets[pair.Key] = pair.Value;
+                var lines = new List<StoreJournalLine>();
+                long retainedDebit = 0, retainedCredit = 0;
+                foreach (var pair in nets.Where(p => p.Value != 0).OrderBy(p => accounts[p.Key].Code))
+                {
+                    var account = accounts[pair.Key];
+                    var net = pair.Value;
+                    if (net > 0)
+                    {
+                        lines.Add(new StoreJournalLine { AccountId = account.Id, Credit = net, Memo = "بستن " + account.Title });
+                        retainedDebit += net;
+                    }
+                    else
+                    {
+                        var creditSide = -net;
+                        lines.Add(new StoreJournalLine { AccountId = account.Id, Debit = creditSide, Memo = "بستن " + account.Title });
+                        retainedCredit += creditSide;
+                    }
+                }
+                if (lines.Count == 0)
+                {
+                    FiscalPeriod.MarkClosed(settings, startYear);
+                    WriteSettings(settings, tx);
+                    tx.Commit();
+                    return null;
+                }
+                var plug = retainedDebit - retainedCredit;
+                if (plug > 0)
+                    lines.Add(new StoreJournalLine { AccountId = retained, Debit = plug, Memo = "سود و زیان سال " + startYear.ToString(CultureInfo.InvariantCulture) });
+                else if (plug < 0)
+                    lines.Add(new StoreJournalLine { AccountId = retained, Credit = -plug, Memo = "سود و زیان سال " + startYear.ToString(CultureInfo.InvariantCulture) });
+                WriteEntry(companyCode, new StoreJournalEntry
+                {
+                    Number = NextSerial(NikooTables.JournalEntries, companyCode, "Number", "SN-", tx),
+                    EntryDate = period.End,
+                    Description = "بستن سال مالی " + startYear.ToString(CultureInfo.InvariantCulture),
+                    Source = JournalSource.Closing,
+                    SourceId = startYear,
+                    DocumentTypeId = TypeId(companyCode, DocumentTypeCodes.Closing),
+                    Lines = lines
+                }, tx);
+                FiscalPeriod.MarkClosed(settings, startYear);
+                WriteSettings(settings, tx);
+                tx.Commit();
+                return null;
+            }
+        }
+
+        /// <summary>Unlocks a closed year and removes its closing journal entry when present.</summary>
+        public static string ReopenFiscalYear(string companyCode, int startYear)
+        {
+            var settings = GetSettings(companyCode);
+            if (settings == null) return "تنظیمات پیدا نشد.";
+            if (!FiscalPeriod.IsClosed(settings, startYear)) return "این سال مالی بسته نیست.";
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                var closing = NikooDb.Query(NikooTables.JournalEntries, new Row
+                {
+                    ["CompanyCode"] = companyCode,
+                    ["Source"] = JournalSource.Closing.ToString(),
+                    ["SourceId"] = startYear
+                }, "[EntryDate] DESC, [Id] DESC", tx).FirstOrDefault();
+                if (closing != null) DeleteEntry(companyCode, closing.Id, tx);
+                FiscalPeriod.MarkOpen(settings, startYear);
+                WriteSettings(settings, tx);
+                tx.Commit();
+                return null;
+            }
+        }
     }
 }

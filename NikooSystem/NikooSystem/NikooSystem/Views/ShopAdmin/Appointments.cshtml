@@ -11,7 +11,7 @@
 }
 @Html.PageHeader("فهرست نوبت‌ها", "نوبت جدید", "NewAppointment")
 <div class="panel-card">
-    @Html.GridToolbar("کد پیگیری، نام، موبایل، خدمت یا متخصص…",
+    @Html.GridToolbar("کد پیگیری، نام، موبایل، خدمت یا متخصص…", true,
         new GridSelect("when", "همه زمان‌ها", GridHtml.Options(whens, w => w.Id, w => w.Text)),
         new GridSelect("status", "همه وضعیت‌ها", GridHtml.Options(statuses, s => s, s => s.StatusText())),
         new GridSelect("staffId", "همه متخصصان", GridHtml.Options(staff, p => p.Id, p => p.Name)),

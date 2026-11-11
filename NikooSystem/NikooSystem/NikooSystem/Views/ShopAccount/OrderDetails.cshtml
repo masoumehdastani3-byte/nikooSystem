@@ -1,0 +1,158 @@
+@model StoreOrder
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    ViewBag.Title = "سفارش " + Model.OrderNumber;
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var returns = (List<StoreReturnRequest>)ViewBag.Returns ?? new List<StoreReturnRequest>();
+    var returnedQty = (Dictionary<int, int>)ViewBag.ReturnedQty ?? new Dictionary<int, int>();
+    var shippingRefunded = ViewBag.ShippingRefunded as bool? == true;
+    var hasPhysical = Model.Items.Any(i => !i.IsDigital);
+    var pending = returns.FirstOrDefault(r => r.Status == ReturnRequestStatus.Pending);
+    var returnsEnabled = settings != null && settings.EnableReturns;
+    var withinDeadline = true;
+    if (returnsEnabled && settings.ReturnDays > 0)
+    {
+        var start = Model.PaidAt ?? Model.CreatedAt;
+        withinDeadline = DateTime.Now.Date <= start.Date.AddDays(settings.ReturnDays);
+    }
+    var returnableItems = Model.Items.Where(i => !i.IsDigital).Select(item =>
+    {
+        int done;
+        returnedQty.TryGetValue(item.ProductId, out done);
+        return new { Item = item, Left = item.Quantity - done };
+    }).Where(x => x.Left > 0).ToList();
+    var canReturn = returnsEnabled && hasPhysical && StoreOrder.Fulfilled.Contains(Model.Status)
+        && pending == null && withinDeadline && returnableItems.Count > 0;
+    var subtotal = Model.Items.Sum(i => i.UnitPrice * i.Quantity);
+}
+<section class="py-4">
+    <div class="container" style="max-width:860px;">
+        @Html.Partial("_AccountNav", "Orders")
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <h1 class="section-title mb-0">سفارش <span dir="ltr">@Model.OrderNumber</span></h1>
+            @Html.StatusBadge(Model.Status)
+        </div>
+        <div class="panel-card mb-3">
+            <div class="small text-muted mb-2">@Model.CreatedAt.ToShamsiText() · @Model.CreatedAt.ToString("HH:mm").ToFaDigits()</div>
+            <table class="table align-middle mb-0">
+                <thead><tr><th>کالا</th><th>تعداد</th><th>مبلغ</th></tr></thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr>
+                            <td>@item.Title @if (item.IsDigital) { <i class="bi bi-cloud-arrow-down text-muted" title="دیجیتال"></i> }</td>
+                            <td>@item.Quantity.ToFa()</td>
+                            <td>@((item.UnitPrice * item.Quantity).ToToman())</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="2" class="text-end">جمع کالاها</td><td>@subtotal.ToToman()</td></tr>
+                    @if (hasPhysical)
+                    {
+                        <tr>
+                            <td colspan="2" class="text-end">
+                                هزینه ارسال
+                                @if (!string.IsNullOrWhiteSpace(Model.ShippingMethod)) { <span class="text-muted">(@Model.ShippingMethod)</span> }
+                            </td>
+                            <td>@(Model.ShippingCost > 0 ? Model.ShippingCost.ToToman() : "رایگان")</td>
+                        </tr>
+                    }
+                    <tr class="fw-bold"><td colspan="2" class="text-end">مبلغ کل</td><td>@Model.Amount.ToToman()</td></tr>
+                </tfoot>
+            </table>
+            @if (!string.IsNullOrWhiteSpace(Model.TrackingCode))
+            {
+                <div class="mt-3"><i class="bi bi-truck"></i> کد رهگیری مرسوله: <strong dir="ltr">@Model.TrackingCode</strong></div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.CustomerAddress))
+            {
+                <div class="mt-2 small"><span class="text-muted">آدرس:</span> @Model.CustomerAddress</div>
+            }
+        </div>
+
+        @if (returns.Count > 0)
+        {
+            <div class="panel-card mb-3">
+                <h5 class="mb-3">درخواست‌های مرجوعی شما</h5>
+                @foreach (var r in returns)
+                {
+                    <div class="mb-2 pb-2 border-bottom">
+                        <div class="d-flex justify-content-between">
+                            <span>@r.CreatedAt.ToShamsiText()</span>
+                            <span>
+                                @if (r.Status == ReturnRequestStatus.Pending) { <span class="badge bg-warning text-dark">در انتظار بررسی</span> }
+                                else if (r.Status == ReturnRequestStatus.Approved) { <span class="badge bg-success">تأیید شده</span> }
+                                else { <span class="badge bg-secondary">رد شده</span> }
+                            </span>
+                        </div>
+                        <div class="small text-muted">@r.Reason</div>
+                        @if (r.RefundAmount > 0) { <div class="small">مبلغ برگشتی: @r.RefundAmount.ToToman()</div> }
+                    </div>
+                }
+            </div>
+        }
+
+        @if (canReturn)
+        {
+            <div class="panel-card mb-3">
+                <h5 class="mb-2">درخواست مرجوعی</h5>
+                @if (!string.IsNullOrWhiteSpace(settings.ReturnPolicy))
+                {
+                    <p class="small text-muted">@settings.ReturnPolicy</p>
+                }
+                else
+                {
+                    <p class="small text-muted">تعداد هر کالا را مشخص کنید، دلیل را بنویسید و ارسال کنید؛ فروشنده بعد از بررسی تأیید یا رد می‌کند.</p>
+                }
+                @using (Html.BeginForm("RequestReturn", "ShopAccount", new { company }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" value="@Model.Id" />
+                    foreach (var row in returnableItems)
+                    {
+                        <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                            <div>
+                                <input type="hidden" name="productId" value="@row.Item.ProductId" />
+                                <strong>@row.Item.Title</strong>
+                                <div class="small text-muted">تا @row.Left.ToFa() عدد</div>
+                            </div>
+                            <input class="form-control" style="max-width:5rem" type="number" min="0" max="@row.Left" name="quantity" value="@row.Left" dir="ltr" />
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label class="form-label">دلیل مرجوعی</label>
+                        <textarea class="form-control" name="reason" rows="3" maxlength="500" required placeholder="مثلاً کالا آسیب دیده / اشتباه در سایز"></textarea>
+                    </div>
+                    if (Model.ShippingCost > 0 && !shippingRefunded)
+                    {
+                        <p class="small text-muted">هزینه ارسال در صورت تأیید فروشنده ممکن است برگشت داده شود.</p>
+                    }
+                    <button class="btn-store" type="submit"><i class="bi bi-arrow-return-left"></i> ارسال درخواست مرجوعی</button>
+                }
+            </div>
+        }
+        else if (pending != null)
+        {
+            <div class="alert alert-info">درخواست مرجوعی شما در انتظار بررسی فروشنده است.</div>
+        }
+        else if (hasPhysical && StoreOrder.Fulfilled.Contains(Model.Status))
+        {
+            if (!returnsEnabled)
+            {
+                <div class="alert alert-light border">مرجوعی آنلاین برای این فروشگاه فعال نیست؛ با فروشگاه تماس بگیرید.</div>
+            }
+            else if (!withinDeadline)
+            {
+                <div class="alert alert-light border">مهلت مرجوعی این سفارش (@settings.ReturnDays.ToFa() روز پس از پرداخت) تمام شده است.</div>
+            }
+            else if (returnableItems.Count == 0)
+            {
+                <div class="alert alert-light border">برای این سفارش کالاهای قابل مرجوعی باقی نمانده است.</div>
+            }
+        }
+
+        <a class="btn-cart-ghost" href="@Url.Action("Orders","ShopAccount", new { company })">بازگشت به سفارش‌ها</a>
+    </div>
+</section>

@@ -33,6 +33,8 @@ namespace NikooSystem.Services.Data
         public static readonly EntityMap<StoreProduct> Products = Store<StoreProduct>("Products")
             .Text("Slug", 400)
             .Index("IX_Products_Slug", "CompanyCode", "Slug")
+            .Index("IX_Products_CreatedAt", "CompanyCode", "CreatedAt")
+            .Index("IX_Products_Category", "CompanyCode", "CategoryId")
             .Child("Images", "ProductImages", "ProductId")
             .Child("Attributes", "ProductAttributes", "ProductId")
             .Values("CollectionIds", "ProductCollections", "ProductId", "CollectionId")
@@ -48,10 +50,22 @@ namespace NikooSystem.Services.Data
             .Text("Mobile", 20)
             .Index("IX_Customers_Mobile", "CompanyCode", "Mobile");
 
+        public static readonly EntityMap<StorePanelUser> PanelUsers = Store<StorePanelUser>("PanelUsers")
+            .Text("Username", 40)
+            .Index("IX_PanelUsers_Username", "CompanyCode", "Username");
+
         public static readonly EntityMap<StoreOrder> Orders = Store<StoreOrder>("Orders")
             .Text("Authority", 100)
             .Index("IX_Orders_Authority", "Authority")
+            .Index("IX_Orders_CreatedAt", "CompanyCode", "CreatedAt")
+            .Index("IX_Orders_Customer", "CompanyCode", "CustomerId", "CreatedAt")
+            .Index("IX_Orders_Status", "CompanyCode", "Status")
             .Child("Items", "OrderItems", "OrderId");
+
+        public static readonly EntityMap<StoreReturnRequest> ReturnRequests = Store<StoreReturnRequest>("ReturnRequests")
+            .Index("IX_ReturnRequests_Order", "CompanyCode", "OrderId")
+            .Index("IX_ReturnRequests_Status", "CompanyCode", "Status")
+            .Child("Lines", "ReturnLines", "ReturnId");
 
         public static readonly EntityMap<StoreProductReview> Reviews = Store<StoreProductReview>("Reviews")
             .Index("IX_Reviews_Product", "CompanyCode", "ProductId");
@@ -66,6 +80,9 @@ namespace NikooSystem.Services.Data
             .Index("IX_PostComments_Post", "CompanyCode", "PostId");
 
         public static readonly EntityMap<StoreContactMessage> ContactMessages = Store<StoreContactMessage>("ContactMessages");
+
+        public static readonly EntityMap<WaiterCall> WaiterCalls = Store<WaiterCall>("WaiterCalls")
+            .Index("IX_WaiterCalls_Open", "CompanyCode", "IsDone");
 
         // ---- Booking sites: services, staff with weekly hours, closed days and appointments
         public static readonly EntityMap<StoreService> Services = Store<StoreService>("Services")
@@ -98,17 +115,30 @@ namespace NikooSystem.Services.Data
             .Index("IX_LedgerAccounts_Code", "CompanyCode", "Code");
 
         public static readonly EntityMap<StoreJournalEntry> JournalEntries = Store<StoreJournalEntry>("JournalEntries")
+            .Text("Number", 30)
             .Index("IX_JournalEntries_Source", "CompanyCode", "Source", "SourceId")
+            .Index("IX_JournalEntries_Date", "CompanyCode", "EntryDate")
+            .Index("IX_JournalEntries_Number", "CompanyCode", "Number")
+            .Index("IX_JournalEntries_DocumentType", "CompanyCode", "DocumentTypeId")
             .Child("Lines", "JournalLines", "EntryId");
 
         public static readonly EntityMap<StorePurchaseInvoice> PurchaseInvoices = Store<StorePurchaseInvoice>("PurchaseInvoices")
+            .Text("Number", 30)
+            .Index("IX_PurchaseInvoices_Date", "CompanyCode", "InvoiceDate")
+            .Index("IX_PurchaseInvoices_Number", "CompanyCode", "Number")
             .Child("Lines", "PurchaseLines", "InvoiceId");
 
         public static readonly EntityMap<StoreSalesInvoice> SalesInvoices = Store<StoreSalesInvoice>("SalesInvoices")
+            .Text("Number", 30)
+            .Index("IX_SalesInvoices_Date", "CompanyCode", "InvoiceDate")
+            .Index("IX_SalesInvoices_Number", "CompanyCode", "Number")
             .Child("Lines", "SaleLines", "InvoiceId");
 
         public static readonly EntityMap<StoreStockMove> StockMoves = Store<StoreStockMove>("StockMoves")
-            .Index("IX_StockMoves_Product", "CompanyCode", "ProductId");
+            .Text("Kind", 30)
+            .Index("IX_StockMoves_Product", "CompanyCode", "ProductId")
+            .Index("IX_StockMoves_Goods", "CompanyCode", "GoodsId")
+            .Index("IX_StockMoves_Ref", "CompanyCode", "Kind", "RefId");
 
         public static readonly EntityMap<StoreGoodsItem> GoodsItems = Store<StoreGoodsItem>("GoodsItems")
             .Text("Code", 40).Text("Title", 150).Text("Unit", 20);
@@ -119,7 +149,9 @@ namespace NikooSystem.Services.Data
             .Text("Code", 20).Text("Title", 80);
 
         public static readonly EntityMap<StoreCashTransaction> CashTransactions = Store<StoreCashTransaction>("CashTransactions")
-            .Text("Number", 20).Text("PartyName", 120);
+            .Text("Number", 20).Text("PartyName", 120)
+            .Index("IX_CashTransactions_Date", "CompanyCode", "TxDate")
+            .Index("IX_CashTransactions_Number", "CompanyCode", "Number");
 
         public static readonly EntityMap<StoreBankAccount> BankAccounts = Store<StoreBankAccount>("BankAccounts")
             .Text("Title", 120).Text("BankName", 60).Text("Branch", 80).Text("AccountNumber", 40).Text("CardNumber", 20)
@@ -148,8 +180,13 @@ namespace NikooSystem.Services.Data
             .Text("Code", 40);
 
         public static readonly EntityMap<Order> SiteOrders = new EntityMap<Order>("SiteOrders", "Id")
+            .Text("CompanyCode", 40)
             .Text("Authority", 100)
-            .Index("IX_SiteOrders_Authority", "Authority");
+            .Index("IX_SiteOrders_Authority", "Authority")
+            .Index("IX_SiteOrders_CreatedAt", "CreatedAt")
+            .Index("IX_SiteOrders_Status", "Status")
+            .Index("IX_SiteOrders_Company", "CompanyCode")
+            .Index("IX_SiteOrders_Product", "ProductId");
 
         public static readonly EntityMap<PaymentClient> PaymentClients = new EntityMap<PaymentClient>("PaymentClients", "AppId")
             .Text("AppId", 100)
@@ -220,22 +257,33 @@ namespace NikooSystem.Services.Data
             .Index("IX_StoragePurchases_CompanyCode", "CompanyCode")
             .Index("IX_StoragePurchases_Authority", "Authority");
 
+        // ---- SMS credit bought by stores (Pappus) and per-send log
+        public static readonly EntityMap<SmsPurchase> SmsPurchases = new EntityMap<SmsPurchase>("SmsPurchases", "Id")
+            .Text("CompanyCode", 40).Text("Authority", 100)
+            .Index("IX_SmsPurchases_CompanyCode", "CompanyCode")
+            .Index("IX_SmsPurchases_Authority", "Authority");
+
+        public static readonly EntityMap<SmsLog> SmsLogs = new EntityMap<SmsLog>("SmsLogs", "Id")
+            .Text("CompanyCode", 40).Text("Mobile", 20).Text("Kind", 20)
+            .Index("IX_SmsLogs_CompanyCode", "CompanyCode")
+            .Index("IX_SmsLogs_CreatedAt", "CompanyCode", "CreatedAt");
+
         /// <summary>In creation order: a table comes after the table it references.</summary>
         public static readonly TableMap[] All =
         {
             Tenants, Settings, PageLayouts, Categories, AttributeDefs, Products, Collections, MenuItems, Pages,
-            GalleryItems, Customers, Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs,
+            GalleryItems, Customers, PanelUsers, Orders, ReturnRequests, Reviews, Posts, PostComments, ContactMessages, WaiterCalls, Services, Staff, TimeOffs,
             Appointments, Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
             PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts, SiteProducts, SiteOrders, PaymentClients, HubPayments, SiteSettings, SiteMessages,
             SiteFaqs, SiteTestimonials, SitePosts, Tutorials, TutorialVideos, NotifySettings, BaleRecipients,
-            SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, SiteVisitIps, StoragePurchases
+            SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, SiteVisitIps, StoragePurchases, SmsPurchases, SmsLogs
         };
 
         /// <summary>Tables holding one store's data; their rows are removed when the store is deleted.</summary>
         public static readonly TableMap[] StoreScoped =
         {
-            Settings, Categories, AttributeDefs, Products, Collections, MenuItems, Pages, GalleryItems, Customers,
-            Orders, Reviews, Posts, PostComments, ContactMessages, Services, Staff, TimeOffs, Appointments,
+            Settings, Categories, AttributeDefs, Products, Collections, MenuItems, Pages, GalleryItems, Customers, PanelUsers,
+            Orders, ReturnRequests, Reviews, Posts, PostComments, ContactMessages, WaiterCalls, Services, Staff, TimeOffs, Appointments,
             Classes, Enrollments, Facilities, FacilityBookings, LedgerAccounts, JournalEntries,
             PurchaseInvoices, SalesInvoices, StockMoves, GoodsItems, FixedAssets, DocumentTypes, CashTransactions, Parties, BankAccounts, DetailAccounts, Carts,
             NotifySettings, BaleRecipients, SupportTickets, SupportMessages, SupportBaleLinks, SiteVisits, SiteVisitIps
@@ -244,6 +292,19 @@ namespace NikooSystem.Services.Data
         static NikooTables()
         {
             foreach (var table in All) table.Validate();
+            ChildIndex(JournalEntries, "JournalLines", "IX_JournalLines_Account", "CompanyCode", "AccountId");
+            ChildIndex(JournalEntries, "JournalLines", "IX_JournalLines_Detail1", "CompanyCode", "Detail1Id");
+            ChildIndex(JournalEntries, "JournalLines", "IX_JournalLines_Detail2", "CompanyCode", "Detail2Id");
+        }
+
+        private static void ChildIndex(TableMap parent, string childName, string indexName, params string[] columns)
+        {
+            foreach (var child in parent.Children)
+            {
+                if (child.Name != childName) continue;
+                child.Indexes.Add(new IndexMap { Name = indexName, Columns = columns });
+                return;
+            }
         }
 
         private static EntityMap<T> Store<T>(string table) where T : class, new()

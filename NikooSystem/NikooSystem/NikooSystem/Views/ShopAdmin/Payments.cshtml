@@ -13,7 +13,7 @@
 </div>
 <div class="panel-card">
     <p class="small text-muted">پولی که به صندوق یا بانک وارد یا از آن خارج می‌شود، جدا از فاکتور، اینجا ثبت می‌شود و همان لحظه سند می‌خورد.</p>
-    @Html.GridToolbar("جستجو در شماره، طرف حساب یا یادداشت…", new GridSelect("flow", "دریافت و پرداخت", GridHtml.Options(directions, d => d, d => AccountingText.Direction(d))))
+    @Html.GridToolbar("جستجو در شماره، طرف حساب یا یادداشت…", true, new GridSelect("flow", "دریافت و پرداخت", GridHtml.Options(directions, d => d, d => AccountingText.Direction(d))))
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>

@@ -105,6 +105,7 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("site-subscription-faq", SiteContentStore.ApplySubscriptionFaqs);
                     NikooSchema.RunOnce("custom-domain-status", CustomDomains.MigrateExisting);
                     NikooSchema.RunOnce("site-domain-faq", SiteContentStore.ApplyDomainFaq);
+                    NikooSchema.RunOnce("site-gateway-marketing-faqs", SiteContentStore.ApplyGatewayMarketingFaqs);
                     NikooSchema.RunOnce("site-enamad-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-campus-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-accounting-faq", SiteContentStore.ApplyModuleFaqs);
@@ -112,7 +113,37 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("site-accounting-parties-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-accounting-banks-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-accounting-chart-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-invoice-vat-faq", SiteContentStore.ApplyModuleFaqs);
+                    // BIT columns added later default to 0; returns were meant to be on unless the owner turns them off.
+                    NikooSchema.RunOnce("enable-returns-default-on", () =>
+                        Execute("UPDATE " + Table(NikooTables.Settings.Name) + " SET [EnableReturns] = 1 WHERE [EnableReturns] = 0"));
+                    NikooSchema.RunOnce("site-offline-ops-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-online-offline-sales-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-offline-product-messaging", SiteStore.ApplyOfflineProductMessaging);
+                    NikooSchema.RunOnce("site-booking-sms-faq", SiteContentStore.ApplyModuleFaqs);
+                    NikooSchema.RunOnce("site-my-dashboard-faq", SiteContentStore.ApplyModuleFaqs);
                     NikooSchema.RunOnce("site-legal-texts", SiteContentStore.ApplyLegalTexts);
+                    NikooSchema.RunOnce("seed-school-demo", TenantStore.SeedSchoolDemo);
+                    NikooSchema.RunOnce("split-club-demo", TenantStore.SeparateClubDemo);
+                    NikooSchema.RunOnce("site-split-campus-products", SiteStore.ApplySplitCampusProducts);
+                    NikooSchema.RunOnce("site-split-campus-faq", SiteContentStore.ApplySplitCampusFaq);
+                    NikooSchema.RunOnce("site-school-public-courses", () =>
+                    {
+                        SiteStore.ApplySchoolProduct();
+                        SiteContentStore.ApplySchoolCourseFaq();
+                        TenantStore.RefreshSchoolDemoCourses();
+                    });
+                    NikooSchema.RunOnce("seed-salon-demo", TenantStore.SeedSalonDemo);
+                    NikooSchema.RunOnce("seed-consult-demo", TenantStore.SeedConsultDemo);
+                    NikooSchema.RunOnce("site-split-booking-products", SiteStore.ApplySplitBookingProducts);
+                    NikooSchema.RunOnce("site-split-booking-faq", SiteContentStore.ApplySplitBookingFaq);
+                    NikooSchema.RunOnce("seed-cafe-demo", TenantStore.SeedCafeDemo);
+                    NikooSchema.RunOnce("site-menu-faq", () =>
+                    {
+                        SiteContentStore.ApplyMenuKindsFaq();
+                        SiteContentStore.ApplyModuleFaqs();
+                    });
+                    NikooSchema.RunOnce("site-matched-product-images", SiteStore.ApplyMatchedProductImages);
                     TutorialService.ApplySeed();
                     _initialized = true;
                 }
@@ -193,9 +224,9 @@ namespace NikooSystem.Services.Data
         }
 
         /// <summary>The values of the first column of a query written in code, with its values passed as parameters.</summary>
-        internal static List<TValue> Column<TValue>(string sql, Row parameters = null)
+        internal static List<TValue> Column<TValue>(string sql, Row parameters = null, DbTx tx = null)
         {
-            return Run(null, (c, t) =>
+            return Run(tx, (c, t) =>
             {
                 var values = new List<TValue>();
                 using (var cmd = Command(c, t, sql, parameters ?? new Row()))
@@ -207,9 +238,9 @@ namespace NikooSystem.Services.Data
         }
 
         /// <summary>Reads every row of a query written in code (e.g. a GROUP BY) with <paramref name="read"/>.</summary>
-        internal static List<TResult> Select<TResult>(string sql, Row parameters, Func<IDataRecord, TResult> read)
+        internal static List<TResult> Select<TResult>(string sql, Row parameters, Func<IDataRecord, TResult> read, DbTx tx = null)
         {
-            return Run(null, (c, t) =>
+            return Run(tx, (c, t) =>
             {
                 var rows = new List<TResult>();
                 using (var cmd = Command(c, t, sql, parameters ?? new Row()))
@@ -230,9 +261,9 @@ namespace NikooSystem.Services.Data
         }
 
         /// <summary>The first two columns of a query written in code as key → value (e.g. a GROUP BY with a count).</summary>
-        internal static Dictionary<TKey, TValue> Pairs<TKey, TValue>(string sql, Row parameters = null)
+        internal static Dictionary<TKey, TValue> Pairs<TKey, TValue>(string sql, Row parameters = null, DbTx tx = null)
         {
-            return Run(null, (c, t) =>
+            return Run(tx, (c, t) =>
             {
                 var pairs = new Dictionary<TKey, TValue>();
                 using (var cmd = Command(c, t, sql, parameters ?? new Row()))
@@ -387,6 +418,7 @@ namespace NikooSystem.Services.Data
         {
             var entities = new List<T>();
             var keys = new List<string>();
+            var keyValues = new List<object[]>();
             var firstKey = new Row();
             var sql = "SELECT " + (single ? "TOP 1 " : "") + "* FROM " + Table(map.Name) + Where(filter)
                 + " ORDER BY " + (orderBy ?? string.Join(", ", map.PrimaryKey.Select(Name)));
@@ -398,10 +430,19 @@ namespace NikooSystem.Services.Data
                     if (entities.Count == 0)
                         foreach (var k in map.PrimaryKey) firstKey[k] = reader[k];
                     entities.Add(map.Read(reader));
-                    keys.Add(KeyText(map.PrimaryKey.Select(k => reader[k])));
+                    var values = map.PrimaryKey.Select(k => reader[k]).ToArray();
+                    keyValues.Add(values);
+                    keys.Add(KeyText(values));
                 }
             }
-            if (entities.Count == 0) return entities;
+            if (entities.Count == 0 || map.Children.Count == 0) return entities;
+
+            // a filter on columns other than the key must not pull every child row of the table
+            if (!single && !FilterUsesOnlyKey(map, filter))
+            {
+                LoadChildren(c, t, map, entities, keyValues);
+                return entities;
+            }
 
             foreach (var child in map.Children)
             {
@@ -473,6 +514,14 @@ namespace NikooSystem.Services.Data
                 for (var i = 0; i < entities.Count; i++)
                     child.SetItems(entities[i], items.TryGetValue(KeyText(keys[i]), out var found) ? found : new List<object>());
             }
+        }
+
+        private static bool FilterUsesOnlyKey(TableMap map, Row filter)
+        {
+            foreach (var key in filter.Keys)
+                if (Array.FindIndex(map.PrimaryKey, k => string.Equals(k, key, StringComparison.OrdinalIgnoreCase)) < 0)
+                    return false;
+            return true;
         }
 
         /// <summary>Translates a filter on the parent's key columns to the child's parent columns; other filters load all child rows.</summary>

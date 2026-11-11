@@ -172,6 +172,7 @@
     <Compile Include="Services\SiteBlogStore.cs" />
     <Compile Include="Controllers\AdminController.Payments.cs" />
     <Compile Include="Controllers\AdminController.Notify.cs" />
+    <Compile Include="Controllers\AdminController.Sms.cs" />
     <Compile Include="Controllers\AdminController.Guides.cs" />
     <Compile Include="Controllers\AdminController.Demos.cs" />
     <Compile Include="Controllers\AdminController.Stores.cs" />
@@ -201,12 +202,16 @@
     <Compile Include="Controllers\AdminController.Enamad.cs" />
     <Compile Include="Controllers\ShopAdminController.Domain.cs" />
     <Compile Include="Controllers\ShopAdminController.Sales.cs" />
+    <Compile Include="Controllers\ShopAdminController.PanelUsers.cs" />
     <Compile Include="Controllers\ShopAdminController.Support.cs" />
     <Compile Include="Controllers\ShopAdminController.Visits.cs" />
     <Compile Include="Controllers\ShopAdminController.Storage.cs" />
+    <Compile Include="Controllers\ShopAdminController.Sms.cs" />
     <Compile Include="Controllers\ShopAdminController.Subscription.cs" />
+    <Compile Include="Controllers\ShopAdminController.Menu.cs" />
     <Compile Include="Controllers\ShopBaseController.cs" />
     <Compile Include="Controllers\ShopController.cs" />
+    <Compile Include="Controllers\ShopController.Menu.cs" />
     <Compile Include="Controllers\ShopController.Booking.cs" />
     <Compile Include="Controllers\ShopController.Campus.cs" />
     <Compile Include="Controllers\ShopController.Seo.cs" />
@@ -226,9 +231,14 @@
     <Compile Include="Helpers\Seo.cs" />
     <Compile Include="Helpers\SeoPages.cs" />
     <Compile Include="Helpers\PlatformModules.cs" />
+    <Compile Include="Helpers\PanelAccess.cs" />
+    <Compile Include="Helpers\ShopAdminNav.cs" />
+    <Compile Include="Helpers\AccountingCopy.cs" />
+    <Compile Include="Helpers\FiscalPeriod.cs" />
     <Compile Include="Helpers\ProductLandings.cs" />
     <Compile Include="Helpers\SiteTools.cs" />
     <Compile Include="Helpers\SiteHelpers.cs" />
+    <Compile Include="Helpers\OfficialHolidays.cs" />
     <Compile Include="Helpers\StoreHtml.cs" />
     <Compile Include="Helpers\StoreMenuHelper.cs" />
     <Compile Include="Helpers\StoreRatings.cs" />
@@ -243,8 +253,11 @@
     <Compile Include="Models\Store\CampusModels.cs" />
     <Compile Include="Models\Store\AccountingModels.cs" />
     <Compile Include="Models\Store\StoreModels.cs" />
+    <Compile Include="Models\Store\MenuModels.cs" />
+    <Compile Include="Models\Store\PanelUserModels.cs" />
     <Compile Include="Models\Store\StoreImageFit.cs" />
     <Compile Include="Models\StorageModels.cs" />
+    <Compile Include="Models\SmsModels.cs" />
     <Compile Include="Models\NotifyModels.cs" />
     <Compile Include="Models\SubscriptionModels.cs" />
     <Compile Include="Models\SupportModels.cs" />
@@ -270,6 +283,8 @@
     <Compile Include="Services\SupportDesk.cs" />
     <Compile Include="Services\VisitStats.cs" />
     <Compile Include="Services\StorageQuota.cs" />
+    <Compile Include="Services\PappusSmsClient.cs" />
+    <Compile Include="Services\SmsService.cs" />
     <Compile Include="Services\Subscriptions.cs" />
     <Compile Include="Services\CustomDomains.cs" />
     <Compile Include="Services\SiteVerification.cs" />
@@ -284,7 +299,10 @@
     <Compile Include="Services\TenantStore.Books.cs" />
     <Compile Include="Services\TenantStore.Chart.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
+    <Compile Include="Services\TenantStore.Menu.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
+    <Compile Include="Services\TenantStore.PanelUsers.cs" />
+    <Compile Include="Services\TenantStore.Returns.cs" />
     <Compile Include="Services\TutorialService.cs" />
     <Compile Include="Services\TorobCatalogService.cs" />
     <Compile Include="Services\TorobTokenValidator.cs" />
@@ -336,6 +354,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="Scripts\qrcode.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -368,6 +387,8 @@
     <Content Include="App_Data\Seed\tutorials.sql" />
     <Content Include="Content\admin-table.css" />
     <Content Include="Content\admin-table.js" />
+    <Content Include="Content\admin-tree.css" />
+    <Content Include="Content\admin-tree.js" />
     <Content Include="Content\nk-alert.css" />
     <Content Include="Content\nk-alert.js" />
     <Content Include="Content\infinite-scroll.js" />
@@ -405,6 +426,10 @@
     <Content Include="Content\support.js" />
     <Content Include="Content\product-gallery.js" />
     <Content Include="Content\admin-pages.css" />
+    <Content Include="Content\cafe-menu.css" />
+    <Content Include="Content\accounting.css" />
+    <Content Include="Content\accounting-lines.js" />
+    <Content Include="Content\excel-export.js" />
     <Content Include="Content\page-layout.js" />
     <Content Include="Content\quick-manage.js" />
     <Content Include="Content\tutorial.css" />
@@ -429,6 +454,7 @@
     <Content Include="Views\Shop\Contact.cshtml" />
     <Content Include="Views\Shop\BookingHome.cshtml" />
     <Content Include="Views\Shop\CampusHome.cshtml" />
+    <Content Include="Views\Shop\Menu.cshtml" />
     <Content Include="Views\Shop\Classes.cshtml" />
     <Content Include="Views\Shop\Class.cshtml" />
     <Content Include="Views\Shop\Enrollment.cshtml" />
@@ -467,13 +493,24 @@
     <Content Include="Views\ShopAdmin\EditJournal.cshtml" />
     <Content Include="Views\ShopAdmin\Purchases.cshtml" />
     <Content Include="Views\ShopAdmin\EditPurchase.cshtml" />
+    <Content Include="Views\ShopAdmin\PrintPurchase.cshtml" />
     <Content Include="Views\ShopAdmin\SaleInvoices.cshtml" />
     <Content Include="Views\ShopAdmin\EditSaleInvoice.cshtml" />
+    <Content Include="Views\ShopAdmin\PrintSaleInvoice.cshtml" />
+    <Content Include="Views\ShopAdmin\Returns.cshtml" />
+    <Content Include="Views\ShopAdmin\ReturnDetails.cshtml" />
+    <Content Include="Views\ShopAdmin\ShippingGuide.cshtml" />
+    <Content Include="Views\ShopAccount\OrderDetails.cshtml" />
+    <Content Include="Views\ShopAdmin\Pos.cshtml" />
+    <Content Include="Views\ShopAdmin\GrantAccess.cshtml" />
+    <Content Include="Views\ShopAdmin\PanelUsers.cshtml" />
+    <Content Include="Views\ShopAdmin\EditPanelUser.cshtml" />
     <Content Include="Views\ShopAdmin\Inventory.cshtml" />
     <Content Include="Views\ShopAdmin\Assets.cshtml" />
     <Content Include="Views\ShopAdmin\EditAsset.cshtml" />
     <Content Include="Views\ShopAdmin\Books.cshtml" />
     <Content Include="Views\ShopAdmin\AccountingGuide.cshtml" />
+    <Content Include="Views\ShopAdmin\FiscalYear.cshtml" />
     <Content Include="Views\ShopAdmin\DocumentTypes.cshtml" />
     <Content Include="Views\ShopAdmin\EditDocumentType.cshtml" />
     <Content Include="Views\ShopAdmin\Payments.cshtml" />
@@ -493,6 +530,9 @@
     <Content Include="Views\Shared\_BookingHeader.cshtml" />
     <Content Include="Views\ShopAdmin\Login.cshtml" />
     <Content Include="Views\ShopAdmin\Index.cshtml" />
+    <Content Include="Views\ShopAdmin\MenuQr.cshtml" />
+    <Content Include="Views\ShopAdmin\WaiterCalls.cshtml" />
+    <Content Include="Views\ShopAdmin\MyDashboard.cshtml" />
     <Content Include="Views\ShopAdmin\Settings.cshtml" />
     <Content Include="Views\ShopAdmin\Products.cshtml" />
     <Content Include="Views\ShopAdmin\EditProduct.cshtml" />
@@ -548,6 +588,7 @@
     <Content Include="Views\Shared\_VisitMini.cshtml" />
     <Content Include="Views\ShopAdmin\Visits.cshtml" />
     <Content Include="Views\ShopAdmin\Storage.cshtml" />
+    <Content Include="Views\ShopAdmin\Sms.cshtml" />
     <Content Include="Views\ShopAdmin\Subscription.cshtml" />
     <Content Include="Views\Admin\Visits.cshtml" />
     <Content Include="Views\Admin\StoreVisits.cshtml" />
@@ -560,6 +601,7 @@
     <Content Include="Views\Shared\_SeoFields.cshtml" />
     <Content Include="Views\Shared\_SeoAutomatic.cshtml" />
     <Content Include="Views\Shared\_ModuleGrid.cshtml" />
+    <Content Include="Views\Shared\_ProductIntroCards.cshtml" />
     <Content Include="Views\Shared\_SolutionLinks.cshtml" />
     <Content Include="Views\Solutions\Show.cshtml" />
     <Content Include="Views\Tools\Index.cshtml" />
@@ -579,6 +621,7 @@
     <Content Include="Views\Admin\_StoreStatus.cshtml" />
     <Content Include="Views\Admin\Account.cshtml" />
     <Content Include="Views\Admin\Notifications.cshtml" />
+    <Content Include="Views\Admin\SmsPanel.cshtml" />
     <Content Include="Views\Admin\SeoGuide.cshtml" />
     <Content Include="Views\Admin\Enamad.cshtml" />
     <Content Include="Views\Admin\DemoTemplates.cshtml" />

@@ -1,0 +1,69 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "کارت QR میزها";
+    var menuUrl = (string)ViewBag.MenuUrl;
+}
+<link href="@Url.Asset("~/Content/cafe-menu.css")" rel="stylesheet" />
+<style>
+    .qr-tools { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    .qr-tools label { display: block; margin-bottom: 4px; }
+    .qr-sheet { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 16px; }
+    .qr-card { border: 1px solid #e6dccb; border-radius: 16px; padding: 14px; text-align: center; background: #fffdf8; break-inside: avoid; }
+    .qr-card strong { display: block; margin-bottom: 6px; }
+    .qr-card svg { width: 160px; height: 160px; }
+    .qr-card small { display: block; direction: ltr; word-break: break-all; color: #6d6458; }
+    @@media print {
+        .admin-side, .trial-banner, .no-print { display: none !important; }
+        .admin-main { margin: 0 !important; }
+        .qr-card { border: 1px solid #ccc; }
+    }
+</style>
+<div class="no-print">
+    <h2 class="mb-2">کارت QR میزها</h2>
+    <p class="text-muted">هر کارت را چاپ کنید و روی میز بگذارید. لینک، شماره همان میز را دارد.</p>
+    <div class="qr-tools">
+        <div>
+            <label for="count">تعداد میز</label>
+            <input class="form-control" id="count" type="number" min="1" max="40" value="8" style="width:120px" />
+        </div>
+        <button class="btn-store" type="button" id="print">چاپ</button>
+    </div>
+</div>
+<div class="qr-sheet" id="sheet" data-url="@menuUrl"></div>
+@section scripts {
+<script src="@Url.Content("~/Scripts/qrcode.js")"></script>
+<script>
+(function () {
+    var sheet = document.getElementById('sheet');
+    var base = sheet.getAttribute('data-url') || '';
+    function draw() {
+        var count = parseInt(document.getElementById('count').value, 10);
+        if (!count || count < 1) count = 1;
+        if (count > 40) count = 40;
+        document.getElementById('count').value = count;
+        sheet.innerHTML = '';
+        for (var i = 1; i <= count; i++) {
+            var link = base + (base.indexOf('?') >= 0 ? '&' : '?') + 'table=' + i;
+            var card = document.createElement('div');
+            card.className = 'qr-card';
+            var title = document.createElement('strong');
+            title.textContent = 'میز ' + i.toLocaleString('fa-IR');
+            var box = document.createElement('div');
+            var qr = qrcode(0, 'M');
+            qr.addData(link);
+            qr.make();
+            box.innerHTML = qr.createSvgTag(4, 0);
+            var small = document.createElement('small');
+            small.textContent = link;
+            card.appendChild(title);
+            card.appendChild(box);
+            card.appendChild(small);
+            sheet.appendChild(card);
+        }
+    }
+    document.getElementById('count').addEventListener('change', draw);
+    document.getElementById('print').addEventListener('click', function () { window.print(); });
+    draw();
+})();
+</script>
+}

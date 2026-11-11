@@ -1,0 +1,62 @@
+@model PagedList<StoreReturnRequest>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "مرجوعی‌ها";
+    var company = (string)ViewBag.CompanyCode;
+    var pending = (int)(ViewBag.PendingCount ?? 0);
+    var statuses = Enum.GetValues(typeof(ReturnRequestStatus)).Cast<ReturnRequestStatus>();
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-0">درخواست‌های مرجوعی</h2>
+        @if (pending > 0)
+        {
+            <p class="text-muted small mb-0">@pending.ToFa() درخواست در انتظار بررسی</p>
+        }
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("ShippingGuide","ShopAdmin", new { company })"><i class="bi bi-truck"></i> راهنمای ارسال</a>
+</div>
+<div class="panel-card">
+    @Html.GridToolbar("شماره سفارش، نام، موبایل یا دلیل…", true,
+        new GridSelect("status", "همه وضعیت‌ها", GridHtml.Options(statuses, s => s, s => s == ReturnRequestStatus.Pending ? "در انتظار" : s == ReturnRequestStatus.Approved ? "تأیید شده" : "رد شده")))
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    @Html.SortHeader("date", "تاریخ")
+                    @Html.SortHeader("order", "سفارش")
+                    @Html.SortHeader("customer", "مشتری")
+                    <th>اقلام</th>
+                    @Html.SortHeader("amount", "مبلغ")
+                    @Html.SortHeader("status", "وضعیت")
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="small text-muted">@item.CreatedAt.ToShamsi()</td>
+                        <td dir="ltr"><a href="@Url.Action("OrderDetails","ShopAdmin", new { company, id = item.OrderId })">@item.OrderNumber</a></td>
+                        <td>@item.CustomerName<div class="small text-muted" dir="ltr">@item.CustomerMobile</div></td>
+                        <td class="small">@((item.Lines ?? new List<StoreReturnLine>()).Sum(l => l.Quantity).ToFa()) قلم</td>
+                        <td>@(item.RefundAmount > 0 ? item.RefundAmount.ToToman() : "—")</td>
+                        <td>
+                            @if (item.Status == ReturnRequestStatus.Pending) { <span class="badge bg-warning text-dark">در انتظار</span> }
+                            else if (item.Status == ReturnRequestStatus.Approved) { <span class="badge bg-success">تأیید شده</span> }
+                            else { <span class="badge bg-secondary">رد شده</span> }
+                        </td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("ReturnDetails", "ShopAdmin", new { company, id = item.Id }), "bi-card-text", "بررسی", "is-view")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="7"><i class="bi bi-arrow-return-left fs-3 d-block mb-1"></i>درخواست مرجوعی‌ای نیست.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @Html.Pager(Model)
+</div>

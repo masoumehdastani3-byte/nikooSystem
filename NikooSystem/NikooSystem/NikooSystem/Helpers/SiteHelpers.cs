@@ -96,6 +96,7 @@ namespace NikooSystem.Helpers
                 case StoreOrderStatus.Shipped: return "ارسال شده";
                 case StoreOrderStatus.Completed: return "تکمیل شده";
                 case StoreOrderStatus.Cancelled: return "لغو شده";
+                case StoreOrderStatus.Returned: return "مرجوع شده";
                 default: return status.ToString();
             }
         }
@@ -107,7 +108,8 @@ namespace NikooSystem.Helpers
                 case StoreOrderStatus.Paid:
                 case StoreOrderStatus.Completed: return "bg-success";
                 case StoreOrderStatus.Failed:
-                case StoreOrderStatus.Cancelled: return "bg-danger";
+                case StoreOrderStatus.Cancelled:
+                case StoreOrderStatus.Returned: return "bg-danger";
                 case StoreOrderStatus.Processing:
                 case StoreOrderStatus.Shipped: return "bg-info";
                 default: return "bg-warning text-dark";

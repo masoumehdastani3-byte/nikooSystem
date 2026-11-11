@@ -1,0 +1,184 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "پیامک";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var company = (string)ViewBag.CompanyCode;
+    var isDemo = (bool)ViewBag.IsDemo;
+    var ready = (bool)ViewBag.Ready;
+    var credit = (long)ViewBag.Credit;
+    var packages = (IReadOnlyList<NikooSystem.Models.SmsPackage>)ViewBag.Packages;
+    var purchases = (List<NikooSystem.Models.SmsPurchase>)ViewBag.Purchases;
+    var logs = (List<NikooSystem.Models.SmsLog>)ViewBag.Logs;
+    var ownerMobile = (ViewBag.Tenant as NikooSystem.Models.Store.TenantInfo)?.OwnerMobile;
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">پیامک مشتریان</h2>
+        <p class="text-muted small mb-0">با شارژ اعتبار، پیامک‌های لازم برای مشتریان @kind.SiteNoun شما (رمز، صورتحساب یا تأیید/یادآوری نوبت) ارسال می‌شود.</p>
+    </div>
+</div>
+
+@if (isDemo)
+{
+    <div class="alert alert-info"><i class="bi bi-info-circle"></i> این @kind.SiteNoun نمونه است و شارژ پیامک در آن غیرفعال است.</div>
+}
+else if (!ready)
+{
+    <div class="alert alert-warning"><i class="bi bi-exclamation-triangle"></i> سامانه پیامک هنوز توسط نیکو فعال نشده است. پس از فعال‌سازی می‌توانید از همین صفحه اعتبار بخرید.</div>
+}
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="panel-card mb-3 @(credit > 0 ? "is-ok" : "is-near")">
+            <div class="small text-muted">اعتبار باقی‌مانده</div>
+            <div class="storage-big">@credit.ToToman()</div>
+            @if (credit <= 0)
+            {
+                <div class="alert alert-warning mb-0 mt-3"><i class="bi bi-exclamation-triangle"></i> اعتباری ندارید؛ تا شارژ نکنید پیامک رمز و صورتحساب ارسال نمی‌شود.</div>
+            }
+            else
+            {
+                <div class="alert alert-success mb-0 mt-3"><i class="bi bi-check2-circle"></i> با هر ارسال، هزینه واقعی پیامک از این اعتبار کم می‌شود.</div>
+            }
+        </div>
+
+        <div class="panel-card mb-3" id="buy">
+            <h5 class="mb-1"><i class="bi bi-phone"></i> شارژ اعتبار</h5>
+            <p class="small text-muted mb-3">پس از پرداخت، اعتبار بلافاصله اضافه می‌شود و تا تمام شدن برای پیامک‌های مشتریان قابل استفاده است.</p>
+            <div class="storage-packages">
+                @foreach (var p in packages)
+                {
+                    <div class="storage-package @(p.Credit == 100000 ? "is-popular" : null)">
+                        @if (p.Credit == 100000)
+                        {
+                            <span class="storage-tag">پرطرفدار</span>
+                        }
+                        <div class="size"><i class="bi bi-chat-dots"></i> @p.Credit.ToToman()</div>
+                        <div class="price">@p.Price.ToToman()</div>
+                        @if (p.DiscountPercent > 0)
+                        {
+                            <div class="small"><del class="text-muted">@p.FullPrice.ToToman()</del> <span class="badge bg-success">@p.DiscountPercent.ToFa()٪ تخفیف</span></div>
+                        }
+                        else
+                        {
+                            <div class="small text-muted">&nbsp;</div>
+                        }
+                        @using (Html.BeginForm("BuySms", "ShopAdmin", new { company }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="credit" value="@p.Credit" />
+                            <button class="btn-store w-100 mt-2" type="submit" @(isDemo || !ready ? "disabled" : null)><i class="bi bi-cart-plus"></i> شارژ</button>
+                        }
+                    </div>
+                }
+            </div>
+            <p class="small text-muted mt-3 mb-0"><i class="bi bi-shield-check"></i> پرداخت از درگاه امن زرین‌پال انجام می‌شود.</p>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-clock-history"></i> سابقه شارژ</h5>
+            <div class="table-responsive">
+                <table class="table align-middle small mb-0">
+                    <thead><tr><th>تاریخ</th><th>اعتبار</th><th>مبلغ</th><th>وضعیت</th><th>توضیح</th></tr></thead>
+                    <tbody>
+                        @foreach (var p in purchases)
+                        {
+                            <tr>
+                                <td class="text-nowrap">@((p.PaidAt ?? p.CreatedAt).ToShamsiText())</td>
+                                <td class="text-nowrap">@(p.Credit < 0 ? "−" : "")@Math.Abs(p.Credit).ToToman()</td>
+                                <td class="text-nowrap">@(p.Amount > 0 ? p.Amount.ToToman() : "رایگان")</td>
+                                <td>
+                                    @if (p.Status == NikooSystem.Models.OrderStatus.Paid)
+                                    {
+                                        <span class="badge bg-success">@(p.Amount > 0 ? "پرداخت شد" : "افزوده شد")</span>
+                                    }
+                                    else if (p.Status == NikooSystem.Models.OrderStatus.PendingPayment)
+                                    {
+                                        <span class="badge bg-secondary">پرداخت نشده</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">ناموفق</span>
+                                    }
+                                </td>
+                                <td>@(p.Note ?? (p.RefId.HasValue ? "کد پیگیری " + p.RefId.Value : p.PaymentMessage))</td>
+                            </tr>
+                        }
+                        @if (purchases.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-muted">هنوز شارژی ثبت نشده است.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="panel-card mb-3" id="test">
+            <h5 class="mb-1"><i class="bi bi-send"></i> ارسال آزمایشی</h5>
+            <p class="small text-muted mb-3">یک پیامک تست به شماره خودتان بفرستید تا از اتصال پاپوس و کافی بودن اعتبار مطمئن شوید. هزینه از اعتبار همین سایت کم می‌شود.</p>
+            @using (Html.BeginForm("TestSms", "ShopAdmin", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="input-group">
+                    <input type="text" name="mobile" class="form-control" dir="ltr" placeholder="@(ownerMobile ?? "09121234567")" value="@ownerMobile" />
+                    <button class="btn btn-outline-secondary" type="submit" @(isDemo || !ready ? "disabled" : null)>
+                        <i class="bi bi-send"></i> ارسال تست
+                    </button>
+                </div>
+            }
+        </div>
+
+        <div class="panel-card mb-3">
+            <h5 class="mb-2"><i class="bi bi-info-circle"></i> چه پیامک‌هایی می‌رود؟</h5>
+            <ul class="small mb-0 pe-3">
+                <li class="mb-2"><b>تغییر / بازیابی رمز:</b> وقتی مشتری یا مدیر رمز موقت می‌خواهد، همان لحظه پیامک می‌شود.</li>
+                @if (kind.IsShop || kind.IsDigital)
+                {
+                    <li class="mb-2"><b>صورتحساب خرید:</b> پس از پرداخت موفق سفارش، خلاصه فاکتور برای موبایل مشتری ارسال می‌شود.</li>
+                }
+                @if (kind.Schedules)
+                {
+                    <li class="mb-2"><b>تأیید نوبت:</b> بعد از قطعی شدن نوبت (آنلاین یا ثبت در پنل)، خلاصه زمان و کد پیگیری پیامک می‌شود. از تنظیمات سایت روشن/خاموش کنید.</li>
+                    <li class="mb-2"><b>یادآوری نوبت:</b> چند ساعت قبل از نوبت (مثلاً ۲۴ ساعت) یادآوری خودکار می‌رود. فاصله را در تنظیمات مشخص کنید.</li>
+                }
+                <li>اگر اعتبار تمام شود، کار سایت ادامه دارد ولی پیامک نمی‌رود تا دوباره شارژ کنید.</li>
+            </ul>
+        </div>
+
+        <div class="panel-card">
+            <h5 class="mb-2"><i class="bi bi-list-ul"></i> آخرین ارسال‌ها</h5>
+            <div class="table-responsive">
+                <table class="table align-middle small mb-0">
+                    <thead><tr><th>زمان</th><th>موبایل</th><th>نوع</th><th>هزینه</th></tr></thead>
+                    <tbody>
+                        @foreach (var log in logs)
+                        {
+                            <tr class="@(log.Success ? null : "table-danger")">
+                                <td class="text-nowrap">@log.CreatedAt.ToShamsiText()</td>
+                                <td class="text-nowrap" dir="ltr">@log.Mobile</td>
+                                <td>
+                                    @(log.Kind == "password" ? "رمز"
+                                        : log.Kind == "invoice" ? "صورتحساب"
+                                        : log.Kind == "booking-confirm" ? "تأیید نوبت"
+                                        : log.Kind == "booking-reminder" ? "یادآوری نوبت"
+                                        : log.Kind == "test" ? "آزمایشی" : "سایر")
+                                    @if (!log.Success)
+                                    {
+                                        <div class="text-danger small">@(log.Error)</div>
+                                    }
+                                </td>
+                                <td class="text-nowrap">@(log.Success ? log.Cost.ToToman() : "—")</td>
+                            </tr>
+                        }
+                        @if (logs.Count == 0)
+                        {
+                            <tr><td colspan="4" class="text-muted">هنوز پیامی ارسال نشده است.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

@@ -100,6 +100,10 @@ namespace NikooSystem.Models.Store
         public long? RefId { get; set; }
         public string PaymentMessage { get; set; }
         public DateTime? PaidAt { get; set; }
+        /// <summary>When the confirmation SMS was sent to the customer.</summary>
+        public DateTime? ConfirmSmsAt { get; set; }
+        /// <summary>When the reminder SMS was sent to the customer.</summary>
+        public DateTime? ReminderSmsAt { get; set; }
         /// <summary>Private note of the owner; never shown to the customer.</summary>
         public string AdminNote { get; set; }
         /// <summary>online | admin</summary>

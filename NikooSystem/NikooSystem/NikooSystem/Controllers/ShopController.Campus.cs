@@ -26,7 +26,9 @@ namespace NikooSystem.Controllers
         [ForKinds(SiteKinds.Campus)]
         public ActionResult Classes()
         {
-            ViewBag.Title = "کلاس‌ها و دوره‌ها";
+            ViewBag.Title = string.Equals(Tenant?.StoreType, "school", StringComparison.OrdinalIgnoreCase)
+                ? "دوره‌های عمومی"
+                : "کلاس‌ها و دوره‌ها";
             return View(ActiveClasses());
         }
 

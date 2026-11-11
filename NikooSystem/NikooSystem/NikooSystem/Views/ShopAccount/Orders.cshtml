@@ -14,7 +14,7 @@
         {
             <div class="panel-card mb-2 account-order">
                 <div class="d-flex justify-content-between align-items-center">
-                    <strong dir="ltr">@o.OrderNumber</strong>
+                    <a class="fw-bold text-decoration-none" dir="ltr" href="@Url.Action("OrderDetails","ShopAccount", new { company, id = o.Id })">@o.OrderNumber</a>
                     @Html.StatusBadge(o.Status)
                 </div>
                 <div class="text-muted small">@o.CreatedAt.ToShamsiText() · @o.CreatedAt.ToString("HH:mm").ToFaDigits()</div>
@@ -28,6 +28,7 @@
                     <span>مبلغ: <strong>@o.Amount.ToToman()</strong></span>
                     @if (o.ShippingCost > 0) { <span>هزینه ارسال: @o.ShippingCost.ToToman()</span> }
                     @if (!string.IsNullOrWhiteSpace(o.TrackingCode)) { <span><i class="bi bi-truck"></i> کد رهگیری مرسوله: <strong dir="ltr">@o.TrackingCode</strong></span> }
+                    <a href="@Url.Action("OrderDetails","ShopAccount", new { company, id = o.Id })">جزئیات و مرجوعی</a>
                 </div>
             </div>
         }

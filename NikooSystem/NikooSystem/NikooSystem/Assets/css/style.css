@@ -203,19 +203,24 @@ section {
   box-shadow: 0px 2px 20px rgba(1, 41, 112, 0.1);
 }
 .header .logo {
-  line-height: 0;
+  line-height: normal;
+  flex-shrink: 0;
+  gap: 8px;
 }
 .header .logo img {
   max-height: 50px;
- 
+  width: auto;
 }
 .header .logo span {
-  font-size: 30px;
+  flex-shrink: 0;
+  font-size: 26px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0;
+  line-height: 1.25;
+  white-space: nowrap;
   color: #012970;
   font-family: 'Far_Yekan', Tahoma;
-  margin-top: 3px;
+  margin-top: 0;
 }
 
 /*--------------------------------------------------------------
@@ -1990,20 +1995,26 @@ section {
   margin-bottom: 30px;
 }
 .footer .footer-top .footer-info .logo {
-  line-height: 0;
+  line-height: normal;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 15px;
 }
 .footer .footer-top .footer-info .logo img {
-  max-height: 40px;
-  margin-left: 6px;
+  max-height: 52px;
+  width: auto;
+  margin: 0;
 }
 .footer .footer-top .footer-info .logo span {
-  font-size: 30px;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 22px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0;
+  line-height: 1.35;
   color: #012970;
   font-family: 'Far_Yekan', Tahoma;
-  margin-top: 3px;
+  margin-top: 0;
 }
 .footer .footer-top .footer-info p {
   font-size: 14px;

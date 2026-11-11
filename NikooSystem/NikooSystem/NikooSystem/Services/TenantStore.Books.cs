@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NikooSystem.Models.Store;
+using NikooSystem.Services.Data;
 
 namespace NikooSystem.Services
 {
@@ -11,18 +12,30 @@ namespace NikooSystem.Services
     /// </summary>
     public static partial class TenantStore
     {
-        private sealed class Posting
+        private sealed class Turn
         {
-            public StoreJournalEntry Entry;
-            public StoreJournalLine Line;
+            public int AccountId;
+            public int Detail1Id;
+            public int Detail2Id;
+            public long OpenDebit;
+            public long OpenCredit;
+            public long Debit;
+            public long Credit;
         }
 
-        private static List<Posting> Postings(string companyCode, DateTime? to) =>
-            GetJournal(companyCode)
-                .Where(e => !to.HasValue || e.EntryDate <= to.Value)
-                .OrderBy(e => e.EntryDate).ThenBy(e => e.Id)
-                .SelectMany(e => (e.Lines ?? new List<StoreJournalLine>()).Select(l => new Posting { Entry = e, Line = l }))
-                .ToList();
+        private sealed class Move
+        {
+            public int EntryId;
+            public DateTime Date;
+            public string Number;
+            public string Description;
+            public int AccountId;
+            public int Detail1Id;
+            public int Detail2Id;
+            public long Debit;
+            public long Credit;
+            public string Memo;
+        }
 
         /// <summary>
         /// Turnover of each account at <paramref name="level"/> (group, general, subsidiary or detail) between the dates,
@@ -34,41 +47,37 @@ namespace NikooSystem.Services
             var byId = GetAccounts(companyCode).ToDictionary(a => a.Id);
             var details = GetDetails(companyCode).ToDictionary(d => d.Id);
             var rows = new Dictionary<string, AccountBalance>();
-            foreach (var posting in Postings(companyCode, to))
+            foreach (var turn in Turns(companyCode, from, to))
             {
-                var before = from.HasValue && posting.Entry.EntryDate < from.Value;
                 StoreLedgerAccount account;
-                byId.TryGetValue(posting.Line.AccountId, out account);
+                byId.TryGetValue(turn.AccountId, out account);
                 if (parentId.HasValue && !Under(account, parentId.Value, byId)) continue;
                 if (level == "detail")
                 {
-                    foreach (var id in new[] { posting.Line.Detail1Id, posting.Line.Detail2Id })
+                    foreach (var id in new[] { turn.Detail1Id, turn.Detail2Id })
                     {
                         StoreDetailAccount detail;
                         if (id > 0 && details.TryGetValue(id, out detail))
-                            AddTurnover(rows, "d" + id, () => new AccountBalance { Detail = detail }, posting.Line, before);
+                            AddTurn(rows, "d" + id, () => new AccountBalance { Detail = detail }, turn);
                     }
                     continue;
                 }
                 var target = level == "group" ? Ancestor(account, AccountLevel.Group, byId)
                     : level == "general" ? Ancestor(account, AccountLevel.General, byId)
                     : account;
-                if (target != null) AddTurnover(rows, "a" + target.Id, () => new AccountBalance { Account = target }, posting.Line, before);
+                if (target != null) AddTurn(rows, "a" + target.Id, () => new AccountBalance { Account = target }, turn);
             }
             return rows.Values.Where(r => r.Debit != 0 || r.Credit != 0 || r.Opening != 0).ToList();
         }
 
-        private static void AddTurnover(Dictionary<string, AccountBalance> rows, string key, Func<AccountBalance> create, StoreJournalLine line, bool opening)
+        private static void AddTurn(Dictionary<string, AccountBalance> rows, string key, Func<AccountBalance> create, Turn turn)
         {
+            if (turn.OpenDebit == turn.OpenCredit && turn.Debit == 0 && turn.Credit == 0) return;
             AccountBalance row;
             if (!rows.TryGetValue(key, out row)) rows[key] = row = create();
-            if (opening)
-            {
-                row.Opening += line.Debit - line.Credit;
-                return;
-            }
-            row.Debit += line.Debit;
-            row.Credit += line.Credit;
+            row.Opening += turn.OpenDebit - turn.OpenCredit;
+            row.Debit += turn.Debit;
+            row.Credit += turn.Credit;
         }
 
         /// <summary>
@@ -79,77 +88,61 @@ namespace NikooSystem.Services
         {
             var byId = GetAccounts(companyCode).ToDictionary(a => a.Id);
             var details = GetDetails(companyCode).ToDictionary(d => d.Id);
-            var postings = Postings(companyCode, page.To);
             var account = page.Account;
             var detail = page.Detail;
             page.PerEntry = account != null && !account.IsPosting && detail == null;
+            var accountIds = PostingIds(account, byId);
+            var detailId = detail == null ? (int?)null : detail.Id;
 
             if (account != null && account.IsPosting)
             {
-                var ids = new HashSet<int>(postings.Where(p => p.Line.AccountId == account.Id)
-                    .SelectMany(p => new[] { p.Line.Detail1Id, p.Line.Detail2Id }).Where(id => id > 0));
+                var ids = new HashSet<int>(DetailIdsOnAccount(companyCode, account.Id, page.To));
                 page.DetailChoices = details.Values.Where(d => ids.Contains(d.Id)).OrderBy(d => d.Level).ThenBy(d => d.Code).ToList();
             }
 
-            Func<Posting, bool> matches = p =>
-            {
-                if (account != null)
-                {
-                    StoreLedgerAccount lineAccount;
-                    if (!byId.TryGetValue(p.Line.AccountId, out lineAccount) || !Under(lineAccount, account.Id, byId)) return false;
-                }
-                return detail == null || p.Line.Detail1Id == detail.Id || p.Line.Detail2Id == detail.Id;
-            };
-
+            page.Opening = page.From.HasValue ? OpeningBalance(companyCode, accountIds, detailId, page.From.Value, page.To) : 0;
             var rows = new List<LedgerMovement>();
-            long running = 0, opening = 0;
-            foreach (var entry in postings.Where(matches).GroupBy(p => p.Entry.Id))
+            var running = page.Opening;
+            foreach (var entry in Movements(companyCode, accountIds, detailId, page.From, page.To).GroupBy(m => m.EntryId))
             {
-                var head = entry.First().Entry;
-                if (page.From.HasValue && head.EntryDate < page.From.Value)
-                {
-                    opening += entry.Sum(p => p.Line.Debit - p.Line.Credit);
-                    running = opening;
-                    continue;
-                }
+                var head = entry.First();
                 if (page.PerEntry)
                 {
-                    var debit = entry.Sum(p => p.Line.Debit);
-                    var credit = entry.Sum(p => p.Line.Credit);
+                    var debit = entry.Sum(m => m.Debit);
+                    var credit = entry.Sum(m => m.Credit);
                     running += debit - credit;
                     rows.Add(new LedgerMovement
                     {
-                        EntryId = head.Id,
-                        Date = head.EntryDate,
+                        EntryId = head.EntryId,
+                        Date = head.Date,
                         Number = head.Number,
                         Description = head.Description,
-                        Account = string.Join("، ", entry.Select(p => AccountLabel(p.Line.AccountId, byId)).Distinct()),
+                        Account = string.Join("، ", entry.Select(m => AccountLabel(m.AccountId, byId)).Distinct()),
                         Debit = debit,
                         Credit = credit,
                         Balance = running
                     });
                     continue;
                 }
-                foreach (var posting in entry)
+                foreach (var move in entry)
                 {
-                    running += posting.Line.Debit - posting.Line.Credit;
+                    running += move.Debit - move.Credit;
                     rows.Add(new LedgerMovement
                     {
-                        EntryId = head.Id,
-                        Date = head.EntryDate,
+                        EntryId = head.EntryId,
+                        Date = head.Date,
                         Number = head.Number,
                         Description = head.Description,
-                        Memo = posting.Line.Memo,
-                        Account = AccountLabel(posting.Line.AccountId, byId),
-                        Detail1 = DetailLabel(posting.Line.Detail1Id, details),
-                        Detail2 = DetailLabel(posting.Line.Detail2Id, details),
-                        Debit = posting.Line.Debit,
-                        Credit = posting.Line.Credit,
+                        Memo = move.Memo,
+                        Account = AccountLabel(move.AccountId, byId),
+                        Detail1 = DetailLabel(move.Detail1Id, details),
+                        Detail2 = DetailLabel(move.Detail2Id, details),
+                        Debit = move.Debit,
+                        Credit = move.Credit,
                         Balance = running
                     });
                 }
             }
-            page.Opening = opening;
             page.Debit = rows.Sum(r => r.Debit);
             page.Credit = rows.Sum(r => r.Credit);
             return rows;
@@ -196,5 +189,131 @@ namespace NikooSystem.Services
             StoreDetailAccount detail;
             return detailId > 0 && details.TryGetValue(detailId, out detail) ? detail.Code + " — " + detail.Title : null;
         }
+
+        private static string JournalFrom() =>
+            " FROM " + NikooDb.Table("JournalLines") + " l INNER JOIN " + NikooDb.Table(NikooTables.JournalEntries.Name)
+            + " e ON e.[CompanyCode] = l.[CompanyCode] AND e.[Id] = l.[EntryId]";
+
+        /// <summary>Null means every posting account. An empty list matches nothing.</summary>
+        private static List<int> PostingIds(StoreLedgerAccount account, Dictionary<int, StoreLedgerAccount> byId)
+        {
+            if (account == null) return null;
+            if (account.IsPosting) return new List<int> { account.Id };
+            return byId.Values.Where(a => a.IsPosting && Under(a, account.Id, byId)).Select(a => a.Id).ToList();
+        }
+
+        private static void LedgerWhere(string companyCode, List<int> accountIds, int? detailId, DateTime? to, Row parameters, List<string> clauses)
+        {
+            parameters["CompanyCode"] = companyCode;
+            clauses.Add("e.[CompanyCode] = @CompanyCode");
+            if (to.HasValue)
+            {
+                parameters["To"] = to.Value;
+                clauses.Add("e.[EntryDate] <= @To");
+            }
+            if (accountIds != null)
+            {
+                if (accountIds.Count == 0) clauses.Add("1 = 0");
+                else
+                {
+                    var names = new List<string>();
+                    for (var i = 0; i < accountIds.Count; i++)
+                    {
+                        parameters["a" + i] = accountIds[i];
+                        names.Add("@a" + i);
+                    }
+                    clauses.Add("l.[AccountId] IN (" + string.Join(", ", names) + ")");
+                }
+            }
+            if (detailId.HasValue)
+            {
+                parameters["DetailId"] = detailId.Value;
+                clauses.Add("(l.[Detail1Id] = @DetailId OR l.[Detail2Id] = @DetailId)");
+            }
+        }
+
+        private static List<Turn> Turns(string companyCode, DateTime? from, DateTime? to)
+        {
+            var sql = "SELECT l.[AccountId], l.[Detail1Id], l.[Detail2Id], "
+                + "SUM(CASE WHEN @HasFrom = 1 AND e.[EntryDate] < @From THEN l.[Debit] ELSE 0 END), "
+                + "SUM(CASE WHEN @HasFrom = 1 AND e.[EntryDate] < @From THEN l.[Credit] ELSE 0 END), "
+                + "SUM(CASE WHEN @HasFrom = 0 OR e.[EntryDate] >= @From THEN l.[Debit] ELSE 0 END), "
+                + "SUM(CASE WHEN @HasFrom = 0 OR e.[EntryDate] >= @From THEN l.[Credit] ELSE 0 END)"
+                + JournalFrom() + " WHERE e.[CompanyCode] = @CompanyCode"
+                + (to.HasValue ? " AND e.[EntryDate] <= @To" : "")
+                + " GROUP BY l.[AccountId], l.[Detail1Id], l.[Detail2Id]";
+            var parameters = new Row
+            {
+                ["CompanyCode"] = companyCode,
+                ["HasFrom"] = from.HasValue ? 1 : 0,
+                ["From"] = from ?? DateTime.MinValue
+            };
+            if (to.HasValue) parameters["To"] = to.Value;
+            return NikooDb.Select(sql, parameters, r => new Turn
+            {
+                AccountId = r.GetInt32(0),
+                Detail1Id = r.GetInt32(1),
+                Detail2Id = r.GetInt32(2),
+                OpenDebit = Convert.ToInt64(r.GetValue(3)),
+                OpenCredit = Convert.ToInt64(r.GetValue(4)),
+                Debit = Convert.ToInt64(r.GetValue(5)),
+                Credit = Convert.ToInt64(r.GetValue(6))
+            });
+        }
+
+        private static long OpeningBalance(string companyCode, List<int> accountIds, int? detailId, DateTime from, DateTime? to)
+        {
+            var clauses = new List<string>();
+            var parameters = new Row();
+            LedgerWhere(companyCode, accountIds, detailId, to, parameters, clauses);
+            parameters["From"] = from;
+            clauses.Add("e.[EntryDate] < @From");
+            var values = NikooDb.Column<long>("SELECT ISNULL(SUM(l.[Debit] - l.[Credit]), 0)" + JournalFrom()
+                + " WHERE " + string.Join(" AND ", clauses), parameters);
+            return values.Count == 0 ? 0 : values[0];
+        }
+
+        private static List<Move> Movements(string companyCode, List<int> accountIds, int? detailId, DateTime? from, DateTime? to)
+        {
+            var clauses = new List<string>();
+            var parameters = new Row();
+            LedgerWhere(companyCode, accountIds, detailId, to, parameters, clauses);
+            if (from.HasValue)
+            {
+                parameters["From"] = from.Value;
+                clauses.Add("e.[EntryDate] >= @From");
+            }
+            return NikooDb.Select(
+                "SELECT e.[Id], e.[EntryDate], e.[Number], e.[Description], l.[AccountId], l.[Detail1Id], l.[Detail2Id], l.[Debit], l.[Credit], l.[Memo]"
+                + JournalFrom() + " WHERE " + string.Join(" AND ", clauses)
+                + " ORDER BY e.[EntryDate], e.[Id], l.[Position]",
+                parameters, ReadMove);
+        }
+
+        private static List<int> DetailIdsOnAccount(string companyCode, int accountId, DateTime? to)
+        {
+            var clauses = new List<string>();
+            var parameters = new Row();
+            LedgerWhere(companyCode, new List<int> { accountId }, null, to, parameters, clauses);
+            var where = string.Join(" AND ", clauses);
+            return NikooDb.Column<int>(
+                "SELECT [Detail1Id]" + JournalFrom() + " WHERE " + where + " AND l.[Detail1Id] > 0"
+                + " UNION SELECT [Detail2Id]" + JournalFrom() + " WHERE " + where + " AND l.[Detail2Id] > 0",
+                parameters);
+        }
+
+        private static Move ReadMove(System.Data.IDataRecord r) => new Move
+        {
+            EntryId = r.GetInt32(0),
+            Date = r.GetDateTime(1),
+            Number = r.IsDBNull(2) ? null : r.GetString(2),
+            Description = r.IsDBNull(3) ? null : r.GetString(3),
+            AccountId = r.GetInt32(4),
+            Detail1Id = r.GetInt32(5),
+            Detail2Id = r.GetInt32(6),
+            Debit = Convert.ToInt64(r.GetValue(7)),
+            Credit = Convert.ToInt64(r.GetValue(8)),
+            Memo = r.IsDBNull(9) ? null : r.GetString(9)
+        };
     }
 }

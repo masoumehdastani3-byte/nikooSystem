@@ -37,18 +37,25 @@
                 </tr>
             </thead>
             <tbody>
+                @{
+                    var pageItems = Model.ToList();
+                    var parentsWithKids = new HashSet<int>(pageItems.Where(a => a.ParentId > 0).Select(a => a.ParentId));
+                }
                 @foreach (var item in Model)
                 {
                     StoreLedgerAccount parentAccount;
                     var hasParent = byId.TryGetValue(item.ParentId, out parentAccount);
-                    var indent = item.Level == AccountLevel.Group ? "0" : item.Level == AccountLevel.General ? "1.25rem" : "2.5rem";
-                    <tr>
+                    var depth = item.Level == AccountLevel.Group ? 0 : item.Level == AccountLevel.General ? 1 : 2;
+                    var hasChildren = parentsWithKids.Contains(item.Id);
+                    var siblings = pageItems.Where(a => a.ParentId == item.ParentId && a.Level == item.Level).ToList();
+                    var isLast = siblings.Count == 0 || siblings[siblings.Count - 1].Id == item.Id;
+                    <tr class="nk-tree-row" data-depth="@depth" data-id="@item.Id">
                         <td dir="ltr" class="@(item.Level == AccountLevel.Group ? "fw-bold" : null)">@item.Code</td>
                         <td>
-                            <div style="padding-inline-start:@indent" class="@(item.Level != AccountLevel.Subsidiary ? "fw-bold" : null)">@item.Title</div>
+                            @Html.TreeNode(item.Title, depth, hasChildren, isLast, item.Level != AccountLevel.Subsidiary ? "fw-bold" : null)
                             @if (hasParent)
                             {
-                                <div class="small text-muted" style="padding-inline-start:@indent">زیر @parentAccount.Code — @parentAccount.Title</div>
+                                <div class="small text-muted nk-tree-meta" style="--depth:@depth">زیر @parentAccount.Code — @parentAccount.Title</div>
                             }
                         </td>
                         <td><span class="badge @(item.Level == AccountLevel.Group ? "bg-dark" : item.Level == AccountLevel.General ? "bg-secondary" : "bg-light text-dark")">@AccountingText.Level(item.Level)</span></td>

@@ -16,6 +16,8 @@
     var storage = (NikooSystem.Models.StorageUsage)ViewBag.Storage;
     var storagePurchases = (List<NikooSystem.Models.StoragePurchase>)ViewBag.StoragePurchases;
     var storageState = storage.IsFull ? "is-full" : storage.IsNearlyFull ? "is-near" : "is-ok";
+    var smsCredit = (long)(ViewBag.SmsCredit ?? 0L);
+    var smsPurchases = (List<NikooSystem.Models.SmsPurchase>)ViewBag.SmsPurchases ?? new List<NikooSystem.Models.SmsPurchase>();
 }
 <link href="@Url.Asset("~/Content/storage.css")" rel="stylesheet" />
 <div class="adm-head">
@@ -221,6 +223,41 @@
                     <input class="form-control form-control-sm" name="note" maxlength="200" placeholder="توضیح (مثلاً: کارت‌به‌کارت یا هدیه)" aria-label="توضیح" />
                     <div class="form-text">مدت از پایان دوره فعلی (یا باقی‌مانده دوره آزمایشی) حساب می‌شود و در فهرست پرداخت‌ها با مبلغ صفر ثبت می‌شود.</div>
                 }
+            }
+        </div>
+
+        <div class="adm-card">
+            <div class="adm-card-title">اعتبار پیامک</div>
+            <dl class="adm-dl small mb-2">
+                <dt>موجودی</dt><dd>@smsCredit.ToToman()</dd>
+            </dl>
+            @using (Html.BeginForm("GrantSms", "Admin", new { id = Model.CompanyCode }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="input-group input-group-sm mb-2">
+                    <select class="form-select" name="credit" aria-label="اعتبار">
+                        <option value="50000">۵۰٬۰۰۰ تومان</option>
+                        <option value="100000" selected>۱۰۰٬۰۰۰ تومان</option>
+                        <option value="200000">۲۰۰٬۰۰۰ تومان</option>
+                        <option value="500000">۵۰۰٬۰۰۰ تومان</option>
+                        <option value="-50000">کم کردن ۵۰٬۰۰۰ تومان</option>
+                    </select>
+                    <button class="btn btn-outline-primary text-nowrap" type="submit">افزودن اعتبار</button>
+                </div>
+                <input class="form-control form-control-sm mb-2" name="note" maxlength="200" placeholder="توضیح (مثلاً: هدیه یا کارت‌به‌کارت)" aria-label="توضیح" />
+            }
+            @if (smsPurchases.Any())
+            {
+                <div class="small fw-bold mt-2 mb-1">سابقه</div>
+                <ul class="list-unstyled small mb-0">
+                    @foreach (var p in smsPurchases.Take(6))
+                    {
+                        <li class="d-flex justify-content-between gap-2 border-bottom py-1">
+                            <span>@((p.PaidAt ?? p.CreatedAt).ToShamsi()) · @(p.Credit < 0 ? "−" : "+")@Math.Abs(p.Credit).ToToman()</span>
+                            <span class="text-muted text-truncate">@(p.Status == NikooSystem.Models.OrderStatus.Paid ? (p.Amount > 0 ? p.Amount.ToToman() : (p.Note ?? "رایگان")) : p.Status == NikooSystem.Models.OrderStatus.PendingPayment ? "پرداخت نشده" : "ناموفق")</span>
+                        </li>
+                    }
+                </ul>
             }
         </div>
 

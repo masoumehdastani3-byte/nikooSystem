@@ -7,7 +7,7 @@
     var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
     var onHome = (bool)ViewBag.OnHome;
 }
-<h2 class="mb-3">@ViewBag.Title</h2>
+@Html.PageTitle()
 @using (Html.BeginForm("SaveCollection", "ShopAdmin", new { company }, FormMethod.Post))
 {
     @Html.AntiForgeryToken()

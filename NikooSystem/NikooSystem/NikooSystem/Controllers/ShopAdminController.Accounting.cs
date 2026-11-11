@@ -13,10 +13,10 @@ namespace NikooSystem.Controllers
     /// <summary>Chart of accounts, journal, invoices, stock and fixed assets for a shop or a sports club.</summary>
     public partial class ShopAdminController
     {
-        private const int AccountLineCount = 8;
+        private const int AccountLineCount = 24;
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Accounts(AccountGridQuery query)
         {
             var page = TenantStore.AccountGrid(CompanyCode, query);
@@ -25,7 +25,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditAccount(int? id, AccountLevel? level, int? parent)
         {
             var accounts = TenantStore.GetAccounts(CompanyCode);
@@ -39,7 +39,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditAccount(StoreLedgerAccount model)
         {
             model.Code = Clip(model.Code, 20);
@@ -52,7 +52,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteAccount(int id)
         {
             var error = TenantStore.DeleteAccount(CompanyCode, id);
@@ -62,7 +62,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DetailAccounts(DetailGridQuery query)
         {
             ViewBag.Balances = TenantStore.DetailBalances(CompanyCode);
@@ -71,7 +71,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditDetail(int? id, int? level)
         {
             var item = id.HasValue ? TenantStore.GetDetail(CompanyCode, id.Value)
@@ -82,7 +82,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditDetail(StoreDetailAccount model)
         {
             model.Code = Clip(model.Code, 20);
@@ -95,7 +95,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteDetail(int id)
         {
             var error = TenantStore.DeleteDetail(CompanyCode, id);
@@ -105,7 +105,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Voucher(int id)
         {
             var page = TenantStore.Voucher(CompanyCode, id);
@@ -114,16 +114,17 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Journal(JournalGridQuery query)
         {
+            ApplyFiscalFilter(query);
             var page = TenantStore.JournalGrid(CompanyCode, query);
             ViewBag.Types = TenantStore.GetDocumentTypes(CompanyCode);
             return View(page);
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditJournal(int? id)
         {
             var item = id.HasValue ? TenantStore.GetEntry(CompanyCode, id.Value) : new StoreJournalEntry { EntryDate = DateTime.Today };
@@ -142,7 +143,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditJournal(StoreJournalEntry model, string entryDate)
         {
             model.EntryDate = ReadDate(entryDate);
@@ -155,7 +156,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteJournal(int id)
         {
             var error = TenantStore.DeleteManualEntry(CompanyCode, id);
@@ -165,28 +166,40 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Purchases(InvoiceGridQuery query)
         {
+            ApplyFiscalFilter(query);
             ViewBag.BankTitles = BankTitles();
             return View(TenantStore.PurchaseGrid(CompanyCode, query));
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult PrintPurchase(int id)
+        {
+            var item = TenantStore.GetPurchase(CompanyCode, id);
+            if (item == null) return Fail("فاکتور خرید پیدا نشد.", "Purchases");
+            ViewBag.BankTitles = BankTitles();
+            return View(item);
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditPurchase(int? id)
         {
-            var item = id.HasValue ? TenantStore.GetPurchase(CompanyCode, id.Value) : new StorePurchaseInvoice { InvoiceDate = DateTime.Today };
+            var item = id.HasValue ? TenantStore.GetPurchase(CompanyCode, id.Value) : new StorePurchaseInvoice { InvoiceDate = DateTime.Today, VatPercent = DefaultVatPercent() };
             if (item == null) return ToAction("Purchases");
             StockBags();
             BankBag(item.BankId);
             ViewBag.Parties = TenantStore.GetParties(CompanyCode).Where(p => p.Supplies && (p.IsActive || p.Id == item.PartyId)).ToList();
+            ViewBag.VatDefaults = CurrentSettings;
             return View(item);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditPurchase(StorePurchaseInvoice model, string invoiceDate, string newParty, string payFrom)
         {
             model.InvoiceDate = ReadDate(invoiceDate);
@@ -194,6 +207,8 @@ namespace NikooSystem.Controllers
             model.BankId = bankId;
             if (model.PartyId <= 0) model.PartyId = NewParty(newParty, PartyKind.Supplier);
             model.Note = Clip(model.Note, 500);
+            model.DiscountAmount = ReadMoney(Request["DiscountAmount"]);
+            model.VatPercent = ReadInt(Request["VatPercent"]);
             model.Lines = ReadPurchaseLines();
             var error = TenantStore.SavePurchase(CompanyCode, model);
             if (error != null) return Fail(error, "EditPurchase", model.Id > 0 ? new { id = model.Id } : null);
@@ -202,7 +217,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeletePurchase(int id)
         {
             var error = TenantStore.DeletePurchase(CompanyCode, id);
@@ -212,29 +227,88 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult SaleInvoices(InvoiceGridQuery query)
         {
+            ApplyFiscalFilter(query);
             ViewBag.BankTitles = BankTitles();
             return View(TenantStore.SaleGrid(CompanyCode, query));
         }
 
+        /// <summary>Fast in-person checkout that posts a sales invoice (cash/card/bank) and reduces stock.</summary>
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult Pos()
+        {
+            PosBags(0);
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult Pos(string party, string newParty, string payFrom, string note)
+        {
+            var invoice = new StoreSalesInvoice
+            {
+                InvoiceDate = DateTime.Today,
+                PayWith = ReadPay(payFrom, out var bankId),
+                BankId = bankId,
+                PartyId = ReadParty(party),
+                Note = Clip(string.IsNullOrWhiteSpace(note) ? AccountingCopy.Pos(Kind) : note, 500),
+                DiscountAmount = ReadMoney(Request["DiscountAmount"]),
+                VatPercent = ReadInt(Request["VatPercent"]),
+                Lines = ReadSaleLines()
+            };
+            if (invoice.PartyId <= 0)
+                invoice.PartyId = NewParty(string.IsNullOrWhiteSpace(newParty) ? "مشتری نقدی صندوق" : newParty, PartyKind.Customer);
+            if (invoice.PartyId <= 0)
+            {
+                PosBags(bankId);
+                return Fail("ثبت مشتری برای فاکتور ممکن نشد.", "Pos");
+            }
+            if (invoice.Lines == null || invoice.Lines.Count == 0)
+            {
+                PosBags(bankId);
+                return Fail(AccountingCopy.PosNeedLines, "Pos");
+            }
+
+            var error = TenantStore.SaveSale(CompanyCode, invoice);
+            if (error != null)
+            {
+                PosBags(bankId);
+                return Fail(error, "Pos");
+            }
+            return Ok("فروش صندوق ثبت شد" + (string.IsNullOrEmpty(invoice.Number) ? "." : " («" + invoice.Number + "»)."), "Pos");
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult PrintSaleInvoice(int id)
+        {
+            var item = TenantStore.GetSale(CompanyCode, id);
+            if (item == null) return Fail(AccountingCopy.SaleInvoice(Kind) + " پیدا نشد.", "SaleInvoices");
+            ViewBag.BankTitles = BankTitles();
+            return View(item);
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditSaleInvoice(int? id)
         {
-            var item = id.HasValue ? TenantStore.GetSale(CompanyCode, id.Value) : new StoreSalesInvoice { InvoiceDate = DateTime.Today };
+            var item = id.HasValue ? TenantStore.GetSale(CompanyCode, id.Value) : new StoreSalesInvoice { InvoiceDate = DateTime.Today, VatPercent = DefaultVatPercent() };
             if (item == null) return ToAction("SaleInvoices");
             StockBags();
             BankBag(item.BankId);
             ViewBag.Parties = TenantStore.GetParties(CompanyCode).Where(p => p.Buys && (p.IsActive || p.Id == item.PartyId)).ToList();
             ViewBag.SiteCustomers = TenantStore.CustomersWithoutParty(CompanyCode);
+            ViewBag.VatDefaults = CurrentSettings;
             return View(item);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditSaleInvoice(StoreSalesInvoice model, string invoiceDate, string party, string newParty, string payFrom)
         {
             model.InvoiceDate = ReadDate(invoiceDate);
@@ -243,15 +317,17 @@ namespace NikooSystem.Controllers
             model.PartyId = ReadParty(party);
             if (model.PartyId <= 0) model.PartyId = NewParty(newParty, PartyKind.Customer);
             model.Note = Clip(model.Note, 500);
+            model.DiscountAmount = ReadMoney(Request["DiscountAmount"]);
+            model.VatPercent = ReadInt(Request["VatPercent"]);
             model.Lines = ReadSaleLines();
             var error = TenantStore.SaveSale(CompanyCode, model);
             if (error != null) return Fail(error, "EditSaleInvoice", model.Id > 0 ? new { id = model.Id } : null);
-            return Ok("فاکتور فروش ثبت شد.", "SaleInvoices");
+            return Ok(AccountingCopy.SaleInvoice(Kind) + " ثبت شد.", "SaleInvoices");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteSaleInvoice(int id)
         {
             var error = TenantStore.DeleteSale(CompanyCode, id);
@@ -261,7 +337,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Inventory(InventoryGridQuery query)
         {
             var tab = query.Tab == "products" || query.Tab == "moves" ? query.Tab : "goods";
@@ -272,6 +348,7 @@ namespace NikooSystem.Controllers
             }
             else if (tab == "moves")
             {
+                ApplyFiscalFilter(query);
                 var moves = TenantStore.MoveGrid(CompanyCode, query);
                 ViewBag.Moves = moves;
                 ViewBag.MoveTitles = TenantStore.MoveTitles(CompanyCode, moves);
@@ -285,7 +362,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult SaveGoods(StoreGoodsItem model)
         {
             model.Title = Clip(model.Title, 150);
@@ -299,18 +376,20 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
-        public ActionResult AdjustStock(int productId, int qty, string note)
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult AdjustStock(int productId, int qty, string note, string back = null)
         {
             var error = TenantStore.AdjustStock(CompanyCode, productId, qty, Clip(note, 200));
             if (error != null) Fail(error);
             else Ok("موجودی محصول تعدیل شد.");
+            if (string.Equals(back, "product", StringComparison.OrdinalIgnoreCase))
+                return ToAction("EditProduct", new { id = productId });
             return ToAction("Inventory", new { tab = "products" });
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult AdjustGoods(int goodsId, int qty, string note)
         {
             var error = TenantStore.AdjustGoods(CompanyCode, goodsId, qty, Clip(note, 200));
@@ -320,14 +399,15 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Assets(GridQuery query)
         {
+            ApplyFiscalFilter(query);
             return View(TenantStore.AssetGrid(CompanyCode, query));
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditAsset(int? id)
         {
             var item = id.HasValue ? TenantStore.GetAsset(CompanyCode, id.Value) : new StoreFixedAsset { BoughtOn = DateTime.Today, IsActive = true };
@@ -337,7 +417,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditAsset(StoreFixedAsset model, string boughtOn)
         {
             model.BoughtOn = ReadDate(boughtOn);
@@ -352,7 +432,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteAsset(int id)
         {
             TenantStore.DeleteAsset(CompanyCode, id);
@@ -360,9 +440,10 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Books(BooksGridQuery query)
         {
+            ApplyFiscalFilter(query);
             var page = new BooksPage { From = ReadOptionalDate(query.From), To = ReadOptionalDate(query.To) };
             var text = (query.Q ?? "").Trim();
             if (query.AccountId.HasValue) page.Account = TenantStore.GetAccount(CompanyCode, query.AccountId.Value);
@@ -406,11 +487,7 @@ namespace NikooSystem.Controllers
             return View(page);
         }
 
-        private static DateTime? ReadOptionalDate(string text)
-        {
-            DateTime date;
-            return DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date) ? date.Date : (DateTime?)null;
-        }
+        private static DateTime? ReadOptionalDate(string text) => GridQuery.ParseDay(text);
 
         private static bool Has(string value, string text) =>
             value != null && value.IndexOf(text, StringComparison.OrdinalIgnoreCase) >= 0;
@@ -428,14 +505,14 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Parties(PartyGridQuery query)
         {
             return View(TenantStore.PartyGrid(CompanyCode, query));
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditParty(int? id, PartyKind? kind)
         {
             var item = id.HasValue ? TenantStore.GetParty(CompanyCode, id.Value) : new StoreParty { Kind = kind ?? PartyKind.Supplier, IsActive = true };
@@ -445,7 +522,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditParty(StoreParty model)
         {
             model.Code = Clip(model.Code, 40);
@@ -461,7 +538,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteParty(int id)
         {
             var error = TenantStore.DeleteParty(CompanyCode, id);
@@ -492,21 +569,80 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult AccountingGuide()
         {
             return View();
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult FiscalYear()
+        {
+            var settings = CurrentSettings;
+            settings.FiscalStartMonth = FiscalPeriod.NormalizeMonth(settings.FiscalStartMonth);
+            var current = FiscalPeriod.Current(settings);
+            ViewBag.CurrentPeriod = current;
+            ViewBag.CloseableYear = current.StartYear - 1;
+            ViewBag.CloseablePeriod = FiscalPeriod.OfYear(current.StartYear - 1, settings.FiscalStartMonth);
+            ViewBag.CloseableClosed = FiscalPeriod.IsClosed(settings, current.StartYear - 1);
+            var closed = new List<FiscalPeriod>();
+            if (!string.IsNullOrWhiteSpace(settings.ClosedFiscalYears))
+            {
+                foreach (var token in settings.ClosedFiscalYears.Split(new[] { ',', '،', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    int year;
+                    if (int.TryParse(token.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out year))
+                        closed.Add(FiscalPeriod.OfYear(year, settings.FiscalStartMonth));
+                }
+            }
+            ViewBag.ClosedPeriods = closed.OrderByDescending(p => p.StartYear).ToList();
+            return View(settings);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult FiscalYear(int fiscalStartMonth, bool fiscalLockDates = false, bool enableVat = false, int vatPercent = 10)
+        {
+            var settings = CurrentSettings;
+            settings.FiscalStartMonth = FiscalPeriod.NormalizeMonth(fiscalStartMonth);
+            settings.FiscalLockDates = fiscalLockDates;
+            settings.EnableVat = enableVat;
+            settings.VatPercent = vatPercent < 0 ? 0 : (vatPercent > 100 ? 100 : vatPercent);
+            TenantStore.SaveSettings(settings);
+            return Ok("تنظیمات سال مالی و مالیات ذخیره شد.", "FiscalYear");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult CloseFiscalYear(int startYear)
+        {
+            var error = TenantStore.CloseFiscalYear(CompanyCode, startYear);
+            if (error != null) return Fail(error, "FiscalYear");
+            return Ok("سال مالی بسته شد؛ درآمد و هزینه به سود و زیان انباشته منتقل شد.", "FiscalYear");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
+        public ActionResult ReopenFiscalYear(int startYear)
+        {
+            var error = TenantStore.ReopenFiscalYear(CompanyCode, startYear);
+            if (error != null) return Fail(error, "FiscalYear");
+            return Ok("سال مالی دوباره باز شد و سند بستن آن برداشته شد.", "FiscalYear");
+        }
+
+        [HttpGet]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DocumentTypes(GridQuery query)
         {
             return View(TenantStore.DocumentTypeGrid(CompanyCode, query));
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditDocumentType(int? id)
         {
             var item = id.HasValue ? TenantStore.GetDocumentType(CompanyCode, id.Value) : new StoreDocumentType { IsActive = true };
@@ -516,7 +652,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditDocumentType(StoreDocumentType model)
         {
             model.Code = Clip(model.Code, 20);
@@ -528,7 +664,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteDocumentType(int id)
         {
             var error = TenantStore.DeleteDocumentType(CompanyCode, id);
@@ -538,16 +674,17 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Payments(CashGridQuery query)
         {
+            ApplyFiscalFilter(query);
             ViewBag.Types = TenantStore.GetDocumentTypes(CompanyCode);
             ViewBag.BankTitles = BankTitles();
             return View(TenantStore.CashGrid(CompanyCode, query));
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditPayment(int? id)
         {
             var item = id.HasValue ? TenantStore.GetCashItem(CompanyCode, id.Value) : new StoreCashTransaction { TxDate = DateTime.Today, Direction = CashDirection.Out };
@@ -562,7 +699,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditPayment(StoreCashTransaction model, string txDate, string payFrom)
         {
             model.TxDate = ReadDate(txDate);
@@ -577,7 +714,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeletePayment(int id)
         {
             var error = TenantStore.DeleteCash(CompanyCode, id);
@@ -587,7 +724,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult Banks(BankGridQuery query)
         {
             var page = TenantStore.BankGrid(CompanyCode, query);
@@ -596,7 +733,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditBank(int? id)
         {
             var item = id.HasValue ? TenantStore.GetBank(CompanyCode, id.Value) : new StoreBankAccount { IsActive = true };
@@ -607,7 +744,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult EditBank(StoreBankAccount model, string gatewaySecretNew)
         {
             model.Title = Clip(model.Title, 120);
@@ -630,7 +767,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking)]
         public ActionResult DeleteBank(int id)
         {
             var error = TenantStore.DeleteBank(CompanyCode, id);
@@ -665,6 +802,15 @@ namespace NikooSystem.Controllers
         {
             ViewBag.Products = TenantStore.GetProducts(CompanyCode).Where(p => p.IsActive).OrderBy(p => p.Title).ToList();
             ViewBag.Goods = TenantStore.GetGoods(CompanyCode).Where(g => g.IsActive).ToList();
+        }
+
+        private void PosBags(int bankId)
+        {
+            StockBags();
+            BankBag(bankId);
+            ViewBag.Parties = TenantStore.GetParties(CompanyCode).Where(p => p.Buys && p.IsActive).ToList();
+            ViewBag.Categories = TenantStore.GetCategories(CompanyCode).Where(c => c.IsActive).OrderBy(c => c.SortOrder).ThenBy(c => c.Title).ToList();
+            ViewBag.DefaultVatPercent = DefaultVatPercent();
         }
 
         private List<StoreJournalLine> ReadJournalLines()
@@ -781,6 +927,15 @@ namespace NikooSystem.Controllers
             return int.TryParse((text ?? "").Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) ? n : 0;
         }
 
+        private int DefaultVatPercent()
+        {
+            var settings = CurrentSettings;
+            if (settings == null || !settings.EnableVat) return 0;
+            var percent = settings.VatPercent;
+            if (percent < 0) return 0;
+            return percent > 100 ? 100 : percent;
+        }
+
         private static long ReadMoney(string text)
         {
             var raw = (text ?? "").Trim().Replace(",", "").Replace("٬", "");
@@ -794,6 +949,25 @@ namespace NikooSystem.Controllers
             return DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date)
                 ? date.Date
                 : DateTime.Today;
+        }
+
+        /// <summary>Defaults empty date filters to the open fiscal year; <c>scope=all</c> keeps every date.</summary>
+        private void ApplyFiscalFilter(GridQuery query)
+        {
+            if (query == null) return;
+            ViewBag.FiscalPeriod = FiscalPeriod.Current(CurrentSettings);
+            if (!string.IsNullOrEmpty(query.From) || !string.IsNullOrEmpty(query.To)) return;
+            if (string.Equals(query.Scope, "all", StringComparison.OrdinalIgnoreCase))
+            {
+                ViewBag.FiscalAll = true;
+                return;
+            }
+            if (FiscalPeriod.ApplyDefault(query, CurrentSettings))
+            {
+                ViewBag.FiscalDefaulted = true;
+                ViewBag.FiscalFrom = GridQuery.ParseDay(query.From);
+                ViewBag.FiscalTo = GridQuery.ParseDay(query.To);
+            }
         }
     }
 }

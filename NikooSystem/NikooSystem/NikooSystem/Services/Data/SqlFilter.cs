@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 
 namespace NikooSystem.Services.Data
@@ -34,6 +36,27 @@ namespace NikooSystem.Services.Data
             _clauses.Add(Column(column) + " <= " + Param(value));
             return this;
         }
+
+        public SqlFilter Before(string column, object value)
+        {
+            _clauses.Add(Column(column) + " < " + Param(value));
+            return this;
+        }
+
+        /// <summary>
+        /// Inclusive day range posted as yyyy-MM-dd. Works for date-only and DateTime columns
+        /// (the end day is exclusive next-midnight).
+        /// </summary>
+        public SqlFilter DateRange(string column, string fromText, string toText)
+        {
+            DateTime from, to;
+            if (TryDay(fromText, out from)) AtLeast(column, from);
+            if (TryDay(toText, out to)) Before(column, to.AddDays(1));
+            return this;
+        }
+
+        private static bool TryDay(string text, out DateTime day) =>
+            DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day);
 
         /// <summary>The column is one of <paramref name="values"/>; an empty list matches nothing.</summary>
         public SqlFilter In<TValue>(string column, IEnumerable<TValue> values)

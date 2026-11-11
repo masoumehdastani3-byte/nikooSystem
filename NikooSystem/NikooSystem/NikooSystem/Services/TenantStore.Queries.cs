@@ -203,7 +203,8 @@ namespace NikooSystem.Services
 
         public static PagedList<StoreOrder> OrderGrid(string companyCode, OrderGridQuery query)
         {
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "OrderNumber", "CustomerName", "CustomerMobile", "TrackingCode");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "OrderNumber", "CustomerName", "CustomerMobile", "TrackingCode")
+                .DateRange("CreatedAt", query.From, query.To);
             if (query.Status.HasValue) filter.Eq("Status", query.Status.Value.ToString());
             return Grid(NikooTables.Orders, companyCode, query, filter, OrderSorts, "date", true);
         }
@@ -243,7 +244,8 @@ namespace NikooSystem.Services
 
         public static PagedList<StoreCustomer> CustomerGrid(string companyCode, GridQuery query) =>
             Grid(NikooTables.Customers, companyCode, query,
-                SqlFilter.ForStore(companyCode).Search(query.Q, "FullName", "Mobile", "Email"),
+                SqlFilter.ForStore(companyCode).Search(query.Q, "FullName", "Mobile", "Email")
+                    .DateRange("CreatedAt", query.From, query.To),
                 CustomerSorts, "created", true);
 
         public static int CountCustomers(string companyCode) => NikooDb.Count(NikooTables.Customers, SqlFilter.ForStore(companyCode));

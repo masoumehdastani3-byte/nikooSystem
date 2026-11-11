@@ -42,7 +42,9 @@ namespace NikooSystem.Services
                 case "clinic": Clinic(seed, code); break;
                 case "beauty": Beauty(seed, code); break;
                 case "consulting": Consulting(seed, code); break;
+                case "school": School(seed, code); break;
                 case "club": Club(seed, code); break;
+                case "cafe": Cafe(seed, code); break;
                 default: Gadgets(seed, code); break;
             }
             customize?.Invoke(seed.Settings);
@@ -50,7 +52,7 @@ namespace NikooSystem.Services
             var kind = StoreTypes.Get(storeType).Kind;
             seed.Menus = Menus(code, kind, storeType, seed.Categories);
             seed.Pages = Pages(seed.Settings, kind, storeType);
-            seed.Gallery = Gallery(kind);
+            seed.Gallery = Gallery(kind, storeType);
             return seed;
         }
 
@@ -299,9 +301,9 @@ namespace NikooSystem.Services
 
         private static void Beauty(TenantSeed seed, string code)
         {
-            seed.Settings = BaseSettings(code, "سالن زیبایی رز", "زیبایی با نوبت دقیق", "#be185d", "#fce7f3",
-                "وقتتان را در صف تلف نکنید", "آرایشگر و خدمت دلخواهتان را انتخاب کنید و آنلاین نوبت بگیرید", "salon");
-            seed.Settings.About = "سالن زیبایی رز با آرایشگران باتجربه، خدمات مو، ناخن و پوست را با محصولات معتبر ارائه می‌کند. این متن را از «اطلاعات سایت» تغییر دهید.";
+            seed.Settings = BaseSettings(code, "آرایشگاه رز", "نوبت آرایشگاه و سالن زیبایی", "#be185d", "#fce7f3",
+                "نوبت آرایش و زیبایی، بدون انتظار", "آرایشگر و خدمت را انتخاب کنید و آنلاین نوبت بگیرید", "salon");
+            seed.Settings.About = "آرایشگاه رز با آرایشگران باتجربه، خدمات مو، ناخن و پوست را با محصولات معتبر ارائه می‌کند. این متن را از «اطلاعات سایت» تغییر دهید.";
             seed.Settings.HeroImageUrl = BookingHero("salon");
             seed.Settings.BookingSlotMinutes = 15;
             seed.Staff = new List<StoreStaff>
@@ -343,36 +345,76 @@ namespace NikooSystem.Services
             };
         }
 
-        private static void Club(TenantSeed seed, string code)
+        private static void School(TenantSeed seed, string code)
         {
-            seed.Settings = BaseSettings(code, "باشگاه و آموزشگاه نیکو", "کلاس، مربی خصوصی، رزرو سالن", "#15803d", "#dcfce7",
-                "کلاس گروهی، جلسه خصوصی یا اجاره سالن", "دوره را ثبت‌نام کنید، با مدرس خصوصی آنلاین یا حضوری وقت بگیرید، یا سالن را ساعتی رزرو کنید", "club");
-            seed.Settings.About = "آموزشگاه و باشگاه نیکو کلاس‌های گروهی، جلسه با مدرس خصوصی و اجاره سالن و میز را در یک‌جا ارائه می‌کند. این متن را از «اطلاعات سایت» تغییر دهید.";
-            seed.Settings.Address = "تهران، مجموعه ورزشی نیکو";
+            seed.Settings = BaseSettings(code, "آموزشگاه نیکو", "دوره عمومی و دوره خصوصی", "#1d4ed8", "#dbeafe",
+                "دوره عمومی یا دوره خصوصی", "در کلاس گروهی ثبت‌نام کنید، یا با مدرس دوره خصوصی حضوری یا آنلاین بگیرید", "club");
+            seed.Settings.About = "آموزشگاه نیکو هم دوره عمومی با ظرفیت مشخص دارد و هم دوره خصوصی با مدرس. این متن را از «اطلاعات سایت» تغییر دهید.";
+            seed.Settings.Address = "تهران، آموزشگاه نیکو";
             seed.Settings.BookingSlotMinutes = 30;
             seed.Settings.BookingNotice = "برای کلاس حضوری ده دقیقه زودتر بیایید. لینک کلاس آنلاین بعد از قطعی شدن ثبت‌نام نشان داده می‌شود.";
             seed.Staff = new List<StoreStaff>
             {
-                Staff(1, "رضا محمدی", "مربی فوتبال و پینگ‌پونگ", "team-2", Week(new[] { 0, 1, 2, 3, 4 }, 15 * 60, 21 * 60)),
+                Staff(1, "مریم احمدی", "مدرس مکالمه انگلیسی", "team-1", Week(new[] { 0, 1, 2, 3, 4 }, 15 * 60, 21 * 60)),
+                Staff(2, "کیوان رضایی", "مدرس پیانو", "team-2", Week(new[] { 0, 2, 4, 6 }, 10 * 60, 13 * 60, 16 * 60, 20 * 60)),
+                Staff(3, "نسترن کریمی", "مدرس ریاضی کنکور", "team-3", Week(new[] { 1, 3, 5 }, 16 * 60, 21 * 60))
+            };
+            seed.Services = new List<StoreService>
+            {
+                Service(1, "مکالمه خصوصی انگلیسی", "جلسه تصویری یک‌به‌یک روی سطح خودتان", 45, 350000, 1),
+                Service(2, "پیانو خصوصی", "درس تکنیک و قطعه؛ حضوری در اتاق تمرین یا آنلاین", 45, 400000, 2),
+                Service(3, "رفع اشکال ریاضی", "جلسه حضوری برای مبحث‌های کنکور", 60, 450000, 3)
+            };
+            seed.Services[0].Mode = CampusDelivery.Online;
+            seed.Services[1].Mode = CampusDelivery.Hybrid;
+            seed.Services[2].Mode = CampusDelivery.InPerson;
+            var termStart = DateTime.Today;
+            seed.Classes = new List<StoreClass>
+            {
+                ClassItem(1, "مکالمه انگلیسی متوسط", "کلاس گروهی تصویری، سطح متوسط", 1, CampusDelivery.Online, 12, 1600000, 0, 18 * 60, 19 * 60 + 30, "متوسط", "نوجوان و بزرگسال", null, "https://meet.example.com/nikoo-english", termStart),
+                ClassItem(2, "پیانو مبتدی", "آشنایی با کلاویه، ریتم و قطعه ساده", 2, CampusDelivery.InPerson, 8, 2200000, 1, 16 * 60, 17 * 60 + 15, "مبتدی", "۸ سال به بالا", "اتاق تمرین ۲", null, termStart),
+                ClassItem(3, "ریاضی کنکور", "جمع‌بندی فصل‌ها با حل سؤال", 3, CampusDelivery.Hybrid, 15, 2400000, 2, 17 * 60, 19 * 60, "پیشرفته", "داوطلب کنکور", "کلاس ۳", "https://meet.example.com/nikoo-math", termStart),
+                ClassItem(4, "نقاشی کودکان", "کلاس حضوری خلاقیت و رنگ", 1, CampusDelivery.InPerson, 10, 1400000, 4, 10 * 60, 11 * 60 + 30, "مبتدی", "۶ تا ۱۰ سال", "کارگاه هنر", null, termStart)
+            };
+            foreach (var item in seed.Classes)
+                item.InstructorName = seed.Staff.FirstOrDefault(s => s.Id == item.InstructorId)?.Name;
+            seed.Facilities = new List<StoreFacility>
+            {
+                Facility(1, "اتاق تمرین موسیقی", "پیانو و میز؛ اجاره برای یک ساعت تمرین", 60, 120000, 1, "طبقه دوم", Week(new[] { 0, 1, 2, 3, 4, 5 }, 9 * 60, 21 * 60)),
+                Facility(2, "کلاس خالی", "اتاق برای گروه کوچک یا جلسه فوق‌العاده", 60, 180000, 1, "کلاس ۴", Week(new[] { 0, 1, 2, 3, 4 }, 8 * 60, 21 * 60))
+            };
+        }
+
+        private static void Club(TenantSeed seed, string code)
+        {
+            seed.Settings = BaseSettings(code, "باشگاه ورزشی نیکو", "کلاس ورزشی، مربی، رزرو سالن", "#15803d", "#dcfce7",
+                "کلاس ورزشی، مربی خصوصی یا اجاره سالن", "در کلاس ثبت‌نام کنید، با مربی وقت بگیرید، یا سالن و میز را ساعتی رزرو کنید", "club");
+            seed.Settings.About = "باشگاه ورزشی نیکو کلاس‌های گروهی، جلسه با مربی خصوصی و اجاره سالن و زمین را در یک‌جا ارائه می‌کند. این متن را از «اطلاعات سایت» تغییر دهید.";
+            seed.Settings.Address = "تهران، مجموعه ورزشی نیکو";
+            seed.Settings.BookingSlotMinutes = 30;
+            seed.Settings.BookingNotice = "برای کلاس حضوری ده دقیقه زودتر بیایید. توپ و راکت طبق مقررات سالن است.";
+            seed.Staff = new List<StoreStaff>
+            {
+                Staff(1, "رضا محمدی", "مربی فوتبال", "team-2", Week(new[] { 0, 1, 2, 3, 4 }, 15 * 60, 21 * 60)),
                 Staff(2, "سارا کاظمی", "مربی بدنسازی", "team-1", Week(new[] { 0, 2, 4, 6 }, 8 * 60, 12 * 60, 17 * 60, 21 * 60)),
-                Staff(3, "نگار حسینی", "مدرس مکالمه انگلیسی", "team-3", Week(new[] { 1, 3, 5 }, 16 * 60, 21 * 60))
+                Staff(3, "آرمین جعفری", "مربی پینگ‌پونگ", "team-3", Week(new[] { 1, 3, 5 }, 16 * 60, 21 * 60))
             };
             seed.Services = new List<StoreService>
             {
                 Service(1, "کلاس خصوصی فوتبال", "تمرین تکنیک و آمادگی جسمانی، روی چمن مصنوعی", 60, 500000, 1),
                 Service(2, "برنامه تمرین خصوصی بدنسازی", "طراحی برنامه و اصلاح حرکت؛ حضوری در سالن یا آنلاین با ویدیو", 45, 400000, 2),
-                Service(3, "مکالمه خصوصی انگلیسی", "جلسه تصویری یک‌به‌یک روی سطح خودتان", 45, 350000, 3)
+                Service(3, "آموزش خصوصی پینگ‌پونگ", "تکنیک، پا و مسابقه روی یک میز", 45, 350000, 3)
             };
             seed.Services[0].Mode = CampusDelivery.InPerson;
             seed.Services[1].Mode = CampusDelivery.Hybrid;
-            seed.Services[2].Mode = CampusDelivery.Online;
+            seed.Services[2].Mode = CampusDelivery.InPerson;
             var termStart = DateTime.Today;
             seed.Classes = new List<StoreClass>
             {
                 ClassItem(1, "فوتبال پایه نونهالان", "تمرین بازی و مهارت‌های پایه روی چمن", 1, CampusDelivery.InPerson, 18, 2500000, 0, 16 * 60, 17 * 60 + 30, "مبتدی", "۷ تا ۱۰ سال", "چمن مصنوعی", null, termStart),
                 ClassItem(2, "بدنسازی بانوان", "تمرین قدرتی و هوازی با مربی", 2, CampusDelivery.InPerson, 12, 1800000, 1, 18 * 60, 19 * 60 + 30, "همه سطوح", "بانوان", "سالن بدنسازی", null, termStart),
-                ClassItem(3, "مکالمه انگلیسی", "کلاس گروهی تصویری، سطح متوسط", 3, CampusDelivery.Online, 15, 1600000, 2, 19 * 60, 20 * 60 + 30, "متوسط", "نوجوان و بزرگسال", null, "https://meet.example.com/nikoo-english", termStart),
-                ClassItem(4, "پینگ‌پونگ پیشرفته", "تکنیک، پا و مسابقه؛ حضوری با امکان مرور آنلاین", 1, CampusDelivery.Hybrid, 8, 2000000, 3, 17 * 60, 18 * 60 + 30, "پیشرفته", "۱۲ سال به بالا", "سالن پینگ‌پونگ", "https://meet.example.com/nikoo-pingpong", termStart)
+                ClassItem(3, "پینگ‌پونگ پیشرفته", "تکنیک، پا و مسابقه", 3, CampusDelivery.InPerson, 8, 2000000, 3, 17 * 60, 18 * 60 + 30, "پیشرفته", "۱۲ سال به بالا", "سالن پینگ‌پونگ", null, termStart),
+                ClassItem(4, "آمادگی جسمانی بزرگسالان", "تمرین هوازی و قدرتی برای همه سطوح", 2, CampusDelivery.InPerson, 16, 1500000, 2, 19 * 60, 20 * 60 + 15, "همه سطوح", "بزرگسال", "سالن بدنسازی", null, termStart)
             };
             foreach (var item in seed.Classes)
                 item.InstructorName = seed.Staff.FirstOrDefault(s => s.Id == item.InstructorId)?.Name;
@@ -476,6 +518,66 @@ namespace NikooSystem.Services
 
         // ---- Menus, pages and gallery for every kind
 
+        private static void Cafe(TenantSeed seed, string code)
+        {
+            seed.Settings = BaseSettings(code, "کافه و رستوران نارون", "قهوه تازه، غذای خانگی، سایه نارون", "#1c3d30", "#c6a15b",
+                "به نارون خوش آمدید", "منو را روی موبایل ببینید و هر وقت خواستید گارسون را صدا بزنید", "cafe");
+            seed.Settings.About = "کافه و رستوران نارون قهوه تازه و غذای خانگی سرو می‌کند. منو را با اسکن QR روی میز ببینید و اگر چیزی خواستید، گارسون را صدا بزنید.";
+            seed.Settings.Phone = "021-91001234";
+            seed.Settings.Address = "تهران، ولیعصر، کوچه نارون، پلاک ۱۲";
+            seed.Settings.OpeningHours = "هر روز ۸ تا ۲۳";
+            seed.Settings.DailyNote = "کیک هویج امروز تازه از فر درآمده است.";
+            seed.Settings.WifiName = "Narvan-Guest";
+            seed.Settings.WifiPassword = "narvan1404";
+            seed.Settings.InstagramUrl = "https://instagram.com/narvan.cafe";
+            seed.Settings.EnablePayment = false;
+            seed.Settings.FooterText = "قهوه تازه، غذای خانگی، سایه نارون";
+            seed.Categories = new List<StoreCategory>
+            {
+                new StoreCategory { Id = 1, Title = "قهوه", Slug = "coffee", SortOrder = 1 },
+                new StoreCategory { Id = 2, Title = "نوشیدنی سرد", Slug = "cold", SortOrder = 2 },
+                new StoreCategory { Id = 3, Title = "صبحانه", Slug = "breakfast", SortOrder = 3 },
+                new StoreCategory { Id = 4, Title = "غذا", Slug = "mains", SortOrder = 4 },
+                new StoreCategory { Id = 5, Title = "سالاد", Slug = "salad", SortOrder = 5 },
+                new StoreCategory { Id = 6, Title = "دسر", Slug = "dessert", SortOrder = 6 }
+            };
+            seed.Attributes = new List<StoreAttributeDef>
+            {
+                new StoreAttributeDef { Id = 1, Name = "نشان", InputType = "text", IsFilterable = false, SortOrder = 1 }
+            };
+            seed.Products = new List<StoreProduct>
+            {
+                Dish(1, 1, "اسپرسو", "espresso", "شات کوتاه و غلیظ", 90000, 50, false),
+                Dish(2, 1, "اسپرسو دبل", "double-espresso", "دو شات اسپرسو", 110000, 50, false),
+                Dish(3, 1, "آمریکانو", "americano", "اسپرسو رقیق‌شده با آب داغ", 120000, 50, false),
+                Dish(4, 1, "لاته", "latte", "اسپرسو با شیر بخار داده", 155000, 50, true, "پیشنهادی"),
+                Dish(5, 1, "کاپوچینو", "cappuccino", "اسپرسو، شیر و کف", 150000, 50, false),
+                Dish(6, 1, "فلت وایت", "flat-white", "اسپرسو با میکروفوم نازک", 160000, 50, false, "جدید"),
+                Dish(7, 1, "موکا", "mocha", "اسپرسو، شکلات و شیر", 175000, 50, false),
+                Dish(8, 1, "قهوه ترک", "turkish-coffee", "دم‌آوری سنتی در جذوه", 100000, 50, false),
+                Dish(9, 2, "آیس لاته", "iced-latte", "لاته سرد با یخ", 170000, 50, false, "محبوب"),
+                Dish(10, 2, "آیس آمریکانو", "iced-americano", "آمریکانو سرد", 140000, 50, false),
+                Dish(11, 2, "شیک شکلات", "chocolate-shake", "شیر، بستنی و شکلات", 195000, 50, false),
+                Dish(12, 2, "لیموناد نعنا", "mint-lemonade", "لیموی تازه و نعنا", 130000, 50, false, "گیاهی"),
+                Dish(13, 2, "موهیتو", "mojito", "نعنا، لیمو و یخ", 145000, 0, false),
+                Dish(14, 2, "آیس‌تی هلو", "peach-iced-tea", "چای سرد با هلو", 125000, 50, false),
+                Dish(15, 3, "صبحانه ایرانی", "iranian-breakfast", "پنیر، گردو، عسل، مربا و چای", 320000, 50, false),
+                Dish(16, 3, "املت", "omelette", "املت گوجه با نان تازه", 185000, 50, false, "تند"),
+                Dish(17, 3, "پنکیک", "pancake", "پنکیک با عسل یا نوتلا", 210000, 50, false),
+                Dish(18, 3, "تست آووکادو", "avocado-toast", "نان تست، آووکادو و تخم‌مرغ", 240000, 50, false, "جدید"),
+                Dish(19, 4, "پاستا آلفردو", "alfredo", "پاستا با سس خامه‌ای", 285000, 50, false),
+                Dish(20, 4, "برگر", "burger", "برگر گوشت با سیب‌زمینی", 340000, 50, false),
+                Dish(21, 4, "مرغ گریل", "grilled-chicken", "سینه مرغ گریل با سبزی", 310000, 50, false),
+                Dish(22, 4, "سالمون", "salmon", "فیله سالمون با سبزیجات", 420000, 50, false),
+                Dish(23, 5, "سالاد سزار", "caesar", "کاهو، مرغ، پنیر و سس سزار", 230000, 50, false),
+                Dish(24, 5, "سالاد فصل", "seasonal-salad", "سبزی‌های فصل", 160000, 50, false, "گیاهی"),
+                Dish(25, 6, "چیزکیک رزبری", "raspberry-cheesecake", "چیزکیک با سس رزبری", 165000, 50, false),
+                Dish(26, 6, "براونی", "brownie", "براونی شکلاتی گرم", 145000, 50, false),
+                Dish(27, 6, "تیرامیسو", "tiramisu", "تیرامیسو کلاسیک", 175000, 50, false),
+                Dish(28, 6, "کیک هویج", "carrot-cake", "کیک هویج روزانه", 150000, 50, true, "پیشنهادی")
+            };
+        }
+
         private static List<StoreMenuItem> Menus(string code, string kind, string storeType, List<StoreCategory> categories)
         {
             var shop = "/Shop/" + code;
@@ -507,10 +609,16 @@ namespace NikooSystem.Services
             }
             else if (kind == SiteKinds.Campus)
             {
-                add("کلاس‌ها", shop + "/Classes");
-                add("کلاس خصوصی", shop + "/Book");
-                add("رزرو سالن", shop + "/Facilities");
+                var sports = storeType == "club";
+                add(sports ? "کلاس‌ها" : "دوره‌های عمومی", shop + "/Classes");
+                add(sports ? "مربی خصوصی" : "دوره خصوصی", shop + "/Book");
+                add(sports ? "رزرو سالن" : "اجاره کلاس", shop + "/Facilities");
                 add("پیگیری", shop + "/CampusTrack");
+                add("تماس با ما", shop + "/Contact");
+            }
+            else if (kind == SiteKinds.Menu)
+            {
+                add("درباره ما", shop + "/Page/about");
                 add("تماس با ما", shop + "/Contact");
             }
             else
@@ -526,7 +634,7 @@ namespace NikooSystem.Services
             items.Add(new StoreMenuItem
             {
                 Id = items.Count + 1,
-                Title = kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : kind == SiteKinds.Campus ? "قوانین کلاس و رزرو" : "شرایط فروش",
+                Title = kind == SiteKinds.Menu ? "شرایط استفاده" : kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : kind == SiteKinds.Campus ? (storeType == "school" ? "قوانین کلاس" : "قوانین کلاس و رزرو") : "شرایط فروش",
                 Url = shop + "/Page/terms",
                 SortOrder = 2,
                 Location = "footer"
@@ -547,6 +655,16 @@ namespace NikooSystem.Services
                 if (storeType == "corporate")
                     pages.Add(new StorePage { Id = 4, Title = "خدمات", Slug = "services", BodyHtml = "<ul><li>مشاوره و تحلیل نیاز</li><li>طراحی و توسعه نرم‌افزار</li><li>پشتیبانی و نگهداری</li></ul>" });
             }
+            else if (kind == SiteKinds.Menu)
+            {
+                pages.Add(new StorePage
+                {
+                    Id = 3,
+                    Title = "شرایط استفاده",
+                    Slug = "terms",
+                    BodyHtml = "<p>قیمت‌ها روی منو همان قیمت روز است. اگر آیتمی ناموجود باشد، روی کارت آن نوشته شده. فراخوان گارسون فقط برای مهمان‌های حاضر در سالن است.</p>"
+                });
+            }
             else if (kind == SiteKinds.Booking)
             {
                 pages.Add(new StorePage
@@ -558,6 +676,20 @@ namespace NikooSystem.Services
                         + "<li>لغو نوبت تا " + settings.BookingCancelHours.ToString().ToFaDigits() + " ساعت پیش از زمان آن از همان صفحه امکان‌پذیر است.</li>"
                         + "<li>اگر بیعانه پرداخت کرده‌اید، برای بازگشت آن پس از لغو با ما تماس بگیرید.</li>"
                         + "<li>در صورت تأخیر بیش از ۱۵ دقیقه، ممکن است نوبت به فرد بعدی داده شود.</li></ul>"
+                });
+            }
+            else if (kind == SiteKinds.Campus && storeType == "school")
+            {
+                pages.Add(new StorePage
+                {
+                    Id = 3,
+                    Title = "قوانین کلاس",
+                    Slug = "terms",
+                    BodyHtml = "<ul><li>کد پیگیری ثبت‌نام را نگه دارید؛ با آن و شماره موبایل، وضعیت را در صفحه «پیگیری» می‌بینید.</li>"
+                        + "<li>وقتی ظرفیت کلاس پر شود، ثبت‌نام برای نفر بعدی بسته می‌شود.</li>"
+                        + "<li>لغو جلسه خصوصی تا " + settings.BookingCancelHours.ToString().ToFaDigits() + " ساعت پیش از زمان آن از صفحه پیگیری ممکن است.</li>"
+                        + "<li>اگر شهریه را آنلاین پرداخته‌اید، برای بازگشت مبلغ پس از لغو با آموزشگاه تماس بگیرید.</li>"
+                        + "<li>لینک کلاس آنلاین فقط بعد از قطعی شدن ثبت‌نام نشان داده می‌شود.</li></ul>"
                 });
             }
             else if (kind == SiteKinds.Campus)
@@ -584,10 +716,13 @@ namespace NikooSystem.Services
             return pages;
         }
 
-        private static List<StoreGalleryItem> Gallery(string kind)
+        private static List<StoreGalleryItem> Gallery(string kind, string storeType)
         {
-            var titles = kind == SiteKinds.Content ? new[] { "پروژه اول", "پروژه دوم", "تیم ما" }
+            var titles = storeType == "cafe" ? new[] { "سالن کافه", "میزها", "دسر روز" }
+                : kind == SiteKinds.Content ? new[] { "پروژه اول", "پروژه دوم", "تیم ما" }
                 : kind == SiteKinds.Booking ? new[] { "فضای پذیرش", "اتاق خدمات", "تیم ما" }
+                : storeType == "school" ? new[] { "کلاس زبان", "اتاق تمرین", "مدرس‌ها" }
+                : storeType == "club" ? new[] { "سالن تمرین", "زمین چمن", "تیم مربیان" }
                 : kind == SiteKinds.Campus ? new[] { "سالن تمرین", "کلاس گروهی", "تیم مربیان" }
                 : new[] { "نمای فروشگاه", "محصولات منتخب", "تیم ما" };
             return titles.Select((t, i) => new StoreGalleryItem
@@ -665,7 +800,27 @@ namespace NikooSystem.Services
                     new StoreProductImage { ThumbUrl = img, LargeUrl = img, Alt = title, SortOrder = 1 },
                     new StoreProductImage { ThumbUrl = img, LargeUrl = img, Alt = title + " ۲", SortOrder = 2 }
                 },
-                Attributes = attrs?.ToList() ?? new List<StoreProductAttribute>()
+                Attributes = attrs.ToList()
+            };
+        }
+
+        private static StoreProduct Dish(int id, int catId, string title, string slug, string desc, long price, int stock, bool featured, params string[] badges)
+        {
+            return new StoreProduct
+            {
+                Id = id,
+                CategoryId = catId,
+                Title = title,
+                Slug = slug,
+                ShortDescription = desc,
+                Description = desc,
+                Price = price,
+                Stock = stock,
+                Sku = "MENU-" + id,
+                IsActive = true,
+                IsFeatured = featured,
+                IsSample = true,
+                Attributes = badges.Select(b => A(1, "نشان", b)).ToList()
             };
         }
 

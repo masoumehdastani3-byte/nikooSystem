@@ -1,12 +1,13 @@
 @model PagedList<StoreParty>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "تامین‌کنندگان و مشتریان";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    ViewBag.Title = AccountingCopy.Parties(kind);
     var company = (string)ViewBag.CompanyCode;
     var kinds = new[] { PartyKind.Supplier, PartyKind.Customer };
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">تامین‌کنندگان و مشتریان</h2>
+    <h2 class="mb-0">@AccountingCopy.Parties(kind)</h2>
     <div class="d-flex gap-2 flex-wrap">
         <a class="btn-store" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Supplier })"><i class="bi bi-plus-lg"></i> تامین‌کننده جدید</a>
         <a class="btn-outline-store" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })"><i class="bi bi-plus-lg"></i> مشتری جدید</a>

@@ -41,7 +41,13 @@ namespace NikooSystem.Controllers
             if (string.Equals(model.Username, CurrentSettings.AdminUsername, StringComparison.OrdinalIgnoreCase) &&
                 PasswordHelper.Verify(model.Password, CurrentSettings.AdminPasswordHash))
             {
-                IsShopAdmin = true;
+                SignInOwner(CurrentSettings.AdminUsername);
+                return ToAction("Index");
+            }
+            var staff = TenantStore.AuthenticatePanelUser(CompanyCode, model.Username, model.Password);
+            if (staff != null)
+            {
+                SignInPanelUser(staff);
                 return ToAction("Index");
             }
             ModelState.AddModelError("", "نام کاربری یا رمز عبور اشتباه است.");
@@ -64,31 +70,39 @@ namespace NikooSystem.Controllers
                 ModelState.AddModelError("", "این موبایل با مالک فروشگاه تطبیق ندارد.");
                 return View("Login", new StoreLoginVm { Username = mobile });
             }
-            if (BaleNotifier.Recipients(CompanyCode).Count == 0)
-            {
-                ModelState.AddModelError("", "ابتدا باید حساب بله را در بخش «اطلاع‌رسانی بله» پنل مدیریت وصل کنید.");
-                return View("Login", new StoreLoginVm { Username = mobile });
-            }
-
             var temporary = PasswordHelper.GenerateTemporaryPassword();
             var settings = CurrentSettings;
             settings.AdminPasswordHash = PasswordHelper.Hash(temporary);
             TenantStore.SaveSettings(settings);
 
-            var text = "🔐 بازیابی رمز مدیر فروشگاه\n"
-                + "فروشگاه: " + BaleNotifier.SiteName(CompanyCode) + "\n"
-                + "موبایل مالک: " + mobile + "\n"
-                + "رمز موقت جدید: " + temporary + "\n"
-                + "بعد از ورود، رمز را عوض کنید.";
-            var error = await BaleNotifier.SendToRecipientsAsync(CompanyCode, text);
-            if (error != null)
+            var siteName = BaleNotifier.SiteName(CompanyCode);
+            var sms = await SmsService.SendPasswordAsync(CompanyCode, mobile, temporary, siteName);
+            if (sms.Success)
             {
-                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                Ok("رمز موقت مدیر پیامک شد.");
+                return ToAction("Login");
+            }
+
+            if (BaleNotifier.Recipients(CompanyCode).Count > 0)
+            {
+                var text = "🔐 بازیابی رمز مدیر فروشگاه\n"
+                    + "فروشگاه: " + siteName + "\n"
+                    + "موبایل مالک: " + mobile + "\n"
+                    + "رمز موقت جدید: " + temporary + "\n"
+                    + "بعد از ورود، رمز را عوض کنید.";
+                var error = await BaleNotifier.SendToRecipientsAsync(CompanyCode, text);
+                if (error == null)
+                {
+                    Ok("رمز موقت مدیر در بله ارسال شد.");
+                    return ToAction("Login");
+                }
+                ModelState.AddModelError("", "ارسال رمز ممکن نشد. پیامک: " + sms.Error + " — بله: " + error);
                 return View("Login", new StoreLoginVm { Username = mobile });
             }
 
-            Ok("رمز موقت مدیر در بله ارسال شد.");
-            return ToAction("Login");
+            ModelState.AddModelError("", sms.Error
+                ?? "برای بازیابی رمز، اعتبار پیامک را شارژ کنید یا حساب بله را در «اطلاع‌رسانی بله» وصل کنید.");
+            return View("Login", new StoreLoginVm { Username = mobile });
         }
 
         [AllowAnonymous]
@@ -113,6 +127,7 @@ namespace NikooSystem.Controllers
 
         public ActionResult Index()
         {
+            ViewBag.DashboardPins = ResolveDashboardPins();
             ViewBag.Checklist = BuildChecklist();
             ViewBag.Visits = VisitStats.Report(CompanyCode);
             if (Kind.IsContent)
@@ -146,6 +161,14 @@ namespace NikooSystem.Controllers
                 }
                 return View();
             }
+            if (Kind.IsMenu)
+            {
+                ViewBag.ItemCount = TenantStore.CountProducts(CompanyCode);
+                ViewBag.OpenCalls = TenantStore.OpenWaiterCallCount(CompanyCode);
+                ViewBag.UnreadMessages = TenantStore.CountUnreadMessages(CompanyCode);
+                ViewBag.RecentCalls = TenantStore.GetWaiterCalls(CompanyCode).Take(8).ToList();
+                return View();
+            }
 
             ViewBag.ProductCount = TenantStore.CountProducts(CompanyCode);
             ViewBag.OrderCount = TenantStore.CountOrders(CompanyCode);
@@ -157,6 +180,62 @@ namespace NikooSystem.Controllers
                 ? TenantStore.LowStockProducts(CompanyCode, CurrentSettings.LowStockThreshold, 8).ToList()
                 : new List<StoreProduct>();
             return View();
+        }
+
+        [HttpGet]
+        public ActionResult MyDashboard()
+        {
+            var nav = BuildPanelNav();
+            var saved = TenantStore.GetDashboardPins(CompanyCode, CurrentPanelUserId);
+            var selected = saved.Count > 0 ? saved : ShopAdminNav.DefaultPins(Kind).ToList();
+            ViewBag.NavGroups = nav;
+            ViewBag.SelectedPins = selected;
+            ViewBag.MaxPins = ShopAdminNav.MaxPins;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult MyDashboard(string[] pins)
+        {
+            var allowed = new HashSet<string>(
+                ShopAdminNav.Flatten(BuildPanelNav()).Select(i => i.Action),
+                StringComparer.OrdinalIgnoreCase);
+            var cleaned = (pins ?? new string[0])
+                .Where(p => !string.IsNullOrWhiteSpace(p) && allowed.Contains(p.Trim())
+                    && !string.Equals(p, "Index", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(p, "MyDashboard", StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Take(ShopAdminNav.MaxPins)
+                .ToList();
+            TenantStore.SaveDashboardPins(CompanyCode, CurrentPanelUserId, cleaned);
+            return Ok("داشبورد شخصی ذخیره شد.", "Index");
+        }
+
+        private List<ShopAdminNavItem> ResolveDashboardPins()
+        {
+            var nav = BuildPanelNav();
+            var saved = TenantStore.GetDashboardPins(CompanyCode, CurrentPanelUserId);
+            var keys = saved.Count > 0 ? saved : ShopAdminNav.DefaultPins(Kind).ToList();
+            var pins = ShopAdminNav.ResolvePins(nav, keys);
+            if (pins.Count == 0)
+                pins = ShopAdminNav.ResolvePins(nav, ShopAdminNav.DefaultPins(Kind));
+            return pins;
+        }
+
+        private List<ShopAdminNavGroup> BuildPanelNav()
+        {
+            var tenant = ViewBag.Tenant as TenantInfo;
+            return ShopAdminNav.Build(
+                Kind,
+                CompanyCode,
+                null,
+                CurrentPanelRole,
+                PanelAccess.IsOwner(CurrentPanelRole),
+                CurrentSettings,
+                tenant != null && tenant.IsRenewalDue(),
+                tenant?.StoreType);
         }
 
         private List<SetupChecklistItem> BuildChecklist()
@@ -251,6 +330,31 @@ namespace NikooSystem.Controllers
                     Done = s.EnablePayment && TenantProvisioningService.HasValidMerchant(s) && (Kind.IsCampus || s.BookingDepositPercent > 0),
                     Optional = true,
                     Url = SetupUrl(4)
+                });
+            }
+            else if (Kind.IsMenu)
+            {
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "افزودن اولین آیتم واقعی منو",
+                    Hint = "غذا یا نوشیدنی خودتان را با قیمت اضافه کنید. موجودی صفر یعنی روی منو ناموجود است.",
+                    Done = TenantStore.CountProducts(CompanyCode, false) > 0,
+                    Url = SetupUrl(3)
+                });
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "حذف نمونه‌ها",
+                    Hint = "آیتم‌های نمونه فقط برای نمایش ظاهر منو هستند.",
+                    Done = TenantStore.CountProducts(CompanyCode, true) == 0,
+                    Url = SetupUrl(3)
+                });
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "چاپ کارت QR میزها",
+                    Hint = "کارت هر میز را چاپ کنید تا مشتری با دوربین موبایل منو را باز کند.",
+                    Done = false,
+                    Optional = true,
+                    Url = Url.Action("MenuQr", new { company = CompanyCode })
                 });
             }
             else
@@ -368,7 +472,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult SetupProduct(string title, long? price, int? categoryId, int? stock, string shortDescription, string author,
             HttpPostedFileBase imageFile, StoreProductType productType = StoreProductType.Physical, bool removeSamples = false)
         {
@@ -610,13 +714,27 @@ namespace NikooSystem.Controllers
                 ?? SaveBrandImage(heroFile, BrandImageKind.Hero, url => model.HeroImageUrl = url);
             if (imageError != null) return Fail(imageError, "Settings");
 
-            model.AdminUsername = string.IsNullOrWhiteSpace(model.AdminUsername)
-                ? (existing?.AdminUsername ?? "admin")
-                : model.AdminUsername;
-            model.AdminPasswordHash = string.IsNullOrWhiteSpace(newPassword)
-                ? (existing?.AdminPasswordHash ?? PasswordHelper.Hash("Admin@123"))
-                : PasswordHelper.Hash(newPassword);
+            if (PanelAccess.IsOwner(CurrentPanelRole))
+            {
+                model.AdminUsername = string.IsNullOrWhiteSpace(model.AdminUsername)
+                    ? (existing?.AdminUsername ?? "admin")
+                    : model.AdminUsername.Trim();
+                model.AdminPasswordHash = string.IsNullOrWhiteSpace(newPassword)
+                    ? (existing?.AdminPasswordHash ?? PasswordHelper.Hash("Admin@123"))
+                    : PasswordHelper.Hash(newPassword);
+            }
+            else
+            {
+                model.AdminUsername = existing?.AdminUsername ?? "admin";
+                model.AdminPasswordHash = existing?.AdminPasswordHash ?? PasswordHelper.Hash("Admin@123");
+            }
             model.PageLayout = existing?.PageLayout;
+            model.FiscalStartMonth = FiscalPeriod.NormalizeMonth(existing?.FiscalStartMonth ?? 1);
+            model.FiscalLockDates = existing?.FiscalLockDates ?? true;
+            model.ClosedFiscalYears = existing?.ClosedFiscalYears;
+            model.EnableVat = existing?.EnableVat == true;
+            model.VatPercent = existing?.VatPercent ?? 10;
+            model.OwnerDashboardPins = existing?.OwnerDashboardPins;
             model.EnableTorob = Kind.IsShop && existing?.EnableTorob == true;
             model.TorobWebhookBearerToken = existing?.TorobWebhookBearerToken;
             model.PublicStoreBaseUrl = existing?.PublicStoreBaseUrl;
@@ -629,6 +747,11 @@ namespace NikooSystem.Controllers
             KeepSettingsOfOtherKinds(model, existing);
             model.ShippingCost = Math.Max(0, model.ShippingCost);
             model.FreeShippingThreshold = Math.Max(0, model.FreeShippingThreshold);
+            model.ShippingMethod = Clip(model.ShippingMethod, 80);
+            if (string.IsNullOrWhiteSpace(model.ShippingMethod)) model.ShippingMethod = "پست پیشتاز";
+            model.ShippingNote = Clip(model.ShippingNote, 500);
+            model.ReturnDays = Math.Max(0, Math.Min(90, model.ReturnDays));
+            model.ReturnPolicy = Clip(model.ReturnPolicy, 1000);
             model.LowStockThreshold = Math.Max(0, model.LowStockThreshold);
             CleanSeo(model);
             var verification = Seo.VerificationCode(model.GoogleVerification);
@@ -650,6 +773,11 @@ namespace NikooSystem.Controllers
             {
                 model.ShippingCost = existing.ShippingCost;
                 model.FreeShippingThreshold = existing.FreeShippingThreshold;
+                model.ShippingMethod = existing.ShippingMethod;
+                model.ShippingNote = existing.ShippingNote;
+                model.EnableReturns = existing.EnableReturns;
+                model.ReturnDays = existing.ReturnDays;
+                model.ReturnPolicy = existing.ReturnPolicy;
                 model.LowStockThreshold = existing.LowStockThreshold;
             }
             if (!Kind.IsContent) model.ModerateComments = existing.ModerateComments;
@@ -666,6 +794,7 @@ namespace NikooSystem.Controllers
                 model.BookingMinNoticeMinutes = Math.Max(0, Math.Min(7 * 24 * 60, model.BookingMinNoticeMinutes));
                 model.BookingDepositPercent = Math.Max(0, Math.Min(100, model.BookingDepositPercent));
                 model.BookingCancelHours = Math.Max(0, Math.Min(14 * 24, model.BookingCancelHours));
+                model.SmsBookingReminderHours = Math.Max(0, Math.Min(7 * 24, model.SmsBookingReminderHours));
                 model.BookingNotice = model.BookingNotice?.Trim();
                 if (model.BookingNotice?.Length > 1000) model.BookingNotice = model.BookingNotice.Substring(0, 1000);
             }
@@ -676,7 +805,24 @@ namespace NikooSystem.Controllers
                 model.BookingMinNoticeMinutes = existing.BookingMinNoticeMinutes;
                 model.BookingDepositPercent = existing.BookingDepositPercent;
                 model.BookingCancelHours = existing.BookingCancelHours;
+                model.SmsBookingConfirm = existing.SmsBookingConfirm;
+                model.SmsBookingReminderHours = existing.SmsBookingReminderHours;
                 model.BookingNotice = existing.BookingNotice;
+            }
+            if (Kind.IsMenu)
+            {
+                model.EnablePayment = false;
+                model.OpeningHours = Clip(model.OpeningHours, 120);
+                model.DailyNote = Clip(model.DailyNote, 300);
+                model.WifiName = Clip(model.WifiName, 80);
+                model.WifiPassword = Clip(model.WifiPassword, 80);
+            }
+            else
+            {
+                model.OpeningHours = existing.OpeningHours;
+                model.DailyNote = existing.DailyNote;
+                model.WifiName = existing.WifiName;
+                model.WifiPassword = existing.WifiPassword;
             }
         }
     }

@@ -8,7 +8,7 @@
     <div class="container" style="max-width:480px;">
         <div class="panel-card">
             <h2 class="section-title">ورود مشتری</h2>
-            <p class="small text-muted">این صفحه مخصوص <strong>مشتریان همین فروشگاه</strong> است.</p>
+            <p class="small text-muted">این صفحه مخصوص <strong>مشتریان همین فروشگاه</strong> است. اگر فقط سفارش آنلاین داده‌اید و رمز ندارید، موبایل را پایین وارد کنید و «ارسال رمز موقت» را بزنید.</p>
             @using (Html.BeginForm())
             {
                 @Html.AntiForgeryToken()
@@ -20,7 +20,7 @@
             @using (Html.BeginForm("ForgotPassword", "ShopAccount", new { company, returnUrl = (string)ViewBag.ReturnUrl }, FormMethod.Post, new { @class = "mt-3" }))
             {
                 @Html.AntiForgeryToken()
-                <div class="small text-muted mb-2">رمز را فراموش کرده‌اید؟ موبایل را وارد کنید تا رمز موقت در بله ارسال شود.</div>
+                <div class="small text-muted mb-2">رمز را فراموش کرده‌اید؟ موبایل را وارد کنید تا رمز موقت پیامک شود.</div>
                 <div class="input-group">
                     <input type="text" name="mobile" class="form-control" placeholder="09121234567" />
                     <button class="btn btn-outline-secondary" type="submit">ارسال رمز موقت</button>

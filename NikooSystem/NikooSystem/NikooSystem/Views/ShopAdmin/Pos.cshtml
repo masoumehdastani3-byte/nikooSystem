@@ -1,0 +1,409 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    ViewBag.Title = AccountingCopy.Pos(kind);
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<StoreProduct>)ViewBag.Products ?? new List<StoreProduct>();
+    var goods = (List<StoreGoodsItem>)ViewBag.Goods ?? new List<StoreGoodsItem>();
+    var parties = (List<StoreParty>)ViewBag.Parties ?? new List<StoreParty>();
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
+    var categories = (List<StoreCategory>)ViewBag.Categories ?? new List<StoreCategory>();
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+    var catalogProducts = products.Where(p => p.Price > 0 || p.Stock > 0)
+        .OrderByDescending(p => p.SoldCount).ThenBy(p => p.Title).ToList();
+    var usedCatIds = new HashSet<int>(catalogProducts.Select(p => p.CategoryId).Where(id => id > 0));
+    var posCats = categories.Where(c => usedCatIds.Contains(c.Id)).ToList();
+    var hasCatalog = catalogProducts.Any() || goods.Any();
+    var defaultVat = ViewBag.DefaultVatPercent != null ? (int)ViewBag.DefaultVatPercent : 0;
+    var safeJson = new Newtonsoft.Json.JsonSerializerSettings { StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.EscapeHtml };
+    var catalogJson = Newtonsoft.Json.JsonConvert.SerializeObject(
+        catalogProducts.Select(p => new
+        {
+            stock = "p-" + p.Id.ToString(invariant),
+            title = p.Title ?? "",
+            price = p.Price,
+            qty = p.Stock,
+            sku = p.Sku ?? "",
+            cat = p.CategoryId,
+            sold = p.SoldCount,
+            goods = false
+        }).Concat(goods.Select(g => new
+        {
+            stock = "g-" + g.Id.ToString(invariant),
+            title = g.Title ?? "",
+            price = 0L,
+            qty = g.Qty,
+            sku = g.Code ?? "",
+            cat = 0,
+            sold = 0,
+            goods = true
+        })), safeJson);
+}
+<link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
+<div class="acc-form-head">
+    <div>
+        <h2>@ViewBag.Title</h2>
+        <p class="lead">@AccountingCopy.PosLead(kind)</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">@AccountingCopy.SaleInvoices(kind)</a>
+        <a class="btn-outline-store" href="@Url.Action("EditSaleInvoice","ShopAdmin", new { company })">فاکتور کامل</a>
+    </div>
+</div>
+
+<div class="pos-layout">
+    <div class="panel-card pos-catalog">
+        <div class="pos-search-wrap mb-2">
+            <i class="bi bi-search"></i>
+            <input type="search" id="posSearch" class="form-control" placeholder="@AccountingCopy.PosSearch(kind)" autocomplete="off" autofocus />
+        </div>
+        @if (posCats.Any() || goods.Any())
+        {
+            <div class="pos-cats" id="posCats" role="tablist">
+                <button type="button" class="pos-cat is-on" data-cat="">همه</button>
+                @foreach (var cat in posCats)
+                {
+                    <button type="button" class="pos-cat" data-cat="@cat.Id.ToString(invariant)">@cat.Title</button>
+                }
+                @if (goods.Any())
+                {
+                    <button type="button" class="pos-cat" data-cat="goods">انبار</button>
+                }
+            </div>
+        }
+        <div class="pos-meta" id="posMeta"></div>
+        <div class="pos-list" id="posGrid" role="listbox" aria-label="نتایج کالا"></div>
+        @if (!hasCatalog)
+        {
+            <p class="text-muted mb-0">@AccountingCopy.PosCatalogEmpty(kind)</p>
+        }
+        <div class="pos-manual">
+            <h4><i class="bi bi-pencil-square"></i> ردیف دستی (خدمت یا مبلغ متفرقه)</h4>
+            <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label" for="manualTitle">شرح</label>
+                    <input class="form-control" id="manualTitle" maxlength="150" placeholder="مثلاً کوتاهی مو، ماساژ، شهریه" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="manualPrice">مبلغ (تومان)</label>
+                    <input class="form-control" id="manualPrice" inputmode="numeric" dir="ltr" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="manualQty">تعداد</label>
+                    <input class="form-control" id="manualQty" type="number" min="1" value="1" dir="ltr" />
+                </div>
+                <div class="col-md-2">
+                    <button type="button" class="btn-store w-100" id="manualAdd">افزودن</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-card pos-cart">
+        <h3 class="h5 mb-3">سبد صندوق</h3>
+        @using (Html.BeginForm("Pos", "ShopAdmin", new { company }, FormMethod.Post, new { id = "posForm" }))
+        {
+            @Html.AntiForgeryToken()
+            <div id="posLines" class="pos-lines mb-3"></div>
+            <div id="posEmpty" class="text-muted small mb-3">@AccountingCopy.PosEmptyCart</div>
+            <div class="pos-total-block mb-3">
+                <div class="pos-total"><span>جمع ردیف‌ها</span><strong id="posSubtotal">۰ تومان</strong></div>
+                <div class="row g-2 mt-2">
+                    <div class="col-6">
+                        <label class="form-label" for="DiscountAmount">تخفیف</label>
+                        <input class="form-control form-control-sm" inputmode="numeric" dir="ltr" name="DiscountAmount" id="DiscountAmount" value="" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label" for="VatPercent">مالیات ٪</label>
+                        <input class="form-control form-control-sm" type="number" min="0" max="100" dir="ltr" name="VatPercent" id="VatPercent" value="@defaultVat.ToString(invariant)" />
+                    </div>
+                </div>
+                <div class="pos-total mt-2"><span>مالیات</span><strong id="posVat">۰ تومان</strong></div>
+                <div class="pos-total is-grand"><span>قابل دریافت</span><strong id="posTotal">۰ تومان</strong></div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label" for="party">مشتری (اختیاری)</label>
+                <select class="form-select" name="party" id="party">
+                    <option value="">— مشتری متفرقه / نقدی —</option>
+                    @foreach (var party in parties)
+                    {
+                        <option value="t-@party.Id">@(party.Name + (string.IsNullOrWhiteSpace(party.Mobile) ? "" : " — " + party.Mobile))</option>
+                    }
+                </select>
+                <input class="form-control form-control-sm mt-1" name="newParty" maxlength="150" placeholder="یا نام مشتری تازه" />
+            </div>
+            <div class="mb-2">
+                <label class="form-label" for="payFrom">دریافت در</label>
+                <select class="form-select" name="payFrom" id="payFrom">
+                    @foreach (var option in AccountingText.PayOptions(banks, true, "Cash"))
+                    {
+                        <option value="@option.Key" @(option.Key == "Cash" ? "selected" : null)>@option.Value</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="note">یادداشت</label>
+                <input class="form-control" name="note" id="note" maxlength="500" value="@AccountingCopy.Pos(kind)" />
+            </div>
+            <button class="btn-store w-100" type="submit" id="posSubmit" disabled><i class="bi bi-check2-circle"></i> ثبت فروش</button>
+        }
+    </div>
+</div>
+
+<script>
+(function () {
+  var catalog = @Html.Raw(catalogJson);
+  var LIMIT = 40;
+  var cart = {};
+  var manualSeq = 0;
+  var activeCat = '';
+  var highlight = 0;
+  var lines = document.getElementById('posLines');
+  var empty = document.getElementById('posEmpty');
+  var totalEl = document.getElementById('posTotal');
+  var subtotalEl = document.getElementById('posSubtotal');
+  var vatEl = document.getElementById('posVat');
+  var discountEl = document.getElementById('DiscountAmount');
+  var vatPercentEl = document.getElementById('VatPercent');
+  var submit = document.getElementById('posSubmit');
+  var search = document.getElementById('posSearch');
+  var grid = document.getElementById('posGrid');
+  var meta = document.getElementById('posMeta');
+  var cats = document.getElementById('posCats');
+  var toman = function (n) {
+    n = Math.round(Number(n) || 0);
+    return n.toLocaleString('fa-IR') + ' تومان';
+  };
+  var money = function (el) {
+    return Math.max(0, parseInt(String((el && el.value) || '').replace(/[^\d]/g, ''), 10) || 0);
+  };
+  var fa = function (n) { return Number(n || 0).toLocaleString('fa-IR'); };
+
+  function addItem(item) {
+    if (!item) return;
+    var key = item.stock;
+    var maxQty = parseInt(item.qty, 10) || 0;
+    var price = parseInt(item.price, 10) || 0;
+    if (!cart[key]) {
+      cart[key] = { title: item.title, price: price, qty: 1, maxQty: maxQty, stock: key };
+    } else if (!maxQty || cart[key].qty < maxQty) {
+      cart[key].qty += 1;
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    var keys = Object.keys(cart);
+    lines.innerHTML = '';
+    var sum = 0;
+    keys.forEach(function (key) {
+      var row = cart[key];
+      sum += row.qty * row.price;
+      var wrap = document.createElement('div');
+      wrap.className = 'pos-line';
+      wrap.innerHTML =
+        '<div><strong></strong><div class="pos-line-meta">' +
+        '<input type="hidden" name="lineStock" value="' + (row.stock || '') + '">' +
+        '<input type="hidden" name="lineTitle" value="">' +
+        '<label class="small mb-0">تعداد <input class="form-control form-control-sm" type="number" min="1" name="lineQty" value="' + row.qty + '"></label>' +
+        '<label class="small mb-0">قیمت <input class="form-control form-control-sm pos-price" inputmode="numeric" dir="ltr" name="linePrice" value="' + row.price + '"></label>' +
+        '<button type="button" class="pos-remove" title="حذف">&times;</button></div></div>' +
+        '<div class="pos-line-sum"></div>';
+      wrap.querySelector('strong').textContent = row.title;
+      wrap.querySelector('input[name=lineTitle]').value = row.title;
+      wrap.querySelector('.pos-line-sum').textContent = toman(row.qty * row.price);
+      wrap.querySelector('input[name=lineQty]').addEventListener('change', function (e) {
+        var q = parseInt(e.target.value, 10) || 1;
+        if (q < 1) q = 1;
+        if (row.maxQty > 0 && q > row.maxQty) q = row.maxQty;
+        row.qty = q;
+        e.target.value = q;
+        renderCart();
+      });
+      wrap.querySelector('input[name=linePrice]').addEventListener('change', function (e) {
+        row.price = Math.max(0, parseInt(String(e.target.value).replace(/[^\d]/g, ''), 10) || 0);
+        e.target.value = row.price;
+        renderCart();
+      });
+      wrap.querySelector('.pos-remove').addEventListener('click', function () {
+        delete cart[key];
+        renderCart();
+      });
+      lines.appendChild(wrap);
+    });
+    empty.style.display = keys.length ? 'none' : 'block';
+    var discount = Math.min(money(discountEl), sum);
+    var vatPercent = Math.min(100, money(vatPercentEl));
+    var net = sum - discount;
+    var vat = Math.round(net * vatPercent / 100);
+    if (subtotalEl) subtotalEl.textContent = toman(sum);
+    if (vatEl) vatEl.textContent = toman(vat);
+    totalEl.textContent = toman(net + vat);
+    submit.disabled = keys.length === 0;
+  }
+
+  function filtered() {
+    var q = (search.value || '').trim().toLowerCase();
+    return catalog.filter(function (item) {
+      if (activeCat === 'goods') {
+        if (!item.goods) return false;
+      } else if (activeCat) {
+        if (item.goods || String(item.cat) !== activeCat) return false;
+      }
+      if (!q) return true;
+      var hay = (item.title + ' ' + item.sku).toLowerCase();
+      return hay.indexOf(q) >= 0;
+    });
+  }
+
+  function rank(list, q) {
+    if (!q) {
+      return list.slice().sort(function (a, b) {
+        var sold = (b.sold || 0) - (a.sold || 0);
+        if (sold) return sold;
+        if (!!a.goods !== !!b.goods) return a.goods ? 1 : -1;
+        return String(a.title || '').localeCompare(String(b.title || ''), 'fa');
+      });
+    }
+    var exact = [];
+    var rest = [];
+    list.forEach(function (item) {
+      if ((item.sku || '').toLowerCase() === q) exact.push(item);
+      else rest.push(item);
+    });
+    return exact.concat(rest);
+  }
+
+  function paintList() {
+    if (!grid) return;
+    var q = (search.value || '').trim().toLowerCase();
+    var browsing = !q;
+    var all = rank(filtered(), q);
+    var page = all.slice(0, LIMIT);
+    highlight = Math.min(highlight, Math.max(0, page.length - 1));
+    grid.innerHTML = '';
+    if (!all.length) {
+      grid.innerHTML = '<div class="pos-list-empty">' + (catalog.length ? 'کالایی با این جستجو پیدا نشد.' : '') + '</div>';
+      if (meta) meta.textContent = '';
+      return;
+    }
+    page.forEach(function (item, idx) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'pos-hit' + (item.goods ? ' is-goods' : '') + (idx === highlight ? ' is-active' : '');
+      btn.setAttribute('role', 'option');
+      btn.innerHTML = '<span class="pos-hit-main"><strong></strong><small></small></span><span class="pos-hit-side"><b></b><em></em></span>';
+      btn.querySelector('strong').textContent = item.title;
+      var bits = [];
+      if (item.sku) bits.push(item.sku);
+      bits.push('موجودی ' + fa(item.qty));
+      if (browsing && !item.goods && item.sold > 0) bits.push('فروش ' + fa(item.sold));
+      btn.querySelector('small').textContent = bits.join(' · ');
+      btn.querySelector('b').textContent = item.goods ? 'قیمت دستی' : toman(item.price);
+      btn.querySelector('em').textContent = 'افزودن';
+      btn.addEventListener('click', function () {
+        addItem(item);
+        search.value = '';
+        highlight = 0;
+        paintList();
+        search.focus();
+      });
+      btn.addEventListener('mouseenter', function () {
+        highlight = idx;
+        Array.prototype.forEach.call(grid.querySelectorAll('.pos-hit'), function (el, i) {
+          el.classList.toggle('is-active', i === highlight);
+        });
+      });
+      grid.appendChild(btn);
+    });
+    if (meta) {
+      if (browsing && !activeCat) {
+        meta.textContent = all.length > LIMIT
+          ? '۴۰ کالای پرفروش از ' + fa(all.length) + ' — بقیه را جستجو کنید.'
+          : (page.length ? fa(page.length) + ' کالای پرفروش' : '');
+      } else if (all.length > LIMIT) {
+        meta.textContent = 'نمایش ' + fa(LIMIT) + ' از ' + fa(all.length) + ' — برای بقیه جستجو کنید.';
+      } else {
+        meta.textContent = fa(all.length) + ' مورد';
+      }
+    }
+  }
+
+  if (discountEl) discountEl.addEventListener('input', renderCart);
+  if (vatPercentEl) vatPercentEl.addEventListener('input', renderCart);
+  document.getElementById('manualAdd').addEventListener('click', function () {
+    var title = (document.getElementById('manualTitle').value || '').trim();
+    var price = parseInt(String(document.getElementById('manualPrice').value || '').replace(/[^\d]/g, ''), 10) || 0;
+    var qty = parseInt(document.getElementById('manualQty').value, 10) || 1;
+    if (!title) { document.getElementById('manualTitle').focus(); return; }
+    if (qty < 1) qty = 1;
+    manualSeq += 1;
+    var key = 'm-' + manualSeq;
+    cart[key] = { title: title, price: price, qty: qty, maxQty: 0, stock: '' };
+    document.getElementById('manualTitle').value = '';
+    document.getElementById('manualPrice').value = '';
+    document.getElementById('manualQty').value = '1';
+    renderCart();
+  });
+  if (cats) {
+    cats.addEventListener('click', function (e) {
+      var btn = e.target.closest('.pos-cat');
+      if (!btn) return;
+      activeCat = btn.getAttribute('data-cat') || '';
+      Array.prototype.forEach.call(cats.querySelectorAll('.pos-cat'), function (el) {
+        el.classList.toggle('is-on', el === btn);
+      });
+      highlight = 0;
+      paintList();
+      search.focus();
+    });
+  }
+  search.addEventListener('input', function () {
+    highlight = 0;
+    paintList();
+  });
+  function markActive() {
+    var hits = grid.querySelectorAll('.pos-hit');
+    Array.prototype.forEach.call(hits, function (el, i) {
+      el.classList.toggle('is-active', i === highlight);
+    });
+    if (hits[highlight] && hits[highlight].scrollIntoView) {
+      hits[highlight].scrollIntoView({ block: 'nearest' });
+    }
+  }
+  search.addEventListener('keydown', function (e) {
+    var hits = grid.querySelectorAll('.pos-hit');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!hits.length) return;
+      highlight = Math.min(highlight + 1, hits.length - 1);
+      markActive();
+      return;
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!hits.length) return;
+      highlight = Math.max(highlight - 1, 0);
+      markActive();
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var q = (search.value || '').trim().toLowerCase();
+      var all = rank(filtered(), q);
+      if (!all.length) return;
+      var pick = all[Math.min(highlight, all.length - 1)] || all[0];
+      if (q) {
+        var exact = all.filter(function (item) { return (item.sku || '').toLowerCase() === q; });
+        if (exact.length === 1) pick = exact[0];
+      }
+      addItem(pick);
+      search.value = '';
+      highlight = 0;
+      paintList();
+    }
+  });
+  paintList();
+  renderCart();
+})();
+</script>

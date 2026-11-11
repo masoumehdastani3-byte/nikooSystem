@@ -1,0 +1,104 @@
+/* Hierarchical lists: circular +/- and L-shaped guide lines (RTL-aware). */
+.nk-tree {
+  --depth: 0;
+  --step: 1.45rem;
+  --tone: #6f8f6a;
+  --line: #c9d0c8;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  min-height: 1.85rem;
+  padding-inline-start: calc(var(--depth) * var(--step));
+}
+.nk-tree-toggle {
+  position: relative;
+  z-index: 1;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--tone);
+  color: #fff;
+  font-size: .72rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, .08);
+}
+.nk-tree-toggle:hover { filter: brightness(1.06); }
+.nk-tree-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--tone) 45%, #fff);
+  outline-offset: 2px;
+}
+.nk-tree-toggle.is-leaf {
+  background: #b7c7b4;
+  cursor: default;
+  pointer-events: none;
+  box-shadow: none;
+}
+.nk-tree-toggle.is-leaf::before {
+  content: "";
+  width: .34rem;
+  height: .34rem;
+  border-radius: 50%;
+  background: #fff;
+}
+.nk-tree-toggle i { pointer-events: none; }
+.nk-tree-label {
+  color: #111827;
+  line-height: 1.35;
+  min-width: 0;
+}
+.nk-tree.fw-bold .nk-tree-label { font-weight: 700; }
+.nk-tree-meta {
+  --depth: 0;
+  --step: 1.45rem;
+  margin-top: .15rem;
+  padding-inline-start: calc(var(--depth) * var(--step) + 1.9rem);
+}
+
+/* Vertical stem + horizontal elbow for nested rows */
+.nk-tree.is-nested::before,
+.nk-tree.is-nested::after {
+  content: "";
+  position: absolute;
+  background: var(--line);
+  pointer-events: none;
+}
+.nk-tree.is-nested::before {
+  /* vertical */
+  inset-inline-start: calc((var(--depth) - 1) * var(--step) + .65rem);
+  top: -0.55rem;
+  bottom: 0;
+  width: 1px;
+}
+.nk-tree.is-last::before {
+  bottom: 50%;
+}
+.nk-tree.is-nested::after {
+  /* horizontal */
+  inset-inline-start: calc((var(--depth) - 1) * var(--step) + .65rem);
+  top: 50%;
+  width: calc(var(--step) - .65rem);
+  height: 1px;
+  transform: translateY(-50%);
+}
+
+tr.nk-tree-row[hidden] { display: none !important; }
+
+/* Quick-manage tree list uses the same tokens */
+.qm-item.nk-tree-item {
+  align-items: center;
+  padding-inline-start: .35rem;
+}
+.qm-item .nk-tree {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.qm-item .nk-tree-label { font-weight: 600; }

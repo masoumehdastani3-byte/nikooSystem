@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -25,13 +27,16 @@ namespace NikooSystem.Controllers
         public ActionResult Login(StoreLoginVm model, string returnUrl)
         {
             // Username field = mobile
-            var customer = TenantStore.GetCustomerByMobile(CompanyCode, model.Username);
-            if (customer == null || !PasswordHelper.Verify(model.Password, customer.PasswordHash))
+            var mobile = BookingTime.NormalizeMobile(model.Username);
+            var customer = mobile == null ? null : TenantStore.GetCustomerByMobile(CompanyCode, mobile);
+            if (customer == null || string.IsNullOrEmpty(customer.PasswordHash) || !PasswordHelper.Verify(model.Password, customer.PasswordHash))
             {
-                ModelState.AddModelError("", "موبایل یا رمز عبور اشتباه است.");
+                ModelState.AddModelError("", "موبایل یا رمز عبور اشتباه است. اگر فقط سفارش داده‌اید و رمز ندارید، از «ارسال رمز موقت» استفاده کنید.");
                 ViewBag.ReturnUrl = returnUrl;
+                model.Username = mobile ?? model.Username;
                 return View(model);
             }
+            TenantStore.ClaimGuestOrders(CompanyCode, customer);
             CurrentCustomerId = customer.Id;
             return AfterSignIn(returnUrl);
         }
@@ -51,34 +56,58 @@ namespace NikooSystem.Controllers
             var customer = TenantStore.GetCustomerByMobile(CompanyCode, mobile);
             if (customer == null)
             {
-                ModelState.AddModelError("", "مشتری با این موبایل پیدا نشد.");
+                // Older guest checkouts left orders without an account — recover from those orders.
+                string createdPassword;
+                customer = TenantStore.RecoverGuestCheckout(CompanyCode, mobile, out createdPassword);
+                if (customer == null || string.IsNullOrEmpty(createdPassword))
+                {
+                    ModelState.AddModelError("", "مشتری با این موبایل پیدا نشد. اگر هنوز ثبت‌نام نکرده‌اید، از لینک ثبت‌نام استفاده کنید.");
+                    return View("Login", new StoreLoginVm { Username = mobile });
+                }
+                var site = BaleNotifier.SiteName(CompanyCode);
+                var send = await SmsService.SendPasswordAsync(CompanyCode, mobile, createdPassword, site);
+                if (send.Success)
+                {
+                    Ok("حساب شما ساخته شد و رمز موقت پیامک شد. سفارش‌های قبلی همین موبایل هم به حسابتان وصل شد.");
+                    return ToAction("Login", new { returnUrl });
+                }
+                ModelState.AddModelError("", "حساب ساخته شد ولی پیامک نرفت. رمز موقت: " + createdPassword
+                    + (string.IsNullOrWhiteSpace(send.Error) ? "" : " — " + send.Error));
                 return View("Login", new StoreLoginVm { Username = mobile });
             }
-            if (!customer.BaleChatId.HasValue || customer.BaleChatId <= 0)
-            {
-                ModelState.AddModelError("", "برای بازیابی رمز باید شناسه چت بله در حساب مشتری ثبت شده باشد.");
-                return View("Login", new StoreLoginVm { Username = mobile });
-            }
-
             var temporary = PasswordHelper.GenerateTemporaryPassword();
             customer.PasswordHash = PasswordHelper.Hash(temporary);
             TenantStore.SaveCustomer(CompanyCode, customer);
+            TenantStore.ClaimGuestOrders(CompanyCode, customer);
 
-            var text = "🔐 بازیابی رمز ورود مشتری\n"
-                + "فروشگاه: " + BaleNotifier.SiteName(CompanyCode) + "\n"
-                + "موبایل: " + mobile + "\n"
-                + "رمز موقت جدید: " + temporary + "\n"
-                + "بعد از ورود، رمز را عوض کنید.";
-
-            var error = await BaleNotifier.SendDirectAsync(CompanyCode, customer.BaleChatId.Value, text);
-            if (error != null)
+            var siteName = BaleNotifier.SiteName(CompanyCode);
+            var sms = await SmsService.SendPasswordAsync(CompanyCode, mobile, temporary, siteName);
+            if (sms.Success)
             {
-                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                Ok("رمز موقت جدید پیامک شد.");
+                return ToAction("Login", new { returnUrl });
+            }
+
+            if (customer.BaleChatId.HasValue && customer.BaleChatId > 0)
+            {
+                var text = "🔐 بازیابی رمز ورود مشتری\n"
+                    + "فروشگاه: " + siteName + "\n"
+                    + "موبایل: " + mobile + "\n"
+                    + "رمز موقت جدید: " + temporary + "\n"
+                    + "بعد از ورود، رمز را عوض کنید.";
+                var error = await BaleNotifier.SendDirectAsync(CompanyCode, customer.BaleChatId.Value, text);
+                if (error == null)
+                {
+                    Ok("رمز موقت جدید در بله ارسال شد.");
+                    return ToAction("Login", new { returnUrl });
+                }
+                ModelState.AddModelError("", "ارسال رمز ممکن نشد. پیامک: " + sms.Error + " — بله: " + error);
                 return View("Login", new StoreLoginVm { Username = mobile });
             }
 
-            Ok("رمز موقت جدید در بله ارسال شد.");
-            return ToAction("Login", new { returnUrl });
+            ModelState.AddModelError("", sms.Error
+                ?? "برای بازیابی رمز، اعتبار پیامک فروشگاه را شارژ کنید یا شناسه چت بله را در پروفایل ثبت کنید.");
+            return View("Login", new StoreLoginVm { Username = mobile });
         }
 
         [HttpGet]
@@ -94,23 +123,29 @@ namespace NikooSystem.Controllers
         {
             ViewBag.ReturnUrl = returnUrl;
             if (!ModelState.IsValid) return View(model);
-            if (TenantStore.GetCustomerByMobile(CompanyCode, model.Mobile) != null)
+            var mobile = BookingTime.NormalizeMobile(model.Mobile);
+            if (mobile == null)
             {
-                ModelState.AddModelError("", "این موبایل قبلاً ثبت شده است.");
+                ModelState.AddModelError("", "شماره موبایل معتبر نیست؛ مثلاً ۰۹۱۲۱۲۳۴۵۶۷.");
+                return View(model);
+            }
+            if (TenantStore.GetCustomerByMobile(CompanyCode, mobile) != null)
+            {
+                ModelState.AddModelError("", "این موبایل قبلاً ثبت شده است. از ورود یا «ارسال رمز موقت» استفاده کنید.");
                 return View(model);
             }
 
             var customer = TenantStore.SaveCustomer(CompanyCode, new StoreCustomer
             {
                 FullName = model.FullName,
-                Mobile = model.Mobile,
-                BaleChatId = model.BaleChatId,
+                Mobile = mobile,
                 Email = model.Email,
                 Address = model.Address,
                 PasswordHash = PasswordHelper.Hash(model.Password)
             });
+            var claimed = TenantStore.ClaimGuestOrders(CompanyCode, customer);
             CurrentCustomerId = customer.Id;
-            Ok("ثبت‌نام انجام شد.");
+            Ok("ثبت‌نام انجام شد." + (claimed > 0 ? " سفارش‌های قبلی همین موبایل به حسابتان وصل شد." : ""));
             return AfterSignIn(returnUrl);
         }
 
@@ -132,6 +167,39 @@ namespace NikooSystem.Controllers
         {
             ViewBag.Customer = CurrentCustomer;
             return View(TenantStore.CustomerOrders(CompanyCode, CurrentCustomer.Id, page));
+        }
+
+        [ShopCustomerOnly]
+        public ActionResult OrderDetails(int id)
+        {
+            var order = TenantStore.GetOrder(CompanyCode, id);
+            if (order == null || order.CustomerId != CurrentCustomer.Id) return ToAction("Orders");
+            ViewBag.Customer = CurrentCustomer;
+            ViewBag.Returns = TenantStore.ReturnsForOrder(CompanyCode, id);
+            ViewBag.ReturnedQty = TenantStore.ReturnedQuantities(CompanyCode, id);
+            ViewBag.ShippingRefunded = TenantStore.ShippingAlreadyRefunded(CompanyCode, id);
+            return View(order);
+        }
+
+        [HttpPost]
+        [ShopCustomerOnly]
+        [ValidateAntiForgeryToken]
+        public ActionResult RequestReturn(int orderId, string reason, int[] productId, int[] quantity)
+        {
+            var lines = new List<StoreReturnLine>();
+            if (productId != null && quantity != null)
+            {
+                var n = Math.Min(productId.Length, quantity.Length);
+                for (var i = 0; i < n; i++)
+                {
+                    if (productId[i] <= 0 || quantity[i] <= 0) continue;
+                    lines.Add(new StoreReturnLine { ProductId = productId[i], Quantity = quantity[i] });
+                }
+            }
+            StoreReturnRequest request;
+            var error = TenantStore.RequestReturn(CompanyCode, orderId, CurrentCustomer.Id, reason, lines, out request);
+            if (error != null) return Fail(error, "OrderDetails", new { id = orderId });
+            return Ok("درخواست مرجوعی ثبت شد و پس از بررسی فروشنده نتیجه اعلام می‌شود.", "OrderDetails", new { id = orderId });
         }
 
         [ShopCustomerOnly]

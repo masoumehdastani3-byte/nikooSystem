@@ -1,9 +1,9 @@
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "انبار";
     var company = (string)ViewBag.CompanyCode;
     var kind = (SiteKindInfo)ViewBag.Kind;
     var tab = (string)ViewBag.Tab;
+    ViewBag.Title = AccountingCopy.Inventory(kind);
 }
 @functions {
     static string MoveKind(string kind)
@@ -20,15 +20,15 @@
     }
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">انبار</h2>
+    <h2 class="mb-0">@AccountingCopy.Inventory(kind)</h2>
 </div>
 <div class="d-flex gap-2 flex-wrap mb-3" role="tablist">
-    <a class="@(tab == "goods" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-box-seam"></i> کالاهای انبار</a>
+    <a class="@(tab == "goods" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-box-seam"></i> اقلام موجودی</a>
     @if (kind != null && kind.Sells)
     {
         <a class="@(tab == "products" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company, tab = "products" })"><i class="bi bi-tags"></i> موجودی محصولات</a>
     }
-    <a class="@(tab == "moves" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company, tab = "moves" })"><i class="bi bi-arrow-left-right"></i> گردش انبار</a>
+    <a class="@(tab == "moves" ? "btn-store" : "btn-outline-store")" href="@Url.Action("Inventory","ShopAdmin", new { company, tab = "moves" })"><i class="bi bi-arrow-left-right"></i> گردش موجودی</a>
 </div>
 @if (tab == "products")
 {
@@ -81,7 +81,7 @@ else if (tab == "moves")
     var titles = (Dictionary<string, string>)ViewBag.MoveTitles;
     <div class="panel-card">
         <h5>گردش انبار</h5>
-        @Html.GridToolbar("جستجو در نام کالا یا یادداشت…")
+        @Html.GridToolbar("جستجو در نام کالا یا یادداشت…", true)
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>

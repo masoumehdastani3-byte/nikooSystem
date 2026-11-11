@@ -1,0 +1,49 @@
+@model List<StorePanelUser>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "کاربران پنل";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">کاربران پنل</h2>
+        <p class="text-muted mb-0 small">برای همکارانتان حساب جدا بسازید: مدیر، صندوقدار یا منشی. ورود همه از همان صفحه ورود پنل است؛ حساب مالک در تنظیمات می‌ماند.</p>
+    </div>
+    <a class="btn-store" href="@Url.Action("EditPanelUser","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> کاربر جدید</a>
+</div>
+<div class="panel-card">
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>نام</th>
+                    <th>نام کاربری</th>
+                    <th>نقش</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var u in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@u.DisplayName</td>
+                        <td dir="ltr" class="text-end">@u.Username</td>
+                        <td>@u.Role.Label()</td>
+                        <td>@(u.IsActive ? "فعال" : "غیرفعال")</td>
+                        <td class="small text-muted">@u.CreatedAt.ToShamsi()</td>
+                        <td class="row-actions">
+                            @Html.IconLink(Url.Action("EditPanelUser", "ShopAdmin", new { company, id = u.Id }), "bi-pencil", "ویرایش", "is-edit")
+                            @Html.IconPost("DeletePanelUser", new { id = u.Id }, "bi-trash", "حذف", "is-delete", "این کاربر حذف شود؟")
+                        </td>
+                    </tr>
+                }
+                @if (Model.Count == 0)
+                {
+                    <tr class="admin-empty-row"><td colspan="6"><i class="bi bi-people fs-3 d-block mb-1"></i>هنوز کاربر فرعی ندارید. برای صندوق یا منشی یک حساب بسازید.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -5,266 +5,431 @@
     var site = kind.SiteNoun;
     ViewBag.Title = "تنظیمات " + site;
     var company = (string)ViewBag.CompanyCode;
+    var siteTenant = ViewBag.Tenant as TenantInfo;
+    var defaultUrl = (string)ViewBag.StoreUrl;
+    var domainState = siteTenant?.DomainStatus() ?? DomainState.None;
+    var domainBadge = domainState == DomainState.WaitingDns ? new { Css = "bg-warning text-dark", Text = "منتظر تنظیم DNS" }
+        : domainState == DomainState.WaitingSupport ? new { Css = "bg-info text-dark", Text = "منتظر فعال‌سازی SSL" }
+        : new { Css = "bg-success", Text = "فعال" };
+    var publicRoot = Html.Seo().Url("/Shop/" + company);
+    var sitemapUrl = Html.Seo().Url("/Shop/" + company + "/sitemap.xml");
+    var fit = NikooSystem.Models.Store.StoreImageFit.Normalize(Model.ImageFit);
+    var isOwner = ViewBag.IsPanelOwner as bool? == true;
 }
-<h2 class="mb-4">اطلاعات و ظاهر @site@(kind.TakesPayments ? " + درگاه پرداخت" : "")</h2>
-@using (Html.BeginForm("Settings", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
-{
-    @Html.AntiForgeryToken()
-    <div class="row g-3">
-        <div class="col-md-6">
-            <label class="form-label">لوگو</label>
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                @if (!string.IsNullOrEmpty(Model.LogoUrl))
-                {
-                    <img src="@Model.LogoUrl" alt="لوگو" style="max-height:60px;max-width:180px;border:1px solid #eee;border-radius:8px;padding:4px;background:#fafafa" />
-                }
-                <input class="form-control" style="max-width:300px" type="file" name="logoFile" accept=".png,.jpg,.jpeg,.gif" />
+<div class="settings-page">
+    <div class="admin-page-head">
+        <div class="admin-page-head-title">
+            <span class="admin-page-head-accent" aria-hidden="true"></span>
+            <div>
+                <h2>تنظیمات @site</h2>
+                <p class="text-muted small mb-0 mt-1">هر بخش را از تب‌ها باز کنید؛ با «ذخیره تنظیمات» همه تغییرات یک‌جا ثبت می‌شوند.</p>
             </div>
-            @if (!string.IsNullOrEmpty(Model.LogoUrl))
+        </div>
+    </div>
+
+    <ul class="nav nav-pills settings-tabs flex-wrap gap-1 mb-3" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#set-identity" role="tab"><i class="bi bi-shop"></i> هویت و تماس</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-look" role="tab"><i class="bi bi-palette"></i> ظاهر</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-social" role="tab"><i class="bi bi-share"></i> شبکه‌های اجتماعی</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-seo" role="tab"><i class="bi bi-google"></i> سئو و آدرس</button>
+        </li>
+        @if (kind.IsShop)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-shop" role="tab"><i class="bi bi-truck"></i> فروش و ارسال</button>
+            </li>
+        }
+        @if (kind.IsContent)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-content" role="tab"><i class="bi bi-chat-dots"></i> نظرات</button>
+            </li>
+        }
+        @if (kind.Schedules)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-booking" role="tab"><i class="bi bi-calendar3"></i> @(kind.IsCampus ? "کلاس و رزرو" : "نوبت‌دهی")</button>
+            </li>
+        }
+        @if (kind.TakesPayments)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-pay" role="tab"><i class="bi bi-credit-card"></i> پرداخت</button>
+            </li>
+        }
+        @if (isOwner)
+        {
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#set-owner" role="tab"><i class="bi bi-person-lock"></i> حساب مالک</button>
+            </li>
+        }
+    </ul>
+
+    @using (Html.BeginForm("Settings", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "settingsForm" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="set-identity" role="tabpanel">
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title">هویت و اطلاعات تماس</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">لوگو</label>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                @if (!string.IsNullOrEmpty(Model.LogoUrl))
+                                {
+                                    <img src="@Model.LogoUrl" alt="لوگو" class="settings-thumb" />
+                                }
+                                <input class="form-control" style="max-width:300px" type="file" name="logoFile" accept=".png,.jpg,.jpeg,.gif" />
+                            </div>
+                            @if (!string.IsNullOrEmpty(Model.LogoUrl))
+                            {
+                                <div class="form-check mt-1">
+                                    <input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="removeLogo" />
+                                    <input type="hidden" name="removeLogo" value="false" />
+                                    <label class="form-check-label small" for="removeLogo">حذف لوگو (نام @site به‌جای آن نمایش داده شود)</label>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">تصویر بنر صفحه اول</label>
+                            <div class="d-flex align-items-center gap-3 flex-wrap">
+                                @if (!string.IsNullOrEmpty(Model.HeroImageUrl))
+                                {
+                                    <img src="@Model.HeroImageUrl" alt="بنر" class="settings-thumb is-hero" />
+                                }
+                                <input class="form-control" style="max-width:300px" type="file" name="heroFile" accept=".png,.jpg,.jpeg" />
+                            </div>
+                            @Html.HiddenFor(m => m.HeroImageUrl)
+                        </div>
+                        <div class="col-md-6"><label class="form-label">نام @site</label>@Html.TextBoxFor(m => m.StoreName, new { @class = "form-control" })</div>
+                        <div class="col-md-6"><label class="form-label">شعار</label>@Html.TextBoxFor(m => m.Tagline, new { @class = "form-control" })</div>
+                        <div class="col-12"><label class="form-label">درباره @(kind.Sells ? "فروشگاه" : "ما")</label>@Html.TextAreaFor(m => m.About, 3, 1, new { @class = "form-control" })</div>
+                        <div class="col-md-4"><label class="form-label">تلفن</label>@Html.TextBoxFor(m => m.Phone, new { @class = "form-control" })</div>
+                        <div class="col-md-4"><label class="form-label">ایمیل</label>@Html.TextBoxFor(m => m.Email, new { @class = "form-control" })</div>
+                        <div class="col-md-4"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Address, new { @class = "form-control" })</div>
+                        @if (kind.IsMenu)
+                        {
+                            <div class="col-md-4"><label class="form-label">ساعت کاری</label>@Html.TextBoxFor(m => m.OpeningHours, new { @class = "form-control", placeholder = "هر روز ۸ تا ۲۳" })</div>
+                            <div class="col-md-8"><label class="form-label">یادداشت روز</label>@Html.TextBoxFor(m => m.DailyNote, new { @class = "form-control" })</div>
+                            <div class="col-md-4"><label class="form-label">نام وای‌فای</label>@Html.TextBoxFor(m => m.WifiName, new { @class = "form-control", dir = "ltr" })</div>
+                            <div class="col-md-4"><label class="form-label">رمز وای‌فای</label>@Html.TextBoxFor(m => m.WifiPassword, new { @class = "form-control", dir = "ltr" })</div>
+                        }
+                        <div class="col-md-6"><label class="form-label">عنوان هیرو</label>@Html.TextBoxFor(m => m.HeroTitle, new { @class = "form-control" })</div>
+                        <div class="col-md-6"><label class="form-label">زیرعنوان هیرو</label>@Html.TextBoxFor(m => m.HeroSubtitle, new { @class = "form-control" })</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="set-look" role="tabpanel">
+                <div class="panel-card settings-pane mb-3">
+                    <h5 class="settings-pane-title">رنگ و فوتر</h5>
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label">رنگ اصلی</label><input class="form-control form-control-color w-100" type="color" name="PrimaryColor" id="PrimaryColor" value="@Model.PrimaryColor" /></div>
+                        <div class="col-md-3"><label class="form-label">رنگ فرعی</label><input class="form-control form-control-color w-100" type="color" name="SecondaryColor" id="SecondaryColor" value="@Model.SecondaryColor" /></div>
+                        <div class="col-md-6"><label class="form-label">متن فوتر</label>@Html.TextBoxFor(m => m.FooterText, new { @class = "form-control" })</div>
+                        <div class="col-12">@Html.BoolField("HidePoweredBy", Model.HidePoweredBy, "عبارت «ساخته شده با نیکو سیستم» در فوتر نمایش داده نشود")</div>
+                    </div>
+                </div>
+                <div class="panel-card settings-pane mb-3">
+                    <h5 class="settings-pane-title">قالب ظاهری @site</h5>
+                    <p class="text-muted small">یکی از قالب‌های آماده را انتخاب کنید. در صورت نیاز رنگ‌ها را هم دستی تغییر دهید.</p>
+                    @Html.Partial("_TemplatePicker", Model.LayoutStyle)
+                </div>
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title"><i class="bi bi-aspect-ratio"></i> نمایش یکدست تصاویر</h5>
+                    <p class="text-muted small">
+                        تصاویر با هر اندازه در کارت‌ها، گالری و بنرها در کادرهای هم‌اندازه می‌نشینند. انتخاب کنید تصویری که با کادر هم‌شکل نیست چطور در آن قرار بگیرد:
+                    </p>
+                    <div class="fit-options" role="radiogroup" aria-label="نحوه قرار گرفتن تصاویر در کادر">
+                        @foreach (var o in NikooSystem.Models.Store.StoreImageFit.Options)
+                        {
+                            <label class="fit-option">
+                                <input type="radio" name="ImageFit" value="@o.Id" @(fit == o.Id ? "checked" : null) />
+                                <span class="fit-demo fit-demo-@o.Id" aria-hidden="true"><i></i><i></i><i></i></span>
+                                <strong><i class="bi @o.Icon"></i> @o.Title</strong>
+                                <span class="small text-muted">@o.Hint</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="set-social" role="tabpanel">
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title">شبکه‌های اجتماعی</h5>
+                    <p class="text-muted small">لینک کامل هر شبکه را وارد کنید تا در فوتر نمایش داده شود.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6"><label class="form-label">اینستاگرام</label>@Html.TextBoxFor(m => m.InstagramUrl, new { @class = "form-control", placeholder = "https://instagram.com/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">تلگرام</label>@Html.TextBoxFor(m => m.TelegramUrl, new { @class = "form-control", placeholder = "https://t.me/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">واتساپ</label>@Html.TextBoxFor(m => m.WhatsAppUrl, new { @class = "form-control", placeholder = "https://wa.me/98912...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">لینکدین</label>@Html.TextBoxFor(m => m.LinkedInUrl, new { @class = "form-control", placeholder = "https://linkedin.com/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">توییتر / X</label>@Html.TextBoxFor(m => m.TwitterUrl, new { @class = "form-control", placeholder = "https://x.com/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">فیسبوک</label>@Html.TextBoxFor(m => m.FacebookUrl, new { @class = "form-control", placeholder = "https://facebook.com/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">آپارات</label>@Html.TextBoxFor(m => m.AparatUrl, new { @class = "form-control", placeholder = "https://aparat.com/...", dir = "ltr" })</div>
+                        <div class="col-md-6"><label class="form-label">یوتیوب</label>@Html.TextBoxFor(m => m.YouTubeUrl, new { @class = "form-control", placeholder = "https://youtube.com/...", dir = "ltr" })</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="set-seo" role="tabpanel">
+                <div class="panel-card settings-pane mb-3">
+                    <h5 class="settings-pane-title"><i class="bi bi-google"></i> نمایش در گوگل</h5>
+                    <p class="text-muted small">عنوان و توضیح صفحه اول در نتایج جستجو. راهنمای کامل در <a href="@Url.Action("SeoGuide","ShopAdmin", new { company })">سئو و گوگل</a>.</p>
+                    <div class="row g-3">
+                        <div class="col-lg-8">
+                            @Html.Partial("_SeoFields", new SeoFieldsVm
+                            {
+                                Title = Model.SeoTitle,
+                                Description = Model.SeoDescription,
+                                AutoTitle = SeoPages.StoreHomeTitle(new StoreSettings { StoreName = Model.StoreName, Tagline = Model.Tagline }),
+                                AutoDescription = Seo.FirstText(Model.About, Model.HeroSubtitle, Model.Tagline) ?? "از متن «درباره» ساخته می‌شود",
+                                Url = publicRoot
+                            })
+                        </div>
+                        <div class="col-lg-4">
+                            <label class="form-label">کد تأیید گوگل سرچ کنسول</label>
+                            @Html.TextBoxFor(m => m.GoogleVerification, new { @class = "form-control", dir = "ltr", placeholder = "<meta name=\"google-site-verification\" content=\"...\" />" })
+                            <div class="form-text">
+                                در <a href="https://search.google.com/search-console" target="_blank" rel="noopener">سرچ کنسول</a> روش «HTML tag» را بزنید و تگ را اینجا بچسبانید. سپس نقشه سایت:
+                                <code dir="ltr" class="d-block mt-1">@sitemapUrl</code>
+                            </div>
+                            @if (NikooSystem.Services.TenantStore.IsDemo(company))
+                            {
+                                <div class="form-text text-warning">این @site نمونه (دمو) است و از نتایج گوگل پنهان می‌ماند.</div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-card settings-pane mb-3">
+                    <h5 class="settings-pane-title"><i class="bi bi-globe"></i> آدرس و دامنه</h5>
+                    <p class="text-muted small mb-1">آدرس رایگان: <a href="@defaultUrl" target="_blank" dir="ltr">@defaultUrl</a></p>
+                    <p class="small mb-0">
+                        دامنه اختصاصی:
+                        @if (domainState == DomainState.None)
+                        {
+                            <span class="text-muted">ثبت نشده</span>
+                        }
+                        else
+                        {
+                            <b dir="ltr">@siteTenant.CustomDomain</b> <span class="badge @domainBadge.Css">@domainBadge.Text</span>
+                        }
+                        — <a href="@Url.Action("Domain","ShopAdmin", new { company })">@(domainState == DomainState.None ? "اتصال دامنه و راهنمای DNS" : "مدیریت دامنه و راهنما")</a>
+                    </p>
+                </div>
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title"><i class="bi bi-patch-check"></i> اینماد</h5>
+                    <p class="small mb-0">
+                        نماد اعتماد:
+                        @if (NikooSystem.Services.SiteVerification.Seal(Model.EnamadHtml) != null)
+                        {
+                            <span class="badge bg-success">در فوتر نمایش داده می‌شود</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">ثبت نشده</span>
+                        }
+                        — <a href="@Url.Action("Enamad","ShopAdmin", new { company })">راهنمای گرفتن اینماد و ثبت نماد</a>
+                    </p>
+                </div>
+            </div>
+
+            @if (kind.IsShop)
             {
-                <div class="form-check mt-1">
-                    <input class="form-check-input" type="checkbox" name="removeLogo" value="true" id="removeLogo" />
-                    <input type="hidden" name="removeLogo" value="false" />
-                    <label class="form-check-label small" for="removeLogo">حذف لوگو (نام فروشگاه به‌جای آن نمایش داده شود)</label>
+                <div class="tab-pane fade" id="set-shop" role="tabpanel">
+                    <div class="panel-card settings-pane mb-3">
+                        <h5 class="settings-pane-title"><i class="bi bi-truck"></i> ارسال و انبار</h5>
+                        <p class="text-muted small">هزینه ارسال روی سبد و تسویه محاسبه می‌شود. <a href="@Url.Action("ShippingGuide","ShopAdmin", new { company })">راهنمای ارسال و مرجوعی</a></p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">هزینه ارسال (تومان)</label>
+                                @Html.TextBoxFor(m => m.ShippingCost, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
+                                <div class="form-text">صفر یعنی ارسال رایگان.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">ارسال رایگان برای خرید بالای (تومان)</label>
+                                @Html.TextBoxFor(m => m.FreeShippingThreshold, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
+                                <div class="form-text">صفر یعنی همیشه هزینه ارسال گرفته شود.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">روش ارسال</label>
+                                @Html.TextBoxFor(m => m.ShippingMethod, new { @class = "form-control", maxlength = "80", placeholder = "پست پیشتاز" })
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">توضیح ارسال برای مشتری</label>
+                                @Html.TextAreaFor(m => m.ShippingNote, new { @class = "form-control", rows = "2", maxlength = "500", placeholder = "مثلاً ارسال ۲ تا ۴ روز کاری در سراسر کشور" })
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">هشدار موجودی کم</label>
+                                @Html.TextBoxFor(m => m.LowStockThreshold, new { @class = "form-control", type = "number", min = "0", dir = "ltr" })
+                                <div class="form-text">کالاهایی با موجودی کمتر یا مساوی این عدد در داشبورد هشدار می‌گیرند.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-card settings-pane mb-3">
+                        <h5 class="settings-pane-title"><i class="bi bi-arrow-return-left"></i> مرجوعی کالا</h5>
+                        <div class="row g-3">
+                            <div class="col-12">
+                                @Html.BoolField("EnableReturns", Model.EnableReturns, "مشتری بتواند از حساب کاربری درخواست مرجوعی بفرستد")
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">مهلت مرجوعی (روز)</label>
+                                @Html.TextBoxFor(m => m.ReturnDays, new { @class = "form-control", type = "number", min = "0", max = "90", dir = "ltr" })
+                                <div class="form-text">از تاریخ پرداخت؛ صفر یعنی بدون محدودیت زمانی.</div>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label">شرایط مرجوعی</label>
+                                @Html.TextAreaFor(m => m.ReturnPolicy, new { @class = "form-control", rows = "2", maxlength = "1000", placeholder = "کالا باید سالم و در بسته‌بندی اولیه باشد…" })
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel-card settings-pane">
+                        <h5 class="settings-pane-title"><i class="bi bi-graph-up"></i> ترب</h5>
+                        <p class="text-muted small mb-0">
+                            اتصال محصولات به ترب @(Model.EnableTorob ? "روشن" : "خاموش") است.
+                            فعال‌سازی و آدرس API در صفحه <a href="@Url.Action("Torob","ShopAdmin", new { company })">اتصال به ترب</a>.
+                        </p>
+                    </div>
+                </div>
+            }
+
+            @if (kind.IsContent)
+            {
+                <div class="tab-pane fade" id="set-content" role="tabpanel">
+                    <div class="panel-card settings-pane">
+                        <h5 class="settings-pane-title">نظرات خوانندگان</h5>
+                        @Html.BoolField("ModerateComments", Model.ModerateComments, "نظرها پیش از نمایش در سایت، توسط مدیر تأیید شوند")
+                        <div class="form-text">اگر خاموش باشد، نظرها بلافاصله منتشر می‌شوند و بعداً می‌توانید مخفی یا حذفشان کنید.</div>
+                    </div>
+                </div>
+            }
+
+            @if (kind.Schedules)
+            {
+                <div class="tab-pane fade" id="set-booking" role="tabpanel">
+                    <div class="panel-card settings-pane">
+                        <h5 class="settings-pane-title">@(kind.IsCampus ? "کلاس خصوصی و رزرو سالن" : "نوبت‌دهی")</h5>
+                        <p class="text-muted small">@(kind.IsCampus
+                            ? "ساعت کاری هر مدرس از صفحه مدرس‌ها و ساعت باز بودن سالن از صفحه سالن‌ها تنظیم می‌شود. درصد بیعانه فقط برای کلاس خصوصی است."
+                            : "ساعت کاری هر متخصص از صفحه متخصصان و روزهای تعطیل از تعطیلی و مرخصی تنظیم می‌شود.")</p>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">فاصله شروع نوبت‌ها (دقیقه)</label>
+                                @Html.DropDownListFor(m => m.BookingSlotMinutes, new SelectList(new[] { 10, 15, 20, 30, 45, 60 }, Model.BookingSlotMinutes), new { @class = "form-select" })
+                                <div class="form-text">مثلاً با ۳۰ دقیقه: ۹:۰۰، ۹:۳۰، ۱۰:۰۰…</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">نوبت‌دهی تا چند روز آینده</label>
+                                @Html.TextBoxFor(m => m.BookingDaysAhead, new { @class = "form-control", type = "number", min = "1", max = "90", dir = "ltr" })
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">حداقل فاصله رزرو تا نوبت (دقیقه)</label>
+                                @Html.TextBoxFor(m => m.BookingMinNoticeMinutes, new { @class = "form-control", type = "number", min = "0", max = "10080", dir = "ltr" })
+                                <div class="form-text">مثلاً ۱۲۰ یعنی دو ساعت آینده قابل رزرو نیست.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">بیعانه آنلاین (درصد)</label>
+                                @Html.TextBoxFor(m => m.BookingDepositPercent, new { @class = "form-control", type = "number", min = "0", max = "100", dir = "ltr" })
+                                <div class="form-text">صفر = بدون پرداخت؛ ۱۰۰ = پرداخت کامل هنگام رزرو.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">مهلت لغو توسط مشتری (ساعت)</label>
+                                @Html.TextBoxFor(m => m.BookingCancelHours, new { @class = "form-control", type = "number", min = "0", max = "720", dir = "ltr" })
+                                <div class="form-text">صفر یعنی مشتری خودش نمی‌تواند لغو کند.</div>
+                            </div>
+                            <div class="col-md-4 form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" name="SmsBookingConfirm" value="true" @(Model.SmsBookingConfirm ? "checked" : null) id="SmsBookingConfirm" />
+                                <label class="form-check-label" for="SmsBookingConfirm">پیامک تأیید نوبت به مشتری</label>
+                                <div class="form-text">نیاز به <a href="@Url.Action("Sms","ShopAdmin", new { company })">اعتبار پیامک</a> دارد.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">یادآوری پیامکی (ساعت قبل)</label>
+                                @Html.TextBoxFor(m => m.SmsBookingReminderHours, new { @class = "form-control", type = "number", min = "0", max = "168", dir = "ltr" })
+                                <div class="form-text">صفر یعنی یادآوری خاموش است.</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">نکته صفحه رزرو (اختیاری)</label>
+                                @Html.TextAreaFor(m => m.BookingNotice, 2, 1, new { @class = "form-control", placeholder = "مثلاً: لطفاً ۱۰ دقیقه زودتر حضور داشته باشید." })
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (kind.TakesPayments)
+            {
+                <div class="tab-pane fade" id="set-pay" role="tabpanel">
+                    <div class="panel-card settings-pane">
+                        <h5 class="settings-pane-title"><i class="bi bi-credit-card"></i> درگاه پرداخت</h5>
+                        @if (kind.IsShop || kind.IsDigital || kind.IsCampus)
+                        {
+                            <p class="text-muted small">حساب بانکی درگاه را در <a href="@Url.Action("Banks","ShopAdmin", new { company })">بانک‌ها</a> ثبت و «درگاه سایت» کنید.</p>
+                        }
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">MerchantId</label>@Html.TextBoxFor(m => m.ZarinPalMerchantId, new { @class = "form-control" })</div>
+                            <div class="col-md-3 form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" name="ZarinPalSandbox" value="true" @(Model.ZarinPalSandbox ? "checked" : "") />
+                                <input type="hidden" name="ZarinPalSandbox" value="false" />
+                                <label class="form-check-label">حالت تست (Sandbox)</label>
+                            </div>
+                            <div class="col-md-3 form-check mt-4 pt-2">
+                                <input class="form-check-input" type="checkbox" name="EnablePayment" value="true" @(Model.EnablePayment ? "checked" : "") />
+                                <input type="hidden" name="EnablePayment" value="false" />
+                                <label class="form-check-label">فعال بودن پرداخت</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (isOwner)
+            {
+                <div class="tab-pane fade" id="set-owner" role="tabpanel">
+                    <div class="panel-card settings-pane">
+                        <h5 class="settings-pane-title">حساب مالک @site</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4"><label class="form-label">نام کاربری مالک</label>@Html.TextBoxFor(m => m.AdminUsername, new { @class = "form-control", dir = "ltr" })</div>
+                            <div class="col-md-4"><label class="form-label">رمز جدید (اختیاری)</label><input class="form-control" type="password" name="newPassword" autocomplete="new-password" /></div>
+                            <div class="col-12"><p class="small text-muted mb-0">کاربران فرعی را از منوی <a href="@Url.Action("PanelUsers","ShopAdmin", new { company })">کاربران پنل</a> بسازید.</p></div>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
-        <div class="col-md-6">
-            <label class="form-label">تصویر بنر صفحه اول</label>
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-                @if (!string.IsNullOrEmpty(Model.HeroImageUrl))
-                {
-                    <img src="@Model.HeroImageUrl" alt="بنر" style="max-height:60px;max-width:140px;border-radius:8px;object-fit:cover" />
-                }
-                <input class="form-control" style="max-width:300px" type="file" name="heroFile" accept=".png,.jpg,.jpeg" />
-            </div>
-            @Html.HiddenFor(m => m.HeroImageUrl)
-        </div>
-        <div class="col-md-6"><label class="form-label">نام @site</label>@Html.TextBoxFor(m => m.StoreName, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">شعار</label>@Html.TextBoxFor(m => m.Tagline, new { @class = "form-control" })</div>
-        <div class="col-12"><label class="form-label">درباره @(kind.Sells ? "فروشگاه" : "ما")</label>@Html.TextAreaFor(m => m.About, 3, 1, new { @class = "form-control" })</div>
-        <div class="col-md-4"><label class="form-label">تلفن</label>@Html.TextBoxFor(m => m.Phone, new { @class = "form-control" })</div>
-        <div class="col-md-4"><label class="form-label">ایمیل</label>@Html.TextBoxFor(m => m.Email, new { @class = "form-control" })</div>
-        <div class="col-md-4"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Address, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">عنوان هیرو</label>@Html.TextBoxFor(m => m.HeroTitle, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">زیرعنوان هیرو</label>@Html.TextBoxFor(m => m.HeroSubtitle, new { @class = "form-control" })</div>
-        <div class="col-md-3"><label class="form-label">رنگ اصلی</label><input class="form-control form-control-color w-100" type="color" name="PrimaryColor" id="PrimaryColor" value="@Model.PrimaryColor" /></div>
-        <div class="col-md-3"><label class="form-label">رنگ فرعی</label><input class="form-control form-control-color w-100" type="color" name="SecondaryColor" id="SecondaryColor" value="@Model.SecondaryColor" /></div>
-        <div class="col-md-8"><label class="form-label">متن فوتر</label>@Html.TextBoxFor(m => m.FooterText, new { @class = "form-control" })</div>
-        <div class="col-md-4 d-flex align-items-end">
-            <div class="small">@Html.BoolField("HidePoweredBy", Model.HidePoweredBy, "عبارت «ساخته شده با نیکو سیستم» در فوتر نمایش داده نشود")</div>
-        </div>
 
-        <div class="col-12"><hr /><h5>قالب ظاهری @site</h5>
-            <p class="text-muted small">یکی از قالب‌های آماده را انتخاب کنید. در صورت نیاز رنگ‌ها را هم دستی تغییر دهید.</p>
+        <div class="settings-save">
+            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
+            <span class="small text-muted">تغییرات همه تب‌ها با همین دکمه ذخیره می‌شوند.</span>
         </div>
-        <div class="col-12">
-            @Html.Partial("_TemplatePicker", Model.LayoutStyle)
-        </div>
-
-        <div class="col-12"><hr /><h5><i class="bi bi-aspect-ratio"></i> نمایش یکدست تصاویر</h5>
-            <p class="text-muted small mb-0">
-                تصاویر را با هر اندازه و شکلی (عمودی، افقی، مربعی) بارگذاری کنید؛ در کارت‌ها، گالری و بنرها همه در کادرهای هم‌اندازه نمایش داده می‌شوند
-                تا ردیف‌ها نامرتب نشوند. لوگو هم در اندازه ثابت سربرگ جا می‌گیرد. فقط انتخاب کنید تصویری که با کادر هم‌شکل نیست چطور در آن قرار بگیرد:
-            </p>
-        </div>
-        <div class="col-12">
-            @{ var fit = NikooSystem.Models.Store.StoreImageFit.Normalize(Model.ImageFit); }
-            <div class="fit-options" role="radiogroup" aria-label="نحوه قرار گرفتن تصاویر در کادر">
-                @foreach (var o in NikooSystem.Models.Store.StoreImageFit.Options)
-                {
-                    <label class="fit-option">
-                        <input type="radio" name="ImageFit" value="@o.Id" @(fit == o.Id ? "checked" : null) />
-                        <span class="fit-demo fit-demo-@o.Id" aria-hidden="true"><i></i><i></i><i></i></span>
-                        <strong><i class="bi @o.Icon"></i> @o.Title</strong>
-                        <span class="small text-muted">@o.Hint</span>
-                    </label>
-                }
-            </div>
-        </div>
-
-        <div class="col-12"><hr /><h5>شبکه‌های اجتماعی</h5>
-            <p class="text-muted small mb-0">لینک کامل هر شبکه را وارد کنید تا در فوتر نمایش داده شود.</p>
-        </div>
-        <div class="col-md-6"><label class="form-label">اینستاگرام</label>@Html.TextBoxFor(m => m.InstagramUrl, new { @class = "form-control", placeholder = "https://instagram.com/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">تلگرام</label>@Html.TextBoxFor(m => m.TelegramUrl, new { @class = "form-control", placeholder = "https://t.me/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">واتساپ</label>@Html.TextBoxFor(m => m.WhatsAppUrl, new { @class = "form-control", placeholder = "https://wa.me/98912...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">لینکدین</label>@Html.TextBoxFor(m => m.LinkedInUrl, new { @class = "form-control", placeholder = "https://linkedin.com/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">توییتر / X</label>@Html.TextBoxFor(m => m.TwitterUrl, new { @class = "form-control", placeholder = "https://x.com/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">فیسبوک</label>@Html.TextBoxFor(m => m.FacebookUrl, new { @class = "form-control", placeholder = "https://facebook.com/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">آپارات</label>@Html.TextBoxFor(m => m.AparatUrl, new { @class = "form-control", placeholder = "https://aparat.com/...", dir = "ltr" })</div>
-        <div class="col-md-6"><label class="form-label">یوتیوب</label>@Html.TextBoxFor(m => m.YouTubeUrl, new { @class = "form-control", placeholder = "https://youtube.com/...", dir = "ltr" })</div>
-
-        <div class="col-12"><hr /><h5>اینماد</h5>
-            <p class="small mb-0">
-                <i class="bi bi-patch-check"></i> نماد اعتماد:
-                @if (NikooSystem.Services.SiteVerification.Seal(Model.EnamadHtml) != null)
-                {
-                    <span class="badge bg-success">در فوتر نمایش داده می‌شود</span>
-                }
-                else
-                {
-                    <span class="text-muted">ثبت نشده</span>
-                }
-                — <a href="@Url.Action("Enamad","ShopAdmin", new { company })">راهنمای گرفتن اینماد، فایل و کد تأیید مالکیت و ثبت نماد</a>
-            </p>
-        </div>
-
-        @{
-            var siteTenant = ViewBag.Tenant as TenantInfo;
-            var defaultUrl = (string)ViewBag.StoreUrl;
-            var domainState = siteTenant?.DomainStatus() ?? DomainState.None;
-            var domainBadge = domainState == DomainState.WaitingDns ? new { Css = "bg-warning text-dark", Text = "منتظر تنظیم DNS" }
-                : domainState == DomainState.WaitingSupport ? new { Css = "bg-info text-dark", Text = "منتظر فعال‌سازی SSL" }
-                : new { Css = "bg-success", Text = "فعال" };
-        }
-        <div class="col-12"><hr /><h5>آدرس و دامنه @site</h5>
-            <p class="text-muted small mb-1">آدرس رایگان @site شما: <a href="@defaultUrl" target="_blank" dir="ltr">@defaultUrl</a></p>
-            <p class="small mb-0">
-                <i class="bi bi-globe"></i> دامنه اختصاصی:
-                @if (domainState == DomainState.None)
-                {
-                    <span class="text-muted">ثبت نشده</span>
-                }
-                else
-                {
-                    <b dir="ltr">@siteTenant.CustomDomain</b> <span class="badge @domainBadge.Css">@domainBadge.Text</span>
-                }
-                — <a href="@Url.Action("Domain","ShopAdmin", new { company })">@(domainState == DomainState.None ? "اتصال دامنه و راهنمای DNS" : "مدیریت دامنه و راهنما")</a>
-            </p>
-        </div>
-
-        @{
-            var publicRoot = Html.Seo().Url("/Shop/" + company);
-            var sitemapUrl = Html.Seo().Url("/Shop/" + company + "/sitemap.xml");
-        }
-        <div class="col-12"><hr /><h5><i class="bi bi-google"></i> نمایش در گوگل</h5>
-            <p class="text-muted small mb-0">عنوان و توضیح صفحه اول @site در نتایج جستجو. برای هر محصول، مطلب، گروه و صفحه هم در فرم ویرایش همان مورد می‌توانید این دو را جدا تنظیم کنید. راهنمای کامل در صفحه <a href="@Url.Action("SeoGuide","ShopAdmin", new { company })">سئو و گوگل</a>.</p>
-        </div>
-        <div class="col-lg-8">
-            @Html.Partial("_SeoFields", new SeoFieldsVm
-            {
-                Title = Model.SeoTitle,
-                Description = Model.SeoDescription,
-                AutoTitle = SeoPages.StoreHomeTitle(new StoreSettings { StoreName = Model.StoreName, Tagline = Model.Tagline }),
-                AutoDescription = Seo.FirstText(Model.About, Model.HeroSubtitle, Model.Tagline) ?? "از متن «درباره» ساخته می‌شود",
-                Url = publicRoot
-            })
-        </div>
-        <div class="col-lg-4">
-            <label class="form-label">کد تأیید گوگل سرچ کنسول</label>
-            @Html.TextBoxFor(m => m.GoogleVerification, new { @class = "form-control", dir = "ltr", placeholder = "<meta name=\"google-site-verification\" content=\"...\" />" })
-            <div class="form-text">
-                در <a href="https://search.google.com/search-console" target="_blank" rel="noopener">سرچ کنسول</a> آدرس @site را اضافه کنید، روش «HTML tag» را بزنید و تگ را اینجا بچسبانید.
-                سپس نقشه سایت را ثبت کنید:
-                <code dir="ltr" class="d-block mt-1">@sitemapUrl</code>
-            </div>
-            @if (NikooSystem.Services.TenantStore.IsDemo(company))
-            {
-                <div class="form-text text-warning">این @site نمونه (دمو) است و از نتایج گوگل پنهان می‌ماند.</div>
-            }
-        </div>
-
-        @if (kind.IsContent)
-        {
-            <div class="col-12"><hr /><h5>نظرات خوانندگان</h5></div>
-            <div class="col-12">
-                @Html.BoolField("ModerateComments", Model.ModerateComments, "نظرها پیش از نمایش در سایت، توسط مدیر تأیید شوند")
-                <div class="form-text">اگر خاموش باشد، نظرها بلافاصله منتشر می‌شوند و بعداً می‌توانید مخفی یا حذفشان کنید.</div>
-            </div>
-        }
-
-        @if (kind.IsShop)
-        {
-            <div class="col-12"><hr /><h5>ارسال و انبار</h5></div>
-            <div class="col-md-4">
-                <label class="form-label">هزینه ارسال (تومان)</label>
-                @Html.TextBoxFor(m => m.ShippingCost, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
-                <div class="form-text">صفر یعنی ارسال رایگان.</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">ارسال رایگان برای خرید بالای (تومان)</label>
-                @Html.TextBoxFor(m => m.FreeShippingThreshold, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
-                <div class="form-text">صفر یعنی همیشه هزینه ارسال گرفته شود.</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">هشدار موجودی کم</label>
-                @Html.TextBoxFor(m => m.LowStockThreshold, new { @class = "form-control", type = "number", min = "0", dir = "ltr" })
-                <div class="form-text">کالاهایی با موجودی کمتر یا مساوی این عدد در داشبورد نمایش داده می‌شوند.</div>
-            </div>
-        }
-
-        @if (kind.Schedules)
-        {
-            <div class="col-12"><hr /><h5>@(kind.IsCampus ? "کلاس خصوصی و رزرو سالن" : "نوبت‌دهی")</h5>
-                <p class="text-muted small mb-0">@(kind.IsCampus
-                    ? "ساعت کاری هر مدرس از صفحه مدرس‌ها و ساعت باز بودن سالن از صفحه سالن‌ها تنظیم می‌شود. درصد بیعانه فقط برای کلاس خصوصی است؛ شهریه کلاس گروهی و اجاره سالن کامل گرفته می‌شود."
-                    : "ساعت کاری هر متخصص از صفحه متخصصان و روزهای تعطیل از تعطیلی و مرخصی تنظیم می‌شود.")</p>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">فاصله شروع نوبت‌ها (دقیقه)</label>
-                @Html.DropDownListFor(m => m.BookingSlotMinutes, new SelectList(new[] { 10, 15, 20, 30, 45, 60 }, Model.BookingSlotMinutes), new { @class = "form-select" })
-                <div class="form-text">مثلاً با ۳۰ دقیقه، ساعت‌های ۹:۰۰، ۹:۳۰، ۱۰:۰۰ و… پیشنهاد می‌شود.</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">نوبت‌دهی تا چند روز آینده</label>
-                @Html.TextBoxFor(m => m.BookingDaysAhead, new { @class = "form-control", type = "number", min = "1", max = "90", dir = "ltr" })
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">حداقل فاصله رزرو تا نوبت (دقیقه)</label>
-                @Html.TextBoxFor(m => m.BookingMinNoticeMinutes, new { @class = "form-control", type = "number", min = "0", max = "10080", dir = "ltr" })
-                <div class="form-text">مثلاً ۱۲۰ یعنی نوبت‌های دو ساعت آینده قابل رزرو نیستند.</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">بیعانه آنلاین (درصد هزینه خدمت)</label>
-                @Html.TextBoxFor(m => m.BookingDepositPercent, new { @class = "form-control", type = "number", min = "0", max = "100", dir = "ltr" })
-                <div class="form-text">صفر یعنی رزرو بدون پرداخت؛ ۱۰۰ یعنی پرداخت کامل هنگام رزرو. فقط وقتی درگاه فعال است گرفته می‌شود.</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">مهلت لغو توسط مشتری (ساعت قبل از نوبت)</label>
-                @Html.TextBoxFor(m => m.BookingCancelHours, new { @class = "form-control", type = "number", min = "0", max = "720", dir = "ltr" })
-                <div class="form-text">صفر یعنی مشتری خودش نمی‌تواند نوبت را لغو کند.</div>
-            </div>
-            <div class="col-12">
-                <label class="form-label">نکته صفحه رزرو (اختیاری)</label>
-                @Html.TextAreaFor(m => m.BookingNotice, 2, 1, new { @class = "form-control", placeholder = "مثلاً: لطفاً ۱۰ دقیقه زودتر حضور داشته باشید و کارت ملی همراه بیاورید." })
-            </div>
-        }
-
-        @if (kind.TakesPayments)
-        {
-        <div class="col-12"><hr /><h5>درگاه پرداخت</h5>
-            @if (kind.IsShop || kind.IsDigital || kind.IsCampus)
-            {
-                <p class="text-muted small mb-0">حساب بانکی که پول درگاه به آن واریز می‌شود را در <a href="@Url.Action("Banks","ShopAdmin", new { company })">بانک‌ها</a> ثبت و «درگاه سایت» کنید تا فروش آنلاین در دفتر همان حساب بنشیند.</p>
-            }
-        </div>
-        <div class="col-md-6"><label class="form-label">MerchantId</label>@Html.TextBoxFor(m => m.ZarinPalMerchantId, new { @class = "form-control" })</div>
-        <div class="col-md-3 form-check mt-4 pt-2">
-            <input class="form-check-input" type="checkbox" name="ZarinPalSandbox" value="true" @(Model.ZarinPalSandbox?"checked":"") />
-            <input type="hidden" name="ZarinPalSandbox" value="false" />
-            <label class="form-check-label">حالت تست (Sandbox)</label>
-        </div>
-        <div class="col-md-3 form-check mt-4 pt-2">
-            <input class="form-check-input" type="checkbox" name="EnablePayment" value="true" @(Model.EnablePayment?"checked":"") />
-            <input type="hidden" name="EnablePayment" value="false" />
-            <label class="form-check-label">فعال بودن پرداخت</label>
-        </div>
-        }
-
-        @if (kind.IsShop)
-        {
-            <div class="col-12"><hr /><h5><i class="bi bi-graph-up"></i> ترب</h5>
-                <p class="text-muted small mb-0">
-                    اتصال محصولات به ترب @(Model.EnableTorob ? "روشن" : "خاموش") است. فعال‌سازی، آدرس API و پیش‌نمایش آنچه ترب دریافت می‌کند در صفحه
-                    <a href="@Url.Action("Torob","ShopAdmin", new { company })">اتصال به ترب</a> است.
-                </p>
-            </div>
-        }
-
-        <div class="col-12"><hr /><h5>مدیر @site</h5></div>
-        <div class="col-md-4"><label class="form-label">نام کاربری ادمین</label>@Html.TextBoxFor(m => m.AdminUsername, new { @class = "form-control" })</div>
-        <div class="col-md-4"><label class="form-label">رمز جدید (اختیاری)</label><input class="form-control" type="password" name="newPassword" /></div>
-        <div class="col-12"><button class="btn-store" type="submit">ذخیره تنظیمات</button></div>
-    </div>
+    }
+</div>
+@section scripts {
+<script>
+(function () {
+    var tabs = document.getElementById('settingsTabs');
+    if (!tabs || !window.bootstrap) return;
+    var key = 'nikoo-settings-tab';
+    var saved = null;
+    try { saved = sessionStorage.getItem(key); } catch (e) { }
+    var hash = (location.hash || '').replace(/^#/, '');
+    var target = hash || saved;
+    if (target) {
+        var btn = tabs.querySelector('[data-bs-target="#' + target + '"]');
+        if (btn) bootstrap.Tab.getOrCreateInstance(btn).show();
+    }
+    tabs.addEventListener('shown.bs.tab', function (e) {
+        var id = (e.target.getAttribute('data-bs-target') || '').replace(/^#/, '');
+        if (!id) return;
+        try { sessionStorage.setItem(key, id); } catch (err) { }
+        if (history.replaceState) history.replaceState(null, '', '#' + id);
+    });
+})();
+</script>
 }

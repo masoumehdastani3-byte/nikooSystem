@@ -33,6 +33,7 @@ namespace NikooSystem.Controllers
             SeoHome();
             if (Kind.IsCampus) return CampusHome();
             if (Kind.IsBooking) return BookingHome();
+            if (Kind.IsMenu) return MenuHome();
             return Kind.IsContent ? ContentHome(sections) : ShopHome(sections);
         }
 
@@ -328,14 +329,25 @@ namespace NikooSystem.Controllers
             if (already != null)
                 return Fail("«" + already.Title + "» را قبلاً خریده‌اید؛ آن را از سبد حذف کنید.", "Cart");
 
+            var mobile = BookingTime.NormalizeMobile(customerMobile);
+            if (mobile == null)
+                return Fail("شماره موبایل معتبر نیست؛ مثلاً ۰۹۱۲۱۲۳۴۵۶۷.", "Checkout");
+
+            string temporaryPassword;
+            var buyer = TenantStore.EnsureCustomerAccount(CompanyCode, customerName, mobile, customerEmail,
+                hasPhysical ? customerAddress : null, out temporaryPassword);
+            if (buyer == null)
+                return Fail("ثبت حساب مشتری ممکن نشد.", "Checkout");
+            CurrentCustomerId = buyer.Id;
+
             var subtotal = cart.Sum(c => c.UnitPrice * c.Quantity);
             var shipping = ShippingFor(cart, products);
             var order = TenantStore.AddOrder(CompanyCode, new StoreOrder
             {
-                CustomerId = CurrentCustomerId,
-                CustomerName = customerName,
-                CustomerMobile = customerMobile,
-                CustomerEmail = customerEmail,
+                CustomerId = buyer.Id,
+                CustomerName = buyer.FullName,
+                CustomerMobile = buyer.Mobile,
+                CustomerEmail = buyer.Email,
                 CustomerAddress = hasPhysical ? customerAddress : null,
                 Items = cart.Select(c => new StoreOrderItem
                 {
@@ -346,14 +358,27 @@ namespace NikooSystem.Controllers
                     IsDigital = products[c.ProductId].IsDigital()
                 }).ToList(),
                 ShippingCost = shipping,
+                ShippingMethod = hasPhysical ? (string.IsNullOrWhiteSpace(CurrentSettings.ShippingMethod) ? "پست پیشتاز" : CurrentSettings.ShippingMethod.Trim()) : null,
                 Amount = subtotal + shipping,
                 Status = StoreOrderStatus.PendingPayment
             });
+
+            if (!string.IsNullOrEmpty(temporaryPassword))
+            {
+                var siteName = BaleNotifier.SiteName(CompanyCode);
+                var sms = await SmsService.SendPasswordAsync(CompanyCode, buyer.Mobile, temporaryPassword, siteName);
+                if (sms.Success)
+                    TempData["AccountHint"] = "حساب مشتری با همین موبایل ساخته شد و رمز ورود پیامک شد. از «سفارش‌های من» پیگیری کنید.";
+                else
+                    TempData["AccountHint"] = "حساب مشتری ساخته شد. رمز موقت ورود: " + temporaryPassword + " — آن را نگه دارید و بعد از ورود عوض کنید."
+                        + (string.IsNullOrWhiteSpace(sms.Error) ? "" : " (پیامک: " + sms.Error + ")");
+            }
 
             if (!CurrentSettings.EnablePayment)
             {
                 TenantStore.ConfirmOrderWithoutPayment(CompanyCode, order);
                 Notifications.StoreOrder(CompanyCode, order, false);
+                SmsService.QueueInvoice(CompanyCode, order);
                 SaveCart(new List<StoreCartItem>());
                 return OrderDone(order, true);
             }
@@ -396,7 +421,11 @@ namespace NikooSystem.Controllers
             }
 
             if (TenantStore.MarkOrderPaid(CompanyCode, order.Id, verify.RefId, verify.Message))
-                Notifications.StoreOrder(CompanyCode, TenantStore.GetOrder(CompanyCode, order.Id) ?? order, true);
+            {
+                var paid = TenantStore.GetOrder(CompanyCode, order.Id) ?? order;
+                Notifications.StoreOrder(CompanyCode, paid, true);
+                SmsService.QueueInvoice(CompanyCode, paid);
+            }
             SaveCart(new List<StoreCartItem>());
             return OrderDone(order, true);
         }

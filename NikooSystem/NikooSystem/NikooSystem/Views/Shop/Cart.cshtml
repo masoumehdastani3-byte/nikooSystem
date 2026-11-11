@@ -129,9 +129,16 @@
                     @if (hasPhysical)
                     {
                         <div class="cart-summary-row">
-                            <span>هزینه ارسال</span>
+                            <span>
+                                هزینه ارسال
+                                @if (!string.IsNullOrWhiteSpace(settings.ShippingMethod)) { <span class="text-muted small">(@settings.ShippingMethod)</span> }
+                            </span>
                             <strong>@(shipping == 0 ? "رایگان" : shipping.ToToman())</strong>
                         </div>
+                        if (!string.IsNullOrWhiteSpace(settings.ShippingNote))
+                        {
+                            <div class="cart-free-hint"><i class="bi bi-info-circle"></i> @settings.ShippingNote</div>
+                        }
                         if (freeLeft > 0)
                         {
                             <div class="cart-free-hint"><i class="bi bi-truck"></i> با @freeLeft.ToToman() خرید بیشتر، ارسال رایگان می‌شود.</div>

@@ -113,7 +113,7 @@ namespace NikooSystem.Controllers
         public ActionResult Enrollments(GridQuery query, string status = null)
         {
             ViewBag.Classes = TenantStore.GetClasses(CompanyCode);
-            var rows = TenantStore.GetEnrollments(CompanyCode).AsEnumerable();
+            var rows = query.InDateRange(TenantStore.GetEnrollments(CompanyCode), e => e.CreatedAt);
             AppointmentStatus parsed;
             if (Enum.TryParse(status, true, out parsed)) rows = rows.Where(e => e.Status == parsed);
             return View(query.Slice(rows,
@@ -251,7 +251,7 @@ namespace NikooSystem.Controllers
         {
             ViewBag.Facilities = TenantStore.GetFacilities(CompanyCode);
             ViewBag.Days = BookingDayOptions(0, Math.Max(CurrentSettings.BookingDaysAhead, 30));
-            var rows = TenantStore.GetFacilityBookings(CompanyCode).AsEnumerable();
+            var rows = query.InDateRange(TenantStore.GetFacilityBookings(CompanyCode), b => b.StartAt);
             AppointmentStatus parsed;
             if (Enum.TryParse(status, true, out parsed)) rows = rows.Where(b => b.Status == parsed);
             return View(query.Slice(rows,

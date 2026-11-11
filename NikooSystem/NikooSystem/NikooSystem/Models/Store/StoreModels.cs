@@ -49,6 +49,9 @@ namespace NikooSystem.Models.Store
         /// <summary>Upload space bought by the owner or given by Nikoo's admin, on top of the base space of every store.</summary>
         public int StorageExtraMb { get; set; }
 
+        /// <summary>اعتبار پیامک باقی‌مانده به‌تومان؛ با شارژ پنل یا اهدای مدیر نیکو افزایش می‌یابد و با هر ارسال کم می‌شود.</summary>
+        public long SmsCredit { get; set; }
+
         /// <summary>When <see cref="CustomDomain"/> was entered; the domain fields below start over whenever it changes.</summary>
         public DateTime? DomainSetAt { get; set; }
         /// <summary>The first check that found the domain pointing at Nikoo's server (support was told to finish the connection).</summary>
@@ -147,6 +150,14 @@ namespace NikooSystem.Models.Store
         public string Phone { get; set; }
         public string Email { get; set; }
         public string Address { get; set; }
+        /// <summary>ساعت کاری که روی منوی کافه نشان داده می‌شود.</summary>
+        public string OpeningHours { get; set; }
+        /// <summary>یادداشت روز منوی کافه، مثل دسر تازه.</summary>
+        public string DailyNote { get; set; }
+        /// <summary>نام شبکه وای‌فای مهمان.</summary>
+        public string WifiName { get; set; }
+        /// <summary>رمز وای‌فای که روی منو نشان داده می‌شود.</summary>
+        public string WifiPassword { get; set; }
         public string LogoUrl { get; set; }
         public string FaviconUrl { get; set; }
         public string PrimaryColor { get; set; } = "#0d6efd";
@@ -205,6 +216,16 @@ namespace NikooSystem.Models.Store
         public long ShippingCost { get; set; }
         /// <summary>سفارش‌های بالای این مبلغ ارسال رایگان دارند؛ ۰ یعنی همیشه هزینه ارسال گرفته می‌شود</summary>
         public long FreeShippingThreshold { get; set; }
+        /// <summary>نام روش ارسال که در تسویه به مشتری نشان داده می‌شود (مثلاً پست پیشتاز).</summary>
+        public string ShippingMethod { get; set; } = "پست پیشتاز";
+        /// <summary>توضیح کوتاه ارسال در سبد و تسویه (زمان تحویل، محدوده و…).</summary>
+        public string ShippingNote { get; set; }
+        /// <summary>مشتری می‌تواند برای سفارش فیزیکی درخواست مرجوعی بفرستد.</summary>
+        public bool EnableReturns { get; set; } = true;
+        /// <summary>تا چند روز پس از پرداخت/ارسال، درخواست مرجوعی پذیرفته می‌شود؛ ۰ یعنی فقط خودتان تأیید می‌کنید و مهلتی نیست.</summary>
+        public int ReturnDays { get; set; } = 7;
+        /// <summary>شرایط مرجوعی که به مشتری نشان داده می‌شود.</summary>
+        public string ReturnPolicy { get; set; }
         /// <summary>کالاهایی که موجودی‌شان به این عدد برسد در داشبورد هشدار دارند</summary>
         public int LowStockThreshold { get; set; } = 5;
         /// <summary>نظرهای خوانندگان پس از تأیید مدیر نمایش داده می‌شوند</summary>
@@ -220,11 +241,31 @@ namespace NikooSystem.Models.Store
         public int BookingDepositPercent { get; set; }
         /// <summary>Booking sites: customers may cancel up to this many hours before; 0 = only the owner cancels.</summary>
         public int BookingCancelHours { get; set; } = 24;
+        /// <summary>Booking/campus: send an SMS when the appointment is confirmed (needs SMS credit).</summary>
+        public bool SmsBookingConfirm { get; set; } = true;
+        /// <summary>Booking/campus: hours before the appointment to send a reminder SMS; 0 = off.</summary>
+        public int SmsBookingReminderHours { get; set; } = 24;
         /// <summary>Booking sites: a note shown on the booking page (what to bring, arrive early…).</summary>
         public string BookingNotice { get; set; }
 
         /// <summary>How images sit in the frames of cards and galleries: auto | cover | contain (see <see cref="StoreImageFit"/>).</summary>
         public string ImageFit { get; set; }
+
+        /// <summary>ماه شمسی شروع سال مالی (۱=فروردین … ۱۲=اسفند).</summary>
+        public int FiscalStartMonth { get; set; } = 1;
+        /// <summary>اگر روشن باشد، سند و فاکتور بیرون از سال‌های باز ثبت نمی‌شود.</summary>
+        public bool FiscalLockDates { get; set; } = true;
+        /// <summary>سال‌های مالی بسته‌شده (سال شمسی شروع)، جدا با ویرگول.</summary>
+        public string ClosedFiscalYears { get; set; }
+
+        /// <summary>روی فاکتور فروش و خرید، مالیات بر ارزش افزوده به‌صورت پیش‌فرض محاسبه شود.</summary>
+        public bool EnableVat { get; set; }
+
+        /// <summary>نرخ پیش‌فرض مالیات بر ارزش افزوده (درصد)، مثلاً ۱۰.</summary>
+        public int VatPercent { get; set; } = 10;
+
+        /// <summary>JSON array of ShopAdmin action names pinned on the owner's personal dashboard.</summary>
+        public string OwnerDashboardPins { get; set; }
 
         public long ShippingFor(long subtotal) =>
             ShippingCost <= 0 || (FreeShippingThreshold > 0 && subtotal >= FreeShippingThreshold) ? 0 : ShippingCost;
@@ -530,7 +571,8 @@ namespace NikooSystem.Models.Store
         Processing = 3,
         Shipped = 4,
         Completed = 5,
-        Cancelled = 6
+        Cancelled = 6,
+        Returned = 7
     }
 
     public class StoreOrder : IStoreEntity
@@ -553,6 +595,12 @@ namespace NikooSystem.Models.Store
 
         /// <summary>جزء Amount است</summary>
         public long ShippingCost { get; set; }
+        /// <summary>نام روش ارسال در زمان ثبت سفارش.</summary>
+        public string ShippingMethod { get; set; }
+        /// <summary>هزینه حملی که فروشگاه به پست/پیک پرداخته (جدا از هزینه ارسال مشتری).</summary>
+        public long FreightCost { get; set; }
+        /// <summary>سند هزینه حمل برای این سفارش زده شده است.</summary>
+        public bool FreightPosted { get; set; }
         /// <summary>کد رهگیری مرسوله پست یا پیک</summary>
         public string TrackingCode { get; set; }
         public string AdminNote { get; set; }
@@ -564,6 +612,47 @@ namespace NikooSystem.Models.Store
         /// <summary>پرداخت شده و لغو نشده؛ خریدار به کالاهای دیجیتال آن دسترسی دارد</summary>
         public static readonly StoreOrderStatus[] Fulfilled =
             { StoreOrderStatus.Paid, StoreOrderStatus.Processing, StoreOrderStatus.Shipped, StoreOrderStatus.Completed };
+    }
+
+    public enum ReturnRequestStatus
+    {
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2
+    }
+
+    /// <summary>Customer request to return physical goods from a fulfilled order.</summary>
+    public class StoreReturnRequest : IStoreEntity
+    {
+        public int Id { get; set; }
+        public int OrderId { get; set; }
+        public string OrderNumber { get; set; }
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; }
+        public string CustomerMobile { get; set; }
+        public string Reason { get; set; }
+        public ReturnRequestStatus Status { get; set; } = ReturnRequestStatus.Pending;
+        public string AdminNote { get; set; }
+        /// <summary>Goods + shipping refunded when approved.</summary>
+        public long RefundAmount { get; set; }
+        public bool RefundShipping { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? ResolvedAt { get; set; }
+        public List<StoreReturnLine> Lines { get; set; } = new List<StoreReturnLine>();
+    }
+
+    public class StoreReturnLine
+    {
+        public int ProductId { get; set; }
+        public string Title { get; set; }
+        public int Quantity { get; set; }
+        public long UnitPrice { get; set; }
+        public long Amount => (long)Quantity * UnitPrice;
+    }
+
+    public class ReturnGridQuery : GridQuery
+    {
+        public ReturnRequestStatus? Status { get; set; }
     }
 
     /// <summary>خبر، مقاله یا اطلاعیه سایت‌های محتوایی</summary>
@@ -664,10 +753,6 @@ namespace NikooSystem.Models.Store
 
         [EmailAddress]
         public string Email { get; set; }
-
-        [Required(ErrorMessage = "شناسه چت بله الزامی است")]
-        [Range(1, long.MaxValue, ErrorMessage = "شناسه چت بله معتبر نیست")]
-        public long? BaleChatId { get; set; }
 
         [Required(ErrorMessage = "رمز عبور الزامی است")]
         [MinLength(6)]

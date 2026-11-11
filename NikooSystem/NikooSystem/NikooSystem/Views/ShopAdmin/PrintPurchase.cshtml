@@ -1,0 +1,94 @@
+@model StorePurchaseInvoice
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "چاپ فاکتور خرید " + Model.Number;
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var bankTitles = (Dictionary<int, string>)ViewBag.BankTitles ?? new Dictionary<int, string>();
+    var payLabel = bankTitles.ContainsKey(Model.BankId) ? bankTitles[Model.BankId] : AccountingText.Pay(Model.PayWith);
+    var lines = Model.Lines ?? new List<StorePurchaseLine>();
+}
+<link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
+    <h2 class="mb-0">چاپ فاکتور خرید <span dir="ltr">@Model.Number</span></h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="button" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
+        <a class="btn-outline-store" href="@Url.Action("EditPurchase","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-pencil"></i> ویرایش</a>
+        <a class="btn-outline-store" href="@Url.Action("Purchases","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
+</div>
+<div class="inv-print">
+    <div class="inv-print-head">
+        <div>
+            <div class="inv-print-brand">@(string.IsNullOrWhiteSpace(settings.StoreName) ? "فروشگاه" : settings.StoreName)</div>
+            <div class="inv-print-title">فاکتور خرید</div>
+        </div>
+        <div class="inv-print-meta">
+            <div><span>شماره:</span> <b dir="ltr">@Model.Number</b></div>
+            <div><span>تاریخ:</span> <b>@Model.InvoiceDate.ToShamsi()</b></div>
+        </div>
+    </div>
+    <div class="inv-print-party">
+        <div><span class="text-muted">تامین‌کننده:</span> <b>@Model.PartyName</b></div>
+        <div><span class="text-muted">نحوه پرداخت:</span> <b>@payLabel</b></div>
+        @if (!string.IsNullOrWhiteSpace(Model.Note))
+        {
+            <div class="inv-print-note"><span class="text-muted">یادداشت:</span> @Model.Note</div>
+        }
+    </div>
+    <table class="table align-middle inv-print-lines">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>شرح</th>
+                <th>نوع</th>
+                <th>تعداد</th>
+                <th>بهای واحد</th>
+                <th>جمع</th>
+            </tr>
+        </thead>
+        <tbody>
+            @{ var n = 0; }
+            @foreach (var line in lines)
+            {
+                n++;
+                <tr>
+                    <td>@n.ToFa()</td>
+                    <td>@line.Title</td>
+                    <td>@AccountingText.Line(line.Kind)</td>
+                    <td dir="ltr">@line.Qty.ToFa()</td>
+                    <td>@line.UnitCost.ToToman()</td>
+                    <td>@line.Amount.ToToman()</td>
+                </tr>
+            }
+            @if (lines.Count == 0)
+            {
+                <tr><td colspan="6" class="text-muted">ردیفی ثبت نشده است.</td></tr>
+            }
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5">جمع ردیف‌ها</td>
+                <td>@Model.Subtotal.ToToman()</td>
+            </tr>
+            @if (Model.DiscountAmount > 0)
+            {
+                <tr>
+                    <td colspan="5">تخفیف</td>
+                    <td>@Model.DiscountAmount.ToToman()</td>
+                </tr>
+            }
+            @if (Model.VatAmount > 0)
+            {
+                <tr>
+                    <td colspan="5">مالیات ارزش افزوده (@Model.VatPercent.ToFa()٪)</td>
+                    <td>@Model.VatAmount.ToToman()</td>
+                </tr>
+            }
+            <tr>
+                <td colspan="5">مبلغ قابل پرداخت</td>
+                <td>@Model.Total.ToToman()</td>
+            </tr>
+        </tfoot>
+    </table>
+</div>

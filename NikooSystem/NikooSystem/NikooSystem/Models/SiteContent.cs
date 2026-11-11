@@ -139,6 +139,12 @@ namespace NikooSystem.Models
         [Range(0, long.MaxValue, ErrorMessage = "عدد معتبر نیست")]
         public long StoragePricePerGb { get; set; }
 
+        [Display(Name = "کلید API پاپوس")]
+        public string PappusApiKey { get; set; }
+
+        [Display(Name = "خط فرستنده پاپوس")]
+        public string PappusSender { get; set; }
+
         /// <summary>IPs (comma separated) customers point their domains at; set on the «دامنه‌های مشتریان» page. Empty = Web.config.</summary>
         public string ServerIp { get; set; }
 

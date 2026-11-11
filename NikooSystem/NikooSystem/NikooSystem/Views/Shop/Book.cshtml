@@ -1,6 +1,8 @@
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
-    ViewBag.Title = "رزرو نوبت";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var school = kind != null && kind.IsCampus && string.Equals(((TenantInfo)ViewBag.Tenant)?.StoreType, "school", StringComparison.OrdinalIgnoreCase);
+    ViewBag.Title = school ? "دوره خصوصی" : "رزرو نوبت";
     var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
     var services = (List<StoreService>)ViewBag.Services;
@@ -15,8 +17,15 @@
 <section class="bk-book">
     <div class="container">
         <div class="bk-book-head">
-            <h1><i class="bi bi-calendar-plus"></i> رزرو نوبت</h1>
-            <a class="hs-more" href="@Url.Action("Track","Shop", new { company })">قبلاً نوبت گرفته‌اید؟ پیگیری نوبت <i class="bi bi-arrow-left"></i></a>
+            <h1><i class="bi bi-calendar-plus"></i> @(school ? "دوره خصوصی" : "رزرو نوبت")</h1>
+            @if (school)
+            {
+                <a class="hs-more" href="@Url.Action("Classes","Shop", new { company })">دوره عمومی می‌خواهید؟ ثبت‌نام کلاس گروهی <i class="bi bi-arrow-left"></i></a>
+            }
+            else
+            {
+                <a class="hs-more" href="@Url.Action("Track","Shop", new { company })">قبلاً نوبت گرفته‌اید؟ پیگیری نوبت <i class="bi bi-arrow-left"></i></a>
+            }
         </div>
 
         @if (!services.Any())

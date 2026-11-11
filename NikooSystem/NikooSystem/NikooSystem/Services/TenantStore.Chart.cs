@@ -62,7 +62,7 @@ namespace NikooSystem.Services
             ChartSub("3102", "اسناد پرداختنی (چک‌های صادره)", false, DetailUse.Optional),
             ChartGeneral("32", "پیش‌دریافت‌ها و سایر بدهی‌های جاری"),
             ChartSub("3201", "پیش‌دریافت از مشتریان", false, DetailUse.Optional),
-            ChartSub("3202", "مالیات و عوارض ارزش افزوده"),
+            ChartSub(AccountCodes.Vat, "مالیات و عوارض ارزش افزوده", true),
             ChartSub("3203", "حقوق و بیمه پرداختنی", false, DetailUse.Optional),
 
             ChartGroup("4", "بدهی‌های غیرجاری", AccountKind.Liability),
@@ -73,13 +73,16 @@ namespace NikooSystem.Services
             ChartGeneral("51", "سرمایه و اندوخته‌ها"),
             ChartSub(AccountCodes.Capital, "سرمایه", true, DetailUse.Optional),
             ChartSub("5102", "برداشت شرکا", false, DetailUse.Optional),
-            ChartSub("5103", "سود و زیان انباشته"),
+            ChartSub(AccountCodes.RetainedEarnings, "سود و زیان انباشته", true),
 
             ChartGroup("6", "درآمدها", AccountKind.Income),
             ChartGeneral("61", "درآمدهای عملیاتی"),
             ChartSub(AccountCodes.Sales, "فروش", true, DetailUse.None, DetailUse.Optional),
             ChartSub(AccountCodes.OnlineSales, "فروش آنلاین", true),
             ChartSub(AccountCodes.Tuition, "درآمد شهریه و رزرو", true, DetailUse.None, DetailUse.Optional),
+            ChartSub(AccountCodes.Visit, "درآمد ویزیت و نوبت", true, DetailUse.None, DetailUse.Optional),
+            ChartSub(AccountCodes.ShippingIncome, "درآمد حمل و ارسال", true),
+            ChartSub(AccountCodes.SalesReturns, "برگشت از فروش", true),
             ChartGeneral("62", "سایر درآمدها"),
             ChartSub("6201", "سایر درآمدها", false, DetailUse.Optional),
 
@@ -97,7 +100,7 @@ namespace NikooSystem.Services
             ChartSub("8105", "هزینه استهلاک"),
             ChartGeneral("82", "هزینه‌های فروش و بازاریابی"),
             ChartSub("8201", "تبلیغات و بازاریابی", false, DetailUse.None, DetailUse.Optional),
-            ChartSub("8202", "هزینه ارسال کالا"),
+            ChartSub(AccountCodes.ShippingExpense, "هزینه ارسال کالا", true),
             ChartGeneral("83", "سایر هزینه‌ها"),
             ChartSub("8301", "کارمزد بانکی"),
             ChartSub("8302", "سایر هزینه‌ها", false, DetailUse.None, DetailUse.Optional)
@@ -110,17 +113,57 @@ namespace NikooSystem.Services
         /// </summary>
         private static void EnsureAccounts(string companyCode)
         {
-            if (All(NikooTables.LedgerAccounts, companyCode).Any(a => a.Level == AccountLevel.Group)) return;
+            if (!All(NikooTables.LedgerAccounts, companyCode).Any(a => a.Level == AccountLevel.Group))
+            {
+                lock (LockFor(companyCode))
+                {
+                    using (var tx = NikooDb.Begin())
+                    {
+                        var existing = NikooDb.List(NikooTables.LedgerAccounts, companyCode, tx: tx);
+                        if (!existing.Any(a => a.Level == AccountLevel.Group))
+                        {
+                            BuildChart(companyCode, existing, tx);
+                            tx.Commit();
+                        }
+                    }
+                    EnsurePartyDetails(companyCode);
+                }
+            }
+            EnsureMissingSystemAccounts(companyCode);
+        }
+
+        /// <summary>Adds new seeded subsidiaries (shipping income, sales returns…) to shops that already had a chart.</summary>
+        private static void EnsureMissingSystemAccounts(string companyCode)
+        {
+            var needed = DefaultChart.Where(r => r.Level == AccountLevel.Subsidiary && r.System).ToList();
+            if (needed.Count == 0) return;
             lock (LockFor(companyCode))
             {
-                using (var tx = NikooDb.Begin())
+                var all = NikooDb.List(NikooTables.LedgerAccounts, companyCode);
+                if (!all.Any(a => a.Level == AccountLevel.Group)) return;
+                var byCode = all.ToDictionary(a => a.Code, StringComparer.OrdinalIgnoreCase);
+                foreach (var row in needed)
                 {
-                    var existing = NikooDb.List(NikooTables.LedgerAccounts, companyCode, tx: tx);
-                    if (existing.Any(a => a.Level == AccountLevel.Group)) return;
-                    BuildChart(companyCode, existing, tx);
-                    tx.Commit();
+                    if (byCode.ContainsKey(row.Code)) continue;
+                    var parentCode = row.Code.Length >= 2 ? row.Code.Substring(0, 2) : null;
+                    StoreLedgerAccount parent;
+                    if (parentCode == null || !byCode.TryGetValue(parentCode, out parent) || parent.Level != AccountLevel.General)
+                        continue;
+                    var account = new StoreLedgerAccount
+                    {
+                        Code = row.Code,
+                        Title = row.Title,
+                        Level = AccountLevel.Subsidiary,
+                        Kind = parent.Kind,
+                        ParentId = parent.Id,
+                        IsSystem = true,
+                        IsActive = true,
+                        Detail1 = row.Detail1,
+                        Detail2 = row.Detail2
+                    };
+                    Save(NikooTables.LedgerAccounts, companyCode, account);
+                    byCode[account.Code] = account;
                 }
-                EnsurePartyDetails(companyCode);
             }
         }
 
@@ -245,7 +288,7 @@ namespace NikooSystem.Services
                 }
                 if (existing.IsSystem) account.Kind = existing.Kind;
                 account.IsSystem = existing.IsSystem;
-                if (account.Level != existing.Level && JournalLines(companyCode).Any(l => l.AccountId == existing.Id))
+                if (account.Level != existing.Level && JournalLineExists(companyCode, "AccountId", existing.Id))
                     return "این حساب در سندها آمده و سطحش عوض نمی‌شود.";
             }
             else account.IsSystem = false;
@@ -306,7 +349,7 @@ namespace NikooSystem.Services
             if (account == null) return null;
             if (account.IsSystem) return "حساب‌های پیش‌فرض حذف نمی‌شوند؛ غیرفعالشان کنید.";
             if (GetAccounts(companyCode).Any(a => a.ParentId == id)) return "اول حساب‌های زیرمجموعه را حذف یا جابه‌جا کنید.";
-            if (JournalLines(companyCode).Any(l => l.AccountId == id)) return "این حساب در سندها آمده و حذف نمی‌شود.";
+            if (JournalLineExists(companyCode, "AccountId", id)) return "این حساب در سندها آمده و حذف نمی‌شود.";
             Remove(NikooTables.LedgerAccounts, companyCode, id);
             return null;
         }
@@ -389,7 +432,8 @@ namespace NikooSystem.Services
         }
 
         private static bool DetailUsed(string companyCode, int id) =>
-            JournalLines(companyCode).Any(l => l.Detail1Id == id || l.Detail2Id == id)
+            JournalLineExists(companyCode, "Detail1Id", id)
+            || JournalLineExists(companyCode, "Detail2Id", id)
             || NikooDb.Count(NikooTables.CashTransactions, SqlFilter.ForStore(companyCode).Eq("Detail2Id", id)) > 0;
 
         private static readonly Dictionary<string, string> DetailSorts = new Dictionary<string, string>
@@ -409,21 +453,14 @@ namespace NikooSystem.Services
         }
 
         /// <summary>Debit minus credit of each detail account, over all documents.</summary>
-        public static Dictionary<int, long> DetailBalances(string companyCode)
-        {
-            var sums = new Dictionary<int, long>();
-            foreach (var line in JournalLines(companyCode))
-            {
-                foreach (var id in new[] { line.Detail1Id, line.Detail2Id })
-                {
-                    if (id <= 0) continue;
-                    long sum;
-                    sums.TryGetValue(id, out sum);
-                    sums[id] = sum + line.Debit - line.Credit;
-                }
-            }
-            return sums;
-        }
+        public static Dictionary<int, long> DetailBalances(string companyCode) =>
+            NikooDb.Pairs<int, long>(
+                "SELECT [Id], SUM([Amount]) FROM ("
+                + "SELECT [Detail1Id] AS [Id], [Debit] - [Credit] AS [Amount] FROM " + NikooDb.Table("JournalLines")
+                + " WHERE [CompanyCode] = @CompanyCode AND [Detail1Id] > 0"
+                + " UNION ALL SELECT [Detail2Id], [Debit] - [Credit] FROM " + NikooDb.Table("JournalLines")
+                + " WHERE [CompanyCode] = @CompanyCode AND [Detail2Id] > 0) d GROUP BY [Id]",
+                NikooDb.Key(companyCode));
 
         /// <summary>The level-1 detail account of a supplier or customer, made the first time and kept in step with its name.</summary>
         private static StoreDetailAccount PartyDetail(string companyCode, StoreParty party, List<StoreDetailAccount> details = null)

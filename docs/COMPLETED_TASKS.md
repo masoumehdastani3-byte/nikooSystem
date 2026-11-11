@@ -1,6 +1,6 @@
 # COMPLETED_TASKS
 
-آخرین به‌روزرسانی: 2026-11-04
+آخرین به‌روزرسانی: 2026-11-10
 
 ## DONE-001 — فراموشی رمز عبور با بله (ShopAdmin + ShopAccount)
 - وضعیت: تکمیل‌شده
@@ -127,3 +127,92 @@
   - افزودن متن خلاصه درباره امکانات پنل (مدیریت، سفارش/رزرو، پیام‌ها، ظاهر سایت).
 - فایل‌های کلیدی:
   - `Views/ShopAdmin/Login.cshtml`
+
+## DONE-011 — BL-020 اصلاح پیام محصول برای اداره حضوری/آفلاین
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - Features هر SiteKind، صفحات ProductLandings، FAQ سایت و توضیحات کاتالوگ برای سناریوی بدون فروش آنلاین شفاف شد.
+  - محصول `digital` در کاتالوگ به‌عنوان فروشگاه گجت فیزیکی از دوره/فایل آموزشی تفکیک شد.
+  - callout در صفحه جزئیات محصول و migration یک‌باره `ApplyOfflineProductMessaging` اضافه شد.
+- فایل‌های کلیدی:
+  - `Helpers/SiteKinds.cs`, `Helpers/ProductLandings.cs`, `Helpers/PlatformModules.cs`
+  - `Services/SiteContentStore.cs`, `Services/SiteStore.cs`, `Services/Data/NikooDb.cs`
+  - `Views/Products/Details.cshtml`, `Views/Products/Index.cshtml`
+
+## DONE-012 — BL-013 صندوق فروش سریع (POS) MVP
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - صفحه `ShopAdmin/Pos` با کاتالوگ قابل جستجو، سبد تعاملی، دریافت نقد/بانک و مشتری نقدی پیش‌فرض.
+  - ثبت از مسیر `TenantStore.SaveSale` با کسر موجودی و سند حسابداری.
+  - لینک در منوی حسابداری، فاکتورهای فروش و راهنمای حسابداری.
+- فایل‌های کلیدی:
+  - `Controllers/ShopAdminController.Accounting.cs`
+  - `Views/ShopAdmin/Pos.cshtml`
+  - `Views/Shared/_ShopAdminLayout.cshtml`
+  - `Views/ShopAdmin/SaleInvoices.cshtml`, `Views/ShopAdmin/AccountingGuide.cshtml`
+
+## DONE-013 — BL-015 حسابداری و تسویه نقدی نوبت‌دهی
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - ماژول حسابداری برای `SiteKinds.Booking` در منو و اکشن‌ها فعال شد.
+  - دریافت مانده نوبت از صفحه جزئیات نوبت (نقد/بانک) با `RecordAppointmentPayment`.
+  - بیعانه آنلاین نوبت در دفاتر با `JournalSource.Appointment` ثبت می‌شود.
+- فایل‌های کلیدی:
+  - `Controllers/ShopAdminController.Booking.cs`
+  - `Controllers/ShopAdminController.Accounting.cs`
+  - `Services/TenantStore.Accounting.cs`, `Services/TenantStore.Booking.cs`
+  - `Views/ShopAdmin/AppointmentDetails.cshtml`
+  - `Models/Store/AccountingModels.cs`
+
+## DONE-014 — BL-016 پیامک تأیید و یادآوری نوبت
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - پیامک تأیید پس از قطعی شدن نوبت (پنل یا سایت/پس از بیعانه).
+  - یادآوری خودکار قبل از نوبت با تایمر ساعتی اپ (`SendDueBookingReminders`).
+  - تنظیمات `SmsBookingConfirm` و `SmsBookingReminderHours`؛ منوی پیامک برای Booking/Campus.
+- فایل‌های کلیدی:
+  - `Services/SmsService.cs`, `Services/TenantStore.Booking.cs`, `Global.asax.cs`
+  - `Models/Store/StoreModels.cs`, `Models/Store/BookingModels.cs`
+  - `Views/ShopAdmin/Settings.cshtml`, `Views/ShopAdmin/Sms.cshtml`
+  - `Controllers/ShopAdminController.Booking.cs`, `Controllers/ShopController.Booking.cs`
+
+## DONE-015 — BL-014 فروش و فعال‌سازی دستی دوره/فایل
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - صفحه `GrantAccess` در پنل Digital: انتخاب محصول دیجیتال، مشتری (یا ساخت حساب با رمز موقت)، مبلغ اختیاری، دریافت نقد/بانک.
+  - `GrantDigitalAccess` سفارش `Completed` می‌سازد تا کتابخانه فعال شود؛ مبلغ > ۰ با `PostManualDigitalSale` در صندوق/بانک و فروش آنلاین (بدون حساب درگاه) سند می‌خورد.
+  - منو، لینک از دانشجویان و سفارش‌ها، FAQ و راهنمای حسابداری به‌روز شد.
+- فایل‌های کلیدی:
+  - `Services/TenantStore.cs`, `Services/TenantStore.Accounting.cs`
+  - `Controllers/ShopAdminController.Sales.cs`
+  - `Views/ShopAdmin/GrantAccess.cshtml`, `Customers.cshtml`, `Orders.cshtml`
+  - `Views/Shared/_ShopAdminLayout.cshtml`, `Views/ShopAdmin/AccountingGuide.cshtml`
+  - `Helpers/SiteKinds.cs`, `Services/SiteContentStore.cs`
+
+## DONE-016 — BL-017 کاربران و نقش‌های پنل
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - جدول `PanelUsers` با نقش‌های مدیر / صندوقدار / منشی کنار حساب مالک در Settings.
+  - ورود یکپارچه؛ نشست نقش؛ `PanelAccess` برای گیت اکشن و فیلتر منو.
+  - صفحه `PanelUsers` فقط برای مالک؛ اعتبار مالک در Settings فقط برای مالک قابل تغییر است.
+- فایل‌های کلیدی:
+  - `Models/Store/PanelUserModels.cs`, `Helpers/PanelAccess.cs`
+  - `Services/TenantStore.PanelUsers.cs`, `Services/Data/NikooTables.cs`
+  - `Controllers/ShopBaseController.cs`, `Controllers/ShopAdminController.cs`, `Controllers/ShopAdminController.PanelUsers.cs`
+  - `Views/ShopAdmin/PanelUsers.cshtml`, `EditPanelUser.cshtml`, `Settings.cshtml`
+  - `Views/Shared/_ShopAdminLayout.cshtml`, `Helpers/PlatformModules.cs`, `Helpers/SiteKinds.cs`
+
+## DONE-017 — BL-021 بازنگری حسابداری SME
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - واژگان kind-aware با `AccountingCopy`؛ منوی Booking دوباره صندوق و فاکتور فروش/خدمت دارد.
+  - ردیف پویا در فاکتور فروش، خرید و سند دستی (شروع ۳–۴ ردیف، افزودن/حذف تا ۲۴).
+  - POS با ردیف دستی خدمت؛ پیام‌های عمومی به‌جای «کالا».
+  - برای Booking/Campus ردیف بدون موجودی به حساب شهریه/خدمت (`6103`) می‌رود.
+  - CSS مشترک حسابداری و راهنمای قدم‌به‌قدم بر اساس kind.
+- فایل‌های کلیدی:
+  - `Helpers/AccountingCopy.cs`, `Content/accounting.css`, `Content/accounting-lines.js`
+  - `Views/ShopAdmin/EditSaleInvoice.cshtml`, `EditPurchase.cshtml`, `EditJournal.cshtml`, `Pos.cshtml`
+  - `Views/ShopAdmin/AccountingGuide.cshtml`, `SaleInvoices.cshtml`, `Inventory.cshtml`, `Parties.cshtml`
+  - `Services/TenantStore.Accounting.cs`, `Controllers/ShopAdminController.Accounting.cs`
+  - `Views/Shared/_ShopAdminLayout.cshtml`

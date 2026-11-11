@@ -4,10 +4,18 @@
     ViewBag.Title = "مشتریان";
     var company = (string)ViewBag.CompanyCode;
     var orderCounts = (Dictionary<int, int>)ViewBag.OrderCounts;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var cols = kind != null && kind.IsDigital ? 6 : 5;
 }
-@Html.PageHeader("مشتریان")
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">@(kind != null && kind.IsDigital ? "دانشجویان و خریداران" : "مشتریان")</h2>
+    @if (kind != null && kind.IsDigital)
+    {
+        <a class="btn-store" href="@Url.Action("GrantAccess","ShopAdmin", new { company })"><i class="bi bi-key"></i> اعطای دسترسی</a>
+    }
+</div>
 <div class="panel-card">
-    @Html.GridToolbar("جستجو در نام، موبایل یا ایمیل…")
+    @Html.GridToolbar("جستجو در نام، موبایل یا ایمیل…", true)
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
@@ -17,6 +25,10 @@
                     <th>ایمیل</th>
                     <th>سفارش‌ها</th>
                     @Html.SortHeader("created", "تاریخ عضویت")
+                    @if (kind != null && kind.IsDigital)
+                    {
+                        <th></th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -38,11 +50,17 @@
                             }
                         </td>
                         <td class="small text-muted">@c.CreatedAt.ToShamsi()</td>
+                        @if (kind != null && kind.IsDigital)
+                        {
+                            <td class="row-actions">
+                                @Html.IconLink(Url.Action("GrantAccess", "ShopAdmin", new { company, name = c.FullName, mobile = c.Mobile }), "bi-key", "اعطای دسترسی", "is-view")
+                            </td>
+                        }
                     </tr>
                 }
                 @if (Model.Count == 0)
                 {
-                    <tr class="admin-empty-row"><td colspan="5"><i class="bi bi-people fs-3 d-block mb-1"></i>مشتری‌ای پیدا نشد.</td></tr>
+                    <tr class="admin-empty-row"><td colspan="@cols"><i class="bi bi-people fs-3 d-block mb-1"></i>مشتری‌ای پیدا نشد.</td></tr>
                 }
             </tbody>
         </table>

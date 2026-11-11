@@ -1,31 +1,47 @@
 @model StoreSalesInvoice
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Id > 0 ? "ویرایش فاکتور فروش" : "فاکتور فروش";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var saleLabel = AccountingCopy.SaleInvoice(kind);
+    ViewBag.Title = Model.Id > 0 ? "ویرایش " + saleLabel : saleLabel;
     var company = (string)ViewBag.CompanyCode;
-    var products = (List<StoreProduct>)ViewBag.Products;
-    var goods = (List<StoreGoodsItem>)ViewBag.Goods;
+    var products = (List<StoreProduct>)ViewBag.Products ?? new List<StoreProduct>();
+    var goods = (List<StoreGoodsItem>)ViewBag.Goods ?? new List<StoreGoodsItem>();
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var lines = Model.Lines ?? new List<StoreSaleLine>();
-    var parties = (List<StoreParty>)ViewBag.Parties;
-    var siteCustomers = (List<StoreCustomer>)ViewBag.SiteCustomers;
-    var banks = (List<StoreBankAccount>)ViewBag.Banks;
+    var parties = (List<StoreParty>)ViewBag.Parties ?? new List<StoreParty>();
+    var siteCustomers = (List<StoreCustomer>)ViewBag.SiteCustomers ?? new List<StoreCustomer>();
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
     var payToken = AccountingText.PayToken(Model.PayWith, Model.BankId);
+    var startRows = Math.Min(24, Math.Max(3, lines.Count > 0 ? lines.Count : 3));
+    var noStock = AccountingCopy.NoStock(kind);
+    var invLabel = AccountingCopy.Inventory(kind);
+    var lineCol = AccountingCopy.LineColumn(kind);
 }
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">@ViewBag.Title</h2>
-    <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">بازگشت به لیست</a>
+<link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
+<div class="acc-form-head">
+    <div>
+        <h2>@ViewBag.Title</h2>
+        <p class="lead">طرف‌حساب و نحوه دریافت را بالا بنویسید؛ کالا را جستجو کنید یا از ردیف‌ها انتخاب کنید.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (Model.Id > 0)
+        {
+            <a class="btn-outline-store" href="@Url.Action("PrintSaleInvoice","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-printer"></i> چاپ</a>
+        }
+        <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
 @using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
-    <div class="panel-card row g-3 m-0 mb-3">
-        <div class="col-md-4">
-            <label class="form-label" for="party">مشتری</label>
+    <div class="panel-card acc-meta mb-3">
+        <div>
+            <label class="form-label" for="party">مشتری / طرف‌حساب</label>
             <select class="form-select" name="party" id="party">
-                <option value="">— از فهرست مشتریان انتخاب کنید —</option>
-                <optgroup label="مشتریان حسابداری">
+                <option value="">— از فهرست انتخاب کنید —</option>
+                <optgroup label="طرف‌حساب‌های ثبت‌شده">
                     @foreach (var party in parties)
                     {
                         <option value="t-@party.Id" @(Model.PartyId == party.Id ? "selected" : null)>@(party.Name + (string.IsNullOrWhiteSpace(party.Mobile) ? "" : " — " + party.Mobile) + (party.IsActive ? "" : " (غیرفعال)"))</option>
@@ -33,7 +49,7 @@
                 </optgroup>
                 @if (siteCustomers.Any())
                 {
-                    <optgroup label="مشتریان عضو سایت">
+                    <optgroup label="اعضای سایت">
                         @foreach (var customer in siteCustomers)
                         {
                             <option value="c-@customer.Id">@(customer.FullName + (string.IsNullOrWhiteSpace(customer.Mobile) ? "" : " — " + customer.Mobile))</option>
@@ -42,17 +58,16 @@
                 }
             </select>
             <div class="form-text">
-                در فهرست نیست؟
-                <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })">تعریف مشتری</a>
-                یا نامش را پایین بنویسید تا به فهرست اضافه شود.
+                <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })">تعریف طرف‌حساب</a>
+                یا نام تازه را پایین بنویسید.
             </div>
             <input class="form-control form-control-sm mt-1" name="newParty" maxlength="150" placeholder="نام مشتری تازه" />
         </div>
-        <div class="col-md-3">
+        <div>
             <label class="form-label" for="invoiceDate">تاریخ</label>
             @Html.ShamsiDate("invoiceDate", Model.InvoiceDate, "invoiceDate")
         </div>
-        <div class="col-md-3">
+        <div>
             <label class="form-label" for="payFrom">دریافت در</label>
             <select class="form-select" name="payFrom" id="payFrom">
                 @foreach (var option in AccountingText.PayOptions(banks, true, payToken))
@@ -61,53 +76,141 @@
                 }
             </select>
         </div>
-        <div class="col-md-12">
+        <div class="acc-span-2">
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
         </div>
     </div>
-    <div class="panel-card">
-        <table class="table align-middle">
-            <thead><tr><th>شرح</th><th>کالا</th><th>تعداد</th><th>قیمت واحد</th></tr></thead>
-            <tbody>
-                @for (var i = 0; i < 8; i++)
-                {
-                    var line = i < lines.Count ? lines[i] : new StoreSaleLine();
-                    var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+    <div class="acc-lines">
+        <div class="acc-stock-search">
+            <label class="form-label" for="saleItemSearch">جستجوی کالا</label>
+            <input type="search" id="saleItemSearch" class="form-control" placeholder="@AccountingCopy.PosSearch(kind)" autocomplete="off" />
+            <div id="saleItemResults" class="acc-stock-results" hidden></div>
+            <div class="form-text">با انتخاب نتیجه، به ردیف خالی اضافه می‌شود (یا ردیف تازه ساخته می‌شود).</div>
+        </div>
+        <div class="table-responsive">
+            <table class="table align-middle" id="saleLines">
+                <thead>
                     <tr>
-                        <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" /></td>
-                        <td>
-                            <select class="form-select" name="lineStock">
-                                <option value="">بدون کسر از موجودی</option>
-                                @if (products.Any())
-                                {
-                                    <optgroup label="محصولات فروشگاه">
-                                        @foreach (var product in products)
-                                        {
-                                            var token = "p-" + product.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku) (@product.Stock.ToFa())</option>
-                                        }
-                                    </optgroup>
-                                }
-                                @if (goods.Any())
-                                {
-                                    <optgroup label="کالاهای انبار">
-                                        @foreach (var item in goods)
-                                        {
-                                            var token = "g-" + item.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code) (@item.Qty.ToFa())</option>
-                                        }
-                                    </optgroup>
-                                }
-                            </select>
-                        </td>
-                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
+                        <th>@lineCol</th>
+                        <th>شرح</th>
+                        <th style="width:6rem">تعداد</th>
+                        <th style="width:8rem">مبلغ واحد</th>
+                        <th style="width:2.5rem"></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-        <p class="small text-muted">اگر موجودی کافی نباشد فاکتور ثبت نمی‌شود. بهای تمام‌شده از میانگین خریدها به سند می‌رود. ردیف بدون کالا فقط درآمد است و از انبار کم نمی‌شود.</p>
-        <button class="btn-store" type="submit">ثبت فاکتور</button>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < startRows; i++)
+                    {
+                        var line = i < lines.Count ? lines[i] : new StoreSaleLine();
+                        var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+                        <tr>
+                            <td>
+                                <select class="form-select" name="lineStock" data-acc-stock>
+                                    <option value="">@noStock</option>
+                                    @if (products.Any())
+                                    {
+                                        <optgroup label="محصولات">
+                                            @foreach (var product in products)
+                                            {
+                                                var token = "p-" + product.Id.ToString(invariant);
+                                                <option value="@token" data-title="@Html.AttributeEncode(product.Title)" data-price="@product.Price.ToString(invariant)" data-sku="@Html.AttributeEncode(product.Sku ?? "")" @(selected == token ? "selected" : null)>@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku) (@product.Stock.ToFa())</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                    @if (goods.Any())
+                                    {
+                                        <optgroup label="@invLabel">
+                                            @foreach (var item in goods)
+                                            {
+                                                var token = "g-" + item.Id.ToString(invariant);
+                                                <option value="@token" data-title="@Html.AttributeEncode(item.Title)" data-price="0" data-sku="@Html.AttributeEncode(item.Code ?? "")" @(selected == token ? "selected" : null)>@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code) (@item.Qty.ToFa())</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </td>
+                            <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" placeholder="مثلاً کوتاهی مو / شهریه ماه" /></td>
+                            <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
+                            <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
+                            <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="acc-lines-toolbar">
+            <button type="button" class="btn-outline-store" id="saleAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
+        </div>
+        <div class="acc-totals">
+            <div class="acc-totals-row"><span>جمع ردیف‌ها</span> <strong id="saleSubtotal">۰ تومان</strong></div>
+            <div class="acc-totals-fields">
+                <div>
+                    <label class="form-label" for="DiscountAmount">تخفیف (تومان)</label>
+                    <input class="form-control" inputmode="numeric" data-money dir="ltr" name="DiscountAmount" id="DiscountAmount" value="@(Model.DiscountAmount > 0 ? Model.DiscountAmount.ToString(invariant) : "")" />
+                </div>
+                <div>
+                    <label class="form-label" for="VatPercent">مالیات ارزش افزوده (٪)</label>
+                    <input class="form-control" type="number" min="0" max="100" step="1" dir="ltr" name="VatPercent" id="VatPercent" value="@Model.VatPercent.ToString(invariant)" />
+                    <div class="form-text">صفر یعنی بدون مالیات. پیش‌فرض را از «سال مالی» تنظیم کنید.</div>
+                </div>
+            </div>
+            <div class="acc-totals-row"><span>پس از تخفیف</span> <strong id="saleNet">۰ تومان</strong></div>
+            <div class="acc-totals-row"><span>مالیات</span> <strong id="saleVat">۰ تومان</strong></div>
+            <div class="acc-totals-row is-grand"><span>مبلغ قابل دریافت</span> <strong id="saleTotal">۰ تومان</strong></div>
+        </div>
     </div>
+    <p class="acc-hint">@AccountingCopy.LineHint(kind)</p>
+    <button class="btn-store" type="submit">ثبت فاکتور</button>
 }
+<script type="text/template" id="saleRowTpl">
+<tr>
+    <td>
+        <select class="form-select" name="lineStock" data-acc-stock>
+            <option value="">@noStock</option>
+            @if (products.Any())
+            {
+                <optgroup label="محصولات">
+                    @foreach (var product in products)
+                    {
+                        <option value="p-@product.Id.ToString(invariant)" data-title="@Html.AttributeEncode(product.Title)" data-price="@product.Price.ToString(invariant)" data-sku="@Html.AttributeEncode(product.Sku ?? "")">@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku) (@product.Stock.ToFa())</option>
+                    }
+                </optgroup>
+            }
+            @if (goods.Any())
+            {
+                <optgroup label="@invLabel">
+                    @foreach (var item in goods)
+                    {
+                        <option value="g-@item.Id.ToString(invariant)" data-title="@Html.AttributeEncode(item.Title)" data-price="0" data-sku="@Html.AttributeEncode(item.Code ?? "")">@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code) (@item.Qty.ToFa())</option>
+                    }
+                </optgroup>
+            }
+        </select>
+    </td>
+    <td><input class="form-control" name="lineTitle" maxlength="150" value="" placeholder="مثلاً کوتاهی مو / شهریه ماه" /></td>
+    <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="" /></td>
+    <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="" /></td>
+    <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
+</tr>
+</script>
+<script src="@Url.Asset("~/Content/accounting-lines.js")"></script>
+<script>
+accInitLines({
+  tableId: 'saleLines',
+  templateId: 'saleRowTpl',
+  addBtnId: 'saleAddRow',
+  totalId: 'saleTotal',
+  subtotalId: 'saleSubtotal',
+  netId: 'saleNet',
+  vatId: 'saleVat',
+  discountId: 'DiscountAmount',
+  vatPercentId: 'VatPercent',
+  maxRows: 24,
+  minRows: 1,
+  qtyName: 'lineQty',
+  priceName: 'linePrice',
+  stockSearchId: 'saleItemSearch',
+  stockResultsId: 'saleItemResults'
+});
+</script>

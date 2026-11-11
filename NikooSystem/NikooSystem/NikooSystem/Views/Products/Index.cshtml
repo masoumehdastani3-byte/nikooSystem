@@ -8,15 +8,22 @@
 <main id="main">
     <div class="page-hero">
         <div class="container">
-            <h1>لیست محصولات نرم‌افزاری</h1>
-            <p class="text-muted">فروشگاه‌های آنلاین آماده و نرم‌افزارهای قابل سفارش</p>
+            <h1>محصولات نرم‌افزاری</h1>
+            <p class="text-muted">سایت و پنل آماده برای فروش آنلاین یا حضوری، آموزش، شرکت، خبر، مطب، آرایشگاه، مشاوره، آموزشگاه و باشگاه ورزشی</p>
         </div>
     </div>
     <section class="pb-5">
         <div class="container">
-            <div class="mb-4">
-                @Html.Partial("_SolutionLinks", ProductLandings.All)
+            <header class="lf-section-head">
+                <h2>معرفی محصولات</h2>
+                <p>تصویر، کاربرد و مسیر شروع هر سایت</p>
+            </header>
+            <div class="mb-5">
+                @Html.Partial("_ProductIntroCards", ProductLandings.All)
             </div>
+            @if (Model.Any() || !string.IsNullOrEmpty(ViewBag.Category as string))
+            {
+            <h2 class="h4 mb-3">نرم‌افزارهای قابل سفارش</h2>
             <div class="mb-4 d-flex flex-wrap gap-2">
                 <a class="btn btn-sm @(string.IsNullOrEmpty(ViewBag.Category as string) ? "btn-primary-shop" : "btn-outline-shop")" href="@Url.Action("Index","Products")">همه</a>
                 @foreach (var c in categories)
@@ -46,7 +53,7 @@
                                     <div>
                                         @if (!string.IsNullOrEmpty(p.DemoSlug))
                                         {
-                                            <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">مشاهده دمو</a>
+                                            <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })" target="_blank" rel="noopener">مشاهده دمو</a>
                                         }
                                         <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات و قیمت</a>
                                     </div>
@@ -56,9 +63,10 @@
                     </div>
                 }
             </div>
-            @if (!Model.Any())
+            if (!Model.Any())
             {
                 <div class="alert alert-info">محصولی یافت نشد.</div>
+            }
             }
         </div>
     </section>

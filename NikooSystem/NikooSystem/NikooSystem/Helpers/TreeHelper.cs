@@ -42,30 +42,38 @@ namespace NikooSystem.Helpers
             var rows = new List<TreeRow<T>>();
             var seen = new HashSet<int>();
 
-            void Visit(T node, int depth, T parent)
+            void Visit(T node, int depth, T parent, bool isLast)
             {
                 if (!seen.Add(node.Id)) return;
-                rows.Add(new TreeRow<T>(node, depth, parent));
-                foreach (var child in children[node.Id]) Visit(child, depth + 1, node);
+                var kids = children[node.Id].ToList();
+                rows.Add(new TreeRow<T>(node, depth, parent, kids.Count > 0, isLast));
+                for (var i = 0; i < kids.Count; i++)
+                    Visit(kids[i], depth + 1, node, i == kids.Count - 1);
             }
 
-            foreach (var root in list.Where(n => !n.ParentId.HasValue || !ids.Contains(n.ParentId.Value)))
-                Visit(root, 0, default(T));
+            var roots = list.Where(n => !n.ParentId.HasValue || !ids.Contains(n.ParentId.Value)).ToList();
+            for (var i = 0; i < roots.Count; i++)
+                Visit(roots[i], 0, default(T), i == roots.Count - 1);
             return rows;
         }
     }
 
     public sealed class TreeRow<T> where T : ITreeNode
     {
-        public TreeRow(T node, int depth, T parent)
+        public TreeRow(T node, int depth, T parent, bool hasChildren = false, bool isLast = true)
         {
             Node = node;
             Depth = depth;
             Parent = parent;
+            HasChildren = hasChildren;
+            IsLast = isLast;
         }
 
         public T Node { get; }
         public int Depth { get; }
         public T Parent { get; }
+        public bool HasChildren { get; }
+        /// <summary>Last among its siblings; used to stop the vertical guide line.</summary>
+        public bool IsLast { get; }
     }
 }

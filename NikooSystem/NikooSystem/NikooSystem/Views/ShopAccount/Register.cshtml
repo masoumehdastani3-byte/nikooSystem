@@ -15,7 +15,6 @@
                 @Html.ValidationSummary(false, "", new { @class = "text-danger" })
                 <div class="mb-3"><label class="form-label">نام</label>@Html.TextBoxFor(m => m.FullName, new { @class = "form-control" })</div>
                 <div class="mb-3"><label class="form-label">موبایل</label>@Html.TextBoxFor(m => m.Mobile, new { @class = "form-control" })</div>
-                <div class="mb-3"><label class="form-label">شناسه چت بله</label>@Html.TextBoxFor(m => m.BaleChatId, new { @class = "form-control", placeholder = "chat_id" })</div>
                 <div class="mb-3"><label class="form-label">ایمیل</label>@Html.TextBoxFor(m => m.Email, new { @class = "form-control" })</div>
                 if (kind.IsShop)
                 {

@@ -14,7 +14,7 @@ namespace NikooSystem.Controllers
     /// <summary>Products (with the files and lessons of digital ones), collections and attributes.</summary>
     public partial class ShopAdminController
     {
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult Products(ProductGridQuery query)
         {
             ViewBag.Categories = TenantStore.GetCategories(CompanyCode);
@@ -23,7 +23,7 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult EditProduct(int? id)
         {
             var product = id.HasValue
@@ -40,7 +40,7 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult EditProduct(StoreProduct model, IEnumerable<HttpPostedFileBase> imageFiles, string attrJson, string removeImageIds, string lessonsJson)
         {
             if (string.IsNullOrWhiteSpace(model.Title))
@@ -77,7 +77,8 @@ namespace NikooSystem.Controllers
 
             model = TenantStore.SaveProduct(CompanyCode, model);
             TorobWebhookService.NotifyProductChanged(CompanyCode, model);
-            return Ok((model.IsDigital() ? "«" + model.Title + "»" : "محصول") + " ذخیره شد.", "EditProduct", new { id = model.Id });
+            var savedNoun = model.IsDigital() ? "«" + model.Title + "»" : Kind.IsMenu ? "آیتم" : "محصول";
+            return Ok(savedNoun + " ذخیره شد.", "EditProduct", new { id = model.Id });
         }
 
         private const int MaxLessons = 500;
@@ -145,11 +146,11 @@ namespace NikooSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult DeleteProduct(int id)
         {
             TenantStore.DeleteProduct(CompanyCode, id);
-            return OkBack("محصول حذف شد.", "Products");
+            return OkBack((Kind.IsMenu ? "آیتم" : "محصول") + " حذف شد.", "Products");
         }
 
         // ---- Protected files of digital products

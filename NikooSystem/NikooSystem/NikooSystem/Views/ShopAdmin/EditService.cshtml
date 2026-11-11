@@ -11,11 +11,12 @@
     <a class="btn-outline-store" href="@Url.Action("Services","ShopAdmin", new { company })">بازگشت به لیست</a>
 </div>
 
-@using (Html.BeginForm("EditService", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+@using (Html.BeginForm("EditService", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", @class = "svc-edit" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
-    <div class="panel-card row g-3">
+    <div class="panel-card">
+    <div class="row g-3">
         <div class="col-md-6">
             <label class="form-label" for="Title">عنوان خدمت</label>
             @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً ویزیت عمومی" })
@@ -53,12 +54,12 @@
             <label class="form-label d-block">چه کسانی این خدمت را ارائه می‌دهند؟</label>
             @if (staff.Any())
             {
-                <div class="d-flex flex-wrap gap-3">
+                <div class="svc-checks">
                     @foreach (var p in staff)
                     {
-                        <label class="form-check">
-                            <input class="form-check-input" type="checkbox" name="StaffIds" value="@p.Id" @(selected.Contains(p.Id) ? "checked" : "") />
-                            <span class="form-check-label">@p.Name @if (!p.IsActive) { <small class="text-muted">(غیرفعال)</small> }</span>
+                        <label class="svc-check">
+                            <input type="checkbox" name="StaffIds" value="@p.Id" @(selected.Contains(p.Id) ? "checked" : null) />
+                            <span>@p.Name @if (!p.IsActive) { <small>(غیرفعال)</small> }</span>
                         </label>
                     }
                 </div>
@@ -75,20 +76,30 @@
             {
                 <div class="d-flex align-items-center gap-3 mb-2">
                     <img src="@Model.ImageUrl" alt="" style="width:120px;height:68px;object-fit:cover;border-radius:8px" />
-                    <label class="small"><input type="checkbox" name="removeImage" value="true" /> حذف تصویر</label>
+                    <label class="svc-check">
+                        <input type="checkbox" name="removeImage" value="true" />
+                        <span>حذف تصویر</span>
+                    </label>
                 </div>
             }
             <input class="form-control" type="file" name="imageFile" accept=".png,.jpg,.jpeg,.gif" />
         </div>
-        <div class="col-md-3">
-            <label class="form-label" for="SortOrder">ترتیب نمایش</label>
-            @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
-        </div>
-        <div class="col-md-3 d-flex align-items-end">
-            @Html.BoolField("IsActive", Model.IsActive, "فعال (قابل رزرو آنلاین)")
+        <div class="col-md-6">
+            <div class="svc-meta">
+                <div>
+                    <label class="form-label" for="SortOrder">ترتیب نمایش</label>
+                    @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", dir = "ltr" })
+                </div>
+                <label class="svc-check">
+                    <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : null) />
+                    <span>فعال (قابل رزرو آنلاین)</span>
+                </label>
+                <input type="hidden" name="IsActive" value="false" />
+            </div>
         </div>
         <div class="col-12 d-flex gap-2">
             @Html.FormActions("Services")
         </div>
+    </div>
     </div>
 }

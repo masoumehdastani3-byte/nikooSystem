@@ -330,22 +330,36 @@ namespace NikooSystem.Services
         public static StoreProduct GetProductBySlug(string companyCode, string slug) =>
             FindBy(NikooTables.Products, companyCode, "Slug", slug);
 
-        /// <summary>Saves the product's own fields; its view and sales counters are kept as stored.</summary>
-        public static StoreProduct SaveProduct(string companyCode, StoreProduct product) =>
-            Save(NikooTables.Products, companyCode, product, (p, stored) =>
+        /// <summary>
+        /// Saves the product's own fields. Physical stock is warehouse-owned: edits keep the stored quantity, and a new
+        /// product's opening stock is recorded as an inventory adjustment (same as انبار).
+        /// </summary>
+        public static StoreProduct SaveProduct(string companyCode, StoreProduct product)
+        {
+            var opening = 0;
+            var saved = Save(NikooTables.Products, companyCode, product, (p, stored) =>
             {
                 if (string.IsNullOrWhiteSpace(p.Slug)) p.Slug = "p-" + p.Id;
-                if (p.IsDigital()) p.Stock = 0;
                 if (stored == null)
                 {
                     p.CreatedAt = DateTime.Now;
+                    if (p.IsDigital()) p.Stock = 0;
+                    else
+                    {
+                        if (p.Stock < 0) p.Stock = 0;
+                        opening = p.Stock;
+                    }
                     return;
                 }
                 p.CreatedAt = stored.CreatedAt;
                 p.ViewCount = stored.ViewCount;
                 p.SoldCount = stored.SoldCount;
+                p.Stock = p.IsDigital() ? 0 : stored.Stock;
                 p.UpdatedAt = DateTime.Now;
             });
+            if (opening > 0) RecordProductOpening(companyCode, saved.Id, opening, saved.Title);
+            return saved;
+        }
 
         /// <summary>Deletes the product and its protected files.</summary>
         public static bool DeleteProduct(string companyCode, int id)
@@ -465,14 +479,142 @@ namespace NikooSystem.Services
         public static StoreCustomer GetCustomer(string companyCode, int? id) =>
             id.HasValue ? Find(NikooTables.Customers, companyCode, id.Value) : null;
 
-        public static StoreCustomer GetCustomerByMobile(string companyCode, string mobile) =>
-            FindBy(NikooTables.Customers, companyCode, "Mobile", mobile);
+        public static StoreCustomer GetCustomerByMobile(string companyCode, string mobile)
+        {
+            mobile = BookingTime.NormalizeMobile(mobile);
+            return mobile == null ? null : FindBy(NikooTables.Customers, companyCode, "Mobile", mobile);
+        }
 
         public static StoreCustomer SaveCustomer(string companyCode, StoreCustomer customer) =>
             Save(NikooTables.Customers, companyCode, customer, (c, stored) =>
             {
                 c.CreatedAt = stored?.CreatedAt ?? DateTime.Now;
+                c.Mobile = BookingTime.NormalizeMobile(c.Mobile) ?? c.Mobile;
             });
+
+        /// <summary>
+        /// Finds or creates the customer account for a checkout mobile. When a new account is created,
+        /// <paramref name="temporaryPassword"/> is set so it can be SMS'd. Guest orders with the same
+        /// mobile are linked to this account.
+        /// </summary>
+        public static StoreCustomer EnsureCustomerAccount(string companyCode, string fullName, string mobile,
+            string email, string address, out string temporaryPassword)
+        {
+            temporaryPassword = null;
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null) return null;
+
+            fullName = (fullName ?? "").Trim();
+            if (fullName.Length > 80) fullName = fullName.Substring(0, 80);
+            email = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
+            address = string.IsNullOrWhiteSpace(address) ? null : address.Trim();
+
+            var customer = GetCustomerByMobile(companyCode, mobile);
+            if (customer == null)
+            {
+                temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+                customer = SaveCustomer(companyCode, new StoreCustomer
+                {
+                    FullName = fullName.Length > 0 ? fullName : "مشتری",
+                    Mobile = mobile,
+                    Email = email,
+                    Address = address,
+                    PasswordHash = PasswordHelper.Hash(temporaryPassword)
+                });
+            }
+            else
+            {
+                var changed = false;
+                if (fullName.Length > 0 && !string.Equals(customer.FullName, fullName, StringComparison.Ordinal))
+                {
+                    customer.FullName = fullName;
+                    changed = true;
+                }
+                if (email != null && !string.Equals(customer.Email, email, StringComparison.Ordinal))
+                {
+                    customer.Email = email;
+                    changed = true;
+                }
+                if (address != null && !string.Equals(customer.Address, address, StringComparison.Ordinal))
+                {
+                    customer.Address = address;
+                    changed = true;
+                }
+                if (string.IsNullOrEmpty(customer.PasswordHash))
+                {
+                    temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+                    customer.PasswordHash = PasswordHelper.Hash(temporaryPassword);
+                    changed = true;
+                }
+                if (changed) SaveCustomer(companyCode, customer);
+            }
+
+            ClaimGuestOrders(companyCode, customer);
+            return customer;
+        }
+
+        /// <summary>Attaches guest checkout orders (no CustomerId) that used this mobile to the customer account.</summary>
+        public static int ClaimGuestOrders(string companyCode, StoreCustomer customer)
+        {
+            if (customer == null || customer.Id <= 0) return 0;
+            var mobile = BookingTime.NormalizeMobile(customer.Mobile);
+            if (mobile == null) return 0;
+            var claimed = 0;
+            foreach (var guest in GuestOrders(companyCode))
+            {
+                if (BookingTime.NormalizeMobile(guest.Mobile) != mobile) continue;
+                var order = GetOrder(companyCode, guest.Id);
+                if (order == null || (order.CustomerId.HasValue && order.CustomerId.Value > 0)) continue;
+                order.CustomerId = customer.Id;
+                if (string.IsNullOrWhiteSpace(order.CustomerName)) order.CustomerName = customer.FullName;
+                order.CustomerMobile = mobile;
+                UpdateOrder(companyCode, order);
+                claimed++;
+            }
+            return claimed;
+        }
+
+        /// <summary>
+        /// For mobiles that only placed a guest checkout (order without CustomerId): create the account,
+        /// claim those orders, and return a temporary password. Null when there is nothing to recover.
+        /// </summary>
+        public static StoreCustomer RecoverGuestCheckout(string companyCode, string mobile, out string temporaryPassword)
+        {
+            temporaryPassword = null;
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null || GetCustomerByMobile(companyCode, mobile) != null) return null;
+            var guests = GuestOrders(companyCode).Where(o => BookingTime.NormalizeMobile(o.Mobile) == mobile).ToList();
+            if (guests.Count == 0) return null;
+            var name = guests.Select(o => o.Name).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            var email = guests.Select(o => o.Email).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            var address = guests.Select(o => o.Address).FirstOrDefault(n => !string.IsNullOrWhiteSpace(n));
+            return EnsureCustomerAccount(companyCode, name ?? "مشتری", mobile, email, address, out temporaryPassword);
+        }
+
+        private sealed class GuestOrder
+        {
+            public int Id;
+            public string Mobile;
+            public string Name;
+            public string Email;
+            public string Address;
+        }
+
+        /// <summary>Orders with no customer account yet. Claimed orders stay out of this list.</summary>
+        private static List<GuestOrder> GuestOrders(string companyCode) =>
+            NikooDb.Select(
+                "SELECT [Id], [CustomerMobile], [CustomerName], [CustomerEmail], [CustomerAddress] FROM "
+                + NikooDb.Table(NikooTables.Orders.Name)
+                + " WHERE [CompanyCode] = @CompanyCode AND ([CustomerId] IS NULL OR [CustomerId] = 0)",
+                NikooDb.Key(companyCode),
+                r => new GuestOrder
+                {
+                    Id = r.GetInt32(0),
+                    Mobile = r.IsDBNull(1) ? null : r.GetString(1),
+                    Name = r.IsDBNull(2) ? null : r.GetString(2),
+                    Email = r.IsDBNull(3) ? null : r.GetString(3),
+                    Address = r.IsDBNull(4) ? null : r.GetString(4)
+                });
 
         // ---- Orders
 
@@ -526,6 +668,101 @@ namespace NikooSystem.Services
                 return;
             }
             SetOrderStatus(companyCode, order.Id, StoreOrderStatus.Processing, order.TrackingCode, order.AdminNote, "پرداخت آنلاین غیرفعال — سفارش ثبت شد.");
+        }
+
+        /// <summary>
+        /// Grants a digital product to a customer without the payment gateway: creates a completed order (library access)
+        /// and posts cash/bank income. Returns an error, or null on success. <paramref name="temporaryPassword"/> is set
+        /// only when a new customer account was created.
+        /// </summary>
+        public static string GrantDigitalAccess(string companyCode, int productId, string customerName, string mobile,
+            PayWith payWith, int bankId, string note, long? priceOverride, out StoreOrder order, out string temporaryPassword)
+        {
+            order = null;
+            temporaryPassword = null;
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null) return "شماره موبایل معتبر نیست؛ مثلاً ۰۹۱۲۱۲۳۴۵۶۷.";
+            customerName = (customerName ?? "").Trim();
+            if (customerName.Length == 0) return "نام مشتری را وارد کنید.";
+            if (customerName.Length > 80) customerName = customerName.Substring(0, 80);
+
+            var product = GetProduct(companyCode, productId);
+            if (product == null || !product.IsActive || !product.IsDigital())
+                return "دوره، کتاب یا فایل فعال را از فهرست انتخاب کنید.";
+            if (OwnsProduct(companyCode, GetCustomerByMobile(companyCode, mobile)?.Id, product.Id))
+                return "این مشتری از قبل به «" + product.Title + "» دسترسی دارد.";
+
+            var amount = priceOverride ?? product.Price;
+            if (amount < 0) return "مبلغ نمی‌تواند منفی باشد.";
+            if (payWith == PayWith.Credit) return "برای فروش دستی، نقد یا بانک را انتخاب کنید.";
+
+            var bankError = amount > 0 ? ResolveBankForPay(companyCode, payWith, ref bankId) : null;
+            if (bankError != null) return bankError;
+
+            var customer = GetCustomerByMobile(companyCode, mobile);
+            if (customer == null)
+            {
+                temporaryPassword = PasswordHelper.GenerateTemporaryPassword();
+                customer = SaveCustomer(companyCode, new StoreCustomer
+                {
+                    FullName = customerName,
+                    Mobile = mobile,
+                    PasswordHash = PasswordHelper.Hash(temporaryPassword)
+                });
+            }
+            else if (!string.Equals(customer.FullName, customerName, StringComparison.Ordinal))
+            {
+                customer.FullName = customerName;
+                SaveCustomer(companyCode, customer);
+            }
+
+            note = string.IsNullOrWhiteSpace(note) ? "فروش دستی بدون درگاه" : note.Trim();
+            if (note.Length > 500) note = note.Substring(0, 500);
+
+            lock (LockFor(companyCode))
+            using (var tx = NikooDb.Begin())
+            {
+                order = new StoreOrder
+                {
+                    CustomerId = customer.Id,
+                    CustomerName = customer.FullName,
+                    CustomerMobile = customer.Mobile,
+                    CustomerEmail = customer.Email,
+                    Amount = amount,
+                    Status = StoreOrderStatus.Completed,
+                    PaidAt = DateTime.Now,
+                    PaymentMessage = note,
+                    AdminNote = "اعطای دسترسی دستی",
+                    Items = new List<StoreOrderItem>
+                    {
+                        new StoreOrderItem
+                        {
+                            ProductId = product.Id,
+                            Title = product.Title,
+                            UnitPrice = amount,
+                            Quantity = 1,
+                            IsDigital = true
+                        }
+                    }
+                };
+                order.Id = NikooDb.NextId(NikooTables.Orders, companyCode, tx);
+                order.CreatedAt = DateTime.Now;
+                order.OrderNumber = companyCode.ToUpperInvariant() + "-" + order.CreatedAt.ToShamsiCompact() + "-" + order.Id.ToString("D4");
+                MoveStock(companyCode, order, +1, tx);
+                NikooDb.Insert(NikooTables.Orders, order, companyCode, tx);
+                tx.Commit();
+            }
+
+            if (amount > 0)
+                PostManualDigitalSale(companyCode, order.Id, payWith, bankId);
+            return null;
+        }
+
+        /// <summary>Validates bank selection for a cash/bank receipt; shared by manual digital sales.</summary>
+        private static string ResolveBankForPay(string companyCode, PayWith payWith, ref int bankId)
+        {
+            EnsureAccounts(companyCode);
+            return ResolveBank(companyCode, payWith, ref bankId);
         }
 
         /// <summary>
@@ -635,11 +872,71 @@ namespace NikooSystem.Services
             RefreshSampleAppointments("CLINIC");
         }
 
-        /// <summary>The demo of the academy and sports-club product, with sample private lessons on the calendar.</summary>
+        /// <summary>The demo of the beauty-salon product.</summary>
+        internal static void SeedSalonDemo()
+        {
+            if (CompanyCodeExists("SALON")) return;
+            AddDemo("SALON", "آرایشگاه رز", "beauty");
+            RefreshSampleAppointments("SALON");
+        }
+
+        /// <summary>The demo of the consulting product.</summary>
+        internal static void SeedConsultDemo()
+        {
+            if (CompanyCodeExists("CONSULT")) return;
+            AddDemo("CONSULT", "مرکز مشاوره نیکو", "consulting");
+            RefreshSampleAppointments("CONSULT");
+        }
+
+        /// <summary>The demo of the sports-club product, with sample classes and courts.</summary>
         internal static void SeedClubDemo()
         {
             if (CompanyCodeExists("CLUB")) return;
-            AddDemo("CLUB", "باشگاه و آموزشگاه نیکو", "club");
+            AddDemo("CLUB", "باشگاه ورزشی نیکو", "club");
+            RefreshSampleAppointments("CLUB");
+        }
+
+        /// <summary>The demo of the academy product, with sample group classes and private tutors.</summary>
+        internal static void SeedSchoolDemo()
+        {
+            if (CompanyCodeExists("SCHOOL")) return;
+            AddDemo("SCHOOL", "آموزشگاه نیکو", "school");
+            RefreshSampleAppointments("SCHOOL");
+        }
+
+        /// <summary>Rewrites the academy demo while it still leads with private lessons, so public and private courses are both in the sample.</summary>
+        internal static void RefreshSchoolDemoCourses()
+        {
+            var settings = NikooDb.Get(NikooTables.Settings, NikooDb.Key("SCHOOL"));
+            if (settings == null || settings.Tagline != "کلاس گروهی و مدرس خصوصی") return;
+
+            lock (LockFor("SCHOOL"))
+                SeedTenantData("SCHOOL", "school", null);
+        }
+
+        /// <summary>
+        /// Rewrites the sample sports-club demo when it is still the combined academy-and-club seed,
+        /// so its classes and courts match the sports product.
+        /// </summary>
+        internal static void SeparateClubDemo()
+        {
+            var settings = NikooDb.Get(NikooTables.Settings, NikooDb.Key("CLUB"));
+            if (settings == null || settings.StoreName != "باشگاه و آموزشگاه نیکو") return;
+
+            var tenant = GetTenantForAdmin("CLUB");
+            if (tenant != null)
+            {
+                tenant.Name = "باشگاه ورزشی نیکو";
+                tenant.StoreType = "club";
+                NikooDb.Update(NikooTables.Tenants, tenant);
+            }
+
+            lock (LockFor("CLUB"))
+                SeedTenantData("CLUB", "club", null);
+
+            var samples = NikooDb.Key("CLUB");
+            samples["IsSample"] = true;
+            NikooDb.Delete(NikooTables.Appointments, samples);
             RefreshSampleAppointments("CLUB");
         }
 

@@ -25,6 +25,10 @@
                 if (Model.RefId.HasValue) { <p>کد پیگیری: @Model.RefId</p> }
                 if (!string.IsNullOrEmpty(Model.PaymentMessage)) { <p class="small">@Model.PaymentMessage</p> }
             }
+            @if (TempData["AccountHint"] != null)
+            {
+                <div class="alert alert-info text-start mt-3 mb-0">@TempData["AccountHint"]</div>
+            }
             @if (ok && Model != null && Model.Items.Any(i => i.IsDigital))
             {
                 <p class="mt-3"><i class="bi bi-collection-play"></i> کتاب‌ها، دوره‌ها و فایل‌های این سفارش در «کتابخانه من» آماده‌اند.</p>

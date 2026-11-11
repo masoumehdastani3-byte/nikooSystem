@@ -2,7 +2,6 @@
 @{
     ViewBag.Title = "خانه";
     ViewBag.Nav = "home";
-    var storeDemos = Model.Where(p => !string.IsNullOrEmpty(p.DemoSlug)).Take(6).ToList();
     var site = NikooSystem.Services.SiteContentStore.Settings;
     var trialDays = NikooSystem.Services.TenantProvisioningService.TrialDays;
     var faqs = (ViewBag.Faqs as List<NikooSystem.Models.SiteFaq>) ?? new List<NikooSystem.Models.SiteFaq>();
@@ -28,8 +27,8 @@
                     <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">
                         <i class="bi bi-rocket-takeoff"></i> شروع آزمایشی رایگان (@trialDays روز)
                     </a>
-                    <a class="lf-btn lf-btn-ghost" href="#stores">
-                        <i class="bi bi-eye"></i> اول دموها را ببینید
+                    <a class="lf-btn lf-btn-ghost" href="#solutions">
+                        <i class="bi bi-grid"></i> محصولات را ببینید
                     </a>
                 </div>
             </div>
@@ -82,51 +81,10 @@
 <section id="solutions" class="lf-land-section lf-home-solutions">
     <div class="container">
         <header class="lf-section-head">
-            <h2>راهکارهای @site.SiteName</h2>
+            <h2>محصولات @site.SiteName</h2>
             <p>برای هر کسب‌وکار، سایت مخصوص خودش</p>
         </header>
-        @Html.Partial("_SolutionLinks", ProductLandings.All)
-    </div>
-</section>
-
-<section id="stores" class="lf-stores">
-    <div class="container">
-        <div class="lf-stores-head">
-            <div>
-                <h2><i class="bi bi-shop-window"></i> @site.StoresTitle</h2>
-                <p>@site.StoresSubtitle</p>
-            </div>
-            <a class="lf-btn lf-btn-primary" href="@Url.Action("Index","Products")">
-                مقایسه دموها و قیمت‌ها <i class="bi bi-arrow-left"></i>
-            </a>
-        </div>
-        <div class="lf-store-grid">
-            @foreach (var p in storeDemos)
-            {
-                <article class="lf-store-card">
-                    <div class="lf-store-thumb">
-                        @if (p.IsFeatured)
-                        {
-                            <span class="lf-badge lf-badge-warm">پیشنهادی</span>
-                        }
-                        <img src="@p.ImageUrl" alt="@p.Title" loading="lazy" decoding="async" />
-                    </div>
-                    <div class="lf-store-body">
-                        <h3>@p.Title</h3>
-                        <p>@p.ShortDescription</p>
-                        <div class="lf-store-foot">
-                            <span class="lf-price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>
-                            <a class="lf-link-demo" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })">
-                                مشاهده دمو <i class="bi bi-arrow-left"></i>
-                            </a>
-                        </div>
-                        <a class="lf-btn lf-btn-primary w-100 mt-2" href="@Url.Action("Index","Signup", new { type = p.DemoSlug })">
-                            <i class="bi bi-rocket-takeoff"></i> شروع آزمایشی همین مدل
-                        </a>
-                    </div>
-                </article>
-            }
-        </div>
+        @Html.Partial("_ProductIntroCards", ProductLandings.All)
     </div>
 </section>
 
@@ -178,7 +136,7 @@
                     <div class="lf-step"><span>۲</span><div><strong>نام و لوگو</strong><em>فروشگاه بلافاصله با محتوای نمونه ساخته می‌شود</em></div></div>
                     <div class="lf-step"><span>۳</span><div><strong>انتخاب قالب</strong><em>ظاهر و رنگ‌ها را با یک کلیک عوض کنید</em></div></div>
                     <div class="lf-step"><span>۴</span><div><strong>افزودن محصولات</strong><em>عکس، قیمت و موجودی را وارد کنید</em></div></div>
-                    <div class="lf-step"><span>۵</span><div><strong>درگاه و دامنه</strong><em>زرین‌پال و دامنه خودتان را وصل کنید</em></div></div>
+                    <div class="lf-step"><span>۵</span><div><strong>درگاه و دامنه</strong><em>درگاه بانک و دامنه خودتان را وصل کنید</em></div></div>
                     <div class="lf-step"><span>۶</span><div><strong>اشتراک دلخواه</strong><em>سه‌ماهه، شش‌ماهه یا یک‌ساله؛ تمدید آنلاین از داخل پنل</em></div></div>
                 </div>
             </div>

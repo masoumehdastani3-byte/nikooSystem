@@ -2,20 +2,43 @@
 @{
     // ViewData["ShowOnly"]: name the products that have a module when not all do (on pages that show every module).
     var showOnly = ViewData["ShowOnly"] as bool? ?? false;
+    var modules = (Model ?? Enumerable.Empty<PlatformModule>()).ToList();
 }
-<div class="lf-module-grid">
-    @foreach (var m in Model)
+<div class="lf-module-grid" data-lf-modules>
+    @for (var i = 0; i < modules.Count; i++)
     {
-        <article class="lf-module @(m.Highlight ? "is-highlight" : null)">
-            <i class="bi @m.Icon" aria-hidden="true"></i>
-            <div>
-                <h3>@m.Name</h3>
+        var m = modules[i];
+        <details class="lf-module @(m.Highlight ? "is-highlight" : null)" @(i == 0 ? "open" : null)>
+            <summary>
+                <i class="bi @m.Icon" aria-hidden="true"></i>
+                <span class="lf-module-title">
+                    @m.Name
+                    @if (showOnly && m.Only != null)
+                    {
+                        <em class="lf-module-only">@m.Only</em>
+                    }
+                </span>
+                <i class="bi bi-chevron-down lf-module-caret" aria-hidden="true"></i>
+            </summary>
+            <div class="lf-module-body">
                 <p>@m.Summary</p>
-                @if (showOnly && m.Only != null)
-                {
-                    <span class="lf-module-only">@m.Only</span>
-                }
             </div>
-        </article>
+        </details>
     }
 </div>
+<script>
+(function () {
+  var root = document.currentScript && document.currentScript.previousElementSibling;
+  if (!root || !root.hasAttribute('data-lf-modules')) {
+    root = document.querySelector('[data-lf-modules]');
+  }
+  if (!root) return;
+  root.addEventListener('toggle', function (e) {
+    var item = e.target;
+    if (!item || item.tagName !== 'DETAILS' || !item.open) return;
+    Array.prototype.forEach.call(root.querySelectorAll('details.lf-module[open]'), function (el) {
+      if (el !== item) el.open = false;
+    });
+  }, true);
+})();
+</script>

@@ -1,13 +1,16 @@
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "راهنمای آموزشگاه و باشگاه";
+    ViewBag.Title = "راهنمای کلاس و رزرو";
     var company = (string)ViewBag.CompanyCode;
+    var sports = string.Equals(((TenantInfo)ViewBag.Tenant)?.StoreType, "club", StringComparison.OrdinalIgnoreCase);
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">راه‌اندازی آموزشگاه و باشگاه</h2>
+    <h2 class="mb-0">@(sports ? "راه‌اندازی باشگاه ورزشی" : "راه‌اندازی آموزشگاه")</h2>
 </div>
 <div class="panel-card mb-3">
-    <p>این سایت برای آموزشگاه، باشگاه ورزشی و مجموعه‌هایی است که هم کلاس گروهی دارند، هم جلسه خصوصی، و هم سالن را ساعتی اجاره می‌دهند. نمونه‌ها را با اطلاعات خودتان عوض کنید.</p>
+    <p>@(sports
+        ? "این پنل برای باشگاه و مجموعه ورزشی است: کلاس گروهی، جلسه با مربی، و رزرو ساعتی سالن و زمین. نمونه‌ها را با اطلاعات خودتان عوض کنید."
+        : "این پنل برای آموزشگاه است: دوره عمومی با ظرفیت مشخص، و دوره خصوصی با مدرس. در صورت نیاز اتاق یا کلاس را هم ساعتی اجاره می‌دهید. نمونه‌ها را با اطلاعات خودتان عوض کنید.")</p>
     <ol class="mb-0">
         <li class="mb-2"><b>مدرس و مربی.</b> از <a href="@Url.Action("Staff","ShopAdmin", new { company })">مدرس‌ها و مربی‌ها</a> نام، تخصص و ساعت کاری هفتگی هر نفر را بنویسید. کلاس خصوصی فقط در همین ساعت‌ها باز می‌شود. مرخصی یک روز را در <a href="@Url.Action("TimeOff","ShopAdmin", new { company })">تعطیلی و مرخصی</a> ثبت کنید؛ تعطیلی کل مجموعه، رزرو سالن را هم می‌بندد.</li>
         <li class="mb-2"><b>کلاس گروهی.</b> از <a href="@Url.Action("Classes","ShopAdmin", new { company })">کلاس‌ها و دوره‌ها</a> هر کلاس را با روز، ساعت، ظرفیت، شهریه، سطح و گروه سنی بسازید. اگر کلاس آنلاین است، لینک جلسه را بگذارید؛ فقط بعد از ثبت‌نام قطعی به دانشجو نشان داده می‌شود. ثبت‌نام تلفنی را از <a href="@Url.Action("Enrollments","ShopAdmin", new { company })">ثبت‌نام‌ها</a> وارد کنید.</li>

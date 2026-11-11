@@ -179,12 +179,18 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        public ActionResult EditCategory(int? id)
+        public ActionResult EditCategory(int? id, int? parent = null)
         {
             var list = TenantStore.GetCategories(CompanyCode);
             ViewBag.Categories = list;
-            return View((id.HasValue ? list.FirstOrDefault(c => c.Id == id.Value) : null)
-                ?? new StoreCategory { IsActive = true, SortOrder = 1 });
+            if (id.HasValue)
+            {
+                var existing = list.FirstOrDefault(c => c.Id == id.Value);
+                if (existing != null) return View(existing);
+            }
+            var parentId = parent.HasValue && list.Any(c => c.Id == parent.Value) ? parent : null;
+            var sort = list.Where(c => c.ParentId == parentId).Select(c => c.SortOrder).DefaultIfEmpty(0).Max() + 1;
+            return View(new StoreCategory { IsActive = true, ParentId = parentId, SortOrder = sort });
         }
 
         [HttpPost]
@@ -220,12 +226,20 @@ namespace NikooSystem.Controllers
         }
 
         [HttpGet]
-        public ActionResult EditMenu(int? id)
+        public ActionResult EditMenu(int? id, int? parent = null)
         {
             var list = TenantStore.GetMenus(CompanyCode);
             ViewBag.Menus = list;
-            return View((id.HasValue ? list.FirstOrDefault(m => m.Id == id.Value) : null)
-                ?? new StoreMenuItem { IsActive = true, Location = "main", SortOrder = 1 });
+            if (id.HasValue)
+            {
+                var existing = list.FirstOrDefault(m => m.Id == id.Value);
+                if (existing != null) return View(existing);
+            }
+            var parentItem = parent.HasValue ? list.FirstOrDefault(m => m.Id == parent.Value) : null;
+            int? parentId = parentItem?.Id;
+            var location = parentItem?.Location ?? "main";
+            var sort = list.Where(m => m.ParentId == parentId && m.Location == location).Select(m => m.SortOrder).DefaultIfEmpty(0).Max() + 1;
+            return View(new StoreMenuItem { IsActive = true, ParentId = parentId, Location = location, SortOrder = sort });
         }
 
         [HttpPost]

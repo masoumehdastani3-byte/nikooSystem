@@ -1,50 +1,147 @@
 @model StoreCategory
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = Model.Id > 0 ? "ویرایش گروه" : "گروه جدید";
     var company = (string)ViewBag.CompanyCode;
     var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    var storeName = ((StoreSettings)ViewBag.Settings).StoreName;
+    var listAction = kind.IsContent ? "Blog" : "Catalog";
+    var excludeIds = Model.Id > 0 ? TreeHelper.SubtreeIds(cats, Model.Id) : new HashSet<int>();
+    var parentOptions = TreeHelper.Flatten(cats).Where(r => !excludeIds.Contains(r.Node.Id)).ToList();
+    var parentTitle = Model.ParentId.HasValue ? cats.FirstOrDefault(c => c.Id == Model.ParentId.Value)?.Title : null;
+    ViewBag.Title = Model.Id > 0 ? "ویرایش گروه" : (parentTitle != null ? "زیرگروه جدید" : "گروه جدید");
 }
-<h2 class="mb-3">@ViewBag.Title</h2>
-@using (Html.BeginForm("SaveCategory", "ShopAdmin", new { company }, FormMethod.Post))
-{
-    @Html.AntiForgeryToken()
-    @Html.HiddenFor(m => m.Id)
-    <div class="panel-card row g-3">
-        <div class="col-md-6"><label class="form-label">عنوان</label>@Html.TextBoxFor(m => m.Title, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">اسلاگ</label>@Html.TextBoxFor(m => m.Slug, new { @class = "form-control" })</div>
-        <div class="col-md-6">
-            <label class="form-label" for="ParentId">گروه والد</label>
-            <div class="qm-field">
-                <select class="form-select" name="ParentId" id="ParentId" data-qm="categories" data-qm-roots data-qm-except="@Model.Id">
-                    <option value="">بدون والد</option>
-                    @foreach (var c in cats.Where(x => x.Id != Model.Id && x.ParentId == null))
+<div class="settings-page product-edit">
+    <div class="admin-page-head">
+        <div class="admin-page-head-title">
+            <span class="admin-page-head-accent" aria-hidden="true"></span>
+            <div>
+                <h2>@ViewBag.Title</h2>
+                <p class="text-muted small mb-0 mt-1">
+                    @if (Model.Id == 0 && parentTitle != null)
                     {
-                        <option value="@c.Id" @(Model.ParentId == c.Id ? "selected" : "")>@c.Title</option>
+                        <text>زیرمجموعهٔ «@parentTitle» — مشخصات و سئو را از تب‌ها پر کنید و ذخیره کنید.</text>
                     }
-                </select>
-                @Html.QuickManage("categories", "گروه‌ها")
+                    else
+                    {
+                        <text>مشخصات گروه و سئو را از تب‌ها باز کنید؛ با «ذخیره» همه با هم ثبت می‌شود.</text>
+                    }
+                </p>
             </div>
         </div>
-        <div class="col-md-3"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
-        <div class="col-md-3 form-check mt-4 pt-3">@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
-        <div class="col-12"><label class="form-label">توضیحات</label>@Html.TextAreaFor(m => m.Description, 3, 1, new { @class = "form-control" })</div>
-        <div class="col-12">
-            <h5><i class="bi bi-google"></i> نمایش در گوگل</h5>
-            @{
-                var kind = (SiteKindInfo)ViewBag.Kind;
-                var storeName = ((StoreSettings)ViewBag.Settings).StoreName;
-                var listAction = kind.IsContent ? "Blog" : "Catalog";
-            }
-            @Html.Partial("_SeoFields", new SeoFieldsVm
+        <div class="admin-page-head-actions">
+            @if (Model.Id > 0 && !kind.Schedules)
             {
-                Title = Model.SeoTitle,
-                Description = Model.SeoDescription,
-                AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "نام گروه" : Model.Title, storeName),
-                AutoDescription = SeoPages.CategoryDescription(Model.Id > 0 ? Model : new StoreCategory { Title = "…" }, kind, storeName),
-                Url = Model.Id > 0 && !kind.Schedules ? Html.Seo().Url(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id) : null
-            })
+                <a class="btn-outline-store" href="@(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id)" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
+            }
+            <a class="btn-outline-store" href="@Url.Action("Categories", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت</a>
         </div>
-        <div class="col-12">@Html.FormActions("Categories")</div>
     </div>
+
+    <ul class="nav nav-pills settings-tabs flex-wrap gap-1 mb-3" id="categoryTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" type="button" data-bs-toggle="tab" data-bs-target="#cat-main" role="tab"><i class="bi bi-info-circle"></i> مشخصات</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" type="button" data-bs-toggle="tab" data-bs-target="#cat-seo" role="tab"><i class="bi bi-google"></i> سئو</button>
+        </li>
+    </ul>
+
+    @using (Html.BeginForm("SaveCategory", "ShopAdmin", new { company }, FormMethod.Post, new { id = "categoryForm" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="cat-main" role="tabpanel">
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title">مشخصات گروه</h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label" for="Title">عنوان</label>
+                            @Html.TextBoxFor(m => m.Title, new { @class = "form-control", id = "Title" })
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="Slug">اسلاگ</label>
+                            @Html.TextBoxFor(m => m.Slug, new { @class = "form-control", id = "Slug", dir = "ltr" })
+                            <div class="form-text">اگر خالی بماند از عنوان ساخته می‌شود.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label" for="ParentId">گروه والد</label>
+                            <div class="qm-field">
+                                <select class="form-select" name="ParentId" id="ParentId" data-qm="categories" data-qm-except="@Model.Id">
+                                    <option value="">بدون والد</option>
+                                    @foreach (var row in parentOptions)
+                                    {
+                                        var pad = new string('\u2003', row.Depth);
+                                        <option value="@row.Node.Id" @(Model.ParentId == row.Node.Id ? "selected" : "")>@pad@row.Node.Title</option>
+                                    }
+                                </select>
+                                @Html.QuickManage("categories", "گروه‌ها")
+                            </div>
+                            <div class="form-text">برای زیرگروه، والد را از فهرست درختی انتخاب کنید.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label" for="SortOrder">ترتیب</label>
+                            @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", id = "SortOrder" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label d-block">&nbsp;</label>
+                            <div class="product-flags">
+                                @Html.BoolField("IsActive", Model.IsActive, "فعال")
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label" for="Description">توضیحات</label>
+                            @Html.TextAreaFor(m => m.Description, 4, 1, new { @class = "form-control", id = "Description" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="cat-seo" role="tabpanel">
+                <div class="panel-card settings-pane">
+                    <h5 class="settings-pane-title">نمایش در گوگل</h5>
+                    @Html.Partial("_SeoFields", new SeoFieldsVm
+                    {
+                        Title = Model.SeoTitle,
+                        Description = Model.SeoDescription,
+                        AutoTitle = SeoPages.ItemTitle(null, string.IsNullOrWhiteSpace(Model.Title) ? "نام گروه" : Model.Title, storeName),
+                        AutoDescription = SeoPages.CategoryDescription(Model.Id > 0 ? Model : new StoreCategory { Title = "…" }, kind, storeName),
+                        Url = Model.Id > 0 && !kind.Schedules ? Html.Seo().Url(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id) : null
+                    })
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-save">
+            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
+            <a class="btn-outline-store" href="@Url.Action("Categories", "ShopAdmin", new { company })">بازگشت</a>
+            <span class="small text-muted">مشخصات و سئو با همین دکمه ذخیره می‌شوند.</span>
+        </div>
+    }
+</div>
+
+@section scripts {
+<script>
+(function () {
+  var tabs = document.getElementById('categoryTabs');
+  if (!tabs || !window.bootstrap) return;
+  var key = 'nikoo-category-tab';
+  var saved = null;
+  try { saved = sessionStorage.getItem(key); } catch (e) { }
+  var hash = (location.hash || '').replace(/^#/, '');
+  var target = hash || saved;
+  if (target) {
+    var btn = tabs.querySelector('[data-bs-target="#' + target + '"]');
+    if (btn) bootstrap.Tab.getOrCreateInstance(btn).show();
+  }
+  tabs.addEventListener('shown.bs.tab', function (e) {
+    var id = (e.target.getAttribute('data-bs-target') || '').replace(/^#/, '');
+    if (!id) return;
+    try { sessionStorage.setItem(key, id); } catch (err) { }
+    if (history.replaceState) history.replaceState(null, '', '#' + id);
+  });
+})();
+</script>
 }

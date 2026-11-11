@@ -93,6 +93,7 @@ namespace NikooSystem.Services.Data
                         : " NOT NULL CONSTRAINT " + NikooDb.Name("DF_" + table.Name + "_" + column.Name) + " DEFAULT " + column.SqlDefault;
                     Exec(c, t, sql);
                 }
+                NarrowTextColumns(c, t, table);
             }
 
             foreach (var index in table.Indexes)
@@ -197,6 +198,53 @@ namespace NikooSystem.Services.Data
                     });
                 }
             }
+        }
+
+        /// <summary>
+        /// Shrinks a text column that is still NVARCHAR(MAX) (or wider than its map) so it can be indexed.
+        /// Nullability is left as it is. Fails if a stored value is longer than the new width.
+        /// </summary>
+        private static void NarrowTextColumns(SqlConnection c, SqlTransaction t, TableMap table)
+        {
+            var widths = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            var nullable = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            using (var cmd = new SqlCommand(
+                "SELECT c.[name], c.[max_length], c.[is_nullable] FROM sys.columns c WHERE c.[object_id] = OBJECT_ID(@table)", c, t))
+            {
+                cmd.Parameters.AddWithValue("@table", "[dbo].[" + table.Name + "]");
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        widths[reader.GetString(0)] = Convert.ToInt32(reader.GetValue(1));
+                        nullable[reader.GetString(0)] = Convert.ToBoolean(reader.GetValue(2));
+                    }
+                }
+            }
+
+            var blocked = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var column in table.Columns.Where(col => col.ClrType == typeof(string) && col.Length.HasValue))
+            {
+                int width;
+                if (!widths.TryGetValue(column.Name, out width)) continue;
+                var chars = width < 0 ? int.MaxValue : width / 2;
+                if (chars <= column.Length.Value) continue;
+                var longest = 0;
+                using (var cmd = new SqlCommand(
+                    "SELECT ISNULL(MAX(LEN(" + NikooDb.Name(column.Name) + ")), 0) FROM " + NikooDb.Table(table.Name), c, t))
+                    longest = Convert.ToInt32(cmd.ExecuteScalar());
+                if (longest > column.Length.Value)
+                {
+                    blocked.Add(column.Name);
+                    continue;
+                }
+                bool allowsNull;
+                nullable.TryGetValue(column.Name, out allowsNull);
+                Exec(c, t, "ALTER TABLE " + NikooDb.Table(table.Name) + " ALTER COLUMN " + NikooDb.Name(column.Name)
+                    + " NVARCHAR(" + column.Length.Value + ")" + (allowsNull ? " NULL" : " NOT NULL"));
+            }
+            if (blocked.Count > 0)
+                table.Indexes.RemoveAll(index => index.Columns.Any(name => blocked.Contains(name)));
         }
 
         private static HashSet<string> ExistingColumns(SqlConnection c, SqlTransaction t, string table)

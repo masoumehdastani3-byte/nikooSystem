@@ -26,6 +26,8 @@ namespace NikooSystem.Controllers
             ViewBag.NewPassword = TempData["NewPassword"] as string;
             ViewBag.Storage = StorageQuota.Usage(store.CompanyCode);
             ViewBag.StoragePurchases = StorageQuota.Purchases(store.CompanyCode);
+            ViewBag.SmsCredit = SmsService.CreditOf(store.CompanyCode);
+            ViewBag.SmsPurchases = SmsService.Purchases(store.CompanyCode);
             return View(store);
         }
 
@@ -41,6 +43,21 @@ namespace NikooSystem.Controllers
             if (granted > 0) TempData["Ok"] = StorageQuota.FormatMb(granted) + " به فضای «" + store.Name + "» اضافه شد.";
             else if (granted < 0) TempData["Ok"] = StorageQuota.FormatMb(-granted) + " از فضای اضافه «" + store.Name + "» کم شد.";
             else TempData["Error"] = "تغییری داده نشد؛ مقدار را وارد کنید (فضای پایه کم نمی‌شود).";
+            return RedirectToAction("Store", new { id = store.CompanyCode });
+        }
+
+        /// <summary>اعتبار پیامک را به فروشگاه اضافه یا کم می‌کند (هدیه یا پرداخت خارج از درگاه).</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult GrantSms(string id, long credit, string note)
+        {
+            var store = TenantStore.GetTenantForAdmin(id);
+            if (store == null) return HttpNotFound();
+            credit = Math.Max(-5_000_000, Math.Min(5_000_000, credit));
+            var granted = SmsService.Grant(store.CompanyCode, credit, note);
+            if (granted > 0) TempData["Ok"] = granted.ToToman() + " اعتبار پیامک به «" + store.Name + "» اضافه شد.";
+            else if (granted < 0) TempData["Ok"] = (-granted).ToToman() + " از اعتبار پیامک «" + store.Name + "» کم شد.";
+            else TempData["Error"] = "تغییری داده نشد؛ مبلغ اعتبار را وارد کنید.";
             return RedirectToAction("Store", new { id = store.CompanyCode });
         }
 

@@ -94,9 +94,10 @@ namespace NikooSystem.Controllers
         public ActionResult Index()
         {
             var products = SiteStore.GetProducts();
-            var orders = SiteStore.GetOrders();
-            var paid = orders.Where(IsPaid).ToList();
             var monthAgo = DateTime.Now.AddDays(-30);
+            int orderCount, paidCount, pendingCount;
+            long revenue, monthRevenue;
+            SiteStore.ReadOrderStats(out orderCount, out paidCount, out pendingCount, out revenue, out monthRevenue, monthAgo);
 
             var stores = TenantStore.GetTenants().Where(t => !TenantStore.IsDemo(t.CompanyCode)).ToList();
             var liveTrials = stores.Where(t => t.IsTrial && !t.IsPaid && !t.IsTrialExpired()).ToList();
@@ -107,12 +108,12 @@ namespace NikooSystem.Controllers
             {
                 ProductCount = products.Count,
                 ActiveProductCount = products.Count(p => p.IsActive),
-                OrderCount = orders.Count,
-                PaidOrderCount = paid.Count,
-                PendingOrderCount = orders.Count(o => o.Status == OrderStatus.PendingPayment),
-                TotalRevenue = paid.Sum(o => o.Amount),
-                MonthRevenue = paid.Where(o => (o.PaidAt ?? o.CreatedAt) >= monthAgo).Sum(o => o.Amount),
-                RecentOrders = orders.Take(6).ToList(),
+                OrderCount = orderCount,
+                PaidOrderCount = paidCount,
+                PendingOrderCount = pendingCount,
+                TotalRevenue = revenue,
+                MonthRevenue = monthRevenue,
+                RecentOrders = SiteStore.RecentOrders(6),
 
                 StoreCount = stores.Count,
                 TrialStoreCount = liveTrials.Count,
@@ -207,7 +208,7 @@ namespace NikooSystem.Controllers
         public ActionResult DeleteProduct(int id)
         {
             var product = SiteStore.GetProduct(id);
-            if (product != null && SiteStore.GetOrders().Any(o => o.ProductId == id))
+            if (product != null && SiteStore.ProductHasOrders(id))
             {
                 product.IsActive = false;
                 SiteStore.UpdateProduct(product);

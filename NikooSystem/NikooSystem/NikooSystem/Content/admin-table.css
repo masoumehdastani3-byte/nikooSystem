@@ -8,6 +8,27 @@
   margin-bottom: 1rem;
 }
 
+.grid-toolbar .js-excel-export,
+.excel-only-toolbar .js-excel-export {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #166534;
+  border-radius: 10px;
+  padding: .45rem .85rem;
+  font-size: .88rem;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.grid-toolbar .js-excel-export:hover,
+.excel-only-toolbar .js-excel-export:hover {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
 .grid-search {
   position: relative;
   flex: 1 1 260px;
@@ -44,6 +65,27 @@
   border-radius: 10px;
 }
 
+.grid-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .55rem;
+}
+.grid-dates > label {
+  margin: 0;
+  font-size: .8rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+.grid-dates .shamsi-dt {
+  min-width: 9.5rem;
+}
+.grid-dates .shamsi-dt-date {
+  padding-top: .4rem;
+  padding-bottom: .4rem;
+  font-size: .88rem;
+}
+
 .grid-clear {
   color: #6b7280;
   font-size: .85rem;
@@ -55,7 +97,14 @@
 /* One look for every panel table (both the main panel and the store panel). */
 
 .table {
-  --bs-table-hover-bg: #f8faff;
+  --tbl-accent: var(--store-primary, var(--adm-accent, #4f46e5));
+  --tbl-head-bg: color-mix(in srgb, var(--tbl-accent) 12%, #fff);
+  --tbl-head-fg: color-mix(in srgb, var(--tbl-accent) 72%, #1f2937);
+  --tbl-stripe: color-mix(in srgb, var(--tbl-accent) 5%, #fff);
+  --tbl-hover: color-mix(in srgb, var(--tbl-accent) 10%, #fff);
+  --tbl-foot: color-mix(in srgb, var(--tbl-accent) 8%, #f8fafc);
+  --tbl-line: color-mix(in srgb, var(--tbl-accent) 14%, #e5e7eb);
+  --bs-table-hover-bg: var(--tbl-hover);
   margin-bottom: 0;
   color: #1f2937;
 }
@@ -64,12 +113,12 @@
 .table-responsive:not(:last-child) { margin-bottom: 1rem; }
 
 .table > thead > tr > th {
-  background: #f8fafc;
-  color: #6b7280;
-  font-weight: 600;
+  background: linear-gradient(180deg, var(--tbl-head-bg), color-mix(in srgb, var(--tbl-accent) 7%, #fff));
+  color: var(--tbl-head-fg);
+  font-weight: 700;
   font-size: .85rem;
   white-space: nowrap;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 2px solid color-mix(in srgb, var(--tbl-accent) 28%, #e5e7eb);
 }
 .table > thead > tr > th:first-child { border-start-start-radius: 10px; }
 .table > thead > tr > th:last-child { border-start-end-radius: 10px; }
@@ -78,11 +127,18 @@
 .table:not(.table-sm) > tbody > tr > *,
 .table:not(.table-sm) > tfoot > tr > * { padding: .7rem .75rem; }
 
-.table > tbody > tr > * { border-bottom-color: #f1f5f9; }
+.table > tbody > tr:nth-child(even) > * { background-color: var(--tbl-stripe); }
+.table > tbody > tr > * { border-bottom-color: var(--tbl-line); }
 .table > tbody > tr:last-child > * { border-bottom-width: 0; }
-.table > tbody > tr:hover > * { background-color: #f8faff; }
-.table > tfoot > tr > * { background: #f8fafc; font-weight: 600; border-top: 1px solid #e5e7eb; border-bottom-width: 0; }
-.table.table-bordered > tbody > tr > * { border: 1px solid #e5e7eb; }
+.table > tbody > tr:hover > * { background-color: var(--tbl-hover); }
+.table > tfoot > tr > * {
+  background: var(--tbl-foot);
+  color: var(--tbl-head-fg);
+  font-weight: 700;
+  border-top: 2px solid color-mix(in srgb, var(--tbl-accent) 22%, #e5e7eb);
+  border-bottom-width: 0;
+}
+.table.table-bordered > tbody > tr > * { border: 1px solid var(--tbl-line); }
 
 /* Phones: each row is a card with its column titles beside the values, so the page never scrolls sideways.
    admin-table.js adds .is-stack and the data-label of each cell. */
@@ -100,13 +156,15 @@
   .table.is-stack > tbody > tr,
   .table.is-stack > tfoot > tr {
     background: #fff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid var(--tbl-line, #e5e7eb);
+    border-inline-start: 3px solid color-mix(in srgb, var(--tbl-accent, #4f46e5) 55%, #cbd5e1);
     border-radius: 12px;
     padding: .25rem .85rem;
     margin-bottom: .65rem;
     box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
   }
-  .table.is-stack > tfoot > tr { background: #f8fafc; }
+  .table.is-stack > tbody > tr:nth-child(even) { background: var(--tbl-stripe, #f8fafc); }
+  .table.is-stack > tfoot > tr { background: var(--tbl-foot, #f8fafc); }
 
   .table.is-stack > tbody > tr > *,
   .table.is-stack > tfoot > tr > * {
@@ -134,7 +192,7 @@
     inset-inline-start: 0;
     top: .55rem;
     width: 34%;
-    color: #6b7280;
+    color: color-mix(in srgb, var(--tbl-accent, #4f46e5) 55%, #6b7280);
     font-size: .8rem;
     font-weight: 600;
     line-height: 1.5;
@@ -390,15 +448,14 @@
   display: flex;
   align-items: center;
   gap: .5rem;
-  padding: .5rem .25rem;
-  padding-inline-start: calc(.25rem + var(--depth, 0) * 1.4rem);
+  padding: .45rem .25rem;
   border-bottom: 1px solid #f1f5f9;
 }
 .qm-item:last-child { border-bottom: 0; }
-.qm-item.is-child .qm-text { border-inline-start: 2px solid #e5e7eb; padding-inline-start: .6rem; }
+.qm-item .nk-tree { flex: 1 1 auto; min-width: 0; }
 .qm-text { flex: 1 1 auto; min-width: 0; }
 .qm-title { display: block; font-weight: 600; overflow-wrap: anywhere; }
-.qm-note { display: block; color: #6b7280; font-size: .78rem; }
+.qm-note { color: #6b7280; font-size: .78rem; font-weight: 500; }
 .qm-item .row-actions { flex: none; }
 .qm-edit { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; width: 100%; }
 .qm-edit [name=title] { flex: 2 1 160px; }

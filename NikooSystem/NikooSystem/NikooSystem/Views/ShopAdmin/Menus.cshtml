@@ -23,17 +23,19 @@
                 @foreach (var row in Model)
                 {
                     var m = row.Node;
-                    <tr>
-                        <td style="padding-inline-start:@(12 + row.Depth * 24)px">
-                            @if (row.Depth > 0) { <i class="bi bi-arrow-return-left text-muted"></i> }
-                            @m.Title
-                            @if (!m.IsActive) { <span class="badge bg-secondary">غیرفعال</span> }
+                    <tr class="nk-tree-row" data-depth="@row.Depth" data-id="@m.Id">
+                        <td>
+                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                @Html.TreeNode(m.Title, row.Depth, row.HasChildren, row.IsLast)
+                                @if (!m.IsActive) { <span class="badge bg-secondary">غیرفعال</span> }
+                            </div>
                         </td>
                         <td>@(locations.ContainsKey(m.Location ?? "") ? locations[m.Location] : m.Location)</td>
                         <td class="small" dir="ltr">@m.Url</td>
                         <td>@(row.Parent?.Title ?? "—")</td>
                         <td>@m.SortOrder</td>
                         <td class="row-actions">
+                            @Html.IconLink(Url.Action("EditMenu", "ShopAdmin", new { company = ViewBag.CompanyCode, parent = m.Id }), "bi-plus-square", "افزودن زیرمنو", "is-ok")
                             @Html.EditLink("EditMenu", m.Id)
                             @Html.DeleteButton("DeleteMenu", m.Id, "«" + m.Title + "» و زیرمجموعه‌هایش حذف شوند؟")
                         </td>

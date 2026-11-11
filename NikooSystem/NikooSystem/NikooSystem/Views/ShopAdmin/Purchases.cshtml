@@ -11,7 +11,7 @@
     <a class="btn-store" href="@Url.Action("EditPurchase","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> فاکتور جدید</a>
 </div>
 <div class="panel-card">
-    @Html.GridToolbar("جستجو در شماره، تامین‌کننده یا یادداشت…", new GridSelect("pay", "همه روش‌های پرداخت", GridHtml.Options(pays, p => p, p => AccountingText.Pay(p))))
+    @Html.GridToolbar("جستجو در شماره، تامین‌کننده یا یادداشت…", true, new GridSelect("pay", "همه روش‌های پرداخت", GridHtml.Options(pays, p => p, p => AccountingText.Pay(p))))
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
@@ -34,6 +34,7 @@
                         <td>@(bankTitles.ContainsKey(item.BankId) ? bankTitles[item.BankId] : AccountingText.Pay(item.PayWith))</td>
                         <td>@item.Total.ToToman()</td>
                         <td class="row-actions">
+                            @Html.IconLink(Url.Action("PrintPurchase", "ShopAdmin", new { company, id = item.Id }), "bi-printer", "چاپ", null)
                             @Html.IconLink(Url.Action("EditPurchase", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
                             @Html.IconPost("DeletePurchase", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "فاکتور حذف شود و موجودی برگردد؟")
                         </td>

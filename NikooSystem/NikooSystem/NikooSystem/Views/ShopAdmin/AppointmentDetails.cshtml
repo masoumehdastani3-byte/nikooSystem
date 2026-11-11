@@ -68,24 +68,52 @@
             <div class="small text-muted">
                 ثبت @(Model.Source == "admin" ? "توسط شما" : "آنلاین") در @Model.CreatedAt.ToShamsi()
                 @if (Model.CancelledAt.HasValue) { <div>لغو در @Model.CancelledAt.Value.ToShamsi()</div> }
+                @if (Model.ConfirmSmsAt.HasValue) { <div>پیامک تأیید: @Model.ConfirmSmsAt.Value.ToShamsi()</div> }
+                @if (Model.ReminderSmsAt.HasValue) { <div>پیامک یادآوری: @Model.ReminderSmsAt.Value.ToShamsi()</div> }
             </div>
         </div>
-        @if (Model.Deposit > 0 || Model.PaidAmount > 0)
-        {
-            <div class="panel-card mb-3">
-                <h5 class="mb-3">بیعانه</h5>
-                <dl class="row small mb-0">
-                    <dt class="col-5">مبلغ بیعانه</dt><dd class="col-7">@Model.Deposit.ToToman()</dd>
-                    <dt class="col-5">پرداخت‌شده</dt><dd class="col-7">@(Model.PaidAmount > 0 ? Model.PaidAmount.ToToman() : "—")</dd>
-                    <dt class="col-5">زمان پرداخت</dt><dd class="col-7">@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsi() : "—")</dd>
-                    <dt class="col-5">کد رهگیری بانک</dt><dd class="col-7" dir="ltr">@(Model.RefId?.ToString() ?? "—")</dd>
-                    @if (!string.IsNullOrEmpty(Model.PaymentMessage))
-                    {
-                        <dt class="col-5">پیام درگاه</dt><dd class="col-7">@Model.PaymentMessage</dd>
-                    }
-                </dl>
-            </div>
+        @{
+            var due = Math.Max(0, Model.Price - Model.PaidAmount);
+            var banks = ViewBag.Banks as List<StoreBankAccount> ?? new List<StoreBankAccount>();
         }
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">پرداخت و تسویه</h5>
+            <dl class="row small mb-3">
+                <dt class="col-5">هزینه خدمت</dt><dd class="col-7">@(Model.Price > 0 ? Model.Price.ToToman() : "رایگان")</dd>
+                <dt class="col-5">بیعانه تعریف‌شده</dt><dd class="col-7">@(Model.Deposit > 0 ? Model.Deposit.ToToman() : "—")</dd>
+                <dt class="col-5">پرداخت‌شده</dt><dd class="col-7">@(Model.PaidAmount > 0 ? Model.PaidAmount.ToToman() : "—")</dd>
+                <dt class="col-5">مانده</dt><dd class="col-7">@(due > 0 ? due.ToToman() : "تسویه شده")</dd>
+                <dt class="col-5">زمان پرداخت</dt><dd class="col-7">@(Model.PaidAt.HasValue ? Model.PaidAt.Value.ToShamsi() : "—")</dd>
+                <dt class="col-5">کد رهگیری بانک</dt><dd class="col-7" dir="ltr">@(Model.RefId?.ToString() ?? "—")</dd>
+                @if (!string.IsNullOrEmpty(Model.PaymentMessage))
+                {
+                    <dt class="col-5">پیام پرداخت</dt><dd class="col-7">@Model.PaymentMessage</dd>
+                }
+            </dl>
+            @if (due > 0 && Model.Status != AppointmentStatus.Cancelled)
+            {
+                using (Html.BeginForm("CollectAppointmentPayment", "ShopAdmin", new { company }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-2">
+                        <label class="form-label" for="apPayAmount">مبلغ دریافت حضوری</label>
+                        <input class="form-control" name="amount" id="apPayAmount" inputmode="numeric" dir="ltr" value="@due.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label" for="apPayFrom">دریافت در</label>
+                        <select class="form-select" name="payFrom" id="apPayFrom">
+                            @foreach (var option in AccountingText.PayOptions(banks, false, "Cash"))
+                            {
+                                <option value="@option.Key" @(option.Key == "Cash" ? "selected" : null)>@option.Value</option>
+                            }
+                        </select>
+                    </div>
+                    <p class="small text-muted">مبلغ در صندوق یا بانک می‌نشیند و سند حسابداری خودکار زده می‌شود.</p>
+                    <button class="btn-store w-100" type="submit"><i class="bi bi-cash-coin"></i> ثبت دریافت</button>
+                }
+            }
+        </div>
         <div class="panel-card">
             <h5 class="mb-3">نوبت‌های دیگر این مراجع</h5>
             @if (history.Any())

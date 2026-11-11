@@ -112,6 +112,17 @@ namespace NikooSystem.Services
             return Every(NikooTables.Appointments, companyCode, filter, "t.[StartAt]");
         }
 
+        /// <summary>Confirmed upcoming appointments in the window that still need a reminder SMS.</summary>
+        public static List<StoreAppointment> AppointmentsNeedingReminder(string companyCode, DateTime from, DateTime to)
+        {
+            return AppointmentsBetween(companyCode, from, to)
+                .Where(a => a.Status == AppointmentStatus.Confirmed
+                    && !a.ReminderSmsAt.HasValue
+                    && !string.IsNullOrWhiteSpace(a.CustomerMobile)
+                    && !a.IsSample)
+                .ToList();
+        }
+
         /// <summary>Every row matching the filter, read page by page.</summary>
         private static List<T> Every<T>(EntityMap<T> map, string companyCode, SqlFilter filter, string orderBy) where T : class, new()
         {
@@ -136,16 +147,17 @@ namespace NikooSystem.Services
 
         public static PagedList<StoreAppointment> AppointmentGrid(string companyCode, AppointmentGridQuery query)
         {
-            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Code", "CustomerName", "CustomerMobile", "ServiceTitle", "StaffName");
+            var filter = SqlFilter.ForStore(companyCode).Search(query.Q, "Code", "CustomerName", "CustomerMobile", "ServiceTitle", "StaffName")
+                .DateRange("StartAt", query.From, query.To);
             if (query.Status.HasValue) filter.Eq("Status", query.Status.Value.ToString());
             if (query.StaffId.HasValue) filter.Eq("StaffId", query.StaffId.Value);
             if (query.ServiceId.HasValue) filter.Eq("ServiceId", query.ServiceId.Value);
             var today = DateTime.Today;
             switch (query.When)
             {
-                case "today": filter.AtLeast("StartAt", today).Where("t.[StartAt] < {0}", today.AddDays(1)); break;
+                case "today": filter.AtLeast("StartAt", today).Before("StartAt", today.AddDays(1)); break;
                 case "upcoming": filter.AtLeast("StartAt", DateTime.Now); break;
-                case "past": filter.Where("t.[StartAt] < {0}", DateTime.Now); break;
+                case "past": filter.Before("StartAt", DateTime.Now); break;
             }
             var descending = query.When != "upcoming" && query.When != "today";
             return Grid(NikooTables.Appointments, companyCode, query, filter, AppointmentSorts, "when", descending);
@@ -239,6 +251,8 @@ namespace NikooSystem.Services
                 if (clash)
                     a.AdminNote = ((a.AdminNote ?? "") + " پرداخت پس از پایان مهلت نگه‌داری انجام شد و این ساعت با نوبت دیگری تداخل دارد؛ با مشتری هماهنگ کنید.").Trim();
                 UpdateAppointment(companyCode, a);
+                if (a.Deposit > 0)
+                    PostIncome(companyCode, JournalSource.Appointment, a.Id, a.Deposit, "بیعانه نوبت " + a.Code);
             }
         }
 

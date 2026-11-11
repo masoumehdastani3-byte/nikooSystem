@@ -103,8 +103,8 @@ namespace NikooSystem.Helpers
             {
                 Id = "beauty",
                 Kind = SiteKinds.Booking,
-                Name = "سالن زیبایی و آرایشگاه",
-                Description = "خدمات مو، ناخن و پوست با انتخاب آرایشگر",
+                Name = "آرایشگاه و سالن زیبایی",
+                Description = "نوبت کوتاهی، رنگ، ناخن و پوست با انتخاب آرایشگر",
                 Icon = "bi-scissors",
                 DefaultTemplate = "salon"
             },
@@ -119,12 +119,30 @@ namespace NikooSystem.Helpers
             },
             new StoreTypeInfo
             {
+                Id = "school",
+                Kind = SiteKinds.Campus,
+                Name = "آموزشگاه",
+                Description = "دوره عمومی با ظرفیت و شهریه، و دوره خصوصی حضوری یا آنلاین",
+                Icon = "bi-journal-bookmark",
+                DefaultTemplate = "club"
+            },
+            new StoreTypeInfo
+            {
                 Id = "club",
                 Kind = SiteKinds.Campus,
-                Name = "آموزشگاه و باشگاه ورزشی",
-                Description = "کلاس گروهی، مدرس خصوصی آنلاین یا حضوری، و رزرو ساعتی سالن",
+                Name = "باشگاه ورزشی",
+                Description = "کلاس ورزشی، مربی خصوصی و رزرو ساعتی سالن و زمین",
                 Icon = "bi-trophy",
                 DefaultTemplate = "club"
+            },
+            new StoreTypeInfo
+            {
+                Id = "cafe",
+                Kind = SiteKinds.Menu,
+                Name = "کافه و رستوران",
+                Description = "منوی میز با QR، قیمت و فراخوان گارسون",
+                Icon = "bi-cup-straw",
+                DefaultTemplate = "cafe"
             }
         };
 

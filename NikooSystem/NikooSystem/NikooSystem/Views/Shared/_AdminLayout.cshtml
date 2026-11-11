@@ -43,6 +43,7 @@
         new { Title = "حساب", Items = new[]
         {
             new { Text = "اطلاع‌رسانی بله", Icon = "bi-bell", Action = "Notifications", Also = "notifications", Badge = 0 },
+            new { Text = "پیامک پاپوس", Icon = "bi-chat-dots", Action = "SmsPanel", Also = "smspanel", Badge = 0 },
             new { Text = "نام کاربری و رمز", Icon = "bi-shield-lock", Action = "Account", Also = "account", Badge = 0 }
         } }
     };
@@ -136,6 +137,7 @@
     <script src="@Url.Asset("~/Content/nk-alert.js")"></script>
     <script src="@Url.Asset("~/Content/money-input.js")"></script>
     <script src="@Url.Asset("~/Content/admin-table.js")"></script>
+    <script src="@Url.Asset("~/Content/excel-export.js")"></script>
     @if (Html.UsesShamsiDateTime())
     {
         <link href="@Url.Asset("~/Content/shamsi-datetime.css")" rel="stylesheet">

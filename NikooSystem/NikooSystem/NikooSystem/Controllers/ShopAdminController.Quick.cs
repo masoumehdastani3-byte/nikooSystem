@@ -279,11 +279,13 @@ namespace NikooSystem.Controllers
             return list;
         }
 
-        /// <summary>Only top-level items can be parents (as on the full edit pages), and never the item itself.</summary>
+        /// <summary>Any existing node can be a parent, except the item itself or one of its descendants.</summary>
         private static int? QuickParent<T>(IEnumerable<T> all, int? parentId, int id) where T : ITreeNode
         {
             if (!parentId.HasValue || parentId.Value == id) return null;
-            return all.Any(n => n.Id == parentId.Value && !n.ParentId.HasValue) ? parentId : null;
+            if (!all.Any(n => n.Id == parentId.Value)) return null;
+            if (id > 0 && TreeHelper.SubtreeIds(all, id).Contains(parentId.Value)) return null;
+            return parentId;
         }
 
         private static List<string> OptionsOf(StoreAttributeDef def) =>

@@ -63,10 +63,37 @@ namespace NikooSystem.Models
         public string Q { get; set; }
         public string Sort { get; set; }
         public string Dir { get; set; }
+        /// <summary>Inclusive start day as yyyy-MM-dd (Shamsi picker posts Gregorian).</summary>
+        public string From { get; set; }
+        /// <summary>Inclusive end day as yyyy-MM-dd.</summary>
+        public string To { get; set; }
+        /// <summary>When <c>all</c>, date filters stay empty (no fiscal-year default).</summary>
+        public string Scope { get; set; }
 
         public int PageSize => PageSizes.Contains(Size) ? Size : 20;
 
         public bool Descending => string.Equals(Dir, "desc", StringComparison.OrdinalIgnoreCase);
+
+        public DateTime? FromDay => ParseDay(From);
+        public DateTime? ToDay => ParseDay(To);
+
+        public static DateTime? ParseDay(string text)
+        {
+            DateTime day;
+            return DateTime.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out day)
+                ? day.Date
+                : (DateTime?)null;
+        }
+
+        /// <summary>Keeps rows whose date falls in the optional From/To day range (inclusive).</summary>
+        public IEnumerable<T> InDateRange<T>(IEnumerable<T> rows, Func<T, DateTime> date)
+        {
+            var from = FromDay;
+            var to = ToDay;
+            if (from.HasValue) rows = rows.Where(r => date(r).Date >= from.Value);
+            if (to.HasValue) rows = rows.Where(r => date(r).Date <= to.Value);
+            return rows;
+        }
 
         /// <summary>
         /// The ORDER BY expression for the requested sort key, chosen from <paramref name="sorts"/> (key → SQL written in code);

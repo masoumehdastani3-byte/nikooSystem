@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -92,6 +92,45 @@ namespace NikooSystem.Services
         public static List<Order> GetOrders()
         {
             return NikooDb.List(NikooTables.SiteOrders).OrderByDescending(o => o.CreatedAt).ToList();
+        }
+
+        public static List<Order> RecentOrders(int take) =>
+            NikooDb.Page(NikooTables.SiteOrders, new SqlFilter(), "t.[CreatedAt] DESC", 1, take).ToList();
+
+        public static bool ProductHasOrders(int productId) =>
+            NikooDb.Count(NikooTables.SiteOrders, new SqlFilter().Eq("ProductId", productId)) > 0;
+
+        /// <summary>Counts and revenue of the main site's orders, without loading the rows.</summary>
+        internal static void ReadOrderStats(out int count, out int paid, out int pending, out long revenue, out long monthRevenue, DateTime monthAgo)
+        {
+            var row = NikooDb.Select(
+                "SELECT COUNT(*), "
+                + "ISNULL(SUM(CASE WHEN [Status] IN (@Paid, @Processing, @Completed) THEN 1 ELSE 0 END), 0), "
+                + "ISNULL(SUM(CASE WHEN [Status] = @Pending THEN 1 ELSE 0 END), 0), "
+                + "ISNULL(SUM(CASE WHEN [Status] IN (@Paid, @Processing, @Completed) THEN [Amount] ELSE 0 END), 0), "
+                + "ISNULL(SUM(CASE WHEN [Status] IN (@Paid, @Processing, @Completed) AND COALESCE([PaidAt], [CreatedAt]) >= @Month THEN [Amount] ELSE 0 END), 0) "
+                + "FROM " + NikooDb.Table(NikooTables.SiteOrders.Name),
+                new Row
+                {
+                    ["Paid"] = OrderStatus.Paid.ToString(),
+                    ["Processing"] = OrderStatus.Processing.ToString(),
+                    ["Completed"] = OrderStatus.Completed.ToString(),
+                    ["Pending"] = OrderStatus.PendingPayment.ToString(),
+                    ["Month"] = monthAgo
+                },
+                r => new[]
+                {
+                    Convert.ToInt64(r.GetValue(0)),
+                    Convert.ToInt64(r.GetValue(1)),
+                    Convert.ToInt64(r.GetValue(2)),
+                    Convert.ToInt64(r.GetValue(3)),
+                    Convert.ToInt64(r.GetValue(4))
+                }).First();
+            count = (int)row[0];
+            paid = (int)row[1];
+            pending = (int)row[2];
+            revenue = row[3];
+            monthRevenue = row[4];
         }
 
         public static Order GetOrder(int id)
@@ -232,41 +271,106 @@ namespace NikooSystem.Services
         {
             { "fashion", "/Assets/img/products/store-fashion.jpg" },
             { "grocery", "/Assets/img/products/store-grocery.jpg" },
-            { "digital", "/Assets/img/products/store-digital.jpg" },
-            { "clinic", "/Assets/img/products/store-booking.jpg" },
-            { "club", "/Assets/img/products/store-booking.jpg" },
+            { "digital", "/Assets/img/products/store-gadget.jpg" },
+            { "clinic", "/Assets/img/products/store-clinic.jpg" },
+            { "beauty", "/Assets/img/products/store-salon.jpg" },
+            { "consulting", "/Assets/img/products/store-consulting.jpg" },
+            { "school", "/Assets/img/products/store-school.jpg" },
+            { "club", "/Assets/img/products/store-club.jpg" },
             { "corporate", "/Assets/img/products/store-cms.jpg" }
         };
 
-        private const string BookingTitle = "پنل رزرو آنلاین نوبت";
+        private const string BookingTitle = "سایت مطب و کلینیک";
+        private const string BeautyTitle = "سایت آرایشگاه";
+        private const string ConsultingTitle = "سایت مشاوره";
         private const string ContentTitle = "سیستم مدیریت محتوا (CMS)";
 
-        /// <summary>
-        /// Turns the catalogue's booking product into a live product with the CLINIC demo, or adds it when the catalogue
-        /// has no such product. Its price and any image the admin chose are kept.
-        /// </summary>
+        /// <summary>Turns the shared booking catalogue row into the clinic product, or adds it.</summary>
         internal static void ApplyBookingProduct()
         {
             var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "clinic")
-                ?? GetProducts().FirstOrDefault(p => string.IsNullOrEmpty(p.DemoSlug) && p.Title != null && p.Title.Contains("رزرو"));
+                ?? GetProducts().FirstOrDefault(p => string.IsNullOrEmpty(p.DemoSlug) && p.Title != null && (p.Title.Contains("رزرو") || p.Title.Contains("نوبت")));
             var isNew = product == null;
             if (isNew) product = new Product { Price = 10000, Title = BookingTitle, IsActive = true };
 
+            product.Title = BookingTitle;
             product.DemoSlug = "clinic";
             product.IsFeatured = true;
-            product.ShortDescription = "سایت نوبت‌دهی آنلاین برای مطب، کلینیک، سالن زیبایی و مشاوره با پنل مدیریت کامل";
-            product.Description = "مشتری خدمت، متخصص، روز و ساعت خالی را خودش انتخاب می‌کند و در کمتر از یک دقیقه نوبت می‌گیرد. "
-                + "ساعت کاری هفتگی هر متخصص، تعطیلی‌ها و مرخصی‌ها، تقویم هفتگی نوبت‌ها، ثبت نوبت تلفنی، بیعانه آنلاین با زرین‌پال "
-                + "و پیگیری و لغو نوبت با کد رهگیری؛ همه روی دامنه و کد شرکت اختصاصی خودتان.";
-            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(product.Category)) product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = "سایت نوبت‌دهی مطب و کلینیک با تقویم پزشک، بیعانه و پیامک یادآوری";
+            product.Description = "بیمار پزشک، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
+                + "ساعت کاری، تعطیلی و مرخصی هر پزشک جداست و منشی نوبت تلفنی را در همان تقویم ثبت می‌کند. "
+                + "بیعانه آنلاین، پیامک تأیید و یادآوری، و پیگیری با کد رهگیری روی دامنه خودتان است. "
+                + "حتی اگر رزرو از سایت را باز نکنید، تقویم و نوبت تلفنی در پنل کار می‌کند.";
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(product.ImageUrl, "/Assets/img/products/store-booking.jpg", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["clinic"];
             if (isNew) AddProduct(product);
             else UpdateProduct(product);
         }
 
-        private const string ClubTitle = "سایت آموزشگاه و باشگاه ورزشی";
+        /// <summary>Adds the beauty-salon product, separate from the clinic.</summary>
+        internal static void ApplyBeautyProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "beauty");
+            var isNew = product == null;
+            if (isNew)
+            {
+                var clinic = GetProducts().FirstOrDefault(p => p.DemoSlug == "clinic");
+                product = new Product { Price = clinic != null && clinic.Price > 0 ? clinic.Price : 10000, Title = BeautyTitle, IsActive = true, Category = "نرم‌افزار خدماتی" };
+            }
 
-        /// <summary>Adds the academy and sports-club product, or refreshes its text when the catalogue already has it.</summary>
+            product.Title = BeautyTitle;
+            product.DemoSlug = "beauty";
+            product.IsFeatured = true;
+            if (string.IsNullOrWhiteSpace(product.Category)) product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = "سایت نوبت‌دهی آرایشگاه و سالن زیبایی با انتخاب آرایشگر و ساعت خالی";
+            product.Description = "مشتری آرایشگر، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
+                + "کوتاهی، رنگ، ناخن و پوست هر کدام مدت و هزینه جدا دارند و ساعت کاری هر آرایشگر مستقل است. "
+                + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد.";
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["beauty"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
+        }
+
+        /// <summary>Adds the consulting product, separate from clinic and salon.</summary>
+        internal static void ApplyConsultingProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "consulting");
+            var isNew = product == null;
+            if (isNew)
+            {
+                var clinic = GetProducts().FirstOrDefault(p => p.DemoSlug == "clinic");
+                product = new Product { Price = clinic != null && clinic.Price > 0 ? clinic.Price : 10000, Title = ConsultingTitle, IsActive = true, Category = "نرم‌افزار خدماتی" };
+            }
+
+            product.Title = ConsultingTitle;
+            product.DemoSlug = "consulting";
+            product.IsFeatured = true;
+            if (string.IsNullOrWhiteSpace(product.Category)) product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = "سایت نوبت‌دهی مشاوره برای جلسه حضوری یا آنلاین";
+            product.Description = "مراجع مشاور، موضوع جلسه و ساعت خالی را خودش انتخاب می‌کند. "
+                + "جلسه می‌تواند حضوری یا آنلاین باشد و نوبت تلفنی در همان تقویم ثبت می‌شود. "
+                + "بیعانه، کد پیگیری و خبر جلسه در بله از پنل تنظیم می‌شود.";
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["consulting"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
+        }
+
+        /// <summary>Splits the shared booking catalogue row into clinic, salon and consulting products.</summary>
+        internal static void ApplySplitBookingProducts()
+        {
+            ApplyBookingProduct();
+            ApplyBeautyProduct();
+            ApplyConsultingProduct();
+        }
+
+        private const string ClubTitle = "سایت باشگاه ورزشی";
+        private const string SchoolTitle = "سایت آموزشگاه";
+
+        /// <summary>Turns the combined catalogue row into the sports-club product, or adds that product.</summary>
         internal static void ApplyClubProduct()
         {
             var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "club")
@@ -277,15 +381,48 @@ namespace NikooSystem.Services
             product.Title = ClubTitle;
             product.DemoSlug = "club";
             product.IsFeatured = true;
-            product.ShortDescription = "سایت آموزشگاه و باشگاه با کلاس گروهی، مدرس خصوصی آنلاین یا حضوری و رزرو ساعتی سالن";
-            product.Description = "کلاس و دوره را با ظرفیت، شهریه، سطح و گروه سنی تعریف کنید و ثبت‌نام آنلاین بگیرید. "
-                + "جلسه با مدرس یا مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
-                + "سالن فوتبال، میز پینگ‌پونگ و هر فضای دیگری را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
-                + "شهریه و اجاره با زرین‌پال به حساب شما می‌آید و هر ثبت‌نام کد پیگیری دارد؛ همه روی دامنه و کد شرکت اختصاصی خودتان.";
+            product.ShortDescription = "سایت باشگاه ورزشی با کلاس، مربی خصوصی و رزرو ساعتی سالن و زمین";
+            product.Description = "کلاس ورزشی را با ظرفیت، شهریه و گروه سنی تعریف کنید؛ ثبت‌نام آنلاین یا تلفنی از پنل. "
+                + "جلسه با مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
+                + "سالن فوتبال، میز پینگ‌پونگ و سالن بدنسازی را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
+                + "شهریه و اجاره آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور در حسابداری ثبت می‌شود.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["club"];
             if (isNew) AddProduct(product);
             else UpdateProduct(product);
+        }
+
+        /// <summary>Adds the academy product, separate from the sports club.</summary>
+        internal static void ApplySchoolProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "school");
+            var isNew = product == null;
+            if (isNew)
+            {
+                var club = GetProducts().FirstOrDefault(p => p.DemoSlug == "club");
+                product = new Product { Price = club != null && club.Price > 0 ? club.Price : 10000, Title = SchoolTitle, IsActive = true };
+            }
+
+            product.Title = SchoolTitle;
+            product.DemoSlug = "school";
+            product.IsFeatured = true;
+            if (string.IsNullOrWhiteSpace(product.Category)) product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = "سایت آموزشگاه با دوره عمومی و دوره خصوصی، حضوری یا آنلاین";
+            product.Description = "دوره عمومی زبان، هنر، موسیقی یا کنکور را با ظرفیت، شهریه، سطح و گروه سنی تعریف کنید تا چند دانشجو در یک کلاس ثبت‌نام کنند. "
+                + "دوره خصوصی را هم با مدرس، حضوری یا آنلاین، روی ساعت کاری همان مدرس بگذارید. "
+                + "ثبت‌نام آنلاین یا تلفنی از پنل انجام می‌شود و هر ثبت‌نام کد پیگیری دارد. "
+                + "شهریه هر دو نوع دوره، آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور، در حسابداری ثبت می‌شود.";
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["school"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
+        }
+
+        /// <summary>Splits the old combined catalogue row into the academy product and the sports-club product.</summary>
+        internal static void ApplySplitCampusProducts()
+        {
+            ApplyClubProduct();
+            ApplySchoolProduct();
         }
 
         private const string ContentTemplatesText = "شش قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)";
@@ -335,16 +472,48 @@ namespace NikooSystem.Services
             if (isNew) AddProduct(product);
             else UpdateProduct(product);
 
-            var orders = GetOrders();
             foreach (var accounting in products.Where(p => p.Id != product.Id && string.IsNullOrEmpty(p.DemoSlug)
                 && p.Title != null && p.Title.Contains("حسابداری")))
             {
-                if (orders.Any(o => o.ProductId == accounting.Id))
+                if (ProductHasOrders(accounting.Id))
                 {
                     accounting.IsActive = false;
                     UpdateProduct(accounting);
                 }
                 else DeleteProduct(accounting.Id);
+            }
+        }
+
+        /// <summary>تصویر هر محصول نرم‌افزاری را با خود محصول عوض می‌کند؛ فقط اگر هنوز تصویر عمومی یا تصویر محصول دیگری باشد.</summary>
+        internal static void ApplyMatchedProductImages()
+        {
+            var previous = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "digital", new[] { "/Assets/img/products/store-digital.jpg" } },
+                { "clinic", new[] { "/Assets/img/booking/hero-clinic.jpg", "/Assets/img/products/store-booking.jpg" } },
+                { "beauty", new[] { "/Assets/img/booking/hero-salon.jpg", "/Assets/img/products/store-booking.jpg" } },
+                { "consulting", new[] { "/Assets/img/booking/hero-clinic.jpg", "/Assets/img/products/store-booking.jpg" } },
+                { "school", new[] { "/Assets/img/hero-img.jpg", "/Assets/img/products/store-booking.jpg" } },
+                { "club", new[] { "/Assets/img/products/store-booking.jpg", "/Assets/img/hero-img.jpg" } }
+            };
+
+            foreach (var product in GetProducts())
+            {
+                string image;
+                string[] olds;
+                if (string.IsNullOrEmpty(product.DemoSlug)
+                    || !StoreDemoImages.TryGetValue(product.DemoSlug, out image)
+                    || !previous.TryGetValue(product.DemoSlug, out olds)) continue;
+                if (string.Equals(product.ImageUrl, image, StringComparison.OrdinalIgnoreCase)) continue;
+
+                var current = product.ImageUrl ?? "";
+                var stock = string.IsNullOrEmpty(current)
+                    || current.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase)
+                    || olds.Any(old => string.Equals(current, old, StringComparison.OrdinalIgnoreCase));
+                if (!stock) continue;
+
+                product.ImageUrl = image;
+                UpdateProduct(product);
             }
         }
 
@@ -358,6 +527,47 @@ namespace NikooSystem.Services
                 if (!string.IsNullOrEmpty(p.ImageUrl) && !p.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase)) continue;
                 p.ImageUrl = image;
                 UpdateProduct(p);
+            }
+        }
+
+        /// <summary>
+        /// Refreshes catalogue copy so shop/booking/campus products say in-person operations are possible,
+        /// and the gadget store is not mistaken for course/file sales.
+        /// </summary>
+        internal static void ApplyOfflineProductMessaging()
+        {
+            ApplyBookingProduct();
+            ApplyClubProduct();
+
+            foreach (var product in GetProducts())
+            {
+                if (product.DemoSlug == "fashion"
+                    && product.ShortDescription != null
+                    && product.ShortDescription.IndexOf("فروش حضوری", StringComparison.Ordinal) < 0)
+                {
+                    product.ShortDescription = "فروشگاه واقعی چندمستأجری: سبد خرید، فروش حضوری با فاکتور، انبار، گالری و درگاه پرداخت";
+                    if (product.Description != null && product.Description.IndexOf("فاکتور فروش حضوری", StringComparison.Ordinal) < 0)
+                        product.Description = "فروشگاه پوشاک با پنل مدیریت کامل، سبد خرید آنلاین، فاکتور فروش حضوری و موجودی یکپارچه، گروه‌بندی درختی، خصوصیات، صفحات، گالری و دامنه/کد شرکت اختصاصی.";
+                    UpdateProduct(product);
+                }
+                else if (product.DemoSlug == "digital"
+                    && (product.ShortDescription == null
+                        || product.ShortDescription.IndexOf("دوره", StringComparison.Ordinal) >= 0
+                        || product.ShortDescription.IndexOf("گجت", StringComparison.Ordinal) < 0))
+                {
+                    product.ShortDescription = "فروشگاه کالای دیجیتال و گجت با سبد خرید، انبار، فاکتور حضوری و درگاه پرداخت";
+                    product.Description = "فروشگاه کالای دیجیتال و گجت (موبایل، لوازم جانبی و…) با کاتالوگ، سبد خرید، موجودی، فاکتور فروش حضوری، پنل ادمین/مشتری، صفحات و درگاه پرداخت. برای دوره و فایل آموزشی از محصول آموزش استفاده کنید.";
+                    UpdateProduct(product);
+                }
+                else if (product.DemoSlug == "grocery"
+                    && product.ShortDescription != null
+                    && product.ShortDescription.IndexOf("حضوری", StringComparison.Ordinal) < 0)
+                {
+                    product.ShortDescription = "سوپرمارکت با پنل مدیریت، سفارش آنلاین، فاکتور حضوری و پرداخت";
+                    if (product.Description != null && product.Description.IndexOf("فاکتور", StringComparison.Ordinal) < 0)
+                        product.Description = "فروشگاه سوپرمارکت کامل: محصول، گروه، سبد خرید، فاکتور فروش حضوری، پنل مشتری، منوی درختی، گالری و درگاه — هر مشتری با کد شرکت خودش.";
+                    UpdateProduct(product);
+                }
             }
         }
 
@@ -436,8 +646,8 @@ namespace NikooSystem.Services
                 {
                     Id = 1,
                     Title = "فروشگاه آنلاین پوشاک (اختصاصی)",
-                    ShortDescription = "فروشگاه واقعی چندمستأجری: سبد خرید، پنل ادمین، منوی درختی، گالری و درگاه پرداخت",
-                    Description = "فروشگاه آنلاین واقعی پوشاک با پنل مدیریت کامل، سبد خرید، گروه‌بندی درختی، خصوصیات، صفحات، گالری و دامنه/کد شرکت اختصاصی.",
+                    ShortDescription = "فروشگاه واقعی چندمستأجری: سبد خرید، فروش حضوری با فاکتور، انبار، گالری و درگاه پرداخت",
+                    Description = "فروشگاه پوشاک با پنل مدیریت کامل، سبد خرید آنلاین، فاکتور فروش حضوری و موجودی یکپارچه، گروه‌بندی درختی، خصوصیات، صفحات، گالری و دامنه/کد شرکت اختصاصی.",
                     Price = 15000,
                     ImageUrl = StoreDemoImages["fashion"],
                     Category = "فروشگاه آنلاین",
@@ -462,8 +672,8 @@ namespace NikooSystem.Services
                 {
                     Id = 3,
                     Title = "فروشگاه محصولات دیجیتال (اختصاصی)",
-                    ShortDescription = "فروشگاه واقعی دوره، لایسنس و فایل با پنل کامل",
-                    Description = "فروشگاه دیجیتال واقعی با کاتالوگ داینامیک، سبد خرید، پنل ادمین/مشتری، صفحات و درگاه پرداخت.",
+                    ShortDescription = "فروشگاه کالای دیجیتال و گجت با سبد خرید، انبار، فاکتور حضوری و درگاه پرداخت",
+                    Description = "فروشگاه کالای دیجیتال و گجت (موبایل، لوازم جانبی و…) با کاتالوگ، سبد خرید، موجودی، فاکتور فروش حضوری، پنل ادمین/مشتری، صفحات و درگاه پرداخت. برای دوره و فایل آموزشی از محصول آموزش استفاده کنید.",
                     Price = 12000,
                     ImageUrl = StoreDemoImages["digital"],
                     Category = "فروشگاه آنلاین",

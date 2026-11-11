@@ -9,135 +9,17 @@
     var onSubscriptionPage = string.Equals(action, "Subscription", StringComparison.OrdinalIgnoreCase);
     var tutorial = NikooSystem.Services.TutorialService.Get(action);
     var kind = (SiteKindInfo)ViewBag.Kind;
-    var unreadMessages = NikooSystem.Services.TenantStore.CountUnreadMessages(company);
-    var pendingComments = kind.IsContent ? NikooSystem.Services.TenantStore.CountPendingComments(company) : 0;
     var storage = NikooSystem.Services.StorageQuota.Usage(company);
     var storageUrl = Url.Action("Storage", "ShopAdmin", new { company });
     var onStoragePage = string.Equals(action, "Storage", StringComparison.OrdinalIgnoreCase);
 
-    // A group with a single item is shown as a plain link.
-    var nav = new List<NavGroup>();
-    NavGroup group = null;
-    Action<string, string> section = (title, icon) => nav.Add(group = new NavGroup { Title = title, Icon = icon });
-    Action<string, string, string, int, string[]> add = (a, icon, text, badge, also) =>
-        group.Items.Add(new NavItem { Action = a, Icon = icon, Text = text, Badge = badge, Also = also ?? new string[0], Active = IsActive(action, a, also) });
+    var panelRole = ViewBag.PanelRole != null ? (PanelRole)ViewBag.PanelRole : PanelRole.Owner;
+    var panelName = ViewBag.PanelDisplayName as string;
+    var isPanelOwner = ViewBag.IsPanelOwner as bool? == true;
 
-    section(null, null);
-    add("Index", "bi-speedometer2", "داشبورد", 0, null);
-    add("Visits", "bi-bar-chart-line", "آمار بازدید", 0, new[] { "VisitIps" });
-    if (kind.IsContent)
-    {
-        section("محتوا", "bi-journal-text");
-        add("Posts", "bi-newspaper", "خبرها و مقاله‌ها", 0, new[] { "EditPost" });
-        add("Categories", "bi-diagram-3", "سرویس‌ها و دسته‌ها", 0, new[] { "EditCategory" });
-        add("Comments", "bi-chat-left-text", "نظرات خوانندگان", pendingComments, null);
-        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
-    }
-    else if (kind.IsCampus)
-    {
-        section("کلاس و ثبت‌نام", "bi-easel");
-        add("Classes", "bi-easel", "کلاس‌ها و دوره‌ها", 0, new[] { "EditClass" });
-        add("Enrollments", "bi-person-check", "ثبت‌نام‌ها", NikooSystem.Services.TenantStore.CountEnrollmentsToday(company), null);
-        add("CampusGuide", "bi-signpost", "راهنمای راه‌اندازی", 0, null);
-        section("سالن و زمین", "bi-trophy");
-        add("Facilities", "bi-trophy", "سالن‌ها و زمین‌ها", 0, new[] { "EditFacility" });
-        add("FacilityBookings", "bi-calendar-week", "رزرو ساعتی", NikooSystem.Services.TenantStore.CountFacilityBookingsToday(company), null);
-        section("کلاس خصوصی", "bi-camera-video");
-        add("Calendar", "bi-calendar-week", "تقویم جلسات", 0, null);
-        add("Appointments", "bi-card-checklist", "جلسات خصوصی", NikooSystem.Services.TenantStore.CountAppointmentsToday(company), new[] { "AppointmentDetails", "NewAppointment" });
-        add("Services", "bi-clipboard-check", "کلاس خصوصی و تعرفه", 0, new[] { "EditService" });
-        add("Staff", "bi-person-badge", "مدرس‌ها و مربی‌ها", 0, new[] { "EditStaff" });
-        add("TimeOff", "bi-calendar-x", "تعطیلی و مرخصی", 0, null);
-        section(null, null);
-        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
-    }
-    else if (kind.IsBooking)
-    {
-        section("نوبت‌دهی", "bi-calendar-week");
-        add("Calendar", "bi-calendar-week", "تقویم نوبت‌ها", 0, null);
-        add("Appointments", "bi-card-checklist", "فهرست نوبت‌ها", NikooSystem.Services.TenantStore.CountAppointmentsToday(company), new[] { "AppointmentDetails", "NewAppointment" });
-        add("Services", "bi-clipboard-check", "خدمات و تعرفه‌ها", 0, new[] { "EditService" });
-        add("Staff", "bi-person-badge", "متخصصان و ساعت کاری", 0, new[] { "EditStaff" });
-        add("TimeOff", "bi-calendar-x", "تعطیلی و مرخصی", 0, null);
-        section(null, null);
-        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
-    }
-    else
-    {
-        section(kind.ItemsLabel, kind.IsDigital ? "bi-easel" : "bi-box-seam");
-        add("Products", kind.IsDigital ? "bi-easel" : "bi-box", "فهرست " + kind.ItemsLabel, 0, new[] { "EditProduct" });
-        add("Categories", "bi-diagram-3", "گروه‌ها", 0, new[] { "EditCategory" });
-        add("Collections", "bi-tags", "برچسب‌های ویژه", 0, new[] { "EditCollection" });
-        add("Attributes", "bi-list-check", "خصوصیات", 0, new[] { "EditAttribute" });
-        section("فروش و مشتریان", "bi-cart-check");
-        add("Orders", "bi-receipt", "سفارش‌ها", 0, new[] { "OrderDetails" });
-        add("Customers", kind.IsDigital ? "bi-camera-video" : "bi-people", kind.IsDigital ? "دانشجویان و خریداران" : "مشتریان", 0, null);
-        add("Reviews", "bi-chat-dots", "نظرات", 0, null);
-        add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
-    }
-    if (kind.IsShop || kind.IsDigital || kind.IsCampus)
-    {
-        section("حسابداری", "bi-journal-text");
-        add("AccountingGuide", "bi-signpost", "راهنمای حسابداری", 0, null);
-        add("Accounts", "bi-list-check", "سرفصل حساب‌ها", 0, new[] { "EditAccount" });
-        add("DetailAccounts", "bi-diagram-3", "حساب‌های تفصیلی", 0, new[] { "EditDetail" });
-        add("Journal", "bi-journal-text", "اسناد حسابداری", 0, new[] { "EditJournal", "Voucher" });
-        add("DocumentTypes", "bi-bookmark", "انواع سند", 0, new[] { "EditDocumentType" });
-        add("Parties", "bi-person-lines-fill", "تامین‌کنندگان و مشتریان", 0, new[] { "EditParty" });
-        add("Banks", "bi-bank", "بانک‌ها و درگاه", 0, new[] { "EditBank" });
-        add("Payments", "bi-cash-stack", "دریافت و پرداخت", 0, new[] { "EditPayment" });
-        add("Purchases", "bi-box", "فاکتور خرید", 0, new[] { "EditPurchase" });
-        add("SaleInvoices", "bi-receipt", "فاکتور فروش", 0, new[] { "EditSaleInvoice" });
-        add("Inventory", "bi-box-seam", "انبار", 0, null);
-        add("Assets", "bi-tags", "اموال", 0, new[] { "EditAsset" });
-        add("Books", "bi-file-earmark-text", "تراز و دفاتر", 0, null);
-    }
-    section("ظاهر سایت", "bi-palette");
-    add("PageLayout", "bi-layout-text-window-reverse", "چیدمان صفحات", 0, null);
-    add("Menus", "bi-menu-button-wide", "منوها", 0, new[] { "EditMenu" });
-    add("Pages", "bi-file-earmark-text", "صفحات", 0, new[] { "EditPage" });
-    add("Gallery", "bi-images", "گالری", 0, null);
-    section("بازاریابی و اتصال‌ها", "bi-megaphone");
-    add("SeoGuide", "bi-google", "سئو و گوگل", 0, null);
-    if (kind.IsShop)
-    {
-        add("Torob", "bi-graph-up", "اتصال به ترب", 0, null);
-    }
-    add("Enamad", "bi-patch-check", "اینماد", 0, null);
-    add("Notifications", "bi-bell", "اطلاع‌رسانی بله", 0, null);
-    section("تنظیمات", "bi-sliders");
-    add("Settings", "bi-gear", "اطلاعات " + kind.SiteNoun, 0, null);
-    add("Domain", "bi-globe", "دامنه اختصاصی", 0, null);
-    add("Setup", "bi-stars", "راه‌اندازی سریع", 0, null);
-    add("Storage", "bi-hdd", "فضای ذخیره‌سازی", storage.IsFull ? 1 : 0, null);
-    add("Subscription", "bi-credit-card", "اشتراک و تمدید", renewalDue ? 1 : 0, null);
-    section(null, null);
-    add("Support", "bi-headset", "پشتیبانی نیکو", NikooSystem.Services.SupportDesk.CountUnreadForStore(company), new[] { "Ticket", "NewTicket" });
+    var nav = ShopAdminNav.Build(kind, company, action, panelRole, isPanelOwner, settings, renewalDue, tenant?.StoreType);
 }
-@functions {
-    public class NavItem
-    {
-        public string Action, Icon, Text;
-        public int Badge;
-        public string[] Also;
-        public bool Active;
-    }
-
-    public class NavGroup
-    {
-        public string Title, Icon;
-        public List<NavItem> Items = new List<NavItem>();
-        public bool Active => Items.Any(i => i.Active);
-        public int Badge => Items.Sum(i => i.Badge);
-    }
-
-    static bool IsActive(string current, string action, string[] also)
-    {
-        return string.Equals(current, action, StringComparison.OrdinalIgnoreCase)
-            || (also != null && also.Any(a => string.Equals(current, a, StringComparison.OrdinalIgnoreCase)));
-    }
-}
-@helper NavLink(NavItem item, string company)
+@helper NavLink(ShopAdminNavItem item, string company)
 {
     <a href="@Url.Action(item.Action, "ShopAdmin", new { company })" class="@(item.Active ? "active" : null)" @(item.Active ? Html.Raw("aria-current=\"page\"") : null)>
         <i class="bi @item.Icon"></i> @item.Text
@@ -157,6 +39,7 @@
     <link href="@Url.Asset("~/Content/storefront.css")" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/admin-table.css")" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/admin-pages.css")" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/admin-tree.css")" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/storage.css")" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/nk-alert.css")" rel="stylesheet" />
     @if (tutorial != null) { <link href="@Url.Asset("~/Content/tutorial.css")" rel="stylesheet" /> }
@@ -169,6 +52,10 @@
             <div class="side-store">
                 <strong>@settings.StoreName</strong>
                 <div class="small opacity-75">کد شرکت: @company · <i class="bi @kind.Icon"></i> @kind.Name</div>
+                @if (!string.IsNullOrWhiteSpace(panelName))
+                {
+                    <div class="small opacity-75 mt-1"><i class="bi bi-person"></i> @panelName · @panelRole.Label()</div>
+                }
             </div>
             <button type="button" class="side-toggle" data-bs-toggle="collapse" data-bs-target="#sideNav" aria-controls="sideNav" aria-expanded="false" aria-label="منوی پنل">
                 <i class="bi bi-list"></i>
@@ -277,6 +164,8 @@
 <script src="@Url.Asset("~/Content/storage-guard.js")"></script>
 <script src="@Url.Asset("~/Content/money-input.js")"></script>
 <script src="@Url.Asset("~/Content/admin-table.js")"></script>
+<script src="@Url.Asset("~/Content/admin-tree.js")"></script>
+<script src="@Url.Asset("~/Content/excel-export.js")"></script>
 @if (Html.UsesQuickManage())
 {
     @Html.Partial("_QuickManage")

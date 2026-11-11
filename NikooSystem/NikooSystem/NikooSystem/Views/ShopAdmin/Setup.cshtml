@@ -13,8 +13,8 @@
     var storeUrl = (string)ViewBag.StoreUrl;
     var serverIp = NikooSystem.Services.TenantProvisioningService.ServerIp;
     var rootDomain = NikooSystem.Services.TenantProvisioningService.RootDomain;
-    var firstItem = kind.IsContent ? "اولین مطلب" : kind.IsCampus ? "کلاس خصوصی" : kind.IsBooking ? "خدمات" : kind.IsDigital ? "اولین دوره یا کتاب" : "اولین محصول";
-    var steps = new[] { "نام و لوگو", "ظاهر " + site, firstItem, kind.IsContent ? "نظرات و تماس" : "درگاه پرداخت", "آدرس سایت" };
+    var firstItem = kind.IsMenu ? "آیتم منو" : kind.IsContent ? "اولین مطلب" : kind.IsCampus ? "کلاس خصوصی" : kind.IsBooking ? "خدمات" : kind.IsDigital ? "اولین دوره یا کتاب" : "اولین محصول";
+    var steps = new[] { "نام و لوگو", "ظاهر " + site, firstItem, kind.IsMenu ? "کارت QR" : kind.IsContent ? "نظرات و تماس" : "درگاه پرداخت", "آدرس سایت" };
 }
 <link href="@Url.Asset("~/Content/storefront-themes.css")" rel="stylesheet" />
 <link href="@Url.Asset("~/Content/onboarding.css")" rel="stylesheet" />
@@ -22,7 +22,7 @@
 @if ((bool)ViewBag.Welcome)
 {
     <div class="alert alert-success">
-        <strong>@site شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده @(kind.IsContent ? "انتشار" : kind.IsCampus ? "کلاس و رزرو" : kind.IsBooking ? "نوبت‌دهی" : "فروش") کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
+        <strong>@site شما ساخته شد!</strong> در ۵ قدم کوتاه آن را آماده @(kind.IsMenu ? "استفاده" : kind.IsContent ? "انتشار" : kind.IsCampus ? "کلاس و رزرو" : kind.IsBooking ? "نوبت‌دهی" : "فروش") کنید. هر قدم را می‌توانید رد کنید و بعداً از منوی کناری کامل کنید.
     </div>
 }
 
@@ -251,6 +251,10 @@ else if (step == 3)
             {
                 <span>عنوان، قیمت و تصویر جلد کافی است؛ فایل‌ها و جلسه‌ها را بعداً از صفحه ویرایش آن بارگذاری کنید.</span>
             }
+            else if (kind.IsMenu)
+            {
+                <span>عنوان و قیمت کافی است. موجودی صفر یعنی روی منو ناموجود دیده می‌شود.</span>
+            }
             else
             {
                 <span>فقط عنوان، قیمت و یک عکس کافی است؛ جزئیات بیشتر را بعداً از بخش «محصولات» اضافه کنید.</span>
@@ -357,6 +361,16 @@ else if (step == 4 && kind.IsContent)
             </div>
         </div>
     }
+}
+else if (step == 4 && kind.IsMenu)
+{
+    <h5>کارت QR میزها</h5>
+    <p class="text-muted small">برای هر میز یک کارت بسازید و چاپ کنید. مشتری با دوربین گوشی منو را باز می‌کند و اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون می‌آید.</p>
+    <p><a class="btn-store" href="@Url.Action("MenuQr", "ShopAdmin", new { company })"><i class="bi bi-upc-scan"></i> ساخت و چاپ کارت‌ها</a></p>
+    <div class="ob-actions">
+        <a href="@Url.Action("Setup", new { company, step = 3 })">بازگشت</a>
+        <a class="btn-store" href="@Url.Action("Setup", new { company, step = 5 })">ادامه <i class="bi bi-arrow-left"></i></a>
+    </div>
 }
 else if (step == 4)
 {

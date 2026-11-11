@@ -3,25 +3,35 @@
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = Model.Id > 0 ? "ویرایش فاکتور خرید" : "فاکتور خرید";
     var company = (string)ViewBag.CompanyCode;
-    var products = (List<StoreProduct>)ViewBag.Products;
-    var goods = (List<StoreGoodsItem>)ViewBag.Goods;
+    var products = (List<StoreProduct>)ViewBag.Products ?? new List<StoreProduct>();
+    var goods = (List<StoreGoodsItem>)ViewBag.Goods ?? new List<StoreGoodsItem>();
     var invariant = System.Globalization.CultureInfo.InvariantCulture;
     var lines = Model.Lines ?? new List<StorePurchaseLine>();
     var kind = (SiteKindInfo)ViewBag.Kind;
-    var parties = (List<StoreParty>)ViewBag.Parties;
-    var banks = (List<StoreBankAccount>)ViewBag.Banks;
+    var parties = (List<StoreParty>)ViewBag.Parties ?? new List<StoreParty>();
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
     var payToken = AccountingText.PayToken(Model.PayWith, Model.BankId);
+    var startRows = Math.Min(24, Math.Max(3, lines.Count > 0 ? lines.Count : 3));
+    var invLabel = AccountingCopy.Inventory(kind);
 }
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">@ViewBag.Title</h2>
+<link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
+<div class="acc-form-head">
+    <div>
+        <h2>@ViewBag.Title</h2>
+        <p class="lead">خرید کالا، لوازم مصرفی، هزینه یا اموال را ثبت کنید. ردیف‌ها را می‌توانید اضافه یا حذف کنید.</p>
+    </div>
     <div class="d-flex gap-2 flex-wrap">
         @if (kind.Sells)
         {
-            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("EditProduct","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> ثبت محصول جدید</a>
+            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("EditProduct","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> محصول جدید</a>
         }
         else
         {
-            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> ثبت کالای انبار</a>
+            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> ثبت در @invLabel</a>
+        }
+        @if (Model.Id > 0)
+        {
+            <a class="btn-outline-store" href="@Url.Action("PrintPurchase","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-printer"></i> چاپ</a>
         }
         <a class="btn-outline-store" href="@Url.Action("Purchases","ShopAdmin", new { company })">بازگشت به لیست</a>
     </div>
@@ -30,28 +40,27 @@
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
-    <div class="panel-card row g-3 m-0 mb-3">
-        <div class="col-md-4">
+    <div class="panel-card acc-meta mb-3">
+        <div>
             <label class="form-label" for="PartyId">تامین‌کننده</label>
             <select class="form-select" name="PartyId" id="PartyId">
-                <option value="">— از فهرست تامین‌کنندگان انتخاب کنید —</option>
+                <option value="">— از فهرست انتخاب کنید —</option>
                 @foreach (var party in parties)
                 {
                     <option value="@party.Id" @(Model.PartyId == party.Id ? "selected" : null)>@(party.Name + (string.IsNullOrWhiteSpace(party.Mobile) ? "" : " — " + party.Mobile) + (party.IsActive ? "" : " (غیرفعال)"))</option>
                 }
             </select>
             <div class="form-text">
-                در فهرست نیست؟
                 <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Supplier })">تعریف تامین‌کننده</a>
-                یا نامش را پایین بنویسید تا به فهرست اضافه شود.
+                یا نام تازه را پایین بنویسید.
             </div>
             <input class="form-control form-control-sm mt-1" name="newParty" maxlength="150" placeholder="نام تامین‌کننده تازه" />
         </div>
-        <div class="col-md-3">
+        <div>
             <label class="form-label" for="invoiceDate">تاریخ</label>
             @Html.ShamsiDate("invoiceDate", Model.InvoiceDate, "invoiceDate")
         </div>
-        <div class="col-md-3">
+        <div>
             <label class="form-label" for="payFrom">پرداخت از</label>
             <select class="form-select" name="payFrom" id="payFrom">
                 @foreach (var option in AccountingText.PayOptions(banks, true, payToken))
@@ -60,61 +69,133 @@
                 }
             </select>
         </div>
-        <div class="col-md-12">
+        <div class="acc-span-2">
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
         </div>
     </div>
-    <div class="panel-card">
-        <table class="table align-middle">
-            <thead><tr><th>شرح</th><th>کالا</th><th>نوع</th><th>تعداد</th><th>بهای واحد</th></tr></thead>
-            <tbody>
-                @for (var i = 0; i < 8; i++)
-                {
-                    var line = i < lines.Count ? lines[i] : new StorePurchaseLine();
-                    var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+    <div class="acc-lines">
+        <div class="table-responsive">
+            <table class="table align-middle" id="purchaseLines">
+                <thead>
                     <tr>
-                        <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" /></td>
-                        <td>
-                            <select class="form-select" name="lineStock">
-                                <option value="">بدون اتصال به موجودی</option>
-                                @if (products.Any())
-                                {
-                                    <optgroup label="محصولات فروشگاه">
-                                        @foreach (var product in products)
-                                        {
-                                            var token = "p-" + product.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku)</option>
-                                        }
-                                    </optgroup>
-                                }
-                                @if (goods.Any())
-                                {
-                                    <optgroup label="کالاهای انبار">
-                                        @foreach (var item in goods)
-                                        {
-                                            var token = "g-" + item.Id.ToString(invariant);
-                                            <option value="@token" @(selected == token ? "selected" : null)>@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code)</option>
-                                        }
-                                    </optgroup>
-                                }
-                            </select>
-                        </td>
-                        <td>
-                            <select class="form-select" name="lineKind">
-                                @foreach (PurchaseLineKind lineKind in Enum.GetValues(typeof(PurchaseLineKind)))
-                                {
-                                    <option value="@lineKind" @(line.Kind == lineKind ? "selected" : null)>@AccountingText.Line(lineKind)</option>
-                                }
-                            </select>
-                        </td>
-                        <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
-                        <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCost" value="@(line.UnitCost > 0 ? line.UnitCost.ToString(invariant) : "")" /></td>
+                        <th>شرح</th>
+                        <th>اتصال به موجودی</th>
+                        <th style="width:7rem">نوع</th>
+                        <th style="width:5.5rem">تعداد</th>
+                        <th style="width:8rem">بهای واحد</th>
+                        <th style="width:2.5rem"></th>
                     </tr>
-                }
-            </tbody>
-        </table>
-        <p class="small text-muted">نوع «کالا» موجودی را زیاد می‌کند. اگر نام کالا را بنویسید و از فهرست انتخاب نکنید، یک کالای انبار تازه ساخته می‌شود. «هزینه» و «اموال» موجودی را عوض نمی‌کنند؛ مال را جداگانه در فهرست اموال هم بنویسید.</p>
-        <button class="btn-store" type="submit">ثبت فاکتور</button>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < startRows; i++)
+                    {
+                        var line = i < lines.Count ? lines[i] : new StorePurchaseLine();
+                        var selected = line.ProductId > 0 ? "p-" + line.ProductId.ToString(invariant) : (line.GoodsId > 0 ? "g-" + line.GoodsId.ToString(invariant) : "");
+                        <tr>
+                            <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" /></td>
+                            <td>
+                                <select class="form-select" name="lineStock">
+                                    <option value="">بدون اتصال به موجودی</option>
+                                    @if (products.Any())
+                                    {
+                                        <optgroup label="محصولات">
+                                            @foreach (var product in products)
+                                            {
+                                                var token = "p-" + product.Id.ToString(invariant);
+                                                <option value="@token" @(selected == token ? "selected" : null)>@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku)</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                    @if (goods.Any())
+                                    {
+                                        <optgroup label="@invLabel">
+                                            @foreach (var item in goods)
+                                            {
+                                                var token = "g-" + item.Id.ToString(invariant);
+                                                <option value="@token" @(selected == token ? "selected" : null)>@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code)</option>
+                                            }
+                                        </optgroup>
+                                    }
+                                </select>
+                            </td>
+                            <td>
+                                <select class="form-select" name="lineKind">
+                                    @foreach (PurchaseLineKind lineKind in Enum.GetValues(typeof(PurchaseLineKind)))
+                                    {
+                                        <option value="@lineKind" @(line.Kind == lineKind ? "selected" : null)>@AccountingText.Line(lineKind)</option>
+                                    }
+                                </select>
+                            </td>
+                            <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
+                            <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCost" value="@(line.UnitCost > 0 ? line.UnitCost.ToString(invariant) : "")" /></td>
+                            <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="acc-lines-toolbar">
+            <button type="button" class="btn-outline-store" id="purchaseAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
+        </div>
+        <div class="acc-totals">
+            <div class="acc-totals-row"><span>جمع ردیف‌ها</span> <strong id="purchaseSubtotal">۰ تومان</strong></div>
+            <div class="acc-totals-fields">
+                <div>
+                    <label class="form-label" for="DiscountAmount">تخفیف (تومان)</label>
+                    <input class="form-control" inputmode="numeric" data-money dir="ltr" name="DiscountAmount" id="DiscountAmount" value="@(Model.DiscountAmount > 0 ? Model.DiscountAmount.ToString(System.Globalization.CultureInfo.InvariantCulture) : "")" />
+                </div>
+                <div>
+                    <label class="form-label" for="VatPercent">مالیات ارزش افزوده (٪)</label>
+                    <input class="form-control" type="number" min="0" max="100" step="1" dir="ltr" name="VatPercent" id="VatPercent" value="@Model.VatPercent.ToString(System.Globalization.CultureInfo.InvariantCulture)" />
+                </div>
+            </div>
+            <div class="acc-totals-row"><span>پس از تخفیف</span> <strong id="purchaseNet">۰ تومان</strong></div>
+            <div class="acc-totals-row"><span>مالیات</span> <strong id="purchaseVat">۰ تومان</strong></div>
+            <div class="acc-totals-row is-grand"><span>مبلغ قابل پرداخت</span> <strong id="purchaseTotal">۰ تومان</strong></div>
+        </div>
     </div>
+    <p class="acc-hint">نوع «کالا» موجودی را زیاد می‌کند. اگر نام را بنویسید و از فهرست انتخاب نکنید، یک قلم تازه در @invLabel ساخته می‌شود. «هزینه» و «اموال» موجودی را عوض نمی‌کنند.</p>
+    <button class="btn-store" type="submit">ثبت فاکتور</button>
 }
+<script type="text/template" id="purchaseRowTpl">
+<tr>
+    <td><input class="form-control" name="lineTitle" maxlength="150" value="" /></td>
+    <td>
+        <select class="form-select" name="lineStock">
+            <option value="">بدون اتصال به موجودی</option>
+            @if (products.Any())
+            {
+                <optgroup label="محصولات">
+                    @foreach (var product in products)
+                    {
+                        <option value="p-@product.Id.ToString(invariant)">@product.Title@(string.IsNullOrWhiteSpace(product.Sku) ? "" : " — " + product.Sku)</option>
+                    }
+                </optgroup>
+            }
+            @if (goods.Any())
+            {
+                <optgroup label="@invLabel">
+                    @foreach (var item in goods)
+                    {
+                        <option value="g-@item.Id.ToString(invariant)">@item.Title@(string.IsNullOrWhiteSpace(item.Code) ? "" : " — " + item.Code)</option>
+                    }
+                </optgroup>
+            }
+        </select>
+    </td>
+    <td>
+        <select class="form-select" name="lineKind">
+            @foreach (PurchaseLineKind lineKind in Enum.GetValues(typeof(PurchaseLineKind)))
+            {
+                <option value="@lineKind">@AccountingText.Line(lineKind)</option>
+            }
+        </select>
+    </td>
+    <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="" /></td>
+    <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="lineCost" value="" /></td>
+    <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
+</tr>
+</script>
+<script src="@Url.Asset("~/Content/accounting-lines.js")"></script>
+<script>accInitLines({ tableId: 'purchaseLines', templateId: 'purchaseRowTpl', addBtnId: 'purchaseAddRow', totalId: 'purchaseTotal', subtotalId: 'purchaseSubtotal', netId: 'purchaseNet', vatId: 'purchaseVat', discountId: 'DiscountAmount', vatPercentId: 'VatPercent', maxRows: 24, minRows: 1, qtyName: 'lineQty', priceName: 'lineCost' });</script>

@@ -61,7 +61,7 @@
                             @if (!string.IsNullOrEmpty(Model.DemoSlug))
                             {
                                 <a class="btn-primary-shop" href="@Url.Action("Index","Signup", new { type = Model.DemoSlug })"><i class="bi bi-rocket-takeoff"></i> شروع آزمایشی رایگان (@NikooSystem.Services.TenantProvisioningService.TrialDays روز)</a>
-                                <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })"><i class="bi bi-eye"></i> اول دمو را ببینید</a>
+                                <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> اول دمو را ببینید</a>
                                 <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @StoreTemplates.ForKind(kind.Id).Count().ToString().ToFaDigits() قالب آماده</a>
                             }
                             else
@@ -78,6 +78,14 @@
                 @Html.Partial("_TemplateShowcase", TemplateShowcase.For(Model.DemoSlug))
 
                 <h2 class="h4 mt-5 mb-3">امکانات و ماژول‌های این محصول</h2>
+                if (kind.IsShop || kind.IsDigital || kind.IsCampus)
+                {
+                    <p class="text-muted small mb-3"><i class="bi bi-shop-window"></i> بدون فروش آنلاین هم می‌توانید از «صندوق فروش» یا فاکتور حضوری، موجودی و دریافت نقدی را ثبت کنید؛ سبد خرید و درگاه وقتی آنلاین می‌فروشید اضافه می‌شوند.</p>
+                }
+                else if (kind.IsBooking)
+                {
+                    <p class="text-muted small mb-3"><i class="bi bi-telephone"></i> حتی اگر مشتری از سایت رزرو نکند، نوبت تلفنی و حضوری را در تقویم پنل ثبت می‌کنید؛ بیعانه آنلاین اختیاری است.</p>
+                }
                 <ul class="lf-kind-features">
                     @foreach (var f in kind.Features)
                     {

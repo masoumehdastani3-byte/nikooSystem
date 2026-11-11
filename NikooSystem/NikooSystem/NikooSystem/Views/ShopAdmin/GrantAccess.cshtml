@@ -1,0 +1,92 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "اعطای دسترسی";
+    var company = (string)ViewBag.CompanyCode;
+    var products = (List<StoreProduct>)ViewBag.Products ?? new List<StoreProduct>();
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
+    var productId = (int?)ViewBag.ProductId;
+    var customerName = (string)ViewBag.CustomerName;
+    var customerMobile = (string)ViewBag.CustomerMobile;
+    var amount = (string)ViewBag.Amount;
+    var invariant = System.Globalization.CultureInfo.InvariantCulture;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">اعطای دسترسی دوره و فایل</h2>
+        <p class="text-muted mb-0 small">برای فروش حضوری، کارت‌به‌کارت یا هدیه: بدون درگاه، دسترسی به کتابخانه دانشجو فعال می‌شود و مبلغ در صندوق یا بانک می‌نشیند.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-outline-store" href="@Url.Action("Customers","ShopAdmin", new { company })">دانشجویان</a>
+        <a class="btn-outline-store" href="@Url.Action("Orders","ShopAdmin", new { company })">سفارش‌ها</a>
+    </div>
+</div>
+
+@if (!products.Any())
+{
+    <div class="alert alert-warning">
+        هنوز دوره، کتاب یا فایل فعالی ندارید. اول از <a href="@Url.Action("EditProduct","ShopAdmin", new { company })">فهرست محصولات</a> یکی بسازید.
+    </div>
+}
+else
+{
+    using (Html.BeginForm("GrantAccess", "ShopAdmin", new { company }, FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <div class="panel-card row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="gaProduct">دوره، کتاب یا فایل</label>
+                <select class="form-select" name="productId" id="gaProduct" required>
+                    <option value="">— انتخاب کنید —</option>
+                    @foreach (var p in products)
+                    {
+                        <option value="@p.Id" data-price="@p.Price.ToString(invariant)" @(productId == p.Id ? "selected" : null)>@p.Title (@p.Price.ToToman())</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="gaAmount">مبلغ دریافتی (تومان)</label>
+                <input class="form-control" name="amount" id="gaAmount" inputmode="numeric" dir="ltr" value="@amount" placeholder="خالی = قیمت محصول؛ ۰ = رایگان" />
+                <div class="form-text">برای تخفیف یا کارت‌به‌کارت مبلغ واقعی را بنویسید. صفر یعنی فقط دسترسی بدون سند فروش.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="gaName">نام دانشجو / خریدار</label>
+                <input class="form-control" name="customerName" id="gaName" maxlength="80" required value="@customerName" />
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="gaMobile">موبایل</label>
+                <input class="form-control" name="customerMobile" id="gaMobile" maxlength="14" required dir="ltr" inputmode="tel" placeholder="09121234567" value="@customerMobile" />
+                <div class="form-text">اگر عضو نباشد، حساب با رمز موقت ساخته می‌شود.</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="gaPayFrom">دریافت در</label>
+                <select class="form-select" name="payFrom" id="gaPayFrom">
+                    @foreach (var option in AccountingText.PayOptions(banks, false, "Cash"))
+                    {
+                        <option value="@option.Key" @(option.Key == "Cash" ? "selected" : null)>@option.Value</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label" for="gaNote">یادداشت</label>
+                <input class="form-control" name="note" id="gaNote" maxlength="500" value="فروش دستی بدون درگاه" />
+            </div>
+            <div class="col-12">
+                <button class="btn-store" type="submit"><i class="bi bi-key"></i> فعال‌سازی دسترسی</button>
+            </div>
+        </div>
+    }
+}
+
+<script>
+(function () {
+    var product = document.getElementById("gaProduct");
+    var amount = document.getElementById("gaAmount");
+    if (!product || !amount) return;
+    product.addEventListener("change", function () {
+        if (amount.value.trim()) return;
+        var opt = product.options[product.selectedIndex];
+        var price = opt && opt.getAttribute("data-price");
+        if (price) amount.placeholder = "پیش‌فرض " + price + " تومان";
+    });
+})();
+</script>

@@ -1,17 +1,21 @@
 @model PagedList<StoreSalesInvoice>
 @{
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
-    ViewBag.Title = "فاکتورهای فروش";
+    var kind = (SiteKindInfo)ViewBag.Kind;
+    ViewBag.Title = AccountingCopy.SaleInvoices(kind);
     var company = (string)ViewBag.CompanyCode;
     var pays = Enum.GetValues(typeof(PayWith)).Cast<PayWith>();
     var bankTitles = (Dictionary<int, string>)ViewBag.BankTitles;
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-    <h2 class="mb-0">فاکتور فروش</h2>
-    <a class="btn-store" href="@Url.Action("EditSaleInvoice","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> فاکتور جدید</a>
+    <h2 class="mb-0">@AccountingCopy.SaleInvoice(kind)</h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn-store" href="@Url.Action("Pos","ShopAdmin", new { company })"><i class="bi bi-shop-window"></i> @AccountingCopy.Pos(kind)</a>
+        <a class="btn-outline-store" href="@Url.Action("EditSaleInvoice","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> فاکتور کامل</a>
+    </div>
 </div>
 <div class="panel-card">
-    @Html.GridToolbar("جستجو در شماره، مشتری یا یادداشت…", new GridSelect("pay", "همه روش‌های دریافت", GridHtml.Options(pays, p => p, p => AccountingText.Pay(p))))
+    @Html.GridToolbar("جستجو در شماره، مشتری یا یادداشت…", true, new GridSelect("pay", "همه روش‌های دریافت", GridHtml.Options(pays, p => p, p => AccountingText.Pay(p))))
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>
@@ -34,6 +38,7 @@
                         <td>@(bankTitles.ContainsKey(item.BankId) ? bankTitles[item.BankId] : AccountingText.Pay(item.PayWith))</td>
                         <td>@item.Total.ToToman()</td>
                         <td class="row-actions">
+                            @Html.IconLink(Url.Action("PrintSaleInvoice", "ShopAdmin", new { company, id = item.Id }), "bi-printer", "چاپ", null)
                             @Html.IconLink(Url.Action("EditSaleInvoice", "ShopAdmin", new { company, id = item.Id }), "bi-pencil", "ویرایش", "is-edit")
                             @Html.IconPost("DeleteSaleInvoice", new { id = item.Id }, "bi-trash", "حذف", "is-delete", "فاکتور حذف شود و موجودی برگردد؟")
                         </td>

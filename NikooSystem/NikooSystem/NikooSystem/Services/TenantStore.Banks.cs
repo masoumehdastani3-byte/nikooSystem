@@ -40,15 +40,25 @@ namespace NikooSystem.Services
         /// <summary>Balance of each bank's ledger account. A reversed entry and its reversing entry both count, so they cancel out.</summary>
         public static Dictionary<int, long> BankBalances(string companyCode, IEnumerable<StoreBankAccount> banks)
         {
-            var ledgerIds = banks.ToDictionary(b => b.Id, b => b.LedgerAccountId);
-            var sums = new Dictionary<int, long>();
-            foreach (var line in JournalLines(companyCode))
+            var list = banks.ToList();
+            var result = list.ToDictionary(b => b.Id, b => 0L);
+            var ids = list.Select(b => b.LedgerAccountId).Where(id => id > 0).Distinct().ToList();
+            if (ids.Count == 0) return result;
+            var key = NikooDb.Key(companyCode);
+            var parameters = string.Join(", ", ids.Select((id, i) =>
+            {
+                key["a" + i] = id;
+                return "@a" + i;
+            }));
+            var sums = NikooDb.Pairs<int, long>(
+                "SELECT [AccountId], SUM([Debit] - [Credit]) FROM " + NikooDb.Table("JournalLines")
+                + " WHERE [CompanyCode] = @CompanyCode AND [AccountId] IN (" + parameters + ") GROUP BY [AccountId]", key);
+            foreach (var bank in list)
             {
                 long sum;
-                sums.TryGetValue(line.AccountId, out sum);
-                sums[line.AccountId] = sum + line.Debit - line.Credit;
+                if (bank.LedgerAccountId > 0 && sums.TryGetValue(bank.LedgerAccountId, out sum)) result[bank.Id] = sum;
             }
-            return ledgerIds.ToDictionary(p => p.Key, p => sums.ContainsKey(p.Value) ? sums[p.Value] : 0);
+            return result;
         }
 
         public static string SaveBank(string companyCode, StoreBankAccount bank, string newSecret)
@@ -146,7 +156,7 @@ namespace NikooSystem.Services
         {
             var bank = GetBank(companyCode, id);
             if (bank == null) return null;
-            var used = JournalLines(companyCode).Any(l => l.AccountId == bank.LedgerAccountId)
+            var used = JournalLineExists(companyCode, "AccountId", bank.LedgerAccountId)
                 || NikooDb.Count(NikooTables.PurchaseInvoices, SqlFilter.ForStore(companyCode).Eq("BankId", id)) > 0
                 || NikooDb.Count(NikooTables.SalesInvoices, SqlFilter.ForStore(companyCode).Eq("BankId", id)) > 0
                 || NikooDb.Count(NikooTables.CashTransactions, SqlFilter.ForStore(companyCode).Eq("BankId", id)) > 0;

@@ -10,7 +10,8 @@
     var staff = (List<StoreStaff>)ViewBag.Staff ?? new List<StoreStaff>();
     var heroImg = settings.HeroImageUrl ?? "/Assets/img/hero-img.jpg";
     var placeCore = true;
-    ViewBag.Title = "کلاس، دوره و رزرو سالن";
+    var sports = string.Equals(((TenantInfo)ViewBag.Tenant)?.StoreType, "club", StringComparison.OrdinalIgnoreCase);
+    ViewBag.Title = sports ? "کلاس، مربی و رزرو سالن" : "دوره عمومی و خصوصی";
 }
 
 @foreach (var sec in sections)
@@ -23,7 +24,7 @@
                     <div class="bk-hero-copy">
                         @if (!string.IsNullOrWhiteSpace(settings.Tagline))
                         {
-                            <div class="bk-kicker"><i class="bi bi-trophy"></i> @settings.Tagline</div>
+                            <div class="bk-kicker"><i class="bi @(sports ? "bi-trophy" : "bi-journal-bookmark")"></i> @settings.Tagline</div>
                         }
                         <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
                         @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))
@@ -31,21 +32,21 @@
                             <p>@settings.HeroSubtitle</p>
                         }
                         <div class="bk-hero-actions">
-                            <a class="btn-wm bk-btn-lg" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> کلاس‌ها و دوره‌ها</a>
-                            <a class="bk-btn-ghost" href="@Url.Action("Facilities","Shop", new { company })"><i class="bi bi-calendar-week"></i> رزرو سالن</a>
+                            <a class="btn-wm bk-btn-lg" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> @(sports ? "کلاس‌ها و دوره‌ها" : "دوره‌های عمومی")</a>
+                            <a class="bk-btn-ghost" href="@(sports ? Url.Action("Facilities","Shop", new { company }) : Url.Action("Book","Shop", new { company }))"><i class="bi @(sports ? "bi-calendar-week" : "bi-camera-video")"></i> @(sports ? "رزرو سالن" : "دوره خصوصی")</a>
                         </div>
                         <ul class="bk-hero-facts">
-                            <li><i class="bi bi-people"></i> کلاس گروهی با ظرفیت مشخص</li>
-                            <li><i class="bi bi-camera-video"></i> کلاس خصوصی آنلاین یا حضوری</li>
-                            <li><i class="bi bi-stopwatch"></i> رزرو ساعتی زمین و سالن</li>
+                            <li><i class="bi bi-people"></i> @(sports ? "کلاس گروهی با ظرفیت مشخص" : "دوره عمومی با ظرفیت مشخص")</li>
+                            <li><i class="bi bi-camera-video"></i> @(sports ? "مربی خصوصی، حضوری یا آنلاین" : "دوره خصوصی، حضوری یا آنلاین")</li>
+                            <li><i class="bi bi-stopwatch"></i> @(sports ? "رزرو ساعتی زمین و سالن" : "اجاره ساعتی اتاق و کلاس")</li>
                         </ul>
                     </div>
                     <div class="bk-hero-media" style="--bk-hero:url('@heroImg')">
                         <div class="bk-hero-card">
                             <strong><i class="bi bi-signpost"></i> از کجا شروع کنید</strong>
-                            <a href="@Url.Action("Classes","Shop", new { company })"><span>ثبت‌نام کلاس گروهی</span><small>@classes.Count.ToFa() کلاس</small></a>
-                            <a href="@Url.Action("Book","Shop", new { company })"><span>کلاس با مدرس خصوصی</span><small>آنلاین یا حضوری</small></a>
-                            <a href="@Url.Action("Facilities","Shop", new { company })"><span>رزرو سالن و میز</span><small>ساعتی</small></a>
+                            <a href="@Url.Action("Classes","Shop", new { company })"><span>@(sports ? "ثبت‌نام کلاس گروهی" : "ثبت‌نام دوره عمومی")</span><small>@classes.Count.ToFa() @(sports ? "کلاس" : "دوره")</small></a>
+                            <a href="@Url.Action("Book","Shop", new { company })"><span>@(sports ? "جلسه با مربی" : "رزرو دوره خصوصی")</span><small>آنلاین یا حضوری</small></a>
+                            <a href="@Url.Action("Facilities","Shop", new { company })"><span>@(sports ? "رزرو سالن و میز" : "اجاره اتاق یا کلاس")</span><small>ساعتی</small></a>
                         </div>
                     </div>
                 </div>
@@ -59,8 +60,8 @@
         <section class="cn-section bk-section">
             <div class="container">
                 <div class="cn-head">
-                    <h2 class="cn-block-title">@(sec.Title ?? "کلاس خصوصی")</h2>
-                    <a class="hs-more" href="@Url.Action("Book","Shop", new { company })">رزرو وقت <i class="bi bi-arrow-left"></i></a>
+                    <h2 class="cn-block-title">@(sec.Title ?? (sports ? "کلاس خصوصی" : "دوره‌های خصوصی"))</h2>
+                    <a class="hs-more" href="@Url.Action("Book","Shop", new { company })">@(sports ? "رزرو وقت" : "رزرو دوره خصوصی") <i class="bi bi-arrow-left"></i></a>
                 </div>
                 <div class="bk-services">
                     @foreach (var s in services.Take(6))
@@ -75,7 +76,7 @@
     {
         <section class="cn-section bk-section bk-section-alt">
             <div class="container">
-                <h2 class="cn-block-title">@(sec.Title ?? "مدرس‌ها و مربی‌ها")</h2>
+                <h2 class="cn-block-title">@(sec.Title ?? (sports ? "مربی‌ها" : "مدرس‌ها"))</h2>
                 <div class="bk-staff-grid">
                     @foreach (var p in staff)
                     {
@@ -97,7 +98,7 @@
                 <div class="row g-4 align-items-stretch">
                     <div class="col-lg-6">
                         <div class="bk-panel h-100">
-                            <h2 class="cn-block-title">@(sec.Title ?? "ساعت کلاس خصوصی")</h2>
+                            <h2 class="cn-block-title">@(sec.Title ?? (sports ? "ساعت کلاس خصوصی" : "ساعت دوره خصوصی"))</h2>
                             <ul class="bk-hours">
                                 @foreach (var d in week)
                                 {
@@ -120,8 +121,8 @@
                         <div class="bk-panel bk-steps h-100">
                             <h2 class="cn-block-title">رزرو در سه قدم</h2>
                             <ol>
-                                <li><i class="bi bi-easel"></i><div><strong>کلاس یا سالن</strong><span>کلاس گروهی، جلسه خصوصی یا زمین را انتخاب کنید.</span></div></li>
-                                <li><i class="bi bi-calendar3"></i><div><strong>روز و ساعت</strong><span>فقط زمان‌های خالی سالن و مدرس نمایش داده می‌شوند.</span></div></li>
+                                <li><i class="bi bi-easel"></i><div><strong>@(sports ? "کلاس یا سالن" : "دوره عمومی یا خصوصی")</strong><span>@(sports ? "کلاس گروهی، جلسه با مربی یا زمین را انتخاب کنید." : "دوره عمومی را ثبت‌نام کنید یا با مدرس دوره خصوصی بگیرید.")</span></div></li>
+                                <li><i class="bi bi-calendar3"></i><div><strong>روز و ساعت</strong><span>@(sports ? "فقط زمان‌های خالی سالن و مربی نمایش داده می‌شوند." : "ظرفیت دوره عمومی و ساعت خالی مدرس جدا نشان داده می‌شود.")</span></div></li>
                                 <li><i class="bi bi-check2-circle"></i><div><strong>ثبت و کد پیگیری</strong><span>نام و موبایل را وارد کنید و کد پیگیری را بگیرید.</span></div></li>
                             </ol>
                             <a class="btn-wm" href="@Url.Action("Classes","Shop", new { company })"><i class="bi bi-easel"></i> شروع ثبت‌نام</a>

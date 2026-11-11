@@ -104,6 +104,30 @@ else if (kind.Schedules)
 {
     @Html.Partial("_BookingHeader")
 }
+else if (kind.IsMenu)
+{
+    <header class="wm-header minimal-header">
+        <div class="container">
+            <div class="minimal-header-row">
+                @Html.StoreBrand("wm-brand")
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <nav class="minimal-nav">
+                    @foreach (var item in mainMenus)
+                    {
+                        <a href="@item.Url">@item.Title</a>
+                    }
+                </nav>
+                <div class="minimal-actions">
+                    @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                    {
+                        <a href="tel:@settings.Phone"><i class="bi bi-telephone"></i></a>
+                    }
+                </div>
+            </div>
+        </div>
+    </header>
+}
 else if (layoutId == "fashion")
 {
     <header class="wm-header fashion-header">
@@ -117,7 +141,7 @@ else if (layoutId == "fashion")
                     {
                         <a href="@item.Url">@item.Title</a>
                     }
-                    @if (!menuHasCatalog)
+                    @if (kind.Sells && !menuHasCatalog)
                     {
                         <a href="@catalogHref">@kind.ItemsLabel</a>
                     }
@@ -147,7 +171,7 @@ else if (layoutId == "minimal")
                     {
                         <a href="@item.Url">@item.Title</a>
                     }
-                    @if (!menuHasCatalog)
+                    @if (kind.Sells && !menuHasCatalog)
                     {
                         <a href="@catalogHref">@kind.ItemsLabel</a>
                     }
@@ -172,7 +196,7 @@ else if (layoutId == "boutique")
                 {
                     <a href="@item.Url">@item.Title</a>
                 }
-                @if (!menuHasCatalog)
+                @if (kind.Sells && !menuHasCatalog)
                 {
                     <a href="@catalogHref">کاتالوگ</a>
                 }

@@ -25,7 +25,7 @@
         filters.Add(new GridSelect("type", "همه انواع", GridHtml.Options(kind.ProductTypes(), t => t, t => t.TypeText())));
     }
 }
-@Html.PageHeader(kind.ItemsLabel, kind.IsDigital ? "دوره یا کتاب جدید" : "محصول جدید", "EditProduct")
+@Html.PageHeader(kind.ItemsLabel, kind.IsMenu ? "آیتم جدید" : kind.IsDigital ? "دوره یا کتاب جدید" : "محصول جدید", "EditProduct")
 <div class="panel-card">
     @Html.GridToolbar("جستجو در عنوان، نویسنده یا کد…", filters.ToArray())
     <div class="table-responsive">
@@ -36,11 +36,14 @@
                     @Html.SortHeader("title", "عنوان")
                     <th>گروه</th>
                     @Html.SortHeader("price", "قیمت")
-                    @if (kind.IsShop)
+                    @if (kind.IsShop || kind.IsMenu)
                     {
-                        @Html.SortHeader("stock", "موجودی")
+                        @Html.SortHeader("stock", kind.IsMenu ? "وضعیت" : "موجودی")
                     }
-                    @Html.SortHeader("sold", "فروش")
+                    @if (!kind.IsMenu)
+                    {
+                        @Html.SortHeader("sold", "فروش")
+                    }
                     @Html.SortHeader("created", "تاریخ")
                     <th></th>
                 </tr>
@@ -77,15 +80,19 @@
                                 <div class="small text-muted text-decoration-line-through">@p.CompareAtPrice.Value.ToToman()</div>
                             }
                         </td>
-                        @if (kind.IsShop)
+                        @if (kind.IsShop || kind.IsMenu)
                         {
                             <td>
                                 @if (p.Stock <= 0) { <span class="badge bg-danger">ناموجود</span> }
-                                else if (p.Stock <= lowStock) { <span class="badge bg-warning text-dark">@p.Stock</span> }
+                                else if (kind.IsShop && p.Stock <= lowStock) { <span class="badge bg-warning text-dark">@p.Stock</span> }
+                                else if (kind.IsMenu) { <span class="badge bg-success">موجود</span> }
                                 else { @p.Stock }
                             </td>
                         }
-                        <td>@p.SoldCount</td>
+                        @if (!kind.IsMenu)
+                        {
+                            <td>@p.SoldCount</td>
+                        }
                         <td class="small text-muted">@p.CreatedAt.ToShamsi()</td>
                         <td class="row-actions">
                             @Html.IconLink(Url.Action("Product", "Shop", new { company, slug = p.Slug }), "bi-eye", "مشاهده در سایت", "is-view", true)

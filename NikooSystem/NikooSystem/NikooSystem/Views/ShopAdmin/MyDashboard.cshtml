@@ -1,0 +1,158 @@
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "داشبورد من";
+    var company = (string)ViewBag.CompanyCode;
+    var groups = (List<ShopAdminNavGroup>)ViewBag.NavGroups ?? new List<ShopAdminNavGroup>();
+    var selected = ((List<string>)ViewBag.SelectedPins ?? new List<string>()).ToList();
+    var selectedSet = new HashSet<string>(selected, StringComparer.OrdinalIgnoreCase);
+    var maxPins = ViewBag.MaxPins != null ? (int)ViewBag.MaxPins : ShopAdminNav.MaxPins;
+}
+<link href="@Url.Asset("~/Content/admin-pages.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">داشبورد من</h2>
+        <p class="text-muted mb-0">منوهای پرکاربرد را برای دسترسی سریع در داشبورد بچینید. حداکثر @maxPins.ToFa() میانبر.</p>
+    </div>
+    <a class="btn-outline-store" href="@Url.Action("Index","ShopAdmin", new { company })">بازگشت به داشبورد</a>
+</div>
+
+@using (Html.BeginForm("MyDashboard", "ShopAdmin", new { company }, FormMethod.Post, new { id = "dashPinsForm", data_max = maxPins }))
+{
+    @Html.AntiForgeryToken()
+    <div class="panel-card mb-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <div class="small text-muted">انتخاب‌شده: <strong id="pinCount">0</strong> از @maxPins.ToFa()</div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn-outline-store btn-sm" id="pinClear">پاک کردن همه</button>
+                <button type="submit" class="btn-store btn-sm"><i class="bi bi-check2-circle"></i> ذخیره داشبورد</button>
+            </div>
+        </div>
+
+        <h5 class="h6 mb-2">ترتیب میانبرها</h5>
+        <ol class="dash-pin-order list-unstyled mb-4" id="pinOrder"></ol>
+        <div id="pinHidden"></div>
+
+        @foreach (var group in groups)
+        {
+            var items = group.Items
+                .Where(i => !string.Equals(i.Action, "Index", StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(i.Action, "MyDashboard", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (!items.Any()) { continue; }
+            <div class="dash-pin-section">
+                <h5 class="dash-pin-section-title">@(string.IsNullOrEmpty(group.Title) ? "عمومی" : group.Title)</h5>
+                <div class="dash-pin-grid">
+                    @foreach (var item in items)
+                    {
+                        var on = selectedSet.Contains(item.Action);
+                        <label class="dash-pin-pick @(on ? "is-on" : null)" data-action="@item.Action" data-icon="@item.Icon" data-text="@item.Text">
+                            <input type="checkbox" value="@item.Action" @(on ? "checked" : null) />
+                            <i class="bi @item.Icon"></i>
+                            <span>@item.Text</span>
+                        </label>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+    <button type="submit" class="btn-store"><i class="bi bi-check2-circle"></i> ذخیره داشبورد</button>
+}
+
+<script>
+(function () {
+  var form = document.getElementById('dashPinsForm');
+  if (!form) return;
+  var max = parseInt(form.getAttribute('data-max'), 10) || 12;
+  var countEl = document.getElementById('pinCount');
+  var orderEl = document.getElementById('pinOrder');
+  var hiddenEl = document.getElementById('pinHidden');
+  var picks = Array.prototype.slice.call(form.querySelectorAll('.dash-pin-pick'));
+  var initial = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(selected, new Newtonsoft.Json.JsonSerializerSettings { StringEscapeHandling = Newtonsoft.Json.StringEscapeHandling.EscapeHtml }));
+  var order = initial.slice();
+
+  function meta(action) {
+    var pick = picks.filter(function (el) { return el.getAttribute('data-action') === action; })[0];
+    return pick ? { icon: pick.getAttribute('data-icon'), text: pick.getAttribute('data-text') } : { icon: 'bi-link', text: action };
+  }
+
+  function syncChecks() {
+    picks.forEach(function (pick) {
+      var action = pick.getAttribute('data-action');
+      var on = order.indexOf(action) >= 0;
+      var box = pick.querySelector('input');
+      box.checked = on;
+      pick.classList.toggle('is-on', on);
+    });
+  }
+
+  function paint() {
+    syncChecks();
+    if (countEl) countEl.textContent = order.length.toLocaleString('fa-IR');
+    orderEl.innerHTML = '';
+    hiddenEl.innerHTML = '';
+    if (!order.length) {
+      orderEl.innerHTML = '<li class="text-muted small">هنوز میانبری انتخاب نشده است.</li>';
+      return;
+    }
+    order.forEach(function (action, idx) {
+      var info = meta(action);
+      var li = document.createElement('li');
+      li.className = 'dash-pin-order-item';
+      li.innerHTML = '<i class="bi"></i><span class="grow"></span>' +
+        '<button type="button" class="btn-outline-store btn-sm" data-dir="-1" title="بالا"><i class="bi bi-arrow-up"></i></button>' +
+        '<button type="button" class="btn-outline-store btn-sm" data-dir="1" title="پایین"><i class="bi bi-arrow-down"></i></button>' +
+        '<button type="button" class="btn-outline-store btn-sm text-danger" data-remove="1" title="حذف"><i class="bi bi-x"></i></button>';
+      li.querySelector('i').className = 'bi ' + info.icon;
+      li.querySelector('.grow').textContent = (idx + 1).toLocaleString('fa-IR') + '. ' + info.text;
+      li.querySelector('[data-dir="-1"]').disabled = idx === 0;
+      li.querySelector('[data-dir="1"]').disabled = idx === order.length - 1;
+      li.querySelector('[data-dir="-1"]').addEventListener('click', function () { swap(idx, idx - 1); });
+      li.querySelector('[data-dir="1"]').addEventListener('click', function () { swap(idx, idx + 1); });
+      li.querySelector('[data-remove]').addEventListener('click', function () {
+        order = order.filter(function (a) { return a !== action; });
+        paint();
+      });
+      orderEl.appendChild(li);
+      var hidden = document.createElement('input');
+      hidden.type = 'hidden';
+      hidden.name = 'pins';
+      hidden.value = action;
+      hiddenEl.appendChild(hidden);
+    });
+  }
+
+  function swap(i, j) {
+    if (i < 0 || j < 0 || i >= order.length || j >= order.length) return;
+    var tmp = order[i];
+    order[i] = order[j];
+    order[j] = tmp;
+    paint();
+  }
+
+  picks.forEach(function (pick) {
+    pick.querySelector('input').addEventListener('change', function (e) {
+      var action = pick.getAttribute('data-action');
+      if (e.target.checked) {
+        if (order.indexOf(action) >= 0) return;
+        if (order.length >= max) {
+          e.target.checked = false;
+          if (window.nkAlert) window.nkAlert('حداکثر ' + max.toLocaleString('fa-IR') + ' میانبر می‌توانید انتخاب کنید.');
+          else alert('حداکثر ' + max + ' میانبر.');
+          return;
+        }
+        order.push(action);
+      } else {
+        order = order.filter(function (a) { return a !== action; });
+      }
+      paint();
+    });
+  });
+
+  document.getElementById('pinClear').addEventListener('click', function () {
+    order = [];
+    paint();
+  });
+
+  paint();
+})();
+</script>

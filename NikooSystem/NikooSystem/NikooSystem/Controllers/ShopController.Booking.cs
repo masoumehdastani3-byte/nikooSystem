@@ -44,7 +44,10 @@ namespace NikooSystem.Controllers
             ViewBag.Staff = ActiveStaff();
             ViewBag.ServiceId = serviceId;
             ViewBag.StaffId = staffId;
-            SeoSimple("رزرو آنلاین نوبت " + CurrentSettings.StoreName + "؛ خدمت و روز و ساعت دلخواه را انتخاب کنید و کد پیگیری بگیرید.", "Book");
+            var school = string.Equals(Tenant?.StoreType, "school", StringComparison.OrdinalIgnoreCase);
+            SeoSimple(school
+                ? "دوره خصوصی " + CurrentSettings.StoreName + "؛ مدرس و ساعت خالی را انتخاب کنید. دوره عمومی در صفحه دوره‌هاست."
+                : "رزرو آنلاین نوبت " + CurrentSettings.StoreName + "؛ خدمت و روز و ساعت دلخواه را انتخاب کنید و کد پیگیری بگیرید.", "Book");
             return View();
         }
 
@@ -130,6 +133,7 @@ namespace NikooSystem.Controllers
             if (deposit == 0)
             {
                 Notifications.StoreAppointment(CompanyCode, appointment);
+                SmsService.QueueAppointmentConfirm(CompanyCode, appointment);
                 return Ok("نوبت شما ثبت شد. کد پیگیری: " + appointment.Code, "Appointment", new { id = appointment.Code });
             }
 
@@ -169,7 +173,9 @@ namespace NikooSystem.Controllers
                 return Fail("پرداخت انجام نشد و نوبت ثبت نشد: " + verify.Message, "Book", new { serviceId = appointment.ServiceId });
             }
             TenantStore.MarkAppointmentPaid(CompanyCode, appointment.Id, verify.RefId, verify.Message);
-            Notifications.StoreAppointment(CompanyCode, TenantStore.GetAppointment(CompanyCode, appointment.Id) ?? appointment);
+            var paid = TenantStore.GetAppointment(CompanyCode, appointment.Id) ?? appointment;
+            Notifications.StoreAppointment(CompanyCode, paid);
+            SmsService.QueueAppointmentConfirm(CompanyCode, paid);
             AllowAppointment(appointment.Code);
             return Ok("بیعانه پرداخت شد و نوبت شما قطعی است.", "Appointment", new { id = appointment.Code });
         }

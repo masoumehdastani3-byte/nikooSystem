@@ -1,0 +1,238 @@
+@using System.Linq
+@{
+    Layout = null;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var categories = (List<StoreCategory>)ViewBag.Categories;
+    var products = (List<StoreProduct>)ViewBag.Products;
+    var table = ViewBag.Table as string;
+    var company = (string)ViewBag.CompanyCode;
+    var grouped = categories
+        .Select(c => new { Category = c, Items = products.Where(p => p.CategoryId == c.Id).ToList() })
+        .Where(g => g.Items.Any())
+        .ToList();
+    var leftover = products.Where(p => grouped.All(g => g.Category.Id != p.CategoryId)).ToList();
+}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@settings.StoreName</title>
+    <meta name="description" content="@settings.Tagline" />
+    <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+    <link href="@Url.Asset("~/Content/cafe-menu.css")" rel="stylesheet" />
+</head>
+<body>
+<header class="mast">
+    <div class="mast-inner">
+        <span class="mark">@((settings.StoreName ?? "م").Trim().Substring(0, 1))</span>
+        <h1>@settings.StoreName</h1>
+        <p class="tagline">@settings.Tagline</p>
+        <div class="facts">
+            @if (!string.IsNullOrWhiteSpace(settings.OpeningHours))
+            {
+                <span><i class="bi bi-clock"></i> @settings.OpeningHours</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(settings.Phone))
+            {
+                <span><i class="bi bi-telephone"></i> <a href="tel:@settings.Phone">@settings.Phone.ToFaDigits()</a></span>
+            }
+            @if (!string.IsNullOrWhiteSpace(settings.Address))
+            {
+                <span><i class="bi bi-geo-alt"></i> @settings.Address</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(settings.WifiName))
+            {
+                <span><i class="bi bi-wifi"></i> @settings.WifiName @if (!string.IsNullOrWhiteSpace(settings.WifiPassword)) { <text>/ @settings.WifiPassword</text> }</span>
+            }
+        </div>
+        @if (!string.IsNullOrWhiteSpace(settings.DailyNote))
+        {
+            <p class="note">@settings.DailyNote</p>
+        }
+    </div>
+</header>
+
+<main class="wrap" id="cafe" data-table="@table">
+    <div class="tools">
+        <input class="search" id="q" type="search" placeholder="جستجو در منو" autocomplete="off" />
+        <div class="chips" id="chips">
+            <button type="button" class="is-on" data-chip="">همه</button>
+            @foreach (var group in grouped)
+            {
+                <button type="button" data-chip="@group.Category.Id">@group.Category.Title</button>
+            }
+        </div>
+    </div>
+
+    @foreach (var group in grouped)
+    {
+        <section class="group" data-group="@group.Category.Id">
+            <h2>@group.Category.Title</h2>
+            <div class="grid">
+                @foreach (var item in group.Items)
+                {
+                    var badges = (item.Attributes ?? new List<StoreProductAttribute>()).Where(a => a.Name == "نشان" && !string.IsNullOrWhiteSpace(a.Value)).Select(a => a.Value).ToList();
+                    var gone = item.Stock <= 0;
+                    var search = ((item.Title ?? "") + " " + (item.ShortDescription ?? "")).Replace('ي', 'ی').Replace('ك', 'ک');
+                    <button type="button" class="dish@(gone ? " is-off" : "")" data-item data-cat="@group.Category.Id" data-search="@search">
+                        <span class="letter">@((item.Title ?? "م").Trim().Substring(0, 1))</span>
+                        <span>
+                            <span class="dish-name">@item.Title</span>
+                            @if (!string.IsNullOrWhiteSpace(item.ShortDescription))
+                            {
+                                <span class="dish-desc">@item.ShortDescription</span>
+                            }
+                            @if (badges.Any() || gone)
+                            {
+                                <span class="badges">
+                                    @foreach (var badge in badges)
+                                    {
+                                        <em>@badge</em>
+                                    }
+                                    @if (gone)
+                                    {
+                                        <em class="off">ناموجود</em>
+                                    }
+                                </span>
+                            }
+                        </span>
+                        <span class="price">@item.Price.ToToman()</span>
+                    </button>
+                }
+            </div>
+        </section>
+    }
+    @if (leftover.Any())
+    {
+        <section class="group" data-group="other">
+            <h2>سایر</h2>
+            <div class="grid">
+                @foreach (var item in leftover)
+                {
+                    <button type="button" class="dish" data-item data-cat="other" data-search="@item.Title">
+                        <span class="letter">@((item.Title ?? "م").Trim().Substring(0, 1))</span>
+                        <span><span class="dish-name">@item.Title</span></span>
+                        <span class="price">@item.Price.ToToman()</span>
+                    </button>
+                }
+            </div>
+        </section>
+    }
+    <p class="empty" id="none" hidden>چیزی با این جستجو پیدا نشد.</p>
+</main>
+
+<div class="sheet" id="sheet" hidden>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+        <div class="row-end">
+            <h3 id="sheetTitle"></h3>
+            <button type="button" class="close" id="sheetClose" aria-label="بستن">×</button>
+        </div>
+        <p id="sheetDesc"></p>
+        <div class="row-end">
+            <strong id="sheetPrice"></strong>
+            <span id="sheetOff" class="off" hidden>ناموجود</span>
+        </div>
+    </div>
+</div>
+
+<div class="tray" id="tray" hidden>
+    <form class="tray-card" id="callForm" method="post" action="@Url.Action("CallWaiter", "Shop", new { company })">
+        @Html.AntiForgeryToken()
+        <div class="row-end">
+            <h3>به گارسون بگویید</h3>
+            <button type="button" class="close" id="trayClose" aria-label="بستن">×</button>
+        </div>
+        <label for="table">شماره میز</label>
+        <input id="table" name="table" type="text" inputmode="numeric" maxlength="2" value="@table" required />
+        <label for="note">یادداشت</label>
+        <textarea id="note" name="note" rows="3" maxlength="200" placeholder="مثلاً لطفاً کم‌شیر باشد"></textarea>
+        <p><button class="send" type="submit">فرستادن درخواست</button></p>
+    </form>
+</div>
+
+<button type="button" class="fab" id="fab"><i class="bi bi-bell"></i> به گارسون بگویید</button>
+<div class="toast" id="toast" hidden></div>
+<p class="foot">@settings.FooterText</p>
+
+<script>
+(function () {
+    var q = document.getElementById('q');
+    var chips = document.querySelectorAll('[data-chip]');
+    var cards = document.querySelectorAll('[data-item]');
+    var groups = document.querySelectorAll('[data-group]');
+    var none = document.getElementById('none');
+    var active = '';
+    function norm(text) { return (text || '').replace(/ي/g, 'ی').replace(/ك/g, 'ک').trim(); }
+    function apply() {
+        var term = norm(q.value);
+        var shown = 0;
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            var okCat = !active || card.getAttribute('data-cat') === active;
+            var okQ = !term || norm(card.getAttribute('data-search')).indexOf(term) >= 0;
+            card.hidden = !(okCat && okQ);
+            if (!card.hidden) shown++;
+        }
+        for (var g = 0; g < groups.length; g++) {
+            var items = groups[g].querySelectorAll('[data-item]');
+            var any = false;
+            for (var j = 0; j < items.length; j++) if (!items[j].hidden) any = true;
+            groups[g].hidden = !any;
+        }
+        none.hidden = shown > 0;
+    }
+    q.addEventListener('input', apply);
+    for (var c = 0; c < chips.length; c++) {
+        chips[c].addEventListener('click', function () {
+            for (var k = 0; k < chips.length; k++) chips[k].classList.remove('is-on');
+            this.classList.add('is-on');
+            active = this.getAttribute('data-chip') || '';
+            apply();
+        });
+    }
+
+    var sheet = document.getElementById('sheet');
+    function openSheet(card) {
+        document.getElementById('sheetTitle').textContent = card.querySelector('.dish-name').textContent;
+        var desc = card.querySelector('.dish-desc');
+        document.getElementById('sheetDesc').textContent = desc ? desc.textContent : '';
+        document.getElementById('sheetPrice').textContent = card.querySelector('.price').textContent;
+        document.getElementById('sheetOff').hidden = !card.classList.contains('is-off');
+        sheet.hidden = false;
+    }
+    for (var n = 0; n < cards.length; n++) {
+        cards[n].addEventListener('click', function () { openSheet(this); });
+    }
+    document.getElementById('sheetClose').addEventListener('click', function () { sheet.hidden = true; });
+    sheet.addEventListener('click', function (e) { if (e.target === sheet) sheet.hidden = true; });
+
+    var tray = document.getElementById('tray');
+    var form = document.getElementById('callForm');
+    var toast = document.getElementById('toast');
+    var preset = document.getElementById('cafe').getAttribute('data-table') || '';
+    document.getElementById('fab').addEventListener('click', function () { tray.hidden = false; });
+    document.getElementById('trayClose').addEventListener('click', function () { tray.hidden = true; });
+    tray.addEventListener('click', function (e) { if (e.target === tray) tray.hidden = true; });
+    function say(text) {
+        toast.textContent = text;
+        toast.hidden = false;
+        setTimeout(function () { toast.hidden = true; }, 2400);
+    }
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        fetch(form.action, { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (!data || !data.ok) { say((data && data.message) || 'درخواست فرستاده نشد.'); return; }
+                form.reset();
+                if (preset) document.getElementById('table').value = preset;
+                tray.hidden = true;
+                say(data.message || 'درخواست فرستاده شد.');
+            })
+            .catch(function () { say('ارتباط برقرار نشد.'); });
+    });
+})();
+</script>
+</body>
+</html>

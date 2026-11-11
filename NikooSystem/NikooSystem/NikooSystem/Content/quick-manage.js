@@ -80,10 +80,23 @@
       listEl.innerHTML = '<li class="qm-empty"><i class="bi bi-inbox"></i> هنوز موردی ندارید؛ اولین مورد را از بالا اضافه کنید.</li>';
       return;
     }
-    listEl.innerHTML = state.items.map(function (it) {
+    listEl.innerHTML = state.items.map(function (it, index) {
       var name = esc(it.Title);
-      return '<li class="qm-item' + (it.Depth ? ' is-child' : '') + '" data-id="' + esc(it.Id) + '" style="--depth:' + (it.Depth || 0) + '">' +
-        '<div class="qm-text"><span class="qm-title">' + name + '</span>' + (it.Note ? '<small class="qm-note">' + esc(it.Note) + '</small>' : '') + '</div>' +
+      var depth = it.Depth || 0;
+      var hasChildren = state.tree && state.items.some(function (x) { return String(x.ParentId) === String(it.Id); });
+      var next = state.items[index + 1];
+      var isLast = !next || (next.Depth || 0) <= depth;
+      var tree =
+        '<div class="nk-tree' + (depth ? ' is-nested' : '') + (isLast ? ' is-last' : '') + '" style="--depth:' + depth + '">' +
+          '<button type="button" class="nk-tree-toggle' + (hasChildren ? '' : ' is-leaf') + '"' +
+            (hasChildren ? ' aria-expanded="true" aria-label="باز و بسته کردن"' : ' tabindex="-1" aria-hidden="true"') + '>' +
+            (hasChildren ? '<i class="bi bi-dash-lg" aria-hidden="true"></i>' : '') +
+          '</button>' +
+          '<span class="nk-tree-label">' + name + '</span>' +
+          (it.Note ? '<small class="qm-note">' + esc(it.Note) + '</small>' : '') +
+        '</div>';
+      return '<li class="qm-item nk-tree-item' + (depth ? ' is-child' : '') + '" data-id="' + esc(it.Id) + '" data-depth="' + depth + '">' +
+        tree +
         '<div class="row-actions">' +
           '<button type="button" class="icon-btn is-edit" data-act="edit" title="ویرایش" aria-label="ویرایش «' + name + '»"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>' +
           '<button type="button" class="icon-btn is-delete" data-act="delete" title="حذف" aria-label="حذف «' + name + '»"><i class="bi bi-trash" aria-hidden="true"></i></button>' +

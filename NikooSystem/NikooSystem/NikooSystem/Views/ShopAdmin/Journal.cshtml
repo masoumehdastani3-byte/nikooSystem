@@ -11,7 +11,7 @@
     <a class="btn-store" href="@Url.Action("EditJournal","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> سند دستی</a>
 </div>
 <div class="panel-card">
-    @Html.GridToolbar("جستجو در شماره یا شرح سند…", new GridSelect("type", "همه نوع‌های سند", GridHtml.Options(typeList, t => t.Id, t => t.Title)))
+    @Html.GridToolbar("جستجو در شماره یا شرح سند…", true, new GridSelect("type", "همه نوع‌های سند", GridHtml.Options(typeList, t => t.Id, t => t.Title)))
     <div class="table-responsive">
         <table class="table align-middle">
             <thead>

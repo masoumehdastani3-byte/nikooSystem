@@ -109,9 +109,13 @@ namespace NikooSystem.Models.Store
         Online,
         Tuition,
         Facility,
+        Appointment,
         Adjust,
         Receipt,
-        Payment
+        Payment,
+        Return,
+        Freight,
+        Closing
     }
 
     public class StoreJournalEntry : IStoreEntity
@@ -150,9 +154,19 @@ namespace NikooSystem.Models.Store
         /// <summary>The bank account when <see cref="PayWith"/> is Bank; 0 posts to the general «بانک» account.</summary>
         public int BankId { get; set; }
         public string Note { get; set; }
+        /// <summary>تخفیف روی جمع ردیف‌ها (تومان).</summary>
+        public long DiscountAmount { get; set; }
+        /// <summary>نرخ مالیات بر ارزش افزوده هنگام ثبت (درصد).</summary>
+        public int VatPercent { get; set; }
+        /// <summary>مبلغ مالیات محاسبه‌شده روی مبلغ پس از تخفیف.</summary>
+        public long VatAmount { get; set; }
+        /// <summary>مبلغ قابل پرداخت = جمع ردیف‌ها − تخفیف + مالیات.</summary>
         public long Total { get; set; }
         public int EntryId { get; set; }
         public List<StorePurchaseLine> Lines { get; set; } = new List<StorePurchaseLine>();
+
+        public long Subtotal => (Lines ?? new List<StorePurchaseLine>()).Sum(l => l.Amount);
+        public long NetAmount => Math.Max(0, Subtotal - Math.Max(0, DiscountAmount));
     }
 
     public class StorePurchaseLine
@@ -178,9 +192,19 @@ namespace NikooSystem.Models.Store
         public PayWith PayWith { get; set; } = PayWith.Cash;
         public int BankId { get; set; }
         public string Note { get; set; }
+        /// <summary>تخفیف روی جمع ردیف‌ها (تومان).</summary>
+        public long DiscountAmount { get; set; }
+        /// <summary>نرخ مالیات بر ارزش افزوده هنگام ثبت (درصد).</summary>
+        public int VatPercent { get; set; }
+        /// <summary>مبلغ مالیات محاسبه‌شده روی مبلغ پس از تخفیف.</summary>
+        public long VatAmount { get; set; }
+        /// <summary>مبلغ قابل دریافت = جمع ردیف‌ها − تخفیف + مالیات.</summary>
         public long Total { get; set; }
         public int EntryId { get; set; }
         public List<StoreSaleLine> Lines { get; set; } = new List<StoreSaleLine>();
+
+        public long Subtotal => (Lines ?? new List<StoreSaleLine>()).Sum(l => l.Amount);
+        public long NetAmount => Math.Max(0, Subtotal - Math.Max(0, DiscountAmount));
     }
 
     public class StoreSaleLine
@@ -241,13 +265,25 @@ namespace NikooSystem.Models.Store
         public const string Inventory = "1301";
         public const string FixedAssets = "2101";
         public const string Payable = "3101";
+        /// <summary>مالیات و عوارض ارزش افزوده (بستانکار در فروش، بدهکار در خرید).</summary>
+        public const string Vat = "3202";
         public const string Capital = "5101";
+        /// <summary>سود و زیان انباشته — مقصد سند بستن سال مالی.</summary>
+        public const string RetainedEarnings = "5103";
         public const string Sales = "6101";
         public const string OnlineSales = "6102";
         public const string Tuition = "6103";
+        /// <summary>درآمد نوبت و ویزیت (کلینیک و جلسه خصوصی)، جدا از شهریه کلاس.</summary>
+        public const string Visit = "6106";
+        /// <summary>درآمد هزینه ارسالی که از مشتری گرفته می‌شود.</summary>
+        public const string ShippingIncome = "6104";
+        /// <summary>برگشت از فروش آنلاین / حضوری.</summary>
+        public const string SalesReturns = "6105";
         public const string Cogs = "7101";
         public const string StockAdjust = "7102";
         public const string Expense = "8101";
+        /// <summary>هزینه حملی که فروشگاه به پست یا پیک می‌پردازد.</summary>
+        public const string ShippingExpense = "8202";
 
         /// <summary>Codes of the first, single-level chart and the subsidiary account each became.</summary>
         public static readonly Dictionary<string, string> Legacy = new Dictionary<string, string>
@@ -266,9 +302,13 @@ namespace NikooSystem.Models.Store
         public const string Online = "ON";
         public const string Tuition = "SH";
         public const string Facility = "RZ";
+        public const string Appointment = "NB";
         public const string Adjust = "TA";
         public const string Receipt = "DR";
         public const string Payment = "PD";
+        public const string Return = "MR";
+        public const string Freight = "HM";
+        public const string Closing = "BS";
     }
 
     public enum CashDirection
@@ -413,9 +453,6 @@ namespace NikooSystem.Models.Store
         public int? Parent { get; set; }
         public int? AccountId { get; set; }
         public int? DetailId { get; set; }
-        /// <summary>yyyy-MM-dd</summary>
-        public string From { get; set; }
-        public string To { get; set; }
     }
 
     /// <summary>A label the owner can add, such as «هزینه اجاره» or «دریافت از مشتری».</summary>
@@ -471,9 +508,13 @@ namespace NikooSystem.Models.Store
                 case JournalSource.Online: return "فروش آنلاین";
                 case JournalSource.Tuition: return "شهریه و ثبت‌نام";
                 case JournalSource.Facility: return "رزرو سالن";
+                case JournalSource.Appointment: return "نوبت و خدمت";
                 case JournalSource.Adjust: return "تعدیل انبار";
                 case JournalSource.Receipt: return "دریافت";
                 case JournalSource.Payment: return "پرداخت";
+                case JournalSource.Return: return "مرجوعی کالا";
+                case JournalSource.Freight: return "هزینه حمل";
+                case JournalSource.Closing: return "بستن سال مالی";
                 default: return "سند دستی";
             }
         }

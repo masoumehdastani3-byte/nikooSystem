@@ -234,6 +234,17 @@ namespace NikooSystem.Services
             BaleNotifier.Notify(BaleNotifier.SiteScope, NotifyEvent.Order, text.ToString(), "/Admin/Store/" + p.CompanyCode);
         }
 
+        public static void SmsPurchase(SmsPurchase p)
+        {
+            var store = TenantStore.GetTenantForAdmin(p.CompanyCode);
+            var text = new Message("📱", "شارژ اعتبار پیامک", BaleNotifier.SiteName(BaleNotifier.SiteScope))
+                .Line("فروشگاه", (store?.Name ?? p.CompanyCode) + " (" + p.CompanyCode + ")")
+                .Line("اعتبار", p.Credit.ToToman())
+                .Line("مبلغ", p.Amount.ToToman() + " — پرداخت شد ✅")
+                .Line("کد پیگیری پرداخت", p.RefId?.ToString(CultureInfo.InvariantCulture));
+            BaleNotifier.Notify(BaleNotifier.SiteScope, NotifyEvent.Order, text.ToString(), "/Admin/Store/" + p.CompanyCode);
+        }
+
         public static void Signup(TenantInfo t)
         {
             var text = new Message("🎉", "فروشگاه آزمایشی جدید", BaleNotifier.SiteName(BaleNotifier.SiteScope))

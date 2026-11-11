@@ -1,0 +1,45 @@
+@model StoreSettings
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "ارسال و مرجوعی";
+    var company = (string)ViewBag.CompanyCode;
+}
+<div class="mb-3">
+    <h2 class="mb-1">ارسال سفارش و مرجوعی کالا</h2>
+    <p class="text-muted small mb-0">هزینه ارسال مشتری، هزینه حمل شما به پست/پیک، و درخواست مرجوعی از حساب مشتری را از اینجا راه‌اندازی کنید.</p>
+</div>
+
+<div class="panel-card mb-3">
+    <h5 class="mb-3"><i class="bi bi-1-circle"></i> هزینه ارسال برای مشتری</h5>
+    <ol class="mb-0">
+        <li class="mb-2">در <a href="@Url.Action("Settings","ShopAdmin", new { company })">تنظیمات ← ارسال و انبار</a> مبلغ «هزینه ارسال» را بنویسید (صفر = رایگان).</li>
+        <li class="mb-2">در صورت تمایل، مبلغ «ارسال رایگان بالای …» را بگذارید تا خریدهای بزرگ‌تر رایگان شوند.</li>
+        <li class="mb-2">روش ارسال و توضیح کوتاه (زمان تحویل) را پر کنید؛ در سبد و تسویه به مشتری نشان داده می‌شود.</li>
+        <li class="mb-0">وقتی سفارش فیزیکی ثبت می‌شود، هزینه ارسال به مبلغ قابل پرداخت اضافه و در حسابداری روی سرفصل «درآمد حمل و ارسال» می‌نشیند.</li>
+    </ol>
+</div>
+
+<div class="panel-card mb-3">
+    <h5 class="mb-3"><i class="bi bi-2-circle"></i> ارسال مرسوله و هزینه حمل شما</h5>
+    <ol class="mb-0">
+        <li class="mb-2">از <a href="@Url.Action("Orders","ShopAdmin", new { company })">سفارش‌ها</a> وضعیت را به «در حال پردازش» یا «ارسال شده» ببرید و کد رهگیری بگذارید.</li>
+        <li class="mb-2">اگر خودتان به پست یا پیک پول داده‌اید، در همان صفحه «هزینه حمل فروشگاه» را بنویسید و صندوق/بانک را انتخاب کنید تا سند «هزینه ارسال کالا» ثبت شود.</li>
+        <li class="mb-0">مشتری کد رهگیری را در «سفارش‌های من» می‌بیند.</li>
+    </ol>
+</div>
+
+<div class="panel-card mb-3">
+    <h5 class="mb-3"><i class="bi bi-3-circle"></i> مرجوعی کالا</h5>
+    <ol class="mb-0">
+        <li class="mb-2">مرجوعی را در تنظیمات روشن کنید و مهلت (روز) و شرایط را بنویسید.</li>
+        <li class="mb-2">مشتری از جزئیات سفارش، کالاهای فیزیکی را انتخاب و درخواست می‌فرستد.</li>
+        <li class="mb-2">شما از <a href="@Url.Action("Returns","ShopAdmin", new { company })">مرجوعی‌ها</a> تأیید یا رد می‌کنید؛ با تأیید، موجودی برمی‌گردد و سند برگشت از فروش ثبت می‌شود.</li>
+        <li class="mb-0">وجه را از صندوق/بانک انتخاب‌شده برگردانید یا اگر «نسیه / بدهی» را بزنید، در حساب‌های پرداختنی می‌ماند تا بعداً از دریافت و پرداخت تسویه کنید.</li>
+    </ol>
+</div>
+
+<div class="d-flex flex-wrap gap-2">
+    <a class="btn-store" href="@Url.Action("Settings","ShopAdmin", new { company })"><i class="bi bi-sliders"></i> تنظیمات ارسال</a>
+    <a class="btn-outline-store" href="@Url.Action("Orders","ShopAdmin", new { company })"><i class="bi bi-receipt"></i> سفارش‌ها</a>
+    <a class="btn-outline-store" href="@Url.Action("Returns","ShopAdmin", new { company })"><i class="bi bi-arrow-return-left"></i> مرجوعی‌ها</a>
+</div>

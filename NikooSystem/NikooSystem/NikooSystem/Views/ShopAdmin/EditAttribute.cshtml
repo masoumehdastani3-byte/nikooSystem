@@ -6,7 +6,7 @@
     var cats = (IEnumerable<StoreCategory>)ViewBag.Categories;
     var selected = new HashSet<int>(Model.CategoryIds ?? new List<int>());
 }
-<h2 class="mb-3">@ViewBag.Title</h2>
+@Html.PageTitle()
 @using (Html.BeginForm("SaveAttribute", "ShopAdmin", new { company }, FormMethod.Post))
 {
     @Html.AntiForgeryToken()

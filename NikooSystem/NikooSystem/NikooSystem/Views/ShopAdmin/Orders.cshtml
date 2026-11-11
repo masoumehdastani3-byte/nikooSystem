@@ -3,11 +3,18 @@
     Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
     ViewBag.Title = "سفارش‌ها";
     var company = (string)ViewBag.CompanyCode;
+    var kind = (SiteKindInfo)ViewBag.Kind;
     var statuses = Enum.GetValues(typeof(StoreOrderStatus)).Cast<StoreOrderStatus>();
 }
-@Html.PageHeader("سفارش‌ها")
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="mb-0">سفارش‌ها</h2>
+    @if (kind != null && kind.IsDigital)
+    {
+        <a class="btn-store" href="@Url.Action("GrantAccess","ShopAdmin", new { company })"><i class="bi bi-key"></i> اعطای دسترسی</a>
+    }
+</div>
 <div class="panel-card">
-    @Html.GridToolbar("شماره سفارش، نام، موبایل یا کد رهگیری…",
+    @Html.GridToolbar("شماره سفارش، نام، موبایل یا کد رهگیری…", true,
         new GridSelect("status", "همه وضعیت‌ها", GridHtml.Options(statuses, s => s, s => s.StatusText())))
     <div class="table-responsive">
         <table class="table align-middle">

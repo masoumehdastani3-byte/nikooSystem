@@ -84,10 +84,19 @@ namespace NikooSystem.Helpers
         }
 
         /// <summary>The search box and filters above a table, sent to the server as a GET form.</summary>
-        public static MvcHtmlString GridToolbar(this HtmlHelper html, string placeholder, params GridSelect[] selects)
+        public static MvcHtmlString GridToolbar(this HtmlHelper html, string placeholder, params GridSelect[] selects) =>
+            GridToolbar(html, placeholder, false, selects);
+
+        /// <summary>
+        /// Same as <see cref="GridToolbar(HtmlHelper,string,GridSelect[])"/>; when <paramref name="dateRange"/> is true,
+        /// Shamsi «از تاریخ / تا تاریخ» fields (from, to) are included.
+        /// </summary>
+        public static MvcHtmlString GridToolbar(this HtmlHelper html, string placeholder, bool dateRange, params GridSelect[] selects)
         {
             var query = html.ViewContext.HttpContext.Request.QueryString;
-            var own = new HashSet<string>(selects.Select(s => s.Name).Concat(new[] { "q", "page" }), System.StringComparer.OrdinalIgnoreCase);
+            var ownKeys = selects.Select(s => s.Name).Concat(new[] { "q", "page" });
+            if (dateRange) ownKeys = ownKeys.Concat(new[] { "from", "to", "scope" });
+            var own = new HashSet<string>(ownKeys, System.StringComparer.OrdinalIgnoreCase);
             var sb = new StringBuilder();
             sb.Append("<form class=\"grid-toolbar\" method=\"get\" role=\"search\">");
             foreach (var key in query.AllKeys.Where(k => k != null && !own.Contains(k)))
@@ -96,6 +105,20 @@ namespace NikooSystem.Helpers
             sb.Append("<div class=\"grid-search\"><i class=\"bi bi-search\"></i>");
             sb.Append("<input type=\"search\" name=\"q\" value=\"" + html.AttributeEncode(query["q"]) + "\" placeholder=\"" + html.AttributeEncode(placeholder) + "\" aria-label=\"" + html.AttributeEncode(placeholder) + "\" />");
             sb.Append("</div>");
+
+            if (dateRange)
+            {
+                var fromDay = GridQuery.ParseDay(query["from"]);
+                var toDay = GridQuery.ParseDay(query["to"]);
+                if (fromDay == null && html.ViewBag.FiscalFrom is System.DateTime fyFrom) fromDay = fyFrom;
+                if (toDay == null && html.ViewBag.FiscalTo is System.DateTime fyTo) toDay = fyTo;
+                sb.Append("<div class=\"grid-dates\">");
+                sb.Append("<label for=\"from\">از تاریخ</label>");
+                sb.Append(html.ShamsiDate("from", fromDay, "from", "از ابتدا"));
+                sb.Append("<label for=\"to\">تا تاریخ</label>");
+                sb.Append(html.ShamsiDate("to", toDay, "to", "تا امروز"));
+                sb.Append("</div>");
+            }
 
             foreach (var select in selects)
             {
@@ -108,11 +131,19 @@ namespace NikooSystem.Helpers
             }
 
             sb.Append("<button class=\"btn-store-sm\" type=\"submit\"><i class=\"bi bi-search\"></i> جستجو</button>");
-            if (!string.IsNullOrEmpty(query["q"]) || selects.Any(s => !string.IsNullOrEmpty(query[s.Name])))
+            var fiscalDefaulted = html.ViewBag.FiscalDefaulted as bool? == true;
+            var hasFilter = !string.IsNullOrEmpty(query["q"]) || selects.Any(s => !string.IsNullOrEmpty(query[s.Name]))
+                || (dateRange && (!string.IsNullOrEmpty(query["from"]) || !string.IsNullOrEmpty(query["to"]) || fiscalDefaulted));
+            if (hasFilter)
             {
-                var clear = selects.Select(s => s.Name).Concat(new[] { "q", "page" }).ToDictionary(k => k, k => (object)null);
+                var clearKeys = selects.Select(s => s.Name).Concat(new[] { "q", "page" });
+                if (dateRange) clearKeys = clearKeys.Concat(new[] { "from", "to" });
+                var clear = clearKeys.ToDictionary(k => k, k => (object)null);
+                if (dateRange) clear["scope"] = "all";
                 sb.Append("<a class=\"grid-clear\" href=\"" + html.AttributeEncode(html.QueryUrl(clear)) + "\"><i class=\"bi bi-x-circle\"></i> حذف فیلتر</a>");
             }
+            // type=button so it does not submit the search form; excel-export.js wires the download
+            sb.Append("<button class=\"js-excel-export\" type=\"button\" title=\"خروجی اکسل از همین جدول\"><i class=\"bi bi-file-earmark-excel\"></i> خروجی اکسل</button>");
             sb.Append("</form>");
             return MvcHtmlString.Create(sb.ToString());
         }

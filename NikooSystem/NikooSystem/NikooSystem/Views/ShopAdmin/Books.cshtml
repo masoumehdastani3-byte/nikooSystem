@@ -80,12 +80,20 @@
         @Html.ShamsiDate("to", Model.To, "to", "تا امروز")
     </div>
     <button class="btn-store-sm" type="submit"><i class="bi bi-calendar-range"></i> اعمال بازه</button>
-    @if (from != null || to != null)
+    @if (from != null || to != null || ViewBag.FiscalDefaulted == true)
     {
-        <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["from"] = null, ["to"] = null, ["page"] = null })"><i class="bi bi-x-circle"></i> همه تاریخ‌ها</a>
+        <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["from"] = null, ["to"] = null, ["page"] = null, ["scope"] = "all" })"><i class="bi bi-x-circle"></i> همه تاریخ‌ها</a>
     }
     <span class="small text-muted ms-auto">
-        @(from == null && to == null ? "همه سندها" : "از " + (Model.From.HasValue ? Model.From.Value.ToShamsi() : "ابتدا") + " تا " + (Model.To.HasValue ? Model.To.Value.ToShamsi() : "امروز"))
+        @{
+            var fiscal = ViewBag.FiscalPeriod as FiscalPeriod;
+            if (ViewBag.FiscalAll == true) { @:همه سندها
+            }
+            else if (ViewBag.FiscalDefaulted == true && fiscal != null) { @fiscal.Label <text>(</text>@fiscal.RangeText<text>)</text>
+            }
+            else { @(from == null && to == null ? "همه سندها" : "از " + (Model.From.HasValue ? Model.From.Value.ToShamsi() : "ابتدا") + " تا " + (Model.To.HasValue ? Model.To.Value.ToShamsi() : "امروز"))
+            }
+        }
     </span>
 </form>
 

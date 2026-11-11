@@ -1,0 +1,22 @@
+@model IEnumerable<NikooSystem.Helpers.ProductLanding>
+@{
+    var siteName = NikooSystem.Services.SiteContentStore.Settings.SiteName;
+}
+<div class="lf-intro-grid">
+    @foreach (var p in Model)
+    {
+        var image = p.Image ?? "";
+        if (image.StartsWith("/")) { image = "~" + image; }
+        <a class="lf-intro-card" href="@Url.RouteUrl("Solution", new { slug = p.Slug })">
+            <div class="lf-intro-media">
+                <img src="@Url.Content(image)" alt="@p.Name" loading="lazy" decoding="async" />
+            </div>
+            <div class="lf-intro-body">
+                <span class="lf-intro-kicker"><i class="bi @p.Icon" aria-hidden="true"></i> @p.Summary</span>
+                <h3>@p.Name</h3>
+                <p>@NikooSystem.Helpers.ProductLandings.Fill(p.Lead, siteName)</p>
+                <span class="lf-intro-more">جزئیات، دمو و شروع رایگان <i class="bi bi-arrow-left" aria-hidden="true"></i></span>
+            </div>
+        </a>
+    }
+</div>

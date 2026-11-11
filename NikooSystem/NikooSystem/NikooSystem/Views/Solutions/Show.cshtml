@@ -25,7 +25,11 @@
         showcases.Add(TemplateShowcase.For("fashion", null, "قالب‌های فروشگاه اینترنتی و سایت آموزشی", "templates-shop"));
         showcases.Add(TemplateShowcase.For("corporate", "corporate", "قالب‌های سایت شرکتی", "templates-corporate"));
         showcases.Add(TemplateShowcase.For("news", "magazine", "قالب‌های سایت خبری", "templates-news"));
-        showcases.Add(TemplateShowcase.For("clinic", null, "قالب‌های نوبت‌دهی آنلاین", "templates-booking"));
+        showcases.Add(TemplateShowcase.For("clinic", null, "قالب مطب و کلینیک", "templates-clinic"));
+        showcases.Add(TemplateShowcase.For("beauty", null, "قالب آرایشگاه", "templates-salon"));
+        showcases.Add(TemplateShowcase.For("consulting", null, "قالب مشاوره", "templates-consulting"));
+        showcases.Add(TemplateShowcase.For("school", null, "قالب آموزشگاه", "templates-school"));
+        showcases.Add(TemplateShowcase.For("club", null, "قالب باشگاه ورزشی", "templates-club"));
         foreach (var s in showcases) { s.Heading = s.Templates.Count.ToString().ToFaDigits() + " " + s.Heading; }
     }
 }
@@ -51,7 +55,7 @@
                         <a class="lf-btn lf-btn-warm" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@trialDays روز)</a>
                         if (demoType != null)
                         {
-                            <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Demo", new { slug = demoType.Id })"><i class="bi bi-eye"></i> مشاهده دمو</a>
+                            <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Demo", new { slug = demoType.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده دمو</a>
                         }
                     }
                     else
@@ -121,7 +125,7 @@
                         <div class="lf-land-type-actions">
                             @if (TenantStore.DemoBySlug.ContainsKey(type.Id))
                             {
-                                <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = type.Id })"><i class="bi bi-eye"></i> دمو</a>
+                                <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = type.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> دمو</a>
                             }
                             <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Index","Signup", new { type = type.Id })"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان</a>
                         </div>
@@ -156,7 +160,7 @@
             </div>
             @if (kind != null)
             {
-                <h3 class="lf-land-subtitle">همه امکانات @kind.Name</h3>
+                <h3 class="lf-land-subtitle">همه امکانات @Model.Name</h3>
                 <ul class="lf-kind-features">
                     @foreach (var f in kind.Features)
                     {

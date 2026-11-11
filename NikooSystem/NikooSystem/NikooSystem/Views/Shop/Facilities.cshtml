@@ -2,11 +2,12 @@
 @{
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var company = (string)ViewBag.CompanyCode;
+    var sports = string.Equals(((TenantInfo)ViewBag.Tenant)?.StoreType, "club", StringComparison.OrdinalIgnoreCase);
 }
 <section class="cn-section bk-section">
     <div class="container">
-        <h1 class="cn-block-title">رزرو سالن و زمین</h1>
-        <p class="text-muted">سالن فوتبال، میز پینگ‌پونگ یا هر فضای دیگری را ساعتی رزرو کنید. فقط ساعت‌های خالی نمایش داده می‌شوند.</p>
+        <h1 class="cn-block-title">@(sports ? "رزرو سالن و زمین" : "اجاره اتاق و کلاس")</h1>
+        <p class="text-muted">@(sports ? "سالن فوتبال، میز پینگ‌پونگ یا هر فضای دیگری را ساعتی رزرو کنید. فقط ساعت‌های خالی نمایش داده می‌شوند." : "اتاق تمرین یا کلاس خالی را ساعتی رزرو کنید. فقط ساعت‌های خالی نمایش داده می‌شوند.")</p>
         @if (Model.Any())
         {
             <div class="bk-services">
