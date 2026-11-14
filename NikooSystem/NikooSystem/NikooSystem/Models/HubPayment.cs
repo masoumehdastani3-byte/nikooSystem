@@ -84,9 +84,8 @@ namespace NikooSystem.Models
         [RegularExpression(@"^09\d{9}$", ErrorMessage = "شماره موبایل معتبر نیست (مثال: 09121234567)")]
         public string CustomerMobile { get; set; }
 
-        [Required(ErrorMessage = "ایمیل الزامی است")]
         [EmailAddress(ErrorMessage = "ایمیل معتبر نیست")]
-        [Display(Name = "ایمیل")]
+        [Display(Name = "ایمیل (اختیاری)")]
         public string CustomerEmail { get; set; }
     }
 }

@@ -60,6 +60,16 @@ namespace NikooSystem.Services
             ? "https://sandbox.zarinpal.com/pg/StartPay/"
             : "https://www.zarinpal.com/pg/StartPay/";
 
+        private static Dictionary<string, string> BuildMetadata(string email, string mobile)
+        {
+            var metadata = new Dictionary<string, string>();
+            if (!string.IsNullOrWhiteSpace(email))
+                metadata["email"] = email.Trim();
+            if (!string.IsNullOrWhiteSpace(mobile))
+                metadata["mobile"] = mobile.Trim();
+            return metadata;
+        }
+
         public async Task<ZarinPalPaymentResult> RequestPaymentAsync(long amountToman, string description, string email, string mobile, string orderId)
         {
             return await RequestPaymentAsync(amountToman, description, email, mobile, orderId, null);
@@ -80,12 +90,7 @@ namespace NikooSystem.Services
                 { "amount", amountRial },
                 { "callback_url", callback },
                 { "description", description ?? "پرداخت سفارش نیکو سیستم آفرین" },
-                { "metadata", new Dictionary<string, string>
-                    {
-                        { "email", email ?? "" },
-                        { "mobile", mobile ?? "" }
-                    }
-                }
+                { "metadata", BuildMetadata(email, mobile) }
             };
 
             try

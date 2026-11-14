@@ -96,8 +96,7 @@ namespace NikooSystem.Services
         public static bool NeedsCustomerInfo(HubPayment payment)
         {
             return string.IsNullOrWhiteSpace(payment.CustomerName)
-                || string.IsNullOrWhiteSpace(payment.CustomerMobile)
-                || string.IsNullOrWhiteSpace(payment.CustomerEmail);
+                || string.IsNullOrWhiteSpace(payment.CustomerMobile);
         }
 
         public static string BuildSignedReturnUrl(HubPayment payment, PaymentClient client)

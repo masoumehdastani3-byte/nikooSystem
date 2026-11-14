@@ -4,8 +4,7 @@
     ViewBag.Nav = "";
     var payment = Model.Payment;
     var hasCustomer = !string.IsNullOrWhiteSpace(payment.CustomerName)
-        && !string.IsNullOrWhiteSpace(payment.CustomerMobile)
-        && !string.IsNullOrWhiteSpace(payment.CustomerEmail);
+        && !string.IsNullOrWhiteSpace(payment.CustomerMobile);
 }
 <main id="main">
     <div class="page-hero">
@@ -33,7 +32,10 @@
                     <h5 class="mb-3">اطلاعات پرداخت‌کننده</h5>
                     <div class="mb-2"><span class="text-muted">نام:</span> @payment.CustomerName</div>
                     <div class="mb-2"><span class="text-muted">موبایل:</span> @payment.CustomerMobile</div>
-                    <div class="mb-3"><span class="text-muted">ایمیل:</span> @payment.CustomerEmail</div>
+                    @if (!string.IsNullOrWhiteSpace(payment.CustomerEmail))
+                    {
+                        <div class="mb-3"><span class="text-muted">ایمیل:</span> @payment.CustomerEmail</div>
+                    }
                     @using (Html.BeginForm("Confirm", "Pay", new { token = payment.Token }, FormMethod.Post))
                     {
                         @Html.AntiForgeryToken()

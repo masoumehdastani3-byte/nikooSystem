@@ -54,6 +54,15 @@ namespace NikooSystem.Controllers
                 return RedirectToAction("Done", new { token, ok = 0 });
 
             model.Payment = payment;
+            if (string.IsNullOrWhiteSpace(model.CustomerEmail))
+            {
+                model.CustomerEmail = null;
+                ModelState.Remove("CustomerEmail");
+            }
+            else
+            {
+                model.CustomerEmail = model.CustomerEmail.Trim();
+            }
 
             if (!ModelState.IsValid)
                 return View(model);
