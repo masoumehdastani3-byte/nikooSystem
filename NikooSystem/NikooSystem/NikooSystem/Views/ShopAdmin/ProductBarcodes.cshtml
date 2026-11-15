@@ -1,0 +1,309 @@
+@model List<StoreProduct>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "بارکد کالا";
+    var company = (string)ViewBag.CompanyCode;
+    var settings = (StoreSettings)ViewBag.Settings;
+    var storeName = settings == null || string.IsNullOrWhiteSpace(settings.StoreName) ? "فروشگاه" : settings.StoreName;
+    int? focusId = ViewBag.FocusId == null ? (int?)null : Convert.ToInt32(ViewBag.FocusId);
+    var ready = Model.Where(p => CanBarcode(p.Sku)).ToList();
+    var missing = Model.Where(p => !CanBarcode(p.Sku)).ToList();
+}
+@functions {
+    static bool CanBarcode(string sku)
+    {
+        if (string.IsNullOrWhiteSpace(sku)) return false;
+        sku = sku.Trim();
+        if (sku.Length > 40) return false;
+        foreach (var c in sku)
+        {
+            if (c < 32 || c > 126) return false;
+        }
+        return true;
+    }
+}
+<style>
+    .bc-tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+    .bc-tools label { display: block; margin-bottom: 4px; }
+    .bc-check { display: flex; align-items: center; gap: 6px; margin-bottom: 0; min-height: 38px; }
+    .bc-sheet {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2mm;
+        align-items: flex-start;
+        align-content: flex-start;
+        margin-top: 16px;
+        background: #fff;
+        padding: 8px;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        min-height: 80px;
+    }
+    .bc-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4mm;
+        box-sizing: border-box;
+        overflow: hidden;
+        background: #fff;
+        color: #000;
+        text-align: center;
+        padding: 1mm 1.5mm;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .bc-sm .bc-label { width: 38mm; height: 25mm; }
+    .bc-md .bc-label { width: 50mm; height: 30mm; }
+    .bc-lg .bc-label { width: 70mm; height: 38mm; }
+    .bc-cut .bc-label { border: 0.2mm dashed #9ca3af; }
+    .bc-store { font-size: 7pt; line-height: 1.15; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bc-title { font-size: 8pt; font-weight: 700; line-height: 1.2; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bc-bars { width: 100%; }
+    .bc-sm .bc-bars { height: 10mm; }
+    .bc-md .bc-bars { height: 13mm; }
+    .bc-lg .bc-bars { height: 16mm; }
+    .bc-bars svg { width: 100%; height: 100%; display: block; }
+    .bc-sku { font-family: Tahoma, sans-serif; font-size: 8pt; line-height: 1.1; direction: ltr; letter-spacing: .04em; }
+    .bc-price { font-size: 8pt; line-height: 1.1; }
+    .bc-empty { margin: 12px; color: #6b7280; }
+    @@page { margin: 6mm; }
+    @@media print {
+        .admin-side, .trial-banner, .storage-banner, .tut-launch, .d-print-none { display: none !important; }
+        .admin-shell { display: block !important; background: #fff !important; }
+        .admin-main { padding: 0 !important; margin: 0 !important; width: auto !important; background: #fff !important; }
+        body { background: #fff !important; }
+        .bc-sheet { border: 0; border-radius: 0; padding: 0; margin: 0; }
+    }
+</style>
+
+<div class="d-print-none">
+    <div class="admin-page-head">
+        <div class="admin-page-head-title">
+            <span class="admin-page-head-accent" aria-hidden="true"></span>
+            <div>
+                <h2>بارکد کالا</h2>
+                <p class="text-muted small mb-0 mt-1">از روی کد کالا برچسب بارکد ساخته می‌شود. بارکدخوان همان کد را می‌خواند و در صندوق، کالا را پیدا می‌کند.</p>
+            </div>
+        </div>
+        <div class="admin-page-head-actions">
+            <a class="btn-outline-store" href="@Url.Action("Products", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> محصولات</a>
+        </div>
+    </div>
+
+    @if (!ready.Any())
+    {
+        <div class="panel-card">
+            <p class="mb-2">هنوز کالایی با کد قابل چاپ ندارید.</p>
+            <p class="text-muted small mb-3">در ویرایش محصول، فیلد «کد کالا» را با حروف انگلیسی، عدد یا علامت (مثل <span dir="ltr">BALL-01</span>) پر کنید و ذخیره کنید.</p>
+            <a class="btn-store" href="@Url.Action("Products", "ShopAdmin", new { company })">رفتن به محصولات</a>
+        </div>
+    }
+    else
+    {
+        <div class="panel-card mb-3">
+            <div class="bc-tools">
+                <div>
+                    <label for="bcSize">اندازه برچسب</label>
+                    <select class="form-select" id="bcSize">
+                        <option value="sm">۳۸ × ۲۵ میلی‌متر</option>
+                        <option value="md" selected>۵۰ × ۳۰ میلی‌متر</option>
+                        <option value="lg">۷۰ × ۳۸ میلی‌متر</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="bulkCopies">تعداد برای انتخاب‌شده‌ها</label>
+                    <div class="d-flex gap-2">
+                        <input class="form-control" id="bulkCopies" type="number" min="1" max="50" value="1" style="width:5.5rem" dir="ltr" />
+                        <button class="btn-outline-store" type="button" id="applyCopies">اعمال</button>
+                    </div>
+                </div>
+                <label class="bc-check"><input type="checkbox" id="showPrice" checked /> قیمت</label>
+                <label class="bc-check"><input type="checkbox" id="showStore" /> نام فروشگاه</label>
+                <label class="bc-check"><input type="checkbox" id="cutLines" checked /> خط برش</label>
+                <button class="btn-store" type="button" id="bcPrint"><i class="bi bi-printer"></i> چاپ</button>
+            </div>
+            <p class="small text-danger mb-0 mt-2" id="bcWarn" hidden>حداقل یک کالا را انتخاب کنید.</p>
+            <p class="small text-muted mb-0 mt-2">در پنجره چاپ، حاشیه را کم کنید. بارکد باید سیاه روی سفید بماند تا بارکدخوان آن را بخواند. کدهای بلند را با برچسب پهن چاپ کنید.</p>
+        </div>
+
+        <div class="panel-card mb-3">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width:2.5rem"><input type="checkbox" id="pickAll" title="انتخاب همه" aria-label="انتخاب همه" /></th>
+                            <th>کالا</th>
+                            <th>کد کالا</th>
+                            <th>قیمت</th>
+                            <th style="width:7rem">تعداد برچسب</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in ready)
+                        {
+                            var sku = product.Sku.Trim();
+                            var focused = focusId == product.Id;
+                            <tr class="bc-row@(focused ? " table-primary" : "")" id="@(focused ? "bc-focus" : null)" data-sku="@sku" data-title="@product.Title" data-price="@product.Price.ToToman()">
+                                <td><input class="bc-pick" type="checkbox" @(focused ? "checked" : null) aria-label="انتخاب @product.Title" /></td>
+                                <td>
+                                    <strong>@product.Title</strong>
+                                    @if (!product.IsActive)
+                                    {
+                                        <span class="badge bg-secondary">غیرفعال</span>
+                                    }
+                                    @if (sku.Length > 16)
+                                    {
+                                        <div class="small text-muted">کد بلند است؛ برچسب ۷۰ میلی‌متری خواناتر است.</div>
+                                    }
+                                </td>
+                                <td dir="ltr">@sku</td>
+                                <td>@product.Price.ToToman()</td>
+                                <td><input class="form-control form-control-sm bc-copies" type="number" min="1" max="50" value="1" dir="ltr" aria-label="تعداد برچسب @product.Title" /></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    @if (missing.Any())
+    {
+        <div class="panel-card">
+            <h5 class="mb-2">بدون بارکد</h5>
+            <p class="small text-muted">این کالاها کد ندارند، یا کدشان حرفی غیر از انگلیسی و عدد دارد. کد کالا را اصلاح کنید.</p>
+            <ul class="mb-0">
+                @foreach (var product in missing)
+                {
+                    <li>
+                        <a href="@Url.Action("EditProduct", "ShopAdmin", new { company, id = product.Id })">@product.Title</a>
+                        @if (!string.IsNullOrWhiteSpace(product.Sku))
+                        {
+                            <span class="text-muted" dir="ltr">(@product.Sku.Trim())</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+<div class="bc-sheet bc-md bc-cut" id="bcSheet" data-store="@storeName" hidden></div>
+<p class="bc-empty d-print-none" id="bcEmpty" @(ready.Any() ? null : "hidden")>کالاها را انتخاب کنید تا پیش‌نمایش برچسب همین‌جا ساخته شود.</p>
+
+@section scripts {
+<script src="@Url.Content("~/Scripts/code128.js")"></script>
+<script>
+(function () {
+    var sheet = document.getElementById('bcSheet');
+    if (!sheet || !window.nikooCode128Svg) return;
+    var storeName = sheet.getAttribute('data-store') || '';
+    var empty = document.getElementById('bcEmpty');
+    var warn = document.getElementById('bcWarn');
+    var maxLabels = 300;
+
+    function copiesOf(input) {
+        var n = parseInt(input.value, 10);
+        if (!n || n < 1) n = 1;
+        if (n > 50) n = 50;
+        input.value = n;
+        return n;
+    }
+
+    function draw() {
+        var size = document.getElementById('bcSize');
+        var showPrice = document.getElementById('showPrice');
+        var showStore = document.getElementById('showStore');
+        var cut = document.getElementById('cutLines');
+        sheet.className = 'bc-sheet bc-' + (size ? size.value : 'md') + (cut && cut.checked ? ' bc-cut' : '');
+        sheet.innerHTML = '';
+        var count = 0;
+        document.querySelectorAll('.bc-row').forEach(function (row) {
+            var pick = row.querySelector('.bc-pick');
+            if (!pick || !pick.checked) return;
+            var copies = copiesOf(row.querySelector('.bc-copies'));
+            var sku = row.getAttribute('data-sku') || '';
+            var svg = nikooCode128Svg(sku);
+            if (!svg) return;
+            for (var i = 0; i < copies; i++) {
+                if (count >= maxLabels) return;
+                count++;
+                var label = document.createElement('div');
+                label.className = 'bc-label';
+                if (showStore && showStore.checked && storeName) {
+                    var shop = document.createElement('div');
+                    shop.className = 'bc-store';
+                    shop.textContent = storeName;
+                    label.appendChild(shop);
+                }
+                var title = document.createElement('div');
+                title.className = 'bc-title';
+                title.textContent = row.getAttribute('data-title') || '';
+                var bars = document.createElement('div');
+                bars.className = 'bc-bars';
+                bars.innerHTML = svg;
+                var code = document.createElement('div');
+                code.className = 'bc-sku';
+                code.textContent = sku;
+                label.appendChild(title);
+                label.appendChild(bars);
+                label.appendChild(code);
+                if (showPrice && showPrice.checked) {
+                    var price = document.createElement('div');
+                    price.className = 'bc-price';
+                    price.textContent = row.getAttribute('data-price') || '';
+                    label.appendChild(price);
+                }
+                sheet.appendChild(label);
+            }
+        });
+        sheet.hidden = count === 0;
+        if (empty) empty.hidden = count !== 0;
+        if (warn) warn.hidden = true;
+        if (count >= maxLabels && warn) {
+            warn.hidden = false;
+            warn.textContent = 'حداکثر ' + maxLabels.toLocaleString('fa-IR') + ' برچسب در هر چاپ ساخته می‌شود.';
+        }
+    }
+
+    var pickAll = document.getElementById('pickAll');
+    if (pickAll) pickAll.addEventListener('change', function () {
+        document.querySelectorAll('.bc-pick').forEach(function (box) { box.checked = pickAll.checked; });
+        draw();
+    });
+    var apply = document.getElementById('applyCopies');
+    if (apply) apply.addEventListener('click', function () {
+        var n = copiesOf(document.getElementById('bulkCopies'));
+        document.querySelectorAll('.bc-row').forEach(function (row) {
+            if (row.querySelector('.bc-pick').checked) row.querySelector('.bc-copies').value = n;
+        });
+        draw();
+    });
+    ['bcSize', 'showPrice', 'showStore', 'cutLines'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.addEventListener('change', draw);
+    });
+    document.querySelectorAll('.bc-pick, .bc-copies').forEach(function (el) {
+        el.addEventListener('change', draw);
+        el.addEventListener('input', draw);
+    });
+    var printBtn = document.getElementById('bcPrint');
+    if (printBtn) printBtn.addEventListener('click', function () {
+        draw();
+        if (!sheet.children.length) {
+            if (warn) {
+                warn.hidden = false;
+                warn.textContent = 'حداقل یک کالا را انتخاب کنید.';
+            }
+            return;
+        }
+        window.print();
+    });
+    draw();
+    var focus = document.getElementById('bc-focus');
+    if (focus && focus.scrollIntoView) focus.scrollIntoView({ block: 'center' });
+})();
+</script>
+}

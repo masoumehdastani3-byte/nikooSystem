@@ -9,7 +9,13 @@ namespace NikooSystem.Helpers
         /// <summary>One of <see cref="SiteKinds"/>.</summary>
         public string Kind { get; set; }
         public string Name { get; set; }
+        /// <summary>کلمه‌ای که در برچسب «نام …» فرم ثبت‌نام می‌آید؛ مثلاً تعمیرگاه، مطب، فروشگاه.</summary>
+        public string NameNoun { get; set; } = "فروشگاه";
         public string Description { get; set; }
+        public string NameLabel => "نام " + (string.IsNullOrWhiteSpace(NameNoun) ? "فروشگاه" : NameNoun);
+        public string NamePlaceholder => string.IsNullOrWhiteSpace(NameNoun) || NameNoun == "فروشگاه"
+            ? "مثلاً پوشاک آریا"
+            : "مثلاً " + NameNoun + " آریا";
         public string Icon { get; set; }
         public string DefaultTemplate { get; set; }
     }
@@ -68,6 +74,7 @@ namespace NikooSystem.Helpers
                 Id = "academy",
                 Kind = SiteKinds.Digital,
                 Name = "آموزشگاه آنلاین",
+                NameNoun = "آموزشگاه",
                 Description = "دوره‌های ویدیویی با فصل، جلسه و پنل دانشجو",
                 Icon = "bi-easel",
                 DefaultTemplate = "marketplace"
@@ -77,6 +84,7 @@ namespace NikooSystem.Helpers
                 Id = "news",
                 Kind = SiteKinds.Content,
                 Name = "خبرگزاری و مجله",
+                NameNoun = "خبرگزاری",
                 Description = "خبر و مقاله، تیتر یک، خبر فوری و سرویس‌های خبری",
                 Icon = "bi-newspaper",
                 DefaultTemplate = "magazine"
@@ -86,6 +94,7 @@ namespace NikooSystem.Helpers
                 Id = "corporate",
                 Kind = SiteKinds.Content,
                 Name = "سایت شرکتی",
+                NameNoun = "شرکت",
                 Description = "معرفی شرکت و خدمات، اخبار، نمونه‌کار و فرم تماس",
                 Icon = "bi-building",
                 DefaultTemplate = "corporate"
@@ -95,6 +104,7 @@ namespace NikooSystem.Helpers
                 Id = "clinic",
                 Kind = SiteKinds.Booking,
                 Name = "مطب و کلینیک",
+                NameNoun = "مطب",
                 Description = "نوبت پزشک، دندانپزشک، فیزیوتراپی و آزمایشگاه",
                 Icon = "bi-heart",
                 DefaultTemplate = "clinic"
@@ -104,6 +114,7 @@ namespace NikooSystem.Helpers
                 Id = "beauty",
                 Kind = SiteKinds.Booking,
                 Name = "آرایشگاه و سالن زیبایی",
+                NameNoun = "آرایشگاه",
                 Description = "نوبت کوتاهی، رنگ، ناخن و پوست با انتخاب آرایشگر",
                 Icon = "bi-scissors",
                 DefaultTemplate = "salon"
@@ -113,6 +124,7 @@ namespace NikooSystem.Helpers
                 Id = "consulting",
                 Kind = SiteKinds.Booking,
                 Name = "مشاوره و خدمات حرفه‌ای",
+                NameNoun = "مرکز مشاوره",
                 Description = "مشاوره حقوقی، روانشناسی، تحصیلی و جلسه آنلاین",
                 Icon = "bi-chat-dots",
                 DefaultTemplate = "clinic"
@@ -122,6 +134,7 @@ namespace NikooSystem.Helpers
                 Id = "school",
                 Kind = SiteKinds.Campus,
                 Name = "آموزشگاه",
+                NameNoun = "آموزشگاه",
                 Description = "دوره عمومی با ظرفیت و شهریه، و دوره خصوصی حضوری یا آنلاین",
                 Icon = "bi-journal-bookmark",
                 DefaultTemplate = "club"
@@ -131,6 +144,7 @@ namespace NikooSystem.Helpers
                 Id = "club",
                 Kind = SiteKinds.Campus,
                 Name = "باشگاه ورزشی",
+                NameNoun = "باشگاه",
                 Description = "کلاس ورزشی، مربی خصوصی و رزرو ساعتی سالن و زمین",
                 Icon = "bi-trophy",
                 DefaultTemplate = "club"
@@ -140,9 +154,20 @@ namespace NikooSystem.Helpers
                 Id = "cafe",
                 Kind = SiteKinds.Menu,
                 Name = "کافه و رستوران",
+                NameNoun = "کافه",
                 Description = "منوی میز با QR، قیمت و فراخوان گارسون",
                 Icon = "bi-cup-straw",
                 DefaultTemplate = "cafe"
+            },
+            new StoreTypeInfo
+            {
+                Id = "repair",
+                Kind = SiteKinds.Repair,
+                Name = "تعمیرگاه",
+                NameNoun = "تعمیرگاه",
+                Description = "پذیرش موبایل، لپ‌تاپ، لوازم خانگی و خودرو با کد پیگیری",
+                Icon = "bi-wrench",
+                DefaultTemplate = "bench"
             }
         };
 

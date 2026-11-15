@@ -50,9 +50,13 @@
     {
         <link href="@Url.Asset("~/Content/storefront-home.css")" rel="stylesheet" />
     }
-    @if (kind.Schedules)
+    @if (kind.Schedules || kind.IsRepair)
     {
         <link href="@Url.Asset("~/Content/storefront-booking.css")" rel="stylesheet" />
+    }
+    @if (kind.IsRepair)
+    {
+        <link href="@Url.Asset("~/Content/storefront-repair.css")" rel="stylesheet" />
     }
     <link href="@Url.Asset("~/Content/storefront-images.css")" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/nk-alert.css")" rel="stylesheet" />
@@ -103,6 +107,32 @@ else if (layoutId == "fashion")
 else if (kind.Schedules)
 {
     @Html.Partial("_BookingHeader")
+}
+else if (kind.IsRepair)
+{
+    <header class="wm-header minimal-header">
+        <div class="container">
+            <div class="minimal-header-row">
+                @Html.StoreBrand("wm-brand")
+                <input type="checkbox" id="sfNavToggle" class="sf-nav-toggle" hidden />
+                <label for="sfNavToggle" class="sf-burger" aria-label="منو"><i class="bi bi-list"></i></label>
+                <nav class="minimal-nav">
+                    @foreach (var item in mainMenus)
+                    {
+                        <a href="@item.Url">@item.Title</a>
+                    }
+                </nav>
+                <div class="minimal-actions">
+                    <a class="btn-wm rp-header-cta" href="@Url.Action("RepairRequest","Shop", new { company })">درخواست تعمیر</a>
+                    <a href="@Url.Action("RepairTrack","Shop", new { company })"><i class="bi bi-search"></i></a>
+                    @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                    {
+                        <a href="tel:@settings.Phone"><i class="bi bi-telephone"></i></a>
+                    }
+                </div>
+            </div>
+        </div>
+    </header>
 }
 else if (kind.IsMenu)
 {

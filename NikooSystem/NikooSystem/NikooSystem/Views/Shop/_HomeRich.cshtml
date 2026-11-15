@@ -196,7 +196,7 @@
         {
             <section class="rh-section rh-reviews-wrap" id="sec-reviews">
                 <div class="container">
-                    @Title(kind.IsContent ? "رضایت مشتریان" : "تجربه خریداران", sec.Title ?? (kind.IsContent ? "مشتریان درباره ما چه می‌گویند" : "نظر خریداران ما"), null)
+                    @Title((kind.IsContent || kind.IsRepair) ? "رضایت مشتریان" : "تجربه خریداران", sec.Title ?? ((kind.IsContent || kind.IsRepair) ? "مشتریان درباره ما چه می‌گویند" : "نظر خریداران ما"), null)
                     <div class="rh-reviews">
                         @if (real != null && real.Any())
                         {
@@ -279,7 +279,15 @@
     case "cta":
         var signedIn = ViewBag.SignedIn as bool? == true;
         string ctaTitle, ctaText, ctaButton, ctaUrl, ctaIcon;
-        if (kind.IsContent)
+        if (kind.IsRepair)
+        {
+            ctaTitle = "دستگاه را بسپارید";
+            ctaText = "درخواست را ثبت کنید. پیک، کارشناس در محل، یا آوردن حضوری.";
+            ctaButton = "درخواست تعمیر";
+            ctaUrl = Url.Action("RepairRequest", "Shop", new { company });
+            ctaIcon = "bi-wrench";
+        }
+        else if (kind.IsContent)
         {
             ctaTitle = "آماده شروع همکاری هستید؟";
             ctaText = "برای مشاوره و دریافت پیشنهاد قیمت با ما در تماس باشید.";
@@ -315,7 +323,7 @@
                     </div>
                     <div class="rh-cta-actions">
                         <a class="rh-cta-btn" href="@(custom ? sec.LinkUrl : ctaUrl)"><i class="bi @(custom ? "bi-arrow-left-circle" : ctaIcon)"></i> @(sec.ButtonText ?? (custom ? "مشاهده" : ctaButton))</a>
-                        @if (kind.IsContent && !string.IsNullOrWhiteSpace(settings.Phone))
+                        @if ((kind.IsContent || kind.IsRepair) && !string.IsNullOrWhiteSpace(settings.Phone))
                         {
                             <a class="rh-cta-ghost" href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
                         }

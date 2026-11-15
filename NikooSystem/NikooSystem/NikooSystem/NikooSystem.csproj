@@ -209,9 +209,12 @@
     <Compile Include="Controllers\ShopAdminController.Sms.cs" />
     <Compile Include="Controllers\ShopAdminController.Subscription.cs" />
     <Compile Include="Controllers\ShopAdminController.Menu.cs" />
+    <Compile Include="Controllers\ShopAdminController.Repair.cs" />
+    <Compile Include="Controllers\ShopAdminController.Barcodes.cs" />
     <Compile Include="Controllers\ShopBaseController.cs" />
     <Compile Include="Controllers\ShopController.cs" />
     <Compile Include="Controllers\ShopController.Menu.cs" />
+    <Compile Include="Controllers\ShopController.Repair.cs" />
     <Compile Include="Controllers\ShopController.Booking.cs" />
     <Compile Include="Controllers\ShopController.Campus.cs" />
     <Compile Include="Controllers\ShopController.Seo.cs" />
@@ -254,6 +257,7 @@
     <Compile Include="Models\Store\AccountingModels.cs" />
     <Compile Include="Models\Store\StoreModels.cs" />
     <Compile Include="Models\Store\MenuModels.cs" />
+    <Compile Include="Models\Store\RepairModels.cs" />
     <Compile Include="Models\Store\PanelUserModels.cs" />
     <Compile Include="Models\Store\StoreImageFit.cs" />
     <Compile Include="Models\StorageModels.cs" />
@@ -300,6 +304,7 @@
     <Compile Include="Services\TenantStore.Chart.cs" />
     <Compile Include="Services\TenantStore.Content.cs" />
     <Compile Include="Services\TenantStore.Menu.cs" />
+    <Compile Include="Services\TenantStore.Repair.cs" />
     <Compile Include="Services\TenantStore.Queries.cs" />
     <Compile Include="Services\TenantStore.PanelUsers.cs" />
     <Compile Include="Services\TenantStore.Returns.cs" />
@@ -355,6 +360,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Scripts\qrcode.js" />
+    <Content Include="Scripts\code128.js" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
@@ -402,6 +408,7 @@
     <Content Include="Content\storefront-kinds.css" />
     <Content Include="Content\storefront-home.css" />
     <Content Include="Content\storefront-booking.css" />
+    <Content Include="Content\storefront-repair.css" />
     <Content Include="Content\booking.js" />
     <Content Include="Content\admin-booking.css" />
     <Content Include="Content\support.css" />
@@ -455,6 +462,10 @@
     <Content Include="Views\Shop\BookingHome.cshtml" />
     <Content Include="Views\Shop\CampusHome.cshtml" />
     <Content Include="Views\Shop\Menu.cshtml" />
+    <Content Include="Views\Shop\RepairHome.cshtml" />
+    <Content Include="Views\Shop\RepairRequest.cshtml" />
+    <Content Include="Views\Shop\RepairTrack.cshtml" />
+    <Content Include="Views\Shop\RepairTicket.cshtml" />
     <Content Include="Views\Shop\Classes.cshtml" />
     <Content Include="Views\Shop\Class.cshtml" />
     <Content Include="Views\Shop\Enrollment.cshtml" />
@@ -531,7 +542,13 @@
     <Content Include="Views\ShopAdmin\Login.cshtml" />
     <Content Include="Views\ShopAdmin\Index.cshtml" />
     <Content Include="Views\ShopAdmin\MenuQr.cshtml" />
+    <Content Include="Views\ShopAdmin\ProductBarcodes.cshtml" />
     <Content Include="Views\ShopAdmin\WaiterCalls.cshtml" />
+    <Content Include="Views\ShopAdmin\Repairs.cshtml" />
+    <Content Include="Views\ShopAdmin\NewRepair.cshtml" />
+    <Content Include="Views\ShopAdmin\RepairDetails.cshtml" />
+    <Content Include="Views\ShopAdmin\PrintRepair.cshtml" />
+    <Content Include="Views\ShopAdmin\_RepairForm.cshtml" />
     <Content Include="Views\ShopAdmin\MyDashboard.cshtml" />
     <Content Include="Views\ShopAdmin\Settings.cshtml" />
     <Content Include="Views\ShopAdmin\Products.cshtml" />
@@ -571,6 +588,7 @@
     <Content Include="Views\ShopAccount\Learn.cshtml" />
     <Content Include="Views\ShopAccount\_AccountNav.cshtml" />
     <Content Include="Views\Shared\_StoreLayout.cshtml" />
+    <Content Include="Views\Shared\_RepairStatement.cshtml" />
     <Content Include="Views\Shared\_StoreProductCard.cshtml" />
     <Content Include="Views\Shared\_NextPage.cshtml" />
     <Content Include="Views\Shared\_QuickManage.cshtml" />

@@ -31,6 +31,7 @@
         {
             @Html.PostButton("EnterStore", new { id = Model.CompanyCode }, "ورود به پنل فروشگاه", "btn btn-primary")
         }
+        <button class="btn btn-primary" type="submit" form="storeInfoForm">ذخیره</button>
         <a class="btn btn-link" href="@Url.Action("Stores","Admin")">بازگشت به فهرست</a>
     </div>
 </div>
@@ -73,7 +74,7 @@
 
         <div class="adm-card">
             <div class="adm-card-title">اطلاعات فروشگاه و مالک</div>
-            @using (Html.BeginForm("UpdateStore", "Admin", new { id = Model.CompanyCode }, FormMethod.Post))
+            @using (Html.BeginForm("UpdateStore", "Admin", new { id = Model.CompanyCode }, FormMethod.Post, new { id = "storeInfoForm" }))
             {
                 @Html.AntiForgeryToken()
                 <div class="row g-3">
@@ -106,7 +107,6 @@
                         <input class="form-control" id="ownerEmail" name="ownerEmail" type="email" value="@Model.OwnerEmail" dir="ltr" />
                     </div>
                 </div>
-                <div class="mt-3"><button class="btn btn-primary" type="submit">ذخیره</button></div>
             }
         </div>
 

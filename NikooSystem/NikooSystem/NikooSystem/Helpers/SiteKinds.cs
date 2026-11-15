@@ -25,6 +25,7 @@ namespace NikooSystem.Helpers
         public bool IsBooking => Id == SiteKinds.Booking;
         public bool IsCampus => Id == SiteKinds.Campus;
         public bool IsMenu => Id == SiteKinds.Menu;
+        public bool IsRepair => Id == SiteKinds.Repair;
         /// <summary>Staff hours and appointments: clinics, and the private lessons of an academy or sports club.</summary>
         public bool Schedules => IsBooking || IsCampus;
         /// <summary>Sells something: has a catalogue, cart, checkout, orders and customers.</summary>
@@ -33,8 +34,8 @@ namespace NikooSystem.Helpers
         public bool TakesPayments => !IsContent && !IsMenu;
         /// <summary>How the owner's site is called in the panel: «فروشگاه» for selling sites, otherwise «سایت».</summary>
         public string SiteNoun => IsMenu ? "منو" : Sells ? "فروشگاه" : "سایت";
-        /// <summary>Service-first businesses (salon/clinic/club) — accounting copy stresses services over retail stock.</summary>
-        public bool ServiceBusiness => IsBooking || IsCampus;
+        /// <summary>Service-first businesses (salon/clinic/club/repair) — accounting copy stresses services over retail stock.</summary>
+        public bool ServiceBusiness => IsBooking || IsCampus || IsRepair;
     }
 
     public static class SiteKinds
@@ -45,6 +46,7 @@ namespace NikooSystem.Helpers
         public const string Booking = "booking";
         public const string Campus = "campus";
         public const string Menu = "menu";
+        public const string Repair = "repair";
 
         public static readonly IReadOnlyList<SiteKindInfo> All = new List<SiteKindInfo>
         {
@@ -163,11 +165,33 @@ namespace NikooSystem.Helpers
                 ItemsLabel = "آیتم‌های منو",
                 Features = new[]
                 {
+                    "سه قالب: نارون گرم، شب تیره و تخته روشن پیشخوان",
                     "منوی موبایل با دسته‌بندی، جستجو، قیمت و وضعیت ناموجود",
                     "کارت QR جدا برای هر میز؛ شماره میز در فراخوان گارسون از قبل پر می‌شود",
                     "فراخوان گارسون با یادداشت، و بستن درخواست از پنل",
                     "ساعت کاری، یادداشت روز و رمز وای‌فای روی همان منو",
                     "ویرایش غذا و نوشیدنی، قیمت و نشان‌ها از همان بخش محصولات پنل"
+                }
+            },
+            new SiteKindInfo
+            {
+                Id = Repair,
+                Name = "سایت تعمیرگاه",
+                Description = "درخواست تعمیر، پیک، وضعیت کار، قطعه و اجرت، و فاکتور فروش در حسابداری",
+                Icon = "bi-wrench",
+                ItemsLabel = "برگه‌های تعمیر",
+                Features = new[]
+                {
+                    "سه قالب: میز کار آبی، گاراژ تیره و پیشخوان نارنجی",
+                    "پذیرش حضوری دستگاه با کد پیگیری؛ مشتری با همان کد و شماره موبایل وضعیت را در سایت می‌بیند",
+                    "درخواست آنلاین با آدرس؛ پیک دستگاه را می‌گیرد و بعد از تعمیر برمی‌گرداند",
+                    "پیش‌فاکتور برای مشتری؛ تعمیر بعد از تأیید او در دفتر ثبت می‌شود",
+                    "فاکتور فروش: اجرت در درآمد تعمیر، قطعه انبار با کسر موجودی و بهای تمام‌شده، دریافت روی حساب مشتری",
+                    "پیامک تغییر وضعیت برای مشتری، به شرط شارژ اعتبار پیامک",
+                    "خبر پذیرش تازه در بله",
+                    "کاربران پنل با نقش منشی برای پذیرش و صندوقدار برای دریافت",
+                    "داشبورد شخصی با میانبرهای دلخواه برای دسترسی سریع به برگه‌ها",
+                    "حسابداری دوطرفه، فاکتور خرید قطعه، انبار لوازم و صندوق فروش لوازم جانبی در کنار برگه تعمیر"
                 }
             }
         };

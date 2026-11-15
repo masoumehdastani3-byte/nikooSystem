@@ -34,6 +34,7 @@ namespace NikooSystem.Controllers
             if (Kind.IsCampus) return CampusHome();
             if (Kind.IsBooking) return BookingHome();
             if (Kind.IsMenu) return MenuHome();
+            if (Kind.IsRepair) return RepairHome();
             return Kind.IsContent ? ContentHome(sections) : ShopHome(sections);
         }
 

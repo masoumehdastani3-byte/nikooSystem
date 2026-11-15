@@ -20,10 +20,12 @@ namespace NikooSystem.Services
     public static class SmsService
     {
         public const long DefaultPricePerCredit = 1;
+        public const int MaxMarkupPercent = 300;
         public const string KindPassword = "password";
         public const string KindInvoice = "invoice";
         public const string KindBookingConfirm = "booking-confirm";
         public const string KindBookingReminder = "booking-reminder";
+        public const string KindRepairStatus = "repair-status";
         public const string KindTest = "test";
         public const string KindOther = "other";
 
@@ -41,6 +43,17 @@ namespace NikooSystem.Services
 
         public static bool IsReady => PappusSmsClient.IsConfigured;
 
+        /// <summary>درصد سود فروش. قیمت پرداختی مشتری را بالا می‌برد؛ اعتباری که به سایت اضافه می‌شود و هنگام ارسال کم می‌شود عوض نمی‌شود.</summary>
+        public static int MarkupPercent
+        {
+            get
+            {
+                var value = SiteContentStore.Settings?.SmsMarkupPercent ?? 0;
+                if (value < 0) return 0;
+                return value > MaxMarkupPercent ? MaxMarkupPercent : value;
+            }
+        }
+
         public static long CreditOf(string companyCode)
         {
             return Math.Max(0, TenantStore.GetTenantForAdmin(companyCode)?.SmsCredit ?? 0);
@@ -48,12 +61,14 @@ namespace NikooSystem.Services
 
         public static IReadOnlyList<SmsPackage> Packages()
         {
+            var markup = MarkupPercent;
             return PackageCredits.Select(p =>
             {
                 var credit = p[0];
                 var discount = (int)p[1];
-                var full = credit;
+                var full = MarkUp(credit, markup);
                 var price = (long)Math.Round(full * (100 - discount) / 100.0 / 1000) * 1000;
+                if (price <= 0) price = full;
                 return new SmsPackage
                 {
                     Credit = credit,
@@ -62,6 +77,15 @@ namespace NikooSystem.Services
                     Price = price
                 };
             }).ToList();
+        }
+
+        /// <summary>قیمت قبل از تخفیف حجم؛ با سود صفر همان اعتبار است تا بسته‌های فعلی عوض نشوند.</summary>
+        private static long MarkUp(long credit, int markup)
+        {
+            if (markup <= 0 || credit <= 0) return credit;
+            var raw = (credit * (100L + markup) + 99) / 100;
+            var rounded = ((raw + 999) / 1000) * 1000;
+            return rounded < credit ? credit : rounded;
         }
 
         public static SmsPurchase StartPurchase(string companyCode, long credit)
@@ -214,6 +238,43 @@ namespace NikooSystem.Services
             return SendAsync(companyCode, mobile, text, KindPassword, "pwd-" + companyCode);
         }
 
+        /// <summary>رمز موقت پنل نیکو را از حساب خود پاپوس پیامک می‌کند؛ از اعتبار فروشگاه‌ها کم نمی‌شود.</summary>
+        public static Task<SmsSendResult> SendPlatformPasswordAsync(string mobile, string temporaryPassword, string siteName)
+        {
+            var text = new StringBuilder()
+                .AppendLine("بازیابی رمز عبور")
+                .AppendLine("پنل: " + (string.IsNullOrWhiteSpace(siteName) ? "نیکو سیستم" : siteName.Trim()))
+                .AppendLine("رمز موقت: " + temporaryPassword)
+                .Append("پس از ورود، رمز را عوض کنید.")
+                .ToString();
+            return SendPlatformAsync(mobile, text, KindPassword, "pwd-nikoo");
+        }
+
+        private static async Task<SmsSendResult> SendPlatformAsync(string mobile, string text, string kind, string reference)
+        {
+            if (!IsReady)
+                return SmsSendResult.Fail("سامانه پیامک هنوز تنظیم نشده است.");
+
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null)
+                return SmsSendResult.Fail("شماره موبایل معتبر نیست.");
+            text = (text ?? "").Trim();
+            if (text.Length == 0)
+                return SmsSendResult.Fail("متن پیامک خالی است.");
+
+            var type = kind == KindPassword ? 1 : 0;
+            var sent = await PappusSmsClient.SendAsync(mobile, text, type, reference).ConfigureAwait(false);
+            if (!sent.Success)
+            {
+                Log(BaleNotifier.SiteScope, mobile, kind, text, 0, null, false, sent.Message ?? "ارسال ناموفق بود.");
+                return SmsSendResult.Fail(sent.Message ?? "ارسال پیامک ناموفق بود.");
+            }
+
+            var cost = RialToToman(sent.CostRial);
+            Log(BaleNotifier.SiteScope, mobile, kind, text, cost, sent.JobId, true, null);
+            return SmsSendResult.Ok(cost, sent.JobId);
+        }
+
         /// <summary>صورتحساب خرید را برای مشتری می‌فرستد.</summary>
         public static Task<SmsSendResult> SendInvoiceAsync(string companyCode, StoreOrder order, string siteName)
         {
@@ -285,6 +346,69 @@ namespace NikooSystem.Services
                 .Append("کد پیگیری: " + appointment.Code)
                 .ToString();
             return SendAsync(companyCode, appointment.CustomerMobile, text, KindBookingReminder, "appt-r-" + appointment.Id);
+        }
+
+        /// <summary>وضعیت تازه برگه تعمیر را برای مشتری پیامک می‌کند.</summary>
+        public static Task<SmsSendResult> SendRepairStatusAsync(string companyCode, RepairJob job, string siteName)
+        {
+            if (job == null) return Task.FromResult(SmsSendResult.Fail("برگه پیدا نشد."));
+            var text = new StringBuilder()
+                .AppendLine("وضعیت تعمیر")
+                .AppendLine((siteName ?? companyCode).Trim())
+                .AppendLine(job.DeviceLabel)
+                .AppendLine(job.Status.StepTitle(job))
+                .AppendLine("کد پیگیری: " + job.Code);
+            if (job.Status == RepairStatus.PickupAssigned && !string.IsNullOrWhiteSpace(job.CourierName))
+                text.Append(job.NeedsVisit ? "کارشناس: " : "پیک: ").Append(job.CourierName);
+            if (job.Status == RepairStatus.PickupAssigned && !string.IsNullOrWhiteSpace(job.PickupWindow))
+                text.Append(" — ").Append(job.PickupWindow);
+            if (job.Status == RepairStatus.QuoteSent)
+            {
+                if (job.ReturnRequested) text.Append("ارجاع دستگاه ثبت شد. هزینه حمل برگشت دوباره محاسبه می‌شود.");
+                else if (job.QuoteState == RepairQuoteState.Approved) text.Append("هزینه را تأیید کردید. تعمیرگاه کار را ادامه می‌دهد.");
+                else text.Append("هزینه را در سایت با همین کد پرداخت کنید تا کار شروع شود.");
+            }
+            if (job.Status == RepairStatus.Repairing && job.QuoteState == RepairQuoteState.Approved)
+                text.Append("مبلغ پرداخت شد و تعمیر شروع شد.");
+            if (job.Status == RepairStatus.Returning)
+                text.Append("هزینه حمل پرداخت شد و دستگاه در راه برگشت است.");
+            if (job.Status == RepairStatus.Ready && job.ReturnRequested && job.BringsInPerson)
+                text.Append("دستگاه برای پس‌گرفتن حضوری آماده است. ایاب و ذهاب گرفته نشده است.");
+            return SendAsync(companyCode, job.CustomerMobile, text.ToString(), KindRepairStatus, "repair-" + job.Id + "-" + job.Status);
+        }
+
+        /// <summary>اگر این وضعیت قبلاً پیامک نشده، در پس‌زمینه می‌فرستد.</summary>
+        public static void QueueRepairStatus(string companyCode, RepairJob job)
+        {
+            if (string.IsNullOrEmpty(companyCode) || job == null || TenantStore.IsDemo(companyCode)) return;
+            if (string.Equals(job.LastSmsStatus, job.Status.ToString(), StringComparison.Ordinal)) return;
+            var settings = TenantStore.GetSettings(companyCode);
+            if (settings == null || !settings.SmsBookingConfirm) return;
+            if (!IsReady || CreditOf(companyCode) <= 0) return;
+
+            var siteName = BaleNotifier.SiteName(companyCode);
+            var id = job.Id;
+            var status = job.Status;
+            Func<CancellationToken, Task> work = async ct =>
+            {
+                try
+                {
+                    var fresh = TenantStore.GetRepairJob(companyCode, id);
+                    if (fresh == null || fresh.Status != status) return;
+                    if (string.Equals(fresh.LastSmsStatus, status.ToString(), StringComparison.Ordinal)) return;
+                    var result = await SendRepairStatusAsync(companyCode, fresh, siteName).ConfigureAwait(false);
+                    if (!result.Success) return;
+                    fresh = TenantStore.GetRepairJob(companyCode, id);
+                    if (fresh == null) return;
+                    TenantStore.MarkRepairSms(companyCode, id, status);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceError("Sms repair " + companyCode + ": " + ex.Message);
+                }
+            };
+            try { HostingEnvironment.QueueBackgroundWorkItem(work); }
+            catch (InvalidOperationException) { Task.Run(() => work(CancellationToken.None)); }
         }
 
         /// <summary>تأیید نوبت را در پس‌زمینه می‌فرستد و در صورت موفقیت زمان ارسال را روی نوبت می‌نویسد.</summary>

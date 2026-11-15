@@ -6,6 +6,7 @@
     var related = ViewBag.Related as List<NikooSystem.Models.Product> ?? new List<NikooSystem.Models.Product>();
     var kind = string.IsNullOrEmpty(Model.DemoSlug) ? null : SiteKinds.Get(StoreTypes.Get(Model.DemoSlug).Kind);
     var landing = string.IsNullOrEmpty(Model.DemoSlug) ? null : ProductLandings.ForType(Model.DemoSlug);
+    var templates = landing != null ? landing.Templates() : (kind == null ? new List<StoreTemplateInfo>() : StoreTemplates.ForKind(kind.Id).ToList());
 }
 <main id="main">
     <div class="page-hero">
@@ -62,7 +63,7 @@
                             {
                                 <a class="btn-primary-shop" href="@Url.Action("Index","Signup", new { type = Model.DemoSlug })"><i class="bi bi-rocket-takeoff"></i> شروع آزمایشی رایگان (@NikooSystem.Services.TenantProvisioningService.TrialDays روز)</a>
                                 <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> اول دمو را ببینید</a>
-                                <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @StoreTemplates.ForKind(kind.Id).Count().ToString().ToFaDigits() قالب آماده</a>
+                                <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @templates.Count.ToString().ToFaDigits() قالب آماده</a>
                             }
                             else
                             {
@@ -75,7 +76,7 @@
 
             @if (kind != null)
             {
-                @Html.Partial("_TemplateShowcase", TemplateShowcase.For(Model.DemoSlug))
+                @Html.Partial("_TemplateShowcase", TemplateShowcase.For(Model.DemoSlug, landing != null ? landing.TemplateLayout : null))
 
                 <h2 class="h4 mt-5 mb-3">امکانات و ماژول‌های این محصول</h2>
                 if (kind.IsShop || kind.IsDigital || kind.IsCampus)

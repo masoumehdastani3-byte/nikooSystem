@@ -40,3 +40,17 @@
         <button class="btn btn-primary" type="submit">ذخیره</button>
     }
 </div>
+<div class="adm-card mt-3" style="max-width:560px">
+    <h2 class="h5">موبایل بازیابی رمز</h2>
+    <p class="text-muted small">در صفحه ورود پنل، رمز موقت به این شماره پیامک می‌شود. اگر خالی باشد فقط در بله ارسال می‌شود.</p>
+    @using (Html.BeginForm("SaveRecoveryMobile", "Admin", FormMethod.Post))
+    {
+        @Html.AntiForgeryToken()
+        <div class="mb-3">
+            <label class="form-label" for="recoveryMobile">شماره موبایل</label>
+            <input class="form-control" type="text" name="mobile" id="recoveryMobile" dir="ltr" inputmode="numeric" autocomplete="tel"
+                   placeholder="09121234567" value="@NikooSystem.Services.SiteContentStore.Settings.AdminMobile" />
+        </div>
+        <button class="btn btn-outline-primary" type="submit">ذخیره موبایل</button>
+    }
+</div>

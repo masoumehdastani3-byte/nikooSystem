@@ -277,7 +277,8 @@ namespace NikooSystem.Services
             { "consulting", "/Assets/img/products/store-consulting.jpg" },
             { "school", "/Assets/img/products/store-school.jpg" },
             { "club", "/Assets/img/products/store-club.jpg" },
-            { "corporate", "/Assets/img/products/store-cms.jpg" }
+            { "corporate", "/Assets/img/products/store-cms.jpg" },
+            { "repair", "/Assets/img/products/store-gadget.jpg" }
         };
 
         private const string BookingTitle = "سایت مطب و کلینیک";
@@ -423,6 +424,141 @@ namespace NikooSystem.Services
         {
             ApplyClubProduct();
             ApplySchoolProduct();
+        }
+
+        private const string CafeTitle = "منوی کافه و رستوران";
+        private const string CafeShort = "منوی دیجیتال کافه و رستوران با سه قالب، QR روی میز و فراخوان گارسون";
+        private const string CafeDescription = "مشتری با دوربین گوشی کارت میز را اسکن می‌کند و منو همان‌جا باز می‌شود. "
+            + "غذا و نوشیدنی، قیمت، توضیح و ناموجودی از پنل عوض می‌شود و برای هر میز یک کارت QR جدا ساخته می‌شود. "
+            + "شماره میز داخل لینک است؛ وقتی مهمان گارسون را صدا می‌زند، میز و یادداشت سفارش همراه درخواست می‌آید. "
+            + "سه قالب آماده دارد: نارون گرم، شب تیره و تخته روشن پیشخوان. "
+            + "این محصول سبد خرید و پرداخت آنلاین ندارد؛ سفارش را گارسون می‌گیرد.";
+
+        /// <summary>Mentions the three cafe templates, only where the earlier catalogue wording is still there.</summary>
+        internal static void ApplyCafeTemplateCopy()
+        {
+            const string previousShort = "منوی دیجیتال کافه و رستوران با QR روی میز و فراخوان گارسون";
+            const string previousDescription = "مشتری با دوربین گوشی کارت میز را اسکن می‌کند و منو همان‌جا باز می‌شود. "
+                + "غذا و نوشیدنی، قیمت، توضیح و ناموجودی از پنل عوض می‌شود و برای هر میز یک کارت QR جدا ساخته می‌شود. "
+                + "شماره میز داخل لینک است؛ وقتی مهمان گارسون را صدا می‌زند، میز و یادداشت سفارش همراه درخواست می‌آید. "
+                + "این محصول سبد خرید و پرداخت آنلاین ندارد؛ سفارش را گارسون می‌گیرد.";
+            foreach (var product in GetProducts().Where(p => p.DemoSlug == "cafe"))
+            {
+                var changed = false;
+                if (product.ShortDescription == previousShort)
+                {
+                    product.ShortDescription = CafeShort;
+                    changed = true;
+                }
+                if (product.Description == previousDescription)
+                {
+                    product.Description = CafeDescription;
+                    changed = true;
+                }
+                if (changed) UpdateProduct(product);
+            }
+        }
+
+        /// <summary>Adds the cafe QR-menu product so its subscription price can be edited with the other catalogue rows.</summary>
+        internal static void ApplyCafeProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "cafe")
+                ?? GetProducts().FirstOrDefault(p => string.IsNullOrEmpty(p.DemoSlug) && p.Title != null && p.Title.Contains("کافه"));
+            var isNew = product == null;
+            if (isNew)
+            {
+                var school = GetProducts().FirstOrDefault(p => p.DemoSlug == "school");
+                product = new Product
+                {
+                    Price = school != null && school.Price > 0 ? school.Price : 10000,
+                    Title = CafeTitle,
+                    IsActive = true,
+                    Category = "نرم‌افزار خدماتی"
+                };
+            }
+
+            product.Title = CafeTitle;
+            product.DemoSlug = "cafe";
+            product.IsFeatured = true;
+            if (string.IsNullOrWhiteSpace(product.Category) || product.Category == "فروشگاه آنلاین")
+                product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = CafeShort;
+            product.Description = CafeDescription;
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["grocery"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
+        }
+
+        private const string RepairTitle = "سایت تعمیرگاه";
+        private const string RepairShortBeforeTemplates = "درخواست تعمیر، پیک، وضعیت کار و فاکتور فروش";
+        private const string RepairShort = "درخواست تعمیر، پیک، وضعیت کار و سه قالب پذیرش";
+        private const string RepairDescriptionBeforeCourier = "مشتری دستگاه را حضوری می‌آورد یا از سایت درخواست می‌دهد و با کد پیگیری وضعیت را می‌بیند. ";
+        private const string RepairDescriptionBeforeTemplates = "مشتری درخواست می‌دهد و آدرس می‌گذارد؛ پیک دستگاه را می‌گیرد و بعد از تعمیر برمی‌گرداند. "
+            + "برگه کار از هماهنگی پیک تا عیب‌یابی، تأیید هزینه، قطعه، تعمیر و تحویل جلو می‌رود. "
+            + "با ثبت صورتحساب، اجرت به درآمد تعمیر می‌رود، قطعه انتخاب‌شده از انبار کم می‌شود و مانده روی حساب مشتری می‌ماند تا نقد یا بانک گرفته شود. "
+            + "با شارژ پیامک، هر تغییر وضعیت برای مشتری پیامک می‌شود.";
+        private const string RepairDescription = RepairDescriptionBeforeTemplates
+            + " سه قالب آماده دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی.";
+
+        /// <summary>Refreshes the catalogue sentence for shops that still have the first repair description.</summary>
+        internal static void ApplyRepairCourierCopy()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "repair");
+            if (product == null || product.Description == null || !product.Description.StartsWith(RepairDescriptionBeforeCourier)) return;
+            product.ShortDescription = RepairShort;
+            product.Description = RepairDescription;
+            UpdateProduct(product);
+        }
+
+        /// <summary>Mentions the three repair templates, only where the earlier catalogue wording is still there.</summary>
+        internal static void ApplyRepairTemplateCopy()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "repair");
+            if (product == null) return;
+            var changed = false;
+            if (product.ShortDescription == RepairShortBeforeTemplates)
+            {
+                product.ShortDescription = RepairShort;
+                changed = true;
+            }
+            if (product.Description == RepairDescriptionBeforeTemplates)
+            {
+                product.Description = RepairDescription;
+                changed = true;
+            }
+            if (changed) UpdateProduct(product);
+        }
+
+        /// <summary>Adds the repair-shop product so its subscription price can be edited with the other catalogue rows.</summary>
+        internal static void ApplyRepairProduct()
+        {
+            var product = GetProducts().FirstOrDefault(p => p.DemoSlug == "repair")
+                ?? GetProducts().FirstOrDefault(p => string.IsNullOrEmpty(p.DemoSlug) && p.Title != null && p.Title.Contains("تعمیرگاه"));
+            var isNew = product == null;
+            if (isNew)
+            {
+                var cafe = GetProducts().FirstOrDefault(p => p.DemoSlug == "cafe");
+                product = new Product
+                {
+                    Price = cafe != null && cafe.Price > 0 ? cafe.Price : 10000,
+                    Title = RepairTitle,
+                    IsActive = true,
+                    Category = "نرم‌افزار خدماتی"
+                };
+            }
+
+            product.Title = RepairTitle;
+            product.DemoSlug = "repair";
+            product.IsFeatured = true;
+            if (string.IsNullOrWhiteSpace(product.Category) || product.Category == "فروشگاه آنلاین")
+                product.Category = "نرم‌افزار خدماتی";
+            product.ShortDescription = RepairShort;
+            product.Description = RepairDescription;
+            if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
+                product.ImageUrl = StoreDemoImages["repair"];
+            if (isNew) AddProduct(product);
+            else UpdateProduct(product);
         }
 
         private const string ContentTemplatesText = "شش قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)";

@@ -214,6 +214,8 @@ namespace NikooSystem.Models.Store
         public string Title { get; set; }
         public int Qty { get; set; }
         public long UnitPrice { get; set; }
+        /// <summary>Customer-paid transport. Credited to shipping income, not service or goods income.</summary>
+        public bool IsShipping { get; set; }
         public long Amount => (long)Qty * UnitPrice;
     }
 
@@ -275,6 +277,8 @@ namespace NikooSystem.Models.Store
         public const string Tuition = "6103";
         /// <summary>درآمد نوبت و ویزیت (کلینیک و جلسه خصوصی)، جدا از شهریه کلاس.</summary>
         public const string Visit = "6106";
+        /// <summary>درآمد اجرت و تعمیر؛ دریافت صندوق برگه تعمیر به این سرفصل می‌نشیند.</summary>
+        public const string Repair = "6107";
         /// <summary>درآمد هزینه ارسالی که از مشتری گرفته می‌شود.</summary>
         public const string ShippingIncome = "6104";
         /// <summary>برگشت از فروش آنلاین / حضوری.</summary>

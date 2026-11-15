@@ -10,13 +10,14 @@
         <p>هر پروژه با شناسه و کلید API خودش درخواست پرداخت می‌سازد و نتیجه را با امضای همین کلید دریافت می‌کند.</p>
     </div>
     <div class="adm-head-actions">
+        <button class="btn btn-primary" type="submit" form="paymentAppForm">@(Model.IsNew ? "ساخت اپلیکیشن" : "ذخیره")</button>
         <a class="btn btn-link" href="@Url.Action("PaymentApps","Admin")">بازگشت</a>
     </div>
 </div>
 <div class="row g-3">
     <div class="col-lg-7">
         <div class="adm-card">
-            @using (Html.BeginForm("EditPaymentApp", "Admin", FormMethod.Post))
+            @using (Html.BeginForm("EditPaymentApp", "Admin", FormMethod.Post, new { id = "paymentAppForm" }))
             {
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(m => m.IsNew)
@@ -44,7 +45,6 @@
                     @Html.TextAreaFor(m => m.AllowedHosts, 4, 1, new { @class = "form-control", dir = "ltr", placeholder = "example.ir\nwww.example.ir\n*.example.ir" })
                     <div class="form-text">کاربر بعد از پرداخت فقط به این دامنه‌ها برمی‌گردد. خالی بگذارید تا همه دامنه‌ها مجاز باشند (توصیه نمی‌شود).</div>
                 </div>
-                <button class="btn btn-primary" type="submit">@(Model.IsNew ? "ساخت اپلیکیشن" : "ذخیره")</button>
             }
         </div>
     </div>

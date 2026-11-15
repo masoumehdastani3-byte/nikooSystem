@@ -9,7 +9,10 @@
         <h2 class="mb-1">@ViewBag.Title</h2>
         <p class="text-muted mb-0 small">محتوا را با ادیتور HTML به‌صورت دیداری طراحی کنید.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Pages","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="pageForm"><i class="bi bi-check2"></i> ذخیره صفحه</button>
+        <a class="btn-outline-store" href="@Url.Action("Pages","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
 
 @using (Html.BeginForm("EditPage", "ShopAdmin", new { company }, FormMethod.Post, new { id = "pageForm" }))
@@ -49,13 +52,12 @@
                 Url = Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Slug) ? Html.Seo().Url(Url.RouteUrl("ShopPage", new { company, slug = Model.Slug })) : null
             })
         </div>
-        <div class="col-12 d-flex gap-2">
-            <button class="btn-store" type="submit">ذخیره صفحه</button>
-            @if (Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Slug))
-            {
+        @if (Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Slug))
+        {
+            <div class="col-12">
                 <a class="btn-outline-store" href="@Url.Action("Page","Shop", new { company, slug = Model.Slug })" target="_blank">پیش‌نمایش</a>
-            }
-        </div>
+            </div>
+        }
     </div>
 }
 

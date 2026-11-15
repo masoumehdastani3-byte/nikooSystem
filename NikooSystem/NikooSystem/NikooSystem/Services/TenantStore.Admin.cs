@@ -13,7 +13,7 @@ namespace NikooSystem.Services
         /// <summary>The sample sites linked from the main site; they cannot be deleted from the panel.</summary>
         public static readonly IReadOnlyCollection<string> DemoCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            "FASHION", "GROCERY", "DIGITAL", "ACADEMY", "BOOKS", "NEWS", "COMPANY", "CLINIC", "SALON", "CONSULT", "CLUB", "SCHOOL", "CAFE"
+            "FASHION", "GROCERY", "DIGITAL", "ACADEMY", "BOOKS", "NEWS", "COMPANY", "CLINIC", "SALON", "CONSULT", "CLUB", "SCHOOL", "CAFE", "REPAIR"
         };
 
         public static bool IsDemo(string companyCode) => companyCode != null && DemoCodes.Contains(companyCode);
@@ -33,7 +33,8 @@ namespace NikooSystem.Services
             { "consulting", "CONSULT" },
             { "school", "SCHOOL" },
             { "club", "CLUB" },
-            { "cafe", "CAFE" }
+            { "cafe", "CAFE" },
+            { "repair", "REPAIR" }
         };
 
         /// <summary>The store whatever its state (suspended or expired ones included).</summary>

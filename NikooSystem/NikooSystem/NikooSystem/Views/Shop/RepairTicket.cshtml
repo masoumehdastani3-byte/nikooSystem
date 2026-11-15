@@ -1,0 +1,87 @@
+@model RepairJob
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+    var steps = RepairText.PathOf(Model);
+}
+<section class="rp-page rp-status">
+    <div class="container rp-wrap rp-ticket-wrap">
+        <div class="rp-ticket">
+            <div class="rp-ticket-head d-flex justify-content-between align-items-center flex-wrap gap-2 rp-no-print">
+                <div>
+                    <h1 class="h3 mb-1">@Model.DeviceLabel</h1>
+                    <p class="text-muted mb-0">کد پیگیری <strong dir="ltr">@Model.Code</strong></p>
+                </div>
+                <span class="badge @Model.Status.Badge() fs-6">@Model.Status.StepTitle(Model)</span>
+            </div>
+            <div class="rp-section rp-no-print">
+                <div><span>مشتری</span>@Model.CustomerName</div>
+                @if (!string.IsNullOrWhiteSpace(Model.Problem))
+                {
+                    <div class="mt-2"><span>مشکل</span>@Model.Problem</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(Model.PickupAddress))
+                {
+                    <div class="mt-2"><span>آدرس</span>@Model.PickupAddress</div>
+                }
+                @if (Model.Status == RepairStatus.PickupAssigned || Model.Status == RepairStatus.PickedUp)
+                {
+                    <div class="mt-2"><span>@(Model.NeedsVisit ? "کارشناس" : "پیک")</span>@Model.CourierName @if (!string.IsNullOrWhiteSpace(Model.PickupWindow)) { <text>— @Model.PickupWindow</text> }</div>
+                }
+                @if (Model.PromisedAt.HasValue && Model.Status != RepairStatus.Delivered && Model.Status != RepairStatus.Cancelled)
+                {
+                    <div class="mt-2"><span>وعده تحویل</span>@Model.PromisedAt.Value.ToShamsiText()</div>
+                }
+                @if (Model.Status == RepairStatus.Delivered && Model.WarrantyDays > 0 && Model.DeliveredAt.HasValue)
+                {
+                    <div class="mt-2"><span>گارانتی تا</span>@Model.DeliveredAt.Value.AddDays(Model.WarrantyDays).ToShamsiText()</div>
+                }
+            </div>
+            @if (Model.Status == RepairStatus.Cancelled)
+            {
+                <div class="alert alert-secondary rp-ticket-note mb-0">این درخواست لغو شده است. برای پیگیری با تعمیرگاه تماس بگیرید.</div>
+            }
+            else
+            {
+                <div class="rp-status-side">
+                    <ol class="rp-timeline rp-no-print">
+                        @foreach (var step in steps)
+                        {
+                            var reached = RepairText.Reached(Model, step);
+                            var now = step == Model.Status;
+                            <li class="@(reached ? "is-done" : "") @(now ? "is-now" : "")">
+                                <span class="dot"></span>
+                                @step.StepTitle(Model)
+                            </li>
+                        }
+                    </ol>
+                    @if (Model.SaleInvoiceId <= 0 && !Model.ReturnRequested && Model.QuoteState != RepairQuoteState.Approved && Model.Charges > 0
+                        && (Model.QuoteState == RepairQuoteState.Pending || Model.Status == RepairStatus.Diagnosing || Model.Status == RepairStatus.QuoteSent || Model.Status == RepairStatus.Received))
+                    {
+                        <div class="rp-quote rp-no-print">
+                            <strong>تصمیم هزینه با شماست</strong>
+                            <p class="mb-0 mt-1">@(Model.NeedsVisit ? "با پرداخت، تعمیر در محل شروع می‌شود." : Model.BringsInPerson ? "با پرداخت، تعمیر شروع می‌شود. اگر نخواهید، دستگاه را حضوری پس می‌گیرید و ایاب و ذهاب گرفته نمی‌شود." : "با پرداخت، تعمیر شروع می‌شود. اگر نخواهید، اول هزینه حمل را می‌پردازید و بعد دستگاه برمی‌گردد.")</p>
+                            @using (Html.BeginForm("ApproveRepairQuote", "Shop", new { company }, FormMethod.Post, new { @class = "rp-quote-actions" }))
+                            {
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="code" value="@Model.Code" />
+                                <input type="hidden" name="mobile" value="@Model.CustomerMobile" />
+                                <button class="btn-wm" type="submit" name="decision" value="yes">تأیید و پرداخت @Model.Charges.ToToman()</button>
+                                <button class="btn-wm-outline" type="submit" name="decision" value="return" @(Model.NeedsVisit ? "hidden" : null)>@(Model.ReturnPreview > 0 ? "ارجاع و پرداخت " + Model.ReturnPreview.ToToman() : "درخواست ارجاع دستگاه")</button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @Html.Partial("_RepairStatement", Model)
+            <div class="rp-bill-actions rp-no-print">
+                <button class="btn-wm-outline" type="button" onclick="window.print()"><i class="bi bi-printer"></i> چاپ پیش‌فاکتور</button>
+            </div>
+            @if (Model.ReturnRequested)
+            {
+                <div class="alert alert-secondary rp-ticket-note mb-0">@(Model.BringsInPerson ? "ارجاع ثبت شد. دستگاه را حضوری پس می‌گیرید و ایاب و ذهاب گرفته نشده است." : "ارجاع ثبت شد. تعمیر انجام نمی‌شود و دستگاه پس از پرداخت حمل برمی‌گردد.")</div>
+            }
+            <div class="rp-ticket-more rp-no-print"><a href="@Url.Action("RepairTrack","Shop", new { company })">پیگیری یک دستگاه دیگر</a></div>
+        </div>
+    </div>
+</section>

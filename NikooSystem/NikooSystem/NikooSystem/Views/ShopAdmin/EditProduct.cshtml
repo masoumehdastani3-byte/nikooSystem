@@ -27,6 +27,7 @@
             </div>
         </div>
         <div class="admin-page-head-actions">
+            <button class="btn-store admin-page-head-action" type="submit" form="productForm"><i class="bi bi-check2"></i> ذخیره</button>
             @if (Model.Id > 0)
             {
                 <a class="btn-outline-store" href="@Url.Action("Product","Shop", new { company, slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
@@ -139,6 +140,14 @@
                         <div class="col-md-6">
                             <label class="form-label">کد کالا</label>
                             @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً BALL-01" })
+                            @if (kind.IsShop && Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Sku))
+                            {
+                                <div class="form-text"><a href="@Url.Action("ProductBarcodes", "ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-upc"></i> ساخت و چاپ بارکد این کالا</a></div>
+                            }
+                            else if (kind.IsShop)
+                            {
+                                <div class="form-text">با حروف انگلیسی یا عدد بنویسید. بعد از ذخیره، از همین کد بارکد قابل چاپ ساخته می‌شود.</div>
+                            }
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">قیمت (تومان)</label>
@@ -397,10 +406,6 @@
             </div>
         </div>
 
-        <div class="settings-save">
-            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
-            <span class="small text-muted">تغییرات تب‌های مشخصات، تصاویر، برچسب، جلسات و سئو با همین دکمه ذخیره می‌شوند.</span>
-        </div>
     }
 </div>
 

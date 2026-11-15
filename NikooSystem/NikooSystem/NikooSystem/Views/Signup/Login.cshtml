@@ -9,6 +9,7 @@
             <h1>ورود به پنل کسب‌وکار</h1>
             <p class="ob-sub">با شماره موبایل و رمزی که هنگام ساخت سایت انتخاب کردید وارد شوید.</p>
             <div class="alert alert-info small py-2 ob-alert-plain">این صفحه مخصوص <strong>مدیران کسب‌وکار</strong> است.</div>
+            @Html.FlashMessages()
             @using (Html.BeginForm("Login", "Signup", FormMethod.Post))
             {
                 @Html.AntiForgeryToken()
@@ -24,6 +25,15 @@
                     @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small" })
                 </div>
                 <button type="submit" class="btn-primary-shop w-100 py-2"><i class="bi bi-box-arrow-in-left"></i> ورود</button>
+            }
+            @using (Html.BeginForm("ForgotPassword", "Signup", FormMethod.Post, new { @class = "mt-3" }))
+            {
+                @Html.AntiForgeryToken()
+                <div class="small text-muted mb-2">رمز را فراموش کرده‌اید؟ شماره موبایل مالک را وارد کنید تا رمز موقت پیامک شود.</div>
+                <div class="mb-2">
+                    <input type="text" name="mobile" class="form-control" dir="ltr" placeholder="09121234567" inputmode="numeric" autocomplete="tel" />
+                </div>
+                <button type="submit" class="btn btn-outline-secondary w-100">ارسال رمز موقت</button>
             }
             <div class="text-center mt-3 small">
                 هنوز سایت ندارید؟ <a href="@Url.Action("Index","Signup")">رایگان بسازید</a>

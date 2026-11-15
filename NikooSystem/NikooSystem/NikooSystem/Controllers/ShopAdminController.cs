@@ -161,6 +161,16 @@ namespace NikooSystem.Controllers
                 }
                 return View();
             }
+            if (Kind.IsRepair)
+            {
+                var jobs = TenantStore.GetRepairJobs(CompanyCode);
+                ViewBag.OpenCount = jobs.Count(j => j.IsOpen);
+                ViewBag.ReadyCount = jobs.Count(j => j.Status == RepairStatus.Ready);
+                ViewBag.PickupCount = jobs.Count(j => j.Status == RepairStatus.Requested || j.Status == RepairStatus.PickupAssigned || j.Status == RepairStatus.PickedUp);
+                ViewBag.UnreadMessages = TenantStore.CountUnreadMessages(CompanyCode);
+                ViewBag.RecentRepairs = jobs.Take(8).ToList();
+                return View();
+            }
             if (Kind.IsMenu)
             {
                 ViewBag.ItemCount = TenantStore.CountProducts(CompanyCode);
@@ -328,6 +338,32 @@ namespace NikooSystem.Controllers
                         ? "با اتصال زرین‌پال، شهریه کلاس و اجاره سالن آنلاین گرفته می‌شود و برای کلاس خصوصی درصد بیعانه را تعیین می‌کنید."
                         : "با اتصال زرین‌پال و تعیین درصد بیعانه، نوبت‌های بدون مراجعه کم می‌شود.",
                     Done = s.EnablePayment && TenantProvisioningService.HasValidMerchant(s) && (Kind.IsCampus || s.BookingDepositPercent > 0),
+                    Optional = true,
+                    Url = SetupUrl(4)
+                });
+            }
+            else if (Kind.IsRepair)
+            {
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "ثبت اولین پذیرش واقعی",
+                    Hint = "دستگاهی را که نمونه نیست در پذیرش جدید ثبت کنید.",
+                    Done = TenantStore.CountRepairs(CompanyCode, false) > 0,
+                    Url = Url.Action("NewRepair", new { company = CompanyCode })
+                });
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "حذف برگه‌های نمونه",
+                    Hint = "برگه‌های نمونه فقط برای دیدن مسیر کار هستند. وضعیت‌شان را تحویل‌شده یا لغو بگذارید، یا همان را در کار واقعی ویرایش کنید.",
+                    Done = TenantStore.CountRepairs(CompanyCode, true) == 0,
+                    Optional = true,
+                    Url = Url.Action("Repairs", new { company = CompanyCode })
+                });
+                items.Add(new SetupChecklistItem
+                {
+                    Title = "اتصال درگاه پرداخت زرین‌پال",
+                    Hint = "برای تعمیرگاه اختیاری است؛ دریافت نقد و کارت از صفحه برگه انجام می‌شود.",
+                    Done = s.EnablePayment && TenantProvisioningService.HasValidMerchant(s),
                     Optional = true,
                     Url = SetupUrl(4)
                 });

@@ -40,6 +40,40 @@ namespace NikooSystem.Services
             BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/AppointmentDetails/" + a.Id);
         }
 
+        public static void RepairIntake(string code, RepairJob job)
+        {
+            if (job == null) return;
+            var text = new Message("🔧", job.Source == "online" ? "درخواست تعمیر" : "پذیرش تعمیر", BaleNotifier.SiteName(code))
+                .Line("دستگاه", job.DeviceLabel)
+                .Line("مشتری", Person(job.CustomerName, job.CustomerMobile))
+                .Line("مشکل", BaleNotifier.Clip(job.Problem, 300))
+                .Line("کد پیگیری", job.Code);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/RepairDetails/" + job.Id);
+        }
+
+        public static void RepairPaid(string code, RepairJob job)
+        {
+            if (job == null) return;
+            var text = new Message("✅", "پرداخت تعمیر", BaleNotifier.SiteName(code))
+                .Line("دستگاه", job.DeviceLabel)
+                .Line("مشتری", Person(job.CustomerName, job.CustomerMobile))
+                .Line("مبلغ", job.PaidAmount > 0 ? job.PaidAmount.ToToman() : null)
+                .Line("کد پیگیری", job.Code);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/RepairDetails/" + job.Id);
+        }
+
+        public static void RepairReturn(string code, RepairJob job)
+        {
+            if (job == null) return;
+            var text = new Message("↩", "ارجاع دستگاه", BaleNotifier.SiteName(code))
+                .Line("دستگاه", job.DeviceLabel)
+                .Line("مشتری", Person(job.CustomerName, job.CustomerMobile))
+                .Line("حمل رفت", job.TravelAmount > 0 ? job.TravelAmount.ToToman() : null)
+                .Line("حمل برگشت", job.ReturnShipping > 0 ? job.ReturnShipping.ToToman() : "بدون مبلغ")
+                .Line("کد پیگیری", job.Code);
+            BaleNotifier.Notify(code, NotifyEvent.Appointment, text.ToString(), "/ShopAdmin/" + code + "/RepairDetails/" + job.Id);
+        }
+
         public static void StoreAppointmentCancelled(string code, StoreAppointment a)
         {
             var text = new Message("❌", "لغو نوبت توسط مراجع", BaleNotifier.SiteName(code))
@@ -282,6 +316,8 @@ namespace NikooSystem.Services
                     kind.IsCampus
                         ? "ثبت‌نام کلاس، رزرو ساعتی سالن و جلسه خصوصی تازه، و لغو آن‌ها"
                         : "نوبت تازه (همراه بیعانه پرداخت‌شده) و لغو نوبت توسط مراجع"));
+            if (kind.IsRepair)
+                list.Add(Option(settings, NotifyEvent.Appointment, "پذیرش تعمیر", "درخواست آنلاین و پذیرش حضوری دستگاه"));
             if (kind.IsContent)
                 list.Add(Option(settings, NotifyEvent.Review, "دیدگاه خوانندگان", "دیدگاهی که زیر خبر یا مقاله ثبت شد"));
             list.Add(Option(settings, NotifyEvent.Message, "پیام‌های تماس", "پیامی که از فرم «تماس با ما» رسید"));

@@ -1,0 +1,291 @@
+@model RepairJob
+@{
+    var statuses = (RepairStatus[])ViewData["Statuses"];
+    var parts = Model.Parts ?? new List<RepairPart>();
+    var rows = Math.Max(4, parts.Count + 1);
+    var goods = ViewBag.Goods as List<StoreGoodsItem> ?? new List<StoreGoodsItem>();
+    var goodsCost = ViewBag.GoodsCost as Dictionary<int, long> ?? new Dictionary<int, long>();
+    var locked = Model.SaleInvoiceId > 0;
+    var stage = Model.OpenStage();
+    var counter = Model.Handover != "pickup" && Model.Handover != "visit";
+    var allowed = new List<RepairStatus> { Model.Status };
+    if (Model.Id > 0)
+    {
+        foreach (var move in ViewBag.Moves as RepairStatus[] ?? new RepairStatus[0])
+        {
+            if (!allowed.Contains(move))
+            {
+                allowed.Add(move);
+            }
+        }
+    }
+    else
+    {
+        allowed = new List<RepairStatus> { RepairStatus.Received, RepairStatus.Diagnosing };
+    }
+}
+<div class="rp-tabs" role="tablist">
+    <button type="button" role="tab" data-rp-tab="intake" class="@(stage == "intake" ? "is-on" : "")">پذیرش</button>
+    <button type="button" role="tab" data-rp-tab="field" data-rp-only="field" class="@(stage == "field" ? "is-on" : "") @(counter ? "rp-off" : "")">هماهنگی</button>
+    <button type="button" role="tab" data-rp-tab="work" class="@(stage == "work" ? "is-on" : "")">عیب‌یابی</button>
+    <button type="button" role="tab" data-rp-tab="cost" class="@(stage == "cost" ? "is-on" : "")">هزینه</button>
+    <button type="button" role="tab" data-rp-tab="done" class="@(stage == "done" ? "is-on" : "")">تحویل</button>
+</div>
+
+<div class="panel-card rp-pane @(stage == "intake" ? "is-on" : "")" data-rp-pane="intake">
+    <p class="rp-pane-lead">مشخصات مشتری و دستگاه، و اینکه دستگاه چطور به دست تعمیرگاه می‌رسد.</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">نام مشتری</label>
+            <input class="form-control" name="CustomerName" value="@Model.CustomerName" maxlength="80" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">موبایل</label>
+            <input class="form-control" name="CustomerMobile" value="@Model.CustomerMobile" maxlength="14" required dir="ltr" inputmode="tel" placeholder="09121234567" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">نوع دستگاه</label>
+            <select class="form-select" name="DeviceType">
+                @foreach (var type in RepairText.DeviceTypes)
+                {
+                    <option value="@type" @(Model.DeviceType == type ? "selected" : null)>@type</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">برند</label>
+            <input class="form-control" name="Brand" value="@Model.Brand" maxlength="60" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">مدل</label>
+            <input class="form-control" name="ModelName" value="@Model.ModelName" maxlength="60" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">سریال</label>
+            <input class="form-control" name="Serial" value="@Model.Serial" maxlength="60" dir="ltr" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">رنگ</label>
+            <input class="form-control" name="Color" value="@Model.Color" maxlength="40" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">نحوه تحویل</label>
+            <select class="form-select" name="Handover" data-rp-handover>
+                <option value="counter" @(counter ? "selected" : null)>حضوری آورده می‌شود</option>
+                <option value="pickup" @(Model.Handover == "pickup" ? "selected" : null)>پیک دستگاه را ببرد</option>
+                <option value="visit" @(Model.Handover == "visit" ? "selected" : null)>کارشناس حضور پیدا کند</option>
+            </select>
+        </div>
+        <div class="col-12">
+            <label class="form-label">لوازم همراه</label>
+            <input class="form-control" name="Accessories" value="@Model.Accessories" maxlength="300" placeholder="شارژر، قاب، سیم‌کارت" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">شرح مشکل</label>
+            <textarea class="form-control" name="Problem" rows="2" maxlength="1000" required>@Model.Problem</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card rp-pane @(stage == "field" ? "is-on" : "") @(counter ? "rp-off" : "")" data-rp-pane="field" data-rp-only="field">
+    <p class="rp-pane-lead">آدرس و کسی که برای بردن دستگاه یا تعمیر در محل می‌رود.</p>
+    <div class="row g-3">
+        <div class="col-md-8">
+            <label class="form-label">آدرس محل</label>
+            <input class="form-control" name="PickupAddress" value="@Model.PickupAddress" maxlength="300" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">بازه حضور</label>
+            <input class="form-control" name="PickupWindow" value="@Model.PickupWindow" maxlength="80" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">نام پیک یا کارشناس</label>
+            <input class="form-control" name="CourierName" value="@Model.CourierName" maxlength="60" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">موبایل پیک یا کارشناس</label>
+            <input class="form-control" name="CourierMobile" value="@Model.CourierMobile" maxlength="14" dir="ltr" />
+        </div>
+        <div class="col-md-4 d-flex align-items-end">
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="ReturnByCourier" value="true" id="returnByCourier" @(Model.ReturnByCourier ? "checked" : null) />
+                <label class="form-check-label" for="returnByCourier">برگشت با پیک</label>
+            </div>
+        </div>
+        @if (Model.Id > 0 && Model.NeedsField && (Model.Status == RepairStatus.Requested || Model.Status == RepairStatus.PickupAssigned))
+        {
+            <div class="col-12">
+                <button class="btn-store" type="button" data-rp-dispatch>هماهنگ کردن @(Model.NeedsVisit ? "کارشناس" : "پیک") و پیام به مشتری</button>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="panel-card rp-pane @(stage == "work" ? "is-on" : "")" data-rp-pane="work">
+    <p class="rp-pane-lead">نتیجه بررسی و کسی که دستگاه را تعمیر می‌کند.</p>
+    <div class="row g-3">
+        <div class="col-md-6">
+            <label class="form-label">تعمیرکار</label>
+            <input class="form-control" name="Technician" value="@Model.Technician" maxlength="60" />
+        </div>
+        <div class="col-12">
+            <label class="form-label">عیب‌یابی</label>
+            <textarea class="form-control" name="Diagnosis" rows="3" maxlength="1000">@Model.Diagnosis</textarea>
+        </div>
+    </div>
+</div>
+
+<div class="panel-card rp-pane @(stage == "cost" ? "is-on" : "")" data-rp-pane="cost">
+    <p class="rp-pane-lead">برآورد، اجرت، ایاب و ذهاب و قطعه. بعد از ذخیره، پیش‌فاکتور برای مشتری قابل تأیید است.</p>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">برآورد (تومان)</label>
+            <input class="form-control" name="EstimateAmount" data-money value="@(Model.EstimateAmount > 0 ? Model.EstimateAmount.ToString() : "")" dir="ltr" inputmode="numeric" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">اجرت (تومان)</label>
+            <input class="form-control" name="LaborAmount" data-money value="@(Model.LaborAmount > 0 ? Model.LaborAmount.ToString() : "")" dir="ltr" inputmode="numeric" @(locked ? "readonly" : null) />
+        </div>
+        <div class="col-md-4 @(counter ? "rp-off" : null)" data-rp-travel>
+            <label class="form-label">ایاب و ذهاب (تومان)</label>
+            <input class="form-control" name="TravelAmount" data-money value="@(Model.TravelAmount > 0 ? Model.TravelAmount.ToString() : "")" dir="ltr" inputmode="numeric" @(locked ? "readonly" : null) />
+        </div>
+        <div class="col-12 @(counter ? null : "rp-off")" data-rp-walkin>
+            <p class="form-text mb-0">تحویل حضوری است و ایاب و ذهاب گرفته نمی‌شود.</p>
+        </div>
+        <div class="col-12">
+            <label class="form-label">قطعات</label>
+            @if (locked)
+            {
+                <p class="form-text">صورتحساب در حسابداری ثبت شده و اجرت، ایاب و ذهاب و قطعه قفل است.</p>
+            }
+            else
+            {
+                <p class="form-text">اگر قطعه را از انبار انتخاب کنید، نام و قیمت واحد از مبلغ همان کالا پر می‌شود و قیمت را می‌توانید عوض کنید. با ثبت صورتحساب از موجودی کم می‌شود. ردیف خالی ذخیره نمی‌شود.</p>
+            }
+            @for (var i = 0; i < rows; i++)
+            {
+                var part = i < parts.Count ? parts[i] : null;
+                <div class="row g-2 mb-2">
+                    <div class="col-md-3">
+                        <select class="form-select" name="partGoods" @(locked ? "disabled" : null)>
+                            <option value="0">بدون انبار</option>
+                            @foreach (var item in goods)
+                            {
+                                long cost;
+                                if (!goodsCost.TryGetValue(item.Id, out cost) || cost < 0)
+                                {
+                                    cost = 0;
+                                }
+                                <option value="@item.Id" data-title="@Html.AttributeEncode(item.Title)" data-price="@cost.ToString(System.Globalization.CultureInfo.InvariantCulture)" @(part != null && part.GoodsId == item.Id ? "selected" : null)>@item.Title (@item.Qty.ToFa())</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4"><input class="form-control" name="partTitle" value="@(part == null ? "" : part.Title)" placeholder="نام قطعه" maxlength="120" @(locked ? "readonly" : null) /></div>
+                    <div class="col-md-2"><input class="form-control" name="partQty" value="@(part == null ? "" : part.Qty.ToString())" placeholder="تعداد" dir="ltr" inputmode="numeric" @(locked ? "readonly" : null) /></div>
+                    <div class="col-md-3"><input class="form-control" name="partPrice" data-money value="@(part == null ? "" : part.UnitPrice.ToString())" placeholder="قیمت واحد" dir="ltr" inputmode="numeric" @(locked ? "readonly" : null) /></div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="panel-card rp-pane @(stage == "done" ? "is-on" : "")" data-rp-pane="done">
+    <p class="rp-pane-lead">وعده تحویل، گارانتی و یادداشت داخلی. مرحله را از «مرحله بعد» جلو ببرید.</p>
+    <div class="row g-3">
+        <div class="col-md-4">
+            <label class="form-label">وضعیت</label>
+            <select class="form-select" name="Status">
+                @foreach (var status in statuses.Where(s => allowed.Contains(s)))
+                {
+                    <option value="@status" @(Model.Status == status ? "selected" : null)>@status.StepTitle(Model)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">تاریخ وعده تحویل</label>
+            @Html.ShamsiDate("promised", Model.PromisedAt, "promised", "بدون وعده")
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">گارانتی (روز)</label>
+            <input class="form-control" name="WarrantyDays" value="@(Model.WarrantyDays > 0 ? Model.WarrantyDays.ToString() : "")" dir="ltr" inputmode="numeric" @(locked ? "readonly" : null) />
+        </div>
+        <div class="col-12">
+            <label class="form-label">یادداشت داخلی</label>
+            <textarea class="form-control" name="AdminNote" rows="2" maxlength="1000">@Model.AdminNote</textarea>
+        </div>
+    </div>
+</div>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var desk = document.querySelector(".rp-desk");
+    if (!desk) return;
+    function show(id) {
+        desk.querySelectorAll("[data-rp-pane]").forEach(function (el) {
+            el.classList.toggle("is-on", el.getAttribute("data-rp-pane") === id);
+        });
+        desk.querySelectorAll("[data-rp-tab]").forEach(function (el) {
+            var on = el.getAttribute("data-rp-tab") === id;
+            el.classList.toggle("is-on", on);
+            if (el.getAttribute("role") === "tab") el.setAttribute("aria-selected", on ? "true" : "false");
+        });
+    }
+    function fieldOpen() {
+        var sel = desk.querySelector("[data-rp-handover]");
+        var open = !sel || sel.value !== "counter";
+        desk.querySelectorAll("[data-rp-only='field']").forEach(function (el) {
+            el.classList.toggle("rp-off", !open);
+        });
+        desk.querySelectorAll("[data-rp-travel]").forEach(function (el) {
+            el.classList.toggle("rp-off", !open);
+        });
+        desk.querySelectorAll("[data-rp-walkin]").forEach(function (el) {
+            el.classList.toggle("rp-off", open);
+        });
+        if (!open && desk.querySelector("[data-rp-tab='field'].is-on")) show("intake");
+    }
+    desk.addEventListener("click", function (e) {
+        var tab = e.target.closest("[data-rp-tab]");
+        if (!tab || !desk.contains(tab) || tab.classList.contains("rp-off")) return;
+        show(tab.getAttribute("data-rp-tab"));
+    });
+    var handover = desk.querySelector("[data-rp-handover]");
+    if (handover) handover.addEventListener("change", fieldOpen);
+    function applyGoods(sel, onlyEmpty) {
+        if (!sel || sel.disabled) return;
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value || opt.value === "0") return;
+        var row = sel.closest(".row");
+        if (!row) return;
+        var title = row.querySelector("[name=partTitle]");
+        var price = row.querySelector("[name=partPrice]");
+        var qty = row.querySelector("[name=partQty]");
+        var name = opt.getAttribute("data-title") || "";
+        var unit = opt.getAttribute("data-price") || "";
+        var priceDigits = String(price && price.value || "").replace(/[^\d]/g, "").replace(/^0+/, "");
+        if (title && !title.readOnly && name && (!onlyEmpty || !String(title.value || "").trim())) title.value = name;
+        if (qty && !qty.readOnly && !String(qty.value || "").trim()) qty.value = "1";
+        if (price && !price.readOnly && unit && unit !== "0" && (!onlyEmpty || !priceDigits)) {
+            price.value = unit;
+            price.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+    }
+    desk.addEventListener("change", function (e) {
+        var sel = e.target && e.target.closest ? e.target.closest("[name=partGoods]") : null;
+        if (!sel || !desk.contains(sel)) return;
+        applyGoods(sel, false);
+    });
+    desk.querySelectorAll("[name=partGoods]").forEach(function (sel) { applyGoods(sel, true); });
+    var dispatch = desk.querySelector("[data-rp-dispatch]");
+    if (dispatch) dispatch.addEventListener("click", function () {
+        var form = document.getElementById("rpDispatch");
+        if (!form) return;
+        form.courierName.value = (desk.querySelector("[name=CourierName]") || {}).value || "";
+        form.courierMobile.value = (desk.querySelector("[name=CourierMobile]") || {}).value || "";
+        form.pickupWindow.value = (desk.querySelector("[name=PickupWindow]") || {}).value || "";
+        form.submit();
+    });
+    fieldOpen();
+    show(desk.getAttribute("data-rp-current") || "intake");
+});
+</script>

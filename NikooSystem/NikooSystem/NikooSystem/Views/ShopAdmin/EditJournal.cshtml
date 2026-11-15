@@ -19,9 +19,12 @@
         <h2>@ViewBag.Title</h2>
         <p class="lead">هر ردیف بدهکار یا بستانکار است؛ جمع دو ستون باید برابر باشد. ردیف‌ها را اضافه یا حذف کنید.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Journal","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="journalForm"><i class="bi bi-check2"></i> ثبت سند</button>
+        <a class="btn-outline-store" href="@Url.Action("Journal","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
-@using (Html.BeginForm("EditJournal", "ShopAdmin", new { company }, FormMethod.Post))
+@using (Html.BeginForm("EditJournal", "ShopAdmin", new { company }, FormMethod.Post, new { id = "journalForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -124,7 +127,6 @@
         تفصیلی می‌خواهد باز است.
         <a href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">حساب‌های تفصیلی</a>
     </p>
-    <button class="btn-store" type="submit">ثبت سند</button>
 }
 <script type="text/template" id="journalRowTpl">
 <tr>

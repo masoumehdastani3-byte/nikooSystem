@@ -1,0 +1,104 @@
+@model RepairJob
+@{
+    var settings = ViewBag.Settings as StoreSettings;
+    var balance = ViewBag.Balance is long ? (long)ViewBag.Balance : Model.Due;
+    var invoice = ViewBag.Invoice as StoreSalesInvoice;
+    var lines = Model.ChargeLines();
+    var payable = invoice != null ? invoice.Total : Model.Bill;
+    var title = Model.ReturnRequested
+        ? "صورتحساب ارجاع"
+        : (Model.QuoteState == RepairQuoteState.Approved || Model.SaleInvoiceId > 0 ? "صورتحساب تعمیر" : "پیش‌فاکتور تعمیر");
+    var shop = settings == null || string.IsNullOrWhiteSpace(settings.StoreName) ? "تعمیرگاه" : settings.StoreName;
+}
+<article class="rp-bill">
+    <header class="rp-bill-head">
+        <div>
+            <div class="rp-bill-brand">@shop</div>
+            <div class="rp-bill-title">@title</div>
+            @if (settings != null && !string.IsNullOrWhiteSpace(settings.Phone))
+            {
+                <div class="rp-bill-shop">تلفن <span dir="ltr">@settings.Phone</span></div>
+            }
+            @if (settings != null && !string.IsNullOrWhiteSpace(settings.Address))
+            {
+                <div class="rp-bill-shop">@settings.Address</div>
+            }
+        </div>
+        <div class="rp-bill-meta">
+            <div><span>کد پیگیری</span> <b dir="ltr">@Model.Code</b></div>
+            <div><span>تاریخ</span> <b>@Model.CreatedAt.ToShamsi()</b></div>
+            <div><span>وضعیت</span> <b>@Model.Status.StepTitle(Model)</b></div>
+        </div>
+    </header>
+    <div class="rp-bill-who">
+        <div><span>مشتری</span><b>@Model.CustomerName</b></div>
+        <div><span>موبایل</span><b dir="ltr">@Model.CustomerMobile</b></div>
+        <div><span>دستگاه</span><b>@Model.DeviceLabel</b></div>
+        @if (!string.IsNullOrWhiteSpace(Model.Problem))
+        {
+            <div class="rp-bill-wide"><span>مشکل</span><b>@Model.Problem</b></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Diagnosis))
+        {
+            <div class="rp-bill-wide"><span>عیب‌یابی</span><b>@Model.Diagnosis</b></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.PickupAddress))
+        {
+            <div class="rp-bill-wide"><span>آدرس</span><b>@Model.PickupAddress</b></div>
+        }
+    </div>
+    <table class="rp-bill-lines">
+        <thead>
+            <tr><th>شرح</th><th>تعداد</th><th>مبلغ واحد</th><th>جمع</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var line in lines)
+            {
+                <tr>
+                    <td>@line.Title</td>
+                    <td>@line.Qty.ToFa()</td>
+                    <td>@line.UnitPrice.ToToman()</td>
+                    <td>@line.Amount.ToToman()</td>
+                </tr>
+            }
+            @if (lines.Count == 0)
+            {
+                <tr><td colspan="4">مبلغی ثبت نشده است.</td></tr>
+            }
+        </tbody>
+        <tfoot>
+            @if (invoice != null && invoice.VatAmount > 0)
+            {
+                <tr><td colspan="3">مالیات</td><td>@invoice.VatAmount.ToToman()</td></tr>
+            }
+            <tr><td colspan="3">قابل پرداخت</td><td>@payable.ToToman()</td></tr>
+            <tr><td colspan="3">دریافت‌شده</td><td>@Model.PaidAmount.ToToman()</td></tr>
+            <tr class="is-due"><td colspan="3">مانده</td><td>@balance.ToToman()</td></tr>
+        </tfoot>
+    </table>
+    @if (Model.ReturnRequested && Model.BringsInPerson)
+    {
+        <p class="rp-bill-note">تعمیر انجام نمی‌شود. دستگاه را حضوری پس می‌گیرید و چون خودتان آن را آورده‌اید، ایاب و ذهاب گرفته نشده است.</p>
+    }
+    else if (Model.ReturnRequested)
+    {
+        <p class="rp-bill-note">تعمیر انجام نمی‌شود. هزینه حمل رفت و برگشت پرداخت شده و دستگاه برمی‌گردد. اجرت و قطعه حساب نشده است.</p>
+    }
+    else if (Model.SaleInvoiceId <= 0 && Model.QuoteState != RepairQuoteState.Approved && Model.Charges > 0
+        && (Model.QuoteState == RepairQuoteState.Pending || Model.Status == RepairStatus.Diagnosing || Model.Status == RepairStatus.QuoteSent || Model.Status == RepairStatus.Received)
+        && Model.BringsInPerson)
+    {
+        <p class="rp-bill-note">اول مبلغ را در درگاه پرداخت می‌کنید و بعد تعمیر شروع می‌شود. اگر تعمیر را نخواهید، دستگاه را حضوری پس می‌گیرید و ایاب و ذهاب گرفته نمی‌شود.</p>
+    }
+    else if (Model.SaleInvoiceId <= 0 && Model.QuoteState != RepairQuoteState.Approved && Model.Charges > 0
+        && (Model.QuoteState == RepairQuoteState.Pending || Model.Status == RepairStatus.Diagnosing || Model.Status == RepairStatus.QuoteSent || Model.Status == RepairStatus.Received)
+        && !Model.NeedsVisit)
+    {
+        <p class="rp-bill-note">اول مبلغ را در درگاه پرداخت می‌کنید و بعد تعمیر شروع می‌شود. اگر تعمیر را نخواهید، هزینه حمل رفت و برگشت @Model.ReturnPreview.ToToman() را می‌پردازید و بعد دستگاه برمی‌گردد.</p>
+    }
+    else if (Model.SaleInvoiceId <= 0 && Model.QuoteState != RepairQuoteState.Approved && Model.Charges > 0
+        && (Model.QuoteState == RepairQuoteState.Pending || Model.Status == RepairStatus.Diagnosing || Model.Status == RepairStatus.QuoteSent || Model.Status == RepairStatus.Received))
+    {
+        <p class="rp-bill-note">اول مبلغ را در درگاه پرداخت می‌کنید و بعد تعمیر در محل شروع می‌شود.</p>
+    }
+</article>

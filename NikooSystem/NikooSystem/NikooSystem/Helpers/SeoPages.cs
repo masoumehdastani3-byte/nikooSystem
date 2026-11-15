@@ -78,6 +78,7 @@ namespace NikooSystem.Helpers
                 case "school": return "EducationalOrganization";
                 case "club": return "SportsActivityLocation";
                 case "cafe": return "CafeOrCoffeeShop";
+                case "repair": return "LocalBusiness";
                 default: return "OnlineStore";
             }
         }

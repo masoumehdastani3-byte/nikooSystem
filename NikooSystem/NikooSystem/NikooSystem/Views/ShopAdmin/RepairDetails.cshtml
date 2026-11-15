@@ -1,0 +1,170 @@
+@model RepairJob
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "برگه " + Model.Code;
+    var company = (string)ViewBag.CompanyCode;
+    var banks = (List<StoreBankAccount>)ViewBag.Banks ?? new List<StoreBankAccount>();
+    var statuses = Enum.GetValues(typeof(RepairStatus)).Cast<RepairStatus>().ToArray();
+    var pay = AccountingText.PayOptions(banks, false, "Cash");
+    var balance = ViewBag.Balance is long ? (long)ViewBag.Balance : Model.Due;
+    var invoice = ViewBag.Invoice as StoreSalesInvoice;
+    var next = Model.NextStep();
+    var moves = ViewBag.Moves as RepairStatus[] ?? new RepairStatus[0];
+    var formData = new ViewDataDictionary(ViewData);
+    formData["Statuses"] = statuses;
+    var steps = RepairText.PathOf(Model);
+    var stage = Model.OpenStage();
+}
+<div class="rp-desk" data-rp-current="@stage">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">برگه <span dir="ltr">@Model.Code</span> <span class="badge @Model.Status.Badge() fs-6 align-middle">@Model.Status.StepTitle(Model)</span></h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="repairForm"><i class="bi bi-check2"></i> ذخیره برگه</button>
+        <a class="btn-outline-store" href="@Url.Action("PrintRepair","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-printer"></i> چاپ</a>
+        <a class="btn-outline-store" href="@Url.Action("Repairs","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> فهرست</a>
+    </div>
+</div>
+@if (!string.IsNullOrWhiteSpace(next))
+{
+    <div class="alert alert-info">قدم بعد: @next</div>
+}
+<div class="row g-3">
+    <div class="col-lg-8">
+        @using (Html.BeginForm("UpdateRepair", "ShopAdmin", new { company }, FormMethod.Post, new { novalidate = "novalidate", id = "repairForm" }))
+        {
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@Model.Id" />
+            @Html.Partial("_RepairForm", Model, formData)
+        }
+        @if (Model.NeedsField && (Model.Status == RepairStatus.Requested || Model.Status == RepairStatus.PickupAssigned))
+        {
+            using (Html.BeginForm("DispatchPickup", "ShopAdmin", new { company }, FormMethod.Post, new { id = "rpDispatch", @class = "rp-off" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="courierName" />
+                <input type="hidden" name="courierMobile" />
+                <input type="hidden" name="pickupWindow" />
+            }
+        }
+        <div class="panel-card rp-pane mt-3 @(stage == "cost" ? "is-on" : "")" data-rp-pane="cost">
+            <h5 class="mb-3">حساب این دستگاه</h5>
+            @if (Model.ReturnRequested)
+            {
+                <div class="alert alert-warning">مشتری تعمیر را نخواست و ارجاع دستگاه را ثبت کرد. فقط حمل رفت و برگشت صورتحساب می‌شود.</div>
+            }
+            <dl class="row mb-0">
+                @if (Model.ReturnRequested && !Model.BringsInPerson)
+                {
+                    <dt class="col-6">حمل رفت</dt><dd class="col-6 text-end">@Model.TravelDue.ToToman()</dd>
+                    <dt class="col-6">حمل برگشت</dt><dd class="col-6 text-end">@Model.ReturnShipping.ToToman()</dd>
+                }
+                else if (!Model.ReturnRequested)
+                {
+                    <dt class="col-6">قطعات</dt><dd class="col-6 text-end">@Model.PartsTotal.ToToman()</dd>
+                    <dt class="col-6">اجرت</dt><dd class="col-6 text-end">@Model.LaborAmount.ToToman()</dd>
+                }
+                @if (Model.BringsInPerson)
+                {
+                    <dt class="col-6">ایاب و ذهاب</dt><dd class="col-6 text-end">گرفته نمی‌شود</dd>
+                }
+                else if (!Model.ReturnRequested && (Model.TravelAmount > 0 || Model.NeedsField))
+                {
+                    <dt class="col-6">ایاب و ذهاب</dt><dd class="col-6 text-end">@Model.TravelAmount.ToToman()</dd>
+                }
+                <dt class="col-6">صورتحساب</dt><dd class="col-6 text-end">@((invoice == null ? Model.Bill : invoice.Total).ToToman())</dd>
+                <dt class="col-6">دریافت‌شده</dt><dd class="col-6 text-end">@Model.PaidAmount.ToToman()</dd>
+                <dt class="col-6">مانده</dt><dd class="col-6 text-end"><strong>@balance.ToToman()</strong></dd>
+            </dl>
+            @if (invoice != null)
+            {
+                <p class="small mt-2 mb-0"><a href="@Url.Action("EditSaleInvoice","ShopAdmin", new { company, id = invoice.Id })">فاکتور @invoice.Number</a></p>
+            }
+            else if (!Model.ReturnRequested && Model.Charges == 0 && Model.EstimateAmount > 0)
+            {
+                <p class="small text-muted mt-2 mb-0">تا وقتی اجرت، قطعه یا ایاب و ذهاب ثبت نشده، برآورد @Model.EstimateAmount.ToToman() فقط برای مشتری است و در دفتر نمی‌نشیند.</p>
+            }
+            @if (Model.SaleInvoiceId <= 0 && Model.Status != RepairStatus.Cancelled && Model.Charges > 0
+                && (Model.ReturnRequested || !Model.NeedsField || Model.QuoteState == RepairQuoteState.Approved))
+            {
+                using (Html.BeginForm("PostRepairInvoice", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "mt-3" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <button class="btn-store w-100" type="submit">@(Model.ReturnRequested ? "ثبت صورتحساب حمل" : "ثبت صورتحساب در حسابداری")</button>
+                }
+            }
+        </div>
+        @if (balance > 0 && Model.SaleInvoiceId > 0 && Model.Status != RepairStatus.Cancelled)
+        {
+            <div class="panel-card rp-pane mt-3 @(stage == (Model.ReturnRequested ? "cost" : "done") ? "is-on" : "")" data-rp-pane="@(Model.ReturnRequested ? "cost" : "done")">
+                <h5 class="mb-3">دریافت</h5>
+                @using (Html.BeginForm("CollectRepairPayment", "ShopAdmin", new { company }, FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <label class="form-label">مبلغ (تومان)</label>
+                    <input class="form-control mb-2" name="amount" data-money value="@balance" dir="ltr" inputmode="numeric" />
+                    <label class="form-label">صندوق یا بانک</label>
+                    <select class="form-select mb-3" name="payFrom">
+                        @foreach (var option in pay)
+                        {
+                            <option value="@option.Key">@option.Value</option>
+                        }
+                    </select>
+                    <button class="btn-store w-100" type="submit">ثبت دریافت</button>
+                }
+            </div>
+        }
+    </div>
+    <div class="col-lg-4">
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">مسیر کار</h5>
+            @if (Model.Status == RepairStatus.Cancelled)
+            {
+                <div class="alert alert-secondary">این درخواست لغو شده است.</div>
+            }
+            <ol class="rp-timeline mb-0">
+                @foreach (var step in steps)
+                {
+                    var reached = RepairText.Reached(Model, step);
+                    var now = step == Model.Status;
+                    <li class="@(reached ? "is-done" : "") @(now ? "is-now" : "")">
+                        <span class="dot"></span>
+                        <button type="button" data-rp-tab="@step.StageOf()">@step.StepTitle(Model)</button>
+                    </li>
+                }
+            </ol>
+        </div>
+        @if (moves.Length > 0)
+        {
+            <div class="panel-card mb-3">
+                <h5 class="mb-3">مرحله بعد</h5>
+                @foreach (var move in moves)
+                {
+                    using (Html.BeginForm("AdvanceRepair", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "mb-2" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="status" value="@move" />
+                        <button class="btn-outline-store w-100" type="submit">@move.StepTitle(Model)</button>
+                    }
+                }
+            </div>
+        }
+        <div class="panel-card mb-3">
+            <h5 class="mb-3">تاریخ‌ها</h5>
+            <dl class="row mb-0">
+                <dt class="col-5">ثبت</dt><dd class="col-7">@Model.CreatedAt.ToShamsi() <span class="text-muted">@Model.CreatedAt.ToString("HH:mm").ToFaDigits()</span></dd>
+                @if (Model.PromisedAt.HasValue) { <dt class="col-5">وعده تحویل</dt><dd class="col-7">@Model.PromisedAt.Value.ToShamsi()</dd> }
+                @if (Model.PickedUpAt.HasValue) { <dt class="col-5">@(Model.NeedsVisit ? "حضور کارشناس" : "تحویل به پیک")</dt><dd class="col-7">@Model.PickedUpAt.Value.ToShamsi()</dd> }
+                @if (Model.ReceivedAt.HasValue) { <dt class="col-5">رسید تعمیرگاه</dt><dd class="col-7">@Model.ReceivedAt.Value.ToShamsi()</dd> }
+                @if (Model.ReadyAt.HasValue) { <dt class="col-5">آماده تحویل</dt><dd class="col-7">@Model.ReadyAt.Value.ToShamsi()</dd> }
+                @if (Model.PaidAt.HasValue) { <dt class="col-5">دریافت</dt><dd class="col-7">@Model.PaidAt.Value.ToShamsi()</dd> }
+                @if (Model.DeliveredAt.HasValue) { <dt class="col-5">تحویل</dt><dd class="col-7">@Model.DeliveredAt.Value.ToShamsi()</dd> }
+                @if (Model.CancelledAt.HasValue) { <dt class="col-5">لغو</dt><dd class="col-7">@Model.CancelledAt.Value.ToShamsi()</dd> }
+            </dl>
+        </div>
+    </div>
+</div>
+</div>

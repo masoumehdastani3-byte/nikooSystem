@@ -148,6 +148,45 @@
             }
         </div>
     }
+    else if (kind.IsRepair)
+    {
+        var jobs = (List<RepairJob>)ViewBag.RecentRepairs ?? new List<RepairJob>();
+        <div class="row g-2 mb-3 dash-stats">
+            <div class="col-6 col-lg-3">@StatCard("bi-wrench", "برگه‌های باز", ((int)ViewBag.OpenCount).ToFa(), Url.Action("Repairs", "ShopAdmin", new { company }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-check2-circle", "آماده تحویل", ((int)ViewBag.ReadyCount).ToFa(), Url.Action("Repairs", "ShopAdmin", new { company, status = RepairStatus.Ready }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-truck", "منتظر پیک", ((int)ViewBag.PickupCount).ToFa(), Url.Action("Repairs", "ShopAdmin", new { company, status = RepairStatus.Requested }))</div>
+            <div class="col-6 col-lg-3">@StatCard("bi-envelope", "پیام‌ها", unread.ToFa(), Url.Action("Messages", "ShopAdmin", new { company }))</div>
+        </div>
+        <div class="panel-card mb-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">آخرین برگه‌ها</h5>
+                <a class="small" href="@Url.Action("NewRepair","ShopAdmin", new { company })">پذیرش جدید</a>
+            </div>
+            <table class="table align-middle table-sm mb-0">
+                <thead><tr><th>کد</th><th>مشتری</th><th>دستگاه</th><th>ثبت</th><th>وضعیت</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var job in jobs)
+                    {
+                        <tr>
+                            <td dir="ltr">@job.Code</td>
+                            <td>@job.CustomerName</td>
+                            <td>@job.DeviceLabel</td>
+                            <td class="small text-nowrap">@job.CreatedAt.ToShamsi()</td>
+                            <td><span class="badge @job.Status.Badge()">@job.Status.StepTitle(job)</span></td>
+                            <td class="row-actions">
+                                <a href="@Url.Action("PrintRepair","ShopAdmin", new { company, id = job.Id })">چاپ</a>
+                                <a href="@Url.Action("RepairDetails","ShopAdmin", new { company, id = job.Id })">برگه</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!jobs.Any())
+                    {
+                        <tr class="admin-empty-row"><td colspan="6">هنوز برگه‌ای ثبت نشده است.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
     else if (kind.IsMenu)
     {
         var calls = (List<WaiterCall>)ViewBag.RecentCalls ?? new List<WaiterCall>();

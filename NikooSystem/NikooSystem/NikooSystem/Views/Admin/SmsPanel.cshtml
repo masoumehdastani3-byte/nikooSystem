@@ -9,6 +9,8 @@
     var balanceOk = ViewBag.BalanceOk as bool?;
     var balanceToman = ViewBag.BalanceToman as long?;
     var balanceError = ViewBag.BalanceError as string;
+    var markup = (int)(ViewBag.Markup ?? 0);
+    var packages = (System.Collections.Generic.IReadOnlyList<NikooSystem.Models.SmsPackage>)ViewBag.Packages;
 }
 <div class="adm-head">
     <div>
@@ -21,6 +23,7 @@
     <h5 class="mb-1"><i class="bi bi-chat-dots"></i> حساب پاپوس نیکو سیستم</h5>
     <p class="text-muted small">
         همین حساب برای همه فروشگاه‌ها استفاده می‌شود. هزینه هر پیامک از موجودی پاپوس شما کم می‌شود و معادل تومان از اعتبار همان فروشگاه کسر می‌گردد.
+        مبلغی که فروشگاه برای شارژ می‌پردازد را با درصد سود همین صفحه بالاتر از اعتبار می‌گذارید.
         کلید را از <a href="https://my.pappus.ir/api-docs" target="_blank" rel="noopener">پنل پاپوس</a> بسازید.
     </p>
 
@@ -92,6 +95,50 @@
             }
         </div>
     }
+</div>
+
+<div class="adm-card mb-3">
+    <h5 class="mb-1"><i class="bi bi-percent"></i> سود فروش پیامک</h5>
+    <p class="text-muted small">
+        قیمت پرداختی سایت‌ها را بالاتر از اعتبار ارسال بگذارید. اعتبار همان مبلغی است که با هر پیامک، به اندازه هزینه پاپوس، از کیف سایت کم می‌شود.
+        سود شما تفاوت مبلغ پرداخت و اعتبار است. تخفیف بسته‌های بزرگ (۵، ۱۰ و ۱۵ درصد) روی قیمت فروش حساب می‌شود؛ اگر سود از آن تخفیف کمتر باشد، همان بسته ارزان‌تر از هزینه پاپوس فروخته می‌شود.
+    </p>
+    @using (Html.BeginForm("SaveSmsMarkup", "Admin", FormMethod.Post, new { @class = "row g-3 align-items-end", style = "max-width:720px" }))
+    {
+        @Html.AntiForgeryToken()
+        <div class="col-sm-4">
+            <label class="form-label" for="smsMarkup">درصد سود (۰ تا @NikooSystem.Services.SmsService.MaxMarkupPercent.ToFa())</label>
+            <input class="form-control" type="text" name="markup" id="smsMarkup" inputmode="numeric" dir="ltr" required
+                   value="@markup" placeholder="مثلاً ۴۰" />
+        </div>
+        <div class="col-sm-8">
+            <button class="btn btn-primary" type="submit"><i class="bi bi-check2"></i> ذخیره سود فروش</button>
+        </div>
+    }
+    <div class="table-responsive mt-3">
+        <table class="table table-sm align-middle mb-0">
+            <thead><tr><th>اعتبار ارسال</th><th>مبلغ پرداخت</th><th>سود شما</th></tr></thead>
+            <tbody>
+                @foreach (var p in packages)
+                {
+                    var profit = p.Price - p.Credit;
+                    <tr>
+                        <td>@p.Credit.ToToman()</td>
+                        <td>
+                            @p.Price.ToToman()
+                            @if (p.DiscountPercent > 0)
+                            {
+                                <span class="text-muted small">(@p.DiscountPercent.ToFa()٪ تخفیف از @p.FullPrice.ToToman())</span>
+                            }
+                        </td>
+                        <td class="@(profit > 0 ? "text-success" : profit < 0 ? "text-danger" : null)">
+                            @(profit > 0 ? "+" : "")@profit.ToToman()
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <div class="adm-card">

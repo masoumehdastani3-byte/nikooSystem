@@ -25,6 +25,7 @@
         <p class="lead">طرف‌حساب و نحوه دریافت را بالا بنویسید؛ کالا را جستجو کنید یا از ردیف‌ها انتخاب کنید.</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="saleForm"><i class="bi bi-check2"></i> ثبت فاکتور</button>
         @if (Model.Id > 0)
         {
             <a class="btn-outline-store" href="@Url.Action("PrintSaleInvoice","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-printer"></i> چاپ</a>
@@ -32,7 +33,7 @@
         <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">بازگشت به لیست</a>
     </div>
 </div>
-@using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post))
+@using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post, new { id = "saleForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -130,7 +131,10 @@
                                     }
                                 </select>
                             </td>
-                            <td><input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" placeholder="مثلاً کوتاهی مو / شهریه ماه" /></td>
+                            <td>
+                                <input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" placeholder="مثلاً کوتاهی مو / شهریه ماه" />
+                                <input type="hidden" name="lineShipping" value="@(line.IsShipping ? "1" : "0")" />
+                            </td>
                             <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
                             <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
                             <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
@@ -161,7 +165,6 @@
         </div>
     </div>
     <p class="acc-hint">@AccountingCopy.LineHint(kind)</p>
-    <button class="btn-store" type="submit">ثبت فاکتور</button>
 }
 <script type="text/template" id="saleRowTpl">
 <tr>
@@ -188,7 +191,10 @@
             }
         </select>
     </td>
-    <td><input class="form-control" name="lineTitle" maxlength="150" value="" placeholder="مثلاً کوتاهی مو / شهریه ماه" /></td>
+    <td>
+        <input class="form-control" name="lineTitle" maxlength="150" value="" placeholder="مثلاً کوتاهی مو / شهریه ماه" />
+        <input type="hidden" name="lineShipping" value="0" />
+    </td>
     <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="" /></td>
     <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="" /></td>
     <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>

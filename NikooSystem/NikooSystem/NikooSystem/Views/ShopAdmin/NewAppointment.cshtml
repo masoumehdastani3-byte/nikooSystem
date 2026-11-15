@@ -16,7 +16,13 @@
         <h2 class="mb-1">نوبت جدید</h2>
         <p class="text-muted mb-0 small">برای مراجعی که تلفنی یا حضوری نوبت می‌گیرد. زمان‌های خالی را از فهرست پایین انتخاب کنید یا ساعت را دستی بنویسید.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Calendar","ShopAdmin", new { company })">بازگشت به تقویم</a>
+    <div class="d-flex gap-2 flex-wrap">
+        @if (services.Any() && staff.Any())
+        {
+            <button class="btn-store" type="submit" form="apForm"><i class="bi bi-calendar-plus"></i> ثبت نوبت</button>
+        }
+        <a class="btn-outline-store" href="@Url.Action("Calendar","ShopAdmin", new { company })">بازگشت به تقویم</a>
+    </div>
 </div>
 
 @if (!services.Any() || !staff.Any())
@@ -82,9 +88,6 @@ else
                 <input class="form-check-input" type="checkbox" name="outsideHours" value="true" id="apOutside" />
                 <input type="hidden" name="outsideHours" value="false" />
                 <label class="form-check-label" for="apOutside">خارج از ساعت کاری یا در روز تعطیل هم ثبت شود (روی نوبت دیگر هرگز ثبت نمی‌شود)</label>
-            </div>
-            <div class="col-12 d-flex gap-2">
-                <button class="btn-store" type="submit"><i class="bi bi-calendar-plus"></i> ثبت نوبت</button>
             </div>
         </div>
     }

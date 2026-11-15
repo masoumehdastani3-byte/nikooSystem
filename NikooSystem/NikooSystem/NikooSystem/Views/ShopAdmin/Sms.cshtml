@@ -44,7 +44,7 @@ else if (!ready)
 
         <div class="panel-card mb-3" id="buy">
             <h5 class="mb-1"><i class="bi bi-phone"></i> شارژ اعتبار</h5>
-            <p class="small text-muted mb-3">پس از پرداخت، اعتبار بلافاصله اضافه می‌شود و تا تمام شدن برای پیامک‌های مشتریان قابل استفاده است.</p>
+            <p class="small text-muted mb-3">پس از پرداخت، اعتبار ارسال همان بسته به کیف پیامک این سایت اضافه می‌شود. مبلغ پرداخت قیمت فروش است و ممکن است با اعتبار فرق داشته باشد. هر ارسال به اندازه هزینه همان پیامک از اعتبار کم می‌شود.</p>
             <div class="storage-packages">
                 @foreach (var p in packages)
                 {
@@ -54,7 +54,9 @@ else if (!ready)
                             <span class="storage-tag">پرطرفدار</span>
                         }
                         <div class="size"><i class="bi bi-chat-dots"></i> @p.Credit.ToToman()</div>
+                        <div class="small text-muted">اعتبار ارسال</div>
                         <div class="price">@p.Price.ToToman()</div>
+                        <div class="small text-muted">مبلغ پرداخت</div>
                         @if (p.DiscountPercent > 0)
                         {
                             <div class="small"><del class="text-muted">@p.FullPrice.ToToman()</del> <span class="badge bg-success">@p.DiscountPercent.ToFa()٪ تخفیف</span></div>
@@ -143,6 +145,10 @@ else if (!ready)
                     <li class="mb-2"><b>تأیید نوبت:</b> بعد از قطعی شدن نوبت (آنلاین یا ثبت در پنل)، خلاصه زمان و کد پیگیری پیامک می‌شود. از تنظیمات سایت روشن/خاموش کنید.</li>
                     <li class="mb-2"><b>یادآوری نوبت:</b> چند ساعت قبل از نوبت (مثلاً ۲۴ ساعت) یادآوری خودکار می‌رود. فاصله را در تنظیمات مشخص کنید.</li>
                 }
+                @if (kind.IsRepair)
+                {
+                    <li class="mb-2"><b>وضعیت تعمیر:</b> با هر تغییر وضعیت برگه، اگر قبلاً همان وضعیت پیامک نشده باشد، کد پیگیری و وضعیت جدید برای مشتری می‌رود.</li>
+                }
                 <li>اگر اعتبار تمام شود، کار سایت ادامه دارد ولی پیامک نمی‌رود تا دوباره شارژ کنید.</li>
             </ul>
         </div>
@@ -163,6 +169,7 @@ else if (!ready)
                                         : log.Kind == "invoice" ? "صورتحساب"
                                         : log.Kind == "booking-confirm" ? "تأیید نوبت"
                                         : log.Kind == "booking-reminder" ? "یادآوری نوبت"
+                                        : log.Kind == "repair-status" ? "وضعیت تعمیر"
                                         : log.Kind == "test" ? "آزمایشی" : "سایر")
                                     @if (!log.Success)
                                     {

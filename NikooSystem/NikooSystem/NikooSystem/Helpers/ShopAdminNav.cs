@@ -110,10 +110,20 @@ namespace NikooSystem.Helpers
                 section(null, null);
                 add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
             }
+            else if (kind.IsRepair)
+            {
+                section("تعمیرات", "bi-wrench");
+                add("Repairs", "bi-wrench", "برگه‌های کار", TenantStore.CountOpenRepairs(company), new[] { "RepairDetails", "UpdateRepair", "CollectRepairPayment", "DispatchPickup", "AdvanceRepair", "PostRepairInvoice" });
+                add("NewRepair", "bi-plus-circle", "پذیرش جدید", 0, null);
+                section(null, null);
+                add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
+            }
             else
             {
                 section(kind.ItemsLabel, kind.IsDigital ? "bi-easel" : "bi-box-seam");
                 add("Products", kind.IsDigital ? "bi-easel" : "bi-box", "فهرست " + kind.ItemsLabel, 0, new[] { "EditProduct" });
+                if (kind.IsShop)
+                    add("ProductBarcodes", "bi-upc", "بارکد کالا", 0, null);
                 add("Categories", "bi-diagram-3", "گروه‌ها", 0, new[] { "EditCategory" });
                 add("Collections", "bi-tags", "برچسب‌های ویژه", 0, new[] { "EditCollection" });
                 add("Attributes", "bi-list-check", "خصوصیات", 0, new[] { "EditAttribute" });
@@ -131,7 +141,7 @@ namespace NikooSystem.Helpers
                 add("Reviews", "bi-chat-dots", "نظرات", 0, null);
                 add("Messages", "bi-envelope", "پیام‌های تماس", unreadMessages, new[] { "Message" });
             }
-            if (kind.IsShop || kind.IsDigital || kind.IsCampus || kind.IsBooking)
+            if (kind.IsShop || kind.IsDigital || kind.IsCampus || kind.IsBooking || kind.IsRepair)
             {
                 section("حسابداری", "bi-journal-text");
                 add("AccountingGuide", "bi-signpost", "راهنمای حسابداری", 0, null);
@@ -161,7 +171,7 @@ namespace NikooSystem.Helpers
                 add("Torob", "bi-graph-up", "اتصال به ترب", 0, null);
             add("Enamad", "bi-patch-check", "اینماد", 0, null);
             add("Notifications", "bi-bell", "اطلاع‌رسانی بله", 0, null);
-            if (kind.IsShop || kind.IsDigital || kind.IsBooking || kind.IsCampus)
+            if (kind.IsShop || kind.IsDigital || kind.IsBooking || kind.IsCampus || kind.IsRepair)
                 add("Sms", "bi-chat-dots", "پیامک مشتریان", 0, null);
             section("تنظیمات", "bi-sliders");
             add("Settings", "bi-gear", "اطلاعات " + kind.SiteNoun, 0, null);
@@ -206,6 +216,7 @@ namespace NikooSystem.Helpers
             if (kind.IsCampus) return new[] { "Classes", "Enrollments", "Facilities", "Calendar", "Appointments", "Pos" };
             if (kind.IsBooking) return new[] { "Calendar", "Appointments", "Services", "Staff", "Messages" };
             if (kind.IsMenu) return new[] { "Products", "Categories", "MenuQr", "WaiterCalls", "Settings" };
+            if (kind.IsRepair) return new[] { "Repairs", "NewRepair", "Pos", "Payments", "Messages" };
             if (kind.IsDigital) return new[] { "Products", "Orders", "GrantAccess", "Customers", "Pos", "SaleInvoices" };
             return new[] { "Pos", "Orders", "Products", "SaleInvoices", "Customers", "Inventory" };
         }

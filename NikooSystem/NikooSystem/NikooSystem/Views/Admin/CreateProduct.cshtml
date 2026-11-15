@@ -5,13 +5,13 @@
 }
 <div class="adm-head">
     <h1>افزودن محصول</h1>
+    <div class="adm-head-actions">
+        <button class="btn btn-primary" type="submit" form="adminCreateProductForm">ذخیره</button>
+        <a href="@Url.Action("Products","Admin")" class="btn btn-link">انصراف</a>
+    </div>
 </div>
-@using (Html.BeginForm("CreateProduct", "Admin", FormMethod.Post, new { enctype = "multipart/form-data" }))
+@using (Html.BeginForm("CreateProduct", "Admin", FormMethod.Post, new { enctype = "multipart/form-data", id = "adminCreateProductForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.Partial("_ProductForm", Model)
-    <div class="mt-3">
-        <button type="submit" class="btn btn-primary px-4">ذخیره</button>
-        <a href="@Url.Action("Products","Admin")" class="btn btn-link">انصراف</a>
-    </div>
 }

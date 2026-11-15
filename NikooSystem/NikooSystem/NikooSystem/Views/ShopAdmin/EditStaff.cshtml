@@ -8,10 +8,13 @@
 <link href="@Url.Asset("~/Content/admin-booking.css")" rel="stylesheet" />
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">@ViewBag.Title</h2>
-    <a class="btn-outline-store" href="@Url.Action("Staff","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="staffForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("Staff","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
 
-@using (Html.BeginForm("EditStaff", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data" }))
+@using (Html.BeginForm("EditStaff", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "staffForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -89,9 +92,6 @@
                 </table>
                 <div class="small text-muted"><i class="bi bi-calendar-x"></i> برای مرخصی یک روز خاص از <a href="@Url.Action("TimeOff","ShopAdmin", new { company })">تعطیلی و مرخصی</a> استفاده کنید.</div>
             </div>
-        </div>
-        <div class="col-12 d-flex gap-2">
-            @Html.FormActions("Staff")
         </div>
     </div>
 }

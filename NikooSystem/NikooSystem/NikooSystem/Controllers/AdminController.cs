@@ -7,6 +7,7 @@ using System.Web.Mvc;
 using NikooSystem.Helpers;
 using NikooSystem.Filters;
 using NikooSystem.Models;
+using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
@@ -67,20 +68,39 @@ namespace NikooSystem.Controllers
             }
 
             var temporary = PasswordHelper.GenerateTemporaryPassword();
+            var previousHash = SiteContentStore.Settings.AdminPasswordHash;
             SiteContentStore.ChangeAdminCredentials(SiteContentStore.AdminUsername, temporary);
+
+            var mobile = BookingTime.NormalizeMobile(SiteContentStore.Settings.AdminMobile);
+            SmsSendResult sms = null;
+            if (mobile != null)
+                sms = await SmsService.SendPlatformPasswordAsync(mobile, temporary, SiteContentStore.Settings.SiteName);
 
             var text = "🔐 بازیابی رمز پنل مدیریت نیکو\n"
                 + "نام کاربری: " + SiteContentStore.AdminUsername + "\n"
                 + "رمز موقت جدید: " + temporary + "\n"
                 + "بعد از ورود، رمز را تغییر دهید.";
-            var error = await BaleNotifier.SendToRecipientsAsync(BaleNotifier.SiteScope, text);
-            if (error != null)
+            var baleError = await BaleNotifier.SendToRecipientsAsync(BaleNotifier.SiteScope, text);
+            var smsOk = sms != null && sms.Success;
+            var baleOk = baleError == null;
+            if (!smsOk && !baleOk)
             {
-                ModelState.AddModelError("", "ارسال رمز در بله انجام نشد: " + error);
+                SiteContentStore.RestoreAdminPasswordHash(previousHash);
+                var why = mobile == null
+                    ? "موبایل بازیابی ثبت نشده و ارسال در بله هم انجام نشد: " + baleError
+                    : "ارسال رمز ممکن نشد. پیامک: " + (sms.Error ?? "ناموفق") + " — بله: " + baleError;
+                ModelState.AddModelError("", why);
                 return View("Login", new LoginViewModel { Username = username });
             }
 
-            TempData["Ok"] = "رمز موقت جدید در بله ارسال شد.";
+            if (smsOk && baleOk)
+                TempData["Ok"] = "رمز موقت پیامک شد و در بله هم ارسال شد.";
+            else if (smsOk)
+                TempData["Ok"] = "رمز موقت پیامک شد.";
+            else if (mobile == null)
+                TempData["Ok"] = "رمز موقت در بله ارسال شد. برای پیامک، موبایل را در «نام کاربری و رمز» ثبت کنید.";
+            else
+                TempData["Ok"] = "پیامک نرفت (" + (sms == null ? "ناموفق" : sms.Error) + "). رمز موقت در بله ارسال شد.";
             return RedirectToAction("Login");
         }
 

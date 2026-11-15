@@ -1,0 +1,48 @@
+@model List<RepairJob>
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "برگه‌های تعمیر";
+    var company = (string)ViewBag.CompanyCode;
+    var filter = ViewBag.Filter as RepairStatus?;
+    var statuses = Enum.GetValues(typeof(RepairStatus)).Cast<RepairStatus>();
+}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h2 class="mb-1">برگه‌های کار</h2>
+        <p class="text-muted mb-0 small">@(((int)ViewBag.OpenCount).ToFa()) برگه هنوز باز است. قطعه روی برگه، ردیف صورتحساب است و از انبار کم نمی‌شود.</p>
+    </div>
+    <a class="btn-store" href="@Url.Action("NewRepair","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> پذیرش جدید</a>
+</div>
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-sm @(filter == null ? "btn-store" : "btn-outline-secondary")" href="@Url.Action("Repairs","ShopAdmin", new { company })">همه</a>
+    @foreach (var status in statuses)
+    {
+        <a class="btn btn-sm @(filter == status ? "btn-store" : "btn-outline-secondary")" href="@Url.Action("Repairs","ShopAdmin", new { company, status })">@status.Title()</a>
+    }
+</div>
+<div class="panel-card">
+    <table class="table align-middle table-sm mb-0">
+        <thead><tr><th>کد</th><th>مشتری</th><th>دستگاه</th><th>ثبت</th><th>وضعیت</th><th>مانده</th><th></th></tr></thead>
+        <tbody>
+            @foreach (var job in Model)
+            {
+                <tr>
+                    <td dir="ltr" class="font-monospace">@job.Code</td>
+                    <td>@job.CustomerName<br /><span class="small text-muted" dir="ltr">@job.CustomerMobile</span></td>
+                    <td>@job.DeviceLabel</td>
+                    <td class="small text-nowrap">@job.CreatedAt.ToShamsi()@if (job.PromisedAt.HasValue) { <div class="text-muted">وعده @job.PromisedAt.Value.ToShamsi()</div> }</td>
+                    <td><span class="badge @job.Status.Badge()">@job.Status.StepTitle(job)</span></td>
+                    <td>@(job.Due > 0 ? job.Due.ToToman() : "تسویه")</td>
+                    <td class="row-actions">
+                        <a class="btn-outline-store btn-sm" href="@Url.Action("PrintRepair","ShopAdmin", new { company, id = job.Id })"><i class="bi bi-printer"></i> چاپ</a>
+                        <a class="btn-outline-store btn-sm" href="@Url.Action("RepairDetails","ShopAdmin", new { company, id = job.Id })">برگه</a>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr class="admin-empty-row"><td colspan="7">برگه‌ای با این فیلتر نیست.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

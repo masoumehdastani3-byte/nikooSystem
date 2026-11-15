@@ -25,11 +25,12 @@
         showcases.Add(TemplateShowcase.For("fashion", null, "قالب‌های فروشگاه اینترنتی و سایت آموزشی", "templates-shop"));
         showcases.Add(TemplateShowcase.For("corporate", "corporate", "قالب‌های سایت شرکتی", "templates-corporate"));
         showcases.Add(TemplateShowcase.For("news", "magazine", "قالب‌های سایت خبری", "templates-news"));
-        showcases.Add(TemplateShowcase.For("clinic", null, "قالب مطب و کلینیک", "templates-clinic"));
-        showcases.Add(TemplateShowcase.For("beauty", null, "قالب آرایشگاه", "templates-salon"));
-        showcases.Add(TemplateShowcase.For("consulting", null, "قالب مشاوره", "templates-consulting"));
+        showcases.Add(TemplateShowcase.For("clinic", "clinic", "قالب مطب و کلینیک", "templates-clinic"));
+        showcases.Add(TemplateShowcase.For("beauty", "salon", "قالب آرایشگاه", "templates-salon"));
+        showcases.Add(TemplateShowcase.For("consulting", "clinic", "قالب مشاوره", "templates-consulting"));
         showcases.Add(TemplateShowcase.For("school", null, "قالب آموزشگاه", "templates-school"));
         showcases.Add(TemplateShowcase.For("club", null, "قالب باشگاه ورزشی", "templates-club"));
+        showcases.Add(TemplateShowcase.For("repair", null, "قالب سایت تعمیرگاه", "templates-repair"));
         foreach (var s in showcases) { s.Heading = s.Templates.Count.ToString().ToFaDigits() + " " + s.Heading; }
     }
 }

@@ -1,0 +1,99 @@
+@model RepairJob
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var company = (string)ViewBag.CompanyCode;
+}
+<section class="rp-page">
+    <div class="container rp-wrap">
+        <div class="rp-card">
+            <h1 class="h3">درخواست تعمیر</h1>
+            <p class="text-muted">پیک، کارشناس در محل، یا آوردن حضوری را انتخاب کنید. بعد از ثبت، یک کد پنج‌رقمی می‌گیرید.</p>
+            @using (Html.BeginForm("RepairRequest", "Shop", new { company }, FormMethod.Post))
+            {
+                @Html.AntiForgeryToken()
+                <div class="rp-section" style="border-top:0;margin-top:0;padding-top:0">
+                    <h2>شما</h2>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">نام</label>
+                            <input class="form-control" name="CustomerName" value="@Model.CustomerName" maxlength="80" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">موبایل</label>
+                            <input class="form-control" name="CustomerMobile" value="@Model.CustomerMobile" dir="ltr" maxlength="14" required inputmode="tel" placeholder="09121234567" />
+                        </div>
+                    </div>
+                </div>
+                <div class="rp-section">
+                    <h2>دستگاه</h2>
+                    <div class="mb-3">
+                        <label class="form-label">نوع دستگاه</label>
+                        <select class="form-select" name="DeviceType">
+                            @foreach (var type in RepairText.DeviceTypes)
+                            {
+                                <option value="@type" @(Model.DeviceType == type ? "selected" : null)>@type</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">برند</label>
+                            <input class="form-control" name="Brand" value="@Model.Brand" maxlength="60" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">مدل</label>
+                            <input class="form-control" name="ModelName" value="@Model.ModelName" maxlength="60" />
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <label class="form-label">مشکل دستگاه</label>
+                        <textarea class="form-control" name="Problem" rows="3" maxlength="1000" required>@Model.Problem</textarea>
+                    </div>
+                </div>
+                <div class="rp-section">
+                    <h2>نحوه تحویل</h2>
+                    <div class="rp-choice mb-3">
+                        <label>
+                            <input type="radio" name="Handover" value="pickup" @(Model.Handover == "pickup" ? "checked" : null) />
+                            پیک دستگاه را ببرد
+                        </label>
+                        <label>
+                            <input type="radio" name="Handover" value="visit" @(Model.Handover == "visit" ? "checked" : null) />
+                            کارشناس حضور پیدا کند
+                        </label>
+                        <label>
+                            <input type="radio" name="Handover" value="counter" @(Model.Handover == "counter" ? "checked" : null) />
+                            حضوری آورده می‌شود
+                        </label>
+                    </div>
+                    <div id="rp-place">
+                        <div class="mb-3">
+                            <label class="form-label">آدرس</label>
+                            <textarea class="form-control" name="PickupAddress" rows="2" maxlength="300" placeholder="شهر، خیابان، پلاک و واحد">@Model.PickupAddress</textarea>
+                        </div>
+                        <div>
+                            <label class="form-label">بازه مناسب برای حضور</label>
+                            <input class="form-control" name="PickupWindow" value="@Model.PickupWindow" maxlength="80" placeholder="مثلاً فردا ۱۶ تا ۱۸" />
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    (function () {
+                        var box = document.getElementById("rp-place");
+                        var radios = document.querySelectorAll("input[name=Handover]");
+                        function sync() {
+                            var field = false;
+                            for (var i = 0; i < radios.length; i++) {
+                                if (radios[i].checked && radios[i].value !== "counter") field = true;
+                            }
+                            box.hidden = !field;
+                        }
+                        for (var i = 0; i < radios.length; i++) radios[i].addEventListener("change", sync);
+                        sync();
+                    })();
+                </script>
+                <button class="btn-wm w-100 mt-4" type="submit">ثبت درخواست</button>
+            }
+        </div>
+    </div>
+</section>

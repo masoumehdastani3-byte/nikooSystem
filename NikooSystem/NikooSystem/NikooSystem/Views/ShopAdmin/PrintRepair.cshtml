@@ -1,0 +1,15 @@
+@model RepairJob
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "چاپ برگه " + Model.Code;
+    var company = (string)ViewBag.CompanyCode;
+}
+<link href="@Url.Asset("~/Content/storefront-repair.css")" rel="stylesheet" />
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 rp-no-print">
+    <h2 class="mb-0">چاپ برگه <span dir="ltr">@Model.Code</span></h2>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="button" onclick="window.print()"><i class="bi bi-printer"></i> چاپ</button>
+        <a class="btn-outline-store" href="@Url.Action("RepairDetails","ShopAdmin", new { company, id = Model.Id })">بازگشت به برگه</a>
+    </div>
+</div>
+@Html.Partial("_RepairStatement", Model)

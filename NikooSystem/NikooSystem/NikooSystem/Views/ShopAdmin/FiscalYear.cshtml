@@ -18,6 +18,9 @@
             <p class="text-muted small mb-0 mt-1">بازه اسناد و تراز به‌صورت پیش‌فرض روی سال مالی جاری است؛ با بستن سال، درآمد و هزینه به «سود و زیان انباشته» منتقل می‌شود.</p>
         </div>
     </div>
+    <div class="admin-page-head-actions">
+        <button class="btn-store admin-page-head-action" type="submit" form="fiscalForm"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
+    </div>
 </div>
 
 <div class="panel-card mb-3">
@@ -39,7 +42,7 @@
 
 <div class="panel-card mb-3">
     <h5 class="mb-3"><i class="bi bi-sliders"></i> تنظیم شروع سال، قفل تاریخ و مالیات</h5>
-    @using (Html.BeginForm("FiscalYear", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-3" }))
+    @using (Html.BeginForm("FiscalYear", "ShopAdmin", new { company }, FormMethod.Post, new { @class = "row g-3", id = "fiscalForm" }))
     {
         @Html.AntiForgeryToken()
         <div class="col-md-4">
@@ -69,9 +72,6 @@
         <div class="col-md-3">
             <label class="form-label" for="vatPercent">نرخ پیش‌فرض مالیات (٪)</label>
             <input class="form-control" type="number" min="0" max="100" step="1" dir="ltr" name="vatPercent" id="vatPercent" value="@Model.VatPercent.ToString(invariant)" />
-        </div>
-        <div class="col-12">
-            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
         </div>
     }
 </div>

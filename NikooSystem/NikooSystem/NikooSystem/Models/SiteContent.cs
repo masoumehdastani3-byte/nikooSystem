@@ -145,6 +145,11 @@ namespace NikooSystem.Models
         [Display(Name = "خط فرستنده پاپوس")]
         public string PappusSender { get; set; }
 
+        /// <summary>درصد سود روی قیمت بسته پیامک. صفر یعنی قیمت برابر اعتبار؛ اعتبار کسرشده هنگام ارسال همان هزینه پاپوس می‌ماند.</summary>
+        [Display(Name = "درصد سود فروش پیامک")]
+        [Range(0, 300, ErrorMessage = "عددی بین ۰ تا ۳۰۰ وارد کنید")]
+        public int SmsMarkupPercent { get; set; }
+
         /// <summary>IPs (comma separated) customers point their domains at; set on the «دامنه‌های مشتریان» page. Empty = Web.config.</summary>
         public string ServerIp { get; set; }
 
@@ -157,6 +162,9 @@ namespace NikooSystem.Models
         // ---- ورود به پنل؛ خالی یعنی مقدار Web.config
         public string AdminUsername { get; set; }
         public string AdminPasswordHash { get; set; }
+
+        /// <summary>موبایلی که رمز موقت پنل مدیریت به آن پیامک می‌شود.</summary>
+        public string AdminMobile { get; set; }
 
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
     }

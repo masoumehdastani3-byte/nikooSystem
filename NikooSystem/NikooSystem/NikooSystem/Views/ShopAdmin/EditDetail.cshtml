@@ -6,9 +6,12 @@
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">@ViewBag.Title</h2>
-    <a class="btn-outline-store" href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="detailForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("DetailAccounts","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
-@using (Html.BeginForm("EditDetail", "ShopAdmin", new { company }, FormMethod.Post))
+@using (Html.BeginForm("EditDetail", "ShopAdmin", new { company }, FormMethod.Post, new { id = "detailForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -45,8 +48,5 @@
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
         <div class="col-12 small text-muted">سطح ۱ معمولاً برای اشخاص و سطح ۲ برای مرکز هزینه و پروژه است. کد خودکار سطح ۱ با ۱ و سطح ۲ با ۲ شروع می‌شود.</div>
-        <div class="col-12">
-            <button class="btn-store" type="submit">ذخیره</button>
-        </div>
     </div>
 }

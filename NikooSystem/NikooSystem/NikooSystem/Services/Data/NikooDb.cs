@@ -138,10 +138,34 @@ namespace NikooSystem.Services.Data
                     NikooSchema.RunOnce("site-split-booking-products", SiteStore.ApplySplitBookingProducts);
                     NikooSchema.RunOnce("site-split-booking-faq", SiteContentStore.ApplySplitBookingFaq);
                     NikooSchema.RunOnce("seed-cafe-demo", TenantStore.SeedCafeDemo);
+                    NikooSchema.RunOnce("site-cafe-product", SiteStore.ApplyCafeProduct);
+                    NikooSchema.RunOnce("site-cafe-templates", () =>
+                    {
+                        SiteStore.ApplyCafeTemplateCopy();
+                        SiteContentStore.ApplyCafeTemplateFaq();
+                    });
                     NikooSchema.RunOnce("site-menu-faq", () =>
                     {
                         SiteContentStore.ApplyMenuKindsFaq();
                         SiteContentStore.ApplyModuleFaqs();
+                    });
+                    NikooSchema.RunOnce("seed-repair-demo", TenantStore.SeedRepairDemo);
+                    NikooSchema.RunOnce("site-repair-product", () =>
+                    {
+                        SiteStore.ApplyRepairProduct();
+                        SiteContentStore.ApplyRepairKindsFaq();
+                        SiteContentStore.ApplyModuleFaqs();
+                    });
+                    NikooSchema.RunOnce("site-repair-courier-copy", () =>
+                    {
+                        SiteStore.ApplyRepairCourierCopy();
+                        SiteContentStore.ApplyRepairCourierFaq();
+                    });
+                    NikooSchema.RunOnce("repair-company-intro", TenantStore.ApplyRepairIntro);
+                    NikooSchema.RunOnce("site-repair-templates", () =>
+                    {
+                        SiteStore.ApplyRepairTemplateCopy();
+                        SiteContentStore.ApplyRepairTemplateFaq();
                     });
                     NikooSchema.RunOnce("site-matched-product-images", SiteStore.ApplyMatchedProductImages);
                     TutorialService.ApplySeed();

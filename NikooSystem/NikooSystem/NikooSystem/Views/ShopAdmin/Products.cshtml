@@ -26,6 +26,12 @@
     }
 }
 @Html.PageHeader(kind.ItemsLabel, kind.IsMenu ? "آیتم جدید" : kind.IsDigital ? "دوره یا کتاب جدید" : "محصول جدید", "EditProduct")
+@if (kind.IsShop)
+{
+    <div class="d-flex justify-content-end mb-2">
+        <a class="btn-outline-store" href="@Url.Action("ProductBarcodes", "ShopAdmin", new { company })"><i class="bi bi-upc"></i> بارکد و چاپ</a>
+    </div>
+}
 <div class="panel-card">
     @Html.GridToolbar("جستجو در عنوان، نویسنده یا کد…", filters.ToArray())
     <div class="table-responsive">
@@ -96,6 +102,10 @@
                         <td class="small text-muted">@p.CreatedAt.ToShamsi()</td>
                         <td class="row-actions">
                             @Html.IconLink(Url.Action("Product", "Shop", new { company, slug = p.Slug }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            @if (kind.IsShop && !string.IsNullOrWhiteSpace(p.Sku))
+                            {
+                                @Html.IconLink(Url.Action("ProductBarcodes", "ShopAdmin", new { company, id = p.Id }), "bi-upc", "چاپ بارکد", "is-view")
+                            }
                             @Html.EditLink("EditProduct", p.Id)
                             @Html.DeleteButton("DeleteProduct", p.Id, "«" + p.Title + "» حذف شود؟")
                         </td>

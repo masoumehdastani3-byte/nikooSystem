@@ -10,7 +10,10 @@
         <h2 class="mb-1">@ViewBag.Title</h2>
         <p class="text-muted mb-0 small">تیتر، لید و متن خبر یا مقاله؛ با زمان انتشار آینده، مطلب خودکار در آن زمان منتشر می‌شود.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Posts","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت به فهرست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="postForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("Posts","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت به فهرست</a>
+    </div>
 </div>
 
 @using (Html.BeginForm("EditPost", "ShopAdmin", new { company }, FormMethod.Post, new { id = "postForm", enctype = "multipart/form-data" }))
@@ -63,13 +66,10 @@
                     @Html.BoolField("IsBreaking", Model.IsBreaking, "نمایش در نوار خبر فوری")
                     @Html.BoolField("AllowComments", Model.AllowComments, "خوانندگان بتوانند نظر بدهند")
                 </div>
-                <div class="d-flex gap-2">
-                    <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
-                    @if (Model.Id > 0 && Model.IsLive())
-                    {
-                        <a class="btn-outline-store" href="@Url.RouteUrl("ShopPost", new { company, slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
-                    }
-                </div>
+                @if (Model.Id > 0 && Model.IsLive())
+                {
+                    <a class="btn-outline-store" href="@Url.RouteUrl("ShopPost", new { company, slug = Model.Slug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
+                }
                 @if (Model.Id > 0)
                 {
                     <p class="small text-muted mt-3 mb-0"><i class="bi bi-bar-chart"></i> @Model.ViewCount بازدید</p>

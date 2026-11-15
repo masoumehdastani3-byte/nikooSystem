@@ -30,6 +30,7 @@
             </div>
         </div>
         <div class="admin-page-head-actions">
+            <button class="btn-store admin-page-head-action" type="submit" form="categoryForm"><i class="bi bi-check2"></i> ذخیره</button>
             @if (Model.Id > 0 && !kind.Schedules)
             {
                 <a class="btn-outline-store" href="@(Url.Action(listAction, "Shop", new { company }) + "?categoryId=" + Model.Id)" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده</a>
@@ -114,11 +115,6 @@
             </div>
         </div>
 
-        <div class="settings-save">
-            <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
-            <a class="btn-outline-store" href="@Url.Action("Categories", "ShopAdmin", new { company })">بازگشت</a>
-            <span class="small text-muted">مشخصات و سئو با همین دکمه ذخیره می‌شوند.</span>
-        </div>
     }
 </div>
 

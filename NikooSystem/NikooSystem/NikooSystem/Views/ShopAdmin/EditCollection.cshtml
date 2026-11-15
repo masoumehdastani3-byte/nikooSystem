@@ -7,8 +7,17 @@
     var cats = ((IEnumerable<StoreCategory>)ViewBag.Categories).ToDictionary(c => c.Id, c => c.Title);
     var onHome = (bool)ViewBag.OnHome;
 }
-@Html.PageTitle()
-@using (Html.BeginForm("SaveCollection", "ShopAdmin", new { company }, FormMethod.Post))
+<div class="admin-page-head">
+    <div class="admin-page-head-title">
+        <span class="admin-page-head-accent" aria-hidden="true"></span>
+        <h2>@ViewBag.Title</h2>
+    </div>
+    <div class="admin-page-head-actions">
+        <button class="btn-store admin-page-head-action" type="submit" form="collectionForm"><i class="bi bi-check2"></i> ذخیره برچسب</button>
+        <a class="btn-outline-store" href="@Url.Action("Collections","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت</a>
+    </div>
+</div>
+@using (Html.BeginForm("SaveCollection", "ShopAdmin", new { company }, FormMethod.Post, new { id = "collectionForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -75,9 +84,6 @@
         </div>
     </div>
 
-    <div class="mt-3">
-        @Html.FormActions("Collections", "ذخیره برچسب")
-    </div>
 }
 @section scripts {
 <script>

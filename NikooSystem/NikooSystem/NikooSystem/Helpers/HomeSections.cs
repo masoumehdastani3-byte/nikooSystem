@@ -42,9 +42,9 @@ namespace NikooSystem.Helpers
             new HomeSectionType { Id = "headline", Name = "تیتر یک", Icon = "bi-lightning", Hint = "مطالبی که تیک «تیتر یک» دارند، با تصویر بزرگ", HasTitle = true, Kinds = new[] { SiteKinds.Content } },
             new HomeSectionType { Id = "latest", Name = "آخرین مطالب", Icon = "bi-clock-history", Hint = "تازه‌ترین خبرها و مقاله‌ها", HasTitle = true, Kinds = new[] { SiteKinds.Content } },
             new HomeSectionType { Id = "topics", Name = "مطالب هر سرویس", Icon = "bi-columns-gap", Hint = "چند مطلب آخر هر دسته کنار هم", HasTitle = true, Kinds = new[] { SiteKinds.Content } },
-            new HomeSectionType { Id = "gallery", Name = "گالری", Icon = "bi-images", Hint = "تصاویر گالری سایت", HasTitle = true, Kinds = HomeSectionType.Every },
-            new HomeSectionType { Id = "about", Name = "درباره ما", Icon = "bi-info-circle", Hint = "متن معرفی", Kinds = HomeSectionType.Every },
-            new HomeSectionType { Id = "contact", Name = "فرم تماس", Icon = "bi-envelope", Hint = "اطلاعات تماس و فرم ارسال پیام", HasTitle = true, Kinds = new[] { SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus } },
+            new HomeSectionType { Id = "gallery", Name = "گالری", Icon = "bi-images", Hint = "تصاویر گالری سایت", HasTitle = true, Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus, SiteKinds.Repair } },
+            new HomeSectionType { Id = "about", Name = "درباره ما", Icon = "bi-info-circle", Hint = "متن معرفی از تنظیمات سایت", Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus, SiteKinds.Repair } },
+            new HomeSectionType { Id = "contact", Name = "فرم تماس", Icon = "bi-envelope", Hint = "اطلاعات تماس و فرم ارسال پیام", HasTitle = true, Kinds = new[] { SiteKinds.Content, SiteKinds.Booking, SiteKinds.Campus, SiteKinds.Repair } },
             new HomeSectionType { Id = "services", Name = "خدمات و تعرفه‌ها", Icon = "bi-clipboard-check", Hint = "کارت هر خدمت با مدت، هزینه و دکمه رزرو", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
             new HomeSectionType { Id = "staff", Name = "متخصصان", Icon = "bi-person-badge", Hint = "معرفی پزشکان، آرایشگرها یا مشاوران با دکمه رزرو", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
             new HomeSectionType { Id = "hours", Name = "ساعت کاری و مراحل رزرو", Icon = "bi-clock", Hint = "روزها و ساعت‌های پذیرش و سه قدم رزرو آنلاین", HasTitle = true, Kinds = HomeSectionType.BookingOnly },
@@ -53,42 +53,42 @@ namespace NikooSystem.Helpers
             new HomeSectionType
             {
                 Id = "stats", Name = "آمار و افتخارات", Icon = "bi-bar-chart", Hint = "چند عدد کلیدی مثل سال‌های تجربه یا تعداد مشتریان", HasTitle = true,
-                Kinds = HomeSectionType.Marketing,
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Repair },
                 ItemsHint = "هر خط یک عدد: «عدد | توضیح». اگر خالی بماند، چند عدد نمونه در سایت نشان داده می‌شود.",
                 ItemsSample = "+۱۰ | سال تجربه\n+۲۵۰۰ | مشتری راضی\n۲۴ ساعته | پاسخ‌گویی"
             },
             new HomeSectionType
             {
                 Id = "whyus", Name = "چرا ما؟", Icon = "bi-award", Hint = "مزیت‌های شما در کارت‌های آیکون‌دار", HasTitle = true,
-                Kinds = HomeSectionType.ContentOnly,
+                Kinds = new[] { SiteKinds.Content, SiteKinds.Repair },
                 ItemsHint = "هر خط یک مزیت: «عنوان | توضیح کوتاه». اگر خالی بماند، چند مزیت نمونه در سایت نشان داده می‌شود.",
                 ItemsSample = "تیم متخصص | کارشناسان باتجربه در همه مراحل کنار شما هستند\nتحویل به‌موقع | برنامه زمانی شفاف و گزارش پیشرفت"
             },
             new HomeSectionType
             {
                 Id = "steps", Name = "روند همکاری", Icon = "bi-signpost-split", Hint = "مراحل کار با شما در چند قدم شماره‌دار", HasTitle = true,
-                Kinds = HomeSectionType.ContentOnly,
-                ItemsHint = "هر خط یک مرحله: «عنوان | توضیح». خالی بگذارید تا چهار مرحله عمومی (مشاوره، پیشنهاد، اجرا، پشتیبانی) نمایش داده شود.",
+                Kinds = new[] { SiteKinds.Content, SiteKinds.Repair },
+                ItemsHint = "هر خط یک مرحله: «عنوان | توضیح». خالی بگذارید تا چهار مرحله عمومی نمایش داده شود.",
                 ItemsSample = "تماس و مشاوره | نیاز شما را می‌شنویم\nپیشنهاد و قرارداد | زمان و هزینه دقیق را اعلام می‌کنیم"
             },
             new HomeSectionType
             {
                 Id = "reviews", Name = "نظر مشتریان", Icon = "bi-chat-quote", Hint = "در فروشگاه: نظرهای تأییدشده ۴ و ۵ ستاره خریداران؛ در سایت شرکتی: رضایت‌نامه‌هایی که می‌نویسید", HasTitle = true,
-                Kinds = HomeSectionType.Marketing,
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Repair },
                 ItemsHint = "هر خط یک نظر: «نام | سمت یا شهر | متن نظر». در فروشگاه تا وقتی نظر تأییدشده‌ای از خریداران نباشد همین متن‌ها نشان داده می‌شوند؛ اگر هر دو خالی باشند یک نمونه نمایش داده می‌شود.",
                 ItemsSample = "مهندس رضایی | مدیر فنی، شرکت آلفا | همکاری دقیق و حرفه‌ای بود و پروژه سر وقت تحویل شد."
             },
             new HomeSectionType
             {
                 Id = "faq", Name = "پرسش‌های پرتکرار", Icon = "bi-question-circle", Hint = "پرسش و پاسخ به شکل آکاردئونی", HasTitle = true,
-                Kinds = HomeSectionType.Marketing,
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Repair },
                 ItemsHint = "هر خط یک پرسش: «پرسش | پاسخ». در فروشگاه اگر خالی بماند، پرسش‌های ارسال، پرداخت و پیگیری از روی تنظیمات فروشگاه ساخته می‌شود.",
                 ItemsSample = "هزینه ارسال چقدر است؟ | برای خریدهای بالای یک میلیون تومان رایگان است."
             },
             new HomeSectionType
             {
                 Id = "cta", Name = "دعوت به اقدام", Icon = "bi-megaphone", Hint = "نوار پایانی با دکمه ثبت‌نام (فروشگاه) یا درخواست مشاوره (سایت شرکتی)", HasTitle = true,
-                Kinds = HomeSectionType.Marketing, HasButton = true
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Content, SiteKinds.Repair }, HasButton = true
             },
             new HomeSectionType { Id = "products", Name = "ردیف محصولات", Icon = "bi-bag-check", Hint = "کالاهای یک برچسب، جدیدترین، پرفروش یا تخفیف‌دار", HasTitle = true, IsCustom = true },
             new HomeSectionType { Id = "posts", Name = "ردیف مطالب", Icon = "bi-journal-text", Hint = "مطالب یک دسته یا پربازدیدترین‌ها", HasTitle = true, IsCustom = true, Kinds = new[] { SiteKinds.Content } },
@@ -130,7 +130,10 @@ namespace NikooSystem.Helpers
             { "corporate", new[] { "hero", "stats", "categories", "about", "whyus", "steps", "latest", "reviews", "gallery", "faq", "cta", "contact" } },
             { "clinic", new[] { "hero", "services", "staff", "hours", "about", "gallery", "contact" } },
             { "salon", new[] { "hero", "services", "staff", "gallery", "hours", "about", "contact" } },
-            { "club", new[] { "hero", "services", "staff", "hours", "about", "gallery", "contact" } }
+            { "club", new[] { "hero", "services", "staff", "hours", "about", "gallery", "contact" } },
+            { "bench", new[] { "stats", "about", "whyus", "steps", "gallery", "reviews", "faq", "cta", "contact" } },
+            { "garage", new[] { "stats", "about", "whyus", "steps", "gallery", "reviews", "faq", "cta", "contact" } },
+            { "counter", new[] { "stats", "about", "whyus", "steps", "gallery", "reviews", "faq", "cta", "contact" } }
         };
 
         public static HomeSectionType Type(string id)
@@ -150,8 +153,10 @@ namespace NikooSystem.Helpers
 
         public static string[] BuiltInsFor(string layoutStyle)
         {
+            var template = StoreTemplates.Get(layoutStyle);
             string[] list;
-            return TemplateSections.TryGetValue(StoreTemplates.Get(layoutStyle).Layout, out list) ? list : TemplateSections["organic"];
+            if (TemplateSections.TryGetValue(template.Id, out list)) return list;
+            return TemplateSections.TryGetValue(template.Layout, out list) ? list : TemplateSections["organic"];
         }
 
         public static StorePageLayout LayoutOf(StoreSettings settings)

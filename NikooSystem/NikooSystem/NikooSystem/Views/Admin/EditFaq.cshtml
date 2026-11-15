@@ -5,10 +5,13 @@
 }
 <div class="adm-head">
     <h1>@ViewBag.Title</h1>
-    <a class="btn btn-link" href="@Url.Action("Faqs","Admin")">بازگشت</a>
+    <div class="adm-head-actions">
+        <button class="btn btn-primary" type="submit" form="faqForm">ذخیره</button>
+        <a class="btn btn-link" href="@Url.Action("Faqs","Admin")">بازگشت</a>
+    </div>
 </div>
 <div class="adm-card" style="max-width:860px">
-    @using (Html.BeginForm("EditFaq", "Admin", FormMethod.Post))
+    @using (Html.BeginForm("EditFaq", "Admin", FormMethod.Post, new { id = "faqForm" }))
     {
         @Html.AntiForgeryToken()
         @Html.HiddenFor(m => m.Id)
@@ -35,6 +38,5 @@
                 </div>
             </div>
         </div>
-        <button class="btn btn-primary" type="submit">ذخیره</button>
     }
 </div>

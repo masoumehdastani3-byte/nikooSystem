@@ -1,6 +1,6 @@
 # COMPLETED_TASKS
 
-آخرین به‌روزرسانی: 2026-11-10
+آخرین به‌روزرسانی: 2026-11-15
 
 ## DONE-001 — فراموشی رمز عبور با بله (ShopAdmin + ShopAccount)
 - وضعیت: تکمیل‌شده
@@ -216,3 +216,52 @@
   - `Views/ShopAdmin/AccountingGuide.cshtml`, `SaleInvoices.cshtml`, `Inventory.cshtml`, `Parties.cshtml`
   - `Services/TenantStore.Accounting.cs`, `Controllers/ShopAdminController.Accounting.cs`
   - `Views/Shared/_ShopAdminLayout.cshtml`
+
+## DONE-018 — محصول سایت تعمیرگاه
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - نوع سایت `repair` و محصول کاتالوگ «سایت تعمیرگاه» با دمو `REPAIR` و قالب میز کار.
+  - برگه کار از پذیرش تا تحویل، درخواست آنلاین، پیگیری با کد و موبایل، اجرت و ردیف قطعه.
+  - دریافت نقد/بانک در سرفصل `6107` درآمد تعمیر.
+  - پیامک تغییر وضعیت و خبر پذیرش در بله.
+- فایل‌های کلیدی:
+  - `Models/Store/RepairModels.cs`, `Services/TenantStore.Repair.cs`
+  - `Controllers/ShopAdminController.Repair.cs`, `Controllers/ShopController.Repair.cs`
+  - `Views/Shop/RepairHome.cshtml`, `RepairRequest.cshtml`, `RepairTrack.cshtml`, `RepairTicket.cshtml`
+  - `Views/ShopAdmin/Repairs.cshtml`, `NewRepair.cshtml`, `RepairDetails.cshtml`
+  - `Helpers/SiteKinds.cs`, `Helpers/StoreTypes.cs`, `Services/SiteStore.cs`
+
+## DONE-019 — پیک و فاکتور فروش تعمیرگاه
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - درخواست با آدرس؛ هماهنگی پیک، تحویل گرفتن و برگشت دستگاه.
+  - پیش‌فاکتور و تأیید یا رد مشتری روی برگه پیگیری.
+  - ثبت صورتحساب با `SaveSale`: اجرت به `6107`، قطعه دارای کالای انبار با کسر موجودی، دریافت بعدی روی حساب دریافتنی.
+- فایل‌های کلیدی:
+  - `Models/Store/RepairModels.cs`, `Services/TenantStore.Repair.cs`
+  - `Views/Shop/RepairHome.cshtml`, `RepairRequest.cshtml`, `RepairTicket.cshtml`
+  - `Content/storefront-repair.css`, `Views/ShopAdmin/RepairDetails.cshtml`
+
+## DONE-020 — کد کوتاه و اعزام کارشناس
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - کد پیگیری تازه پنج رقم است. کدهای حرفی قبلی همچنان پیدا می‌شوند.
+  - درخواست می‌تواند پیک باشد یا اعزام کارشناس به محل. مسیر کارشناس تا «کار در محل تمام شد» جدا از بردن دستگاه است.
+
+## DONE-021 — معرفی شرکتی تعمیرگاه
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - صفحه اول تعمیرگاه بنر درخواست را نگه می‌دارد و بعد درباره، آمار، مزیت، روند کار، گالری، نظر، پرسش و فرم تماس را نشان می‌دهد.
+  - متن از تنظیمات سایت و چیدمان صفحات می‌آید. قالب `bench` دیگر بخش‌های فروشگاه را به ارث نمی‌برد.
+  - تعمیرگاه‌های قبلی که هنوز معرفی یک‌خطی دارند، با اجرای برنامه متن، ساعت کار و آدرس پیش‌فرض را می‌گیرند.
+  - تاریخ ثبت، وعده و مراحل برگه در پنل شمسی است و وعده تحویل با تقویم شمسی انتخاب می‌شود.
+
+## DONE-022 — سه قالب سایت تعمیرگاه
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - کنار قالب میز کار، گاراژ (زغالی و کهربایی) و پیشخوان (نارنجی و تخت) اضافه شد.
+  - هر سه همان بخش‌های صفحه اول را دارند. رنگ پیش‌فرض قالب فقط تا وقتی اعمال می‌شود که فروشگاه رنگ خودش را ذخیره نکرده باشد؛ پیش‌نمایش قالب رنگ پیش‌فرض را نشان می‌دهد.
+  - کاتالوگ، پرسش متداول و لندینگ تعمیرگاه سه قالب را نام می‌برند، فقط اگر متن قبلی هنوز دست‌نخورده باشد.
+- فایل‌های کلیدی:
+  - `Helpers/StoreTemplates.cs`, `Helpers/HomeSections.cs`, `Content/storefront-repair.css`
+  - `Services/SiteStore.cs`, `Services/SiteContentStore.cs`, `Helpers/ProductLandings.cs`

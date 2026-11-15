@@ -1,0 +1,26 @@
+@model RepairJob
+@{
+    Layout = "~/Views/Shared/_ShopAdminLayout.cshtml";
+    ViewBag.Title = "پذیرش جدید";
+    var company = (string)ViewBag.CompanyCode;
+    var statuses = new[] { RepairStatus.Received, RepairStatus.Diagnosing, RepairStatus.WaitingPart, RepairStatus.Repairing, RepairStatus.Ready };
+    var formData = new ViewDataDictionary(ViewData);
+    formData["Statuses"] = statuses;
+}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h2 class="mb-1">پذیرش دستگاه</h2>
+        <p class="text-muted mb-0 small">برای مشتری که دستگاه را حضوری یا تلفنی می‌آورد. کد پیگیری بعد از ثبت ساخته می‌شود.</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="repairNewForm"><i class="bi bi-check2"></i> ثبت پذیرش</button>
+        <a class="btn-outline-store" href="@Url.Action("Repairs","ShopAdmin", new { company })">بازگشت به فهرست</a>
+    </div>
+</div>
+<div class="rp-desk" data-rp-current="intake">
+@using (Html.BeginForm("NewRepair", "ShopAdmin", new { company }, FormMethod.Post, new { novalidate = "novalidate", id = "repairNewForm" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.Partial("_RepairForm", Model, formData)
+}
+</div>

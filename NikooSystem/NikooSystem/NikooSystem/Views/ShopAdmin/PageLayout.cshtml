@@ -14,7 +14,11 @@
         <h2 class="mb-1">چیدمان صفحات</h2>
         <p class="text-muted mb-0">بخش‌های صفحه اول را روشن و خاموش کنید، جابه‌جا کنید یا بخش تازه بسازید.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده صفحه اول</a>
+    <div class="d-flex gap-2 flex-wrap align-items-center">
+        <button class="btn-store" type="submit" form="layoutForm"><i class="bi bi-check2"></i> ذخیره چیدمان</button>
+        <span class="ls-dirty" id="lsDirty" hidden><i class="bi bi-dot"></i> تغییرات ذخیره نشده</span>
+        <a class="btn-outline-store" href="@Url.Action("Index","Shop", new { company })" target="_blank"><i class="bi bi-eye"></i> مشاهده صفحه اول</a>
+    </div>
 </div>
 
 @using (Html.BeginForm("PageLayout", "ShopAdmin", new { company }, FormMethod.Post, new { enctype = "multipart/form-data", id = "layoutForm" }))
@@ -145,10 +149,6 @@
         </div>
     </div>
 
-    <div class="ls-savebar">
-        <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره چیدمان</button>
-        <span class="ls-dirty" id="lsDirty" hidden><i class="bi bi-dot"></i> تغییرات ذخیره نشده</span>
-    </div>
 }
 
 @if (kind.IsContent)

@@ -46,6 +46,7 @@ namespace NikooSystem.Services
                 form.Id = 1;
                 form.AdminUsername = stored.AdminUsername;
                 form.AdminPasswordHash = stored.AdminPasswordHash;
+                form.AdminMobile = stored.AdminMobile;
                 form.ServerIp = stored.ServerIp;
                 form.EnamadHtml = stored.EnamadHtml;
                 form.EnamadMeta = stored.EnamadMeta;
@@ -53,6 +54,7 @@ namespace NikooSystem.Services
                 form.RootFiles = stored.RootFiles;
                 form.PappusApiKey = stored.PappusApiKey;
                 form.PappusSender = stored.PappusSender;
+                form.SmsMarkupPercent = stored.SmsMarkupPercent;
                 form.UpdatedAt = DateTime.Now;
                 NikooDb.Upsert(NikooTables.SiteSettings, form);
                 _settings = null;
@@ -131,6 +133,31 @@ namespace NikooSystem.Services
                 var stored = LoadSettings();
                 stored.AdminUsername = username.Trim();
                 stored.AdminPasswordHash = PasswordHelper.Hash(newPassword);
+                stored.UpdatedAt = DateTime.Now;
+                NikooDb.Upsert(NikooTables.SiteSettings, stored);
+                _settings = null;
+            }
+        }
+
+        /// <summary>برگرداندن هش قبلی وقتی هیچ کانالی رمز موقت را نرساند، تا ورود قبلی از کار نیفتد.</summary>
+        public static void RestoreAdminPasswordHash(string hash)
+        {
+            lock (SettingsLock)
+            {
+                var stored = LoadSettings();
+                stored.AdminPasswordHash = string.IsNullOrEmpty(hash) ? null : hash;
+                stored.UpdatedAt = DateTime.Now;
+                NikooDb.Upsert(NikooTables.SiteSettings, stored);
+                _settings = null;
+            }
+        }
+
+        public static void SaveAdminMobile(string mobile)
+        {
+            lock (SettingsLock)
+            {
+                var stored = LoadSettings();
+                stored.AdminMobile = string.IsNullOrWhiteSpace(mobile) ? null : mobile.Trim();
                 stored.UpdatedAt = DateTime.Now;
                 NikooDb.Upsert(NikooTables.SiteSettings, stored);
                 _settings = null;
@@ -391,10 +418,72 @@ namespace NikooSystem.Services
             }
         }
 
+        /// <summary>The cafe FAQ names the three menu templates, unless the owner has rewritten it.</summary>
+        internal static void ApplyCafeTemplateFaq()
+        {
+            const string previous = "مهمان با دوربین گوشی QR روی میز را می‌خواند و منو در مرورگر باز می‌شود: دسته‌ها، قیمت، توضیح و ناموجودی. "
+                + "اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون پر شده است و درخواست با یادداشت در پنل دیده می‌شود. پرداخت آنلاین در این محصول نیست.";
+            var fresh = ModuleFaqs().First(f => f.Question.StartsWith("منوی دیجیتال کافه"));
+            lock (ListLock)
+            {
+                foreach (var faq in GetFaqs().Where(f => f.Question != null && f.Question.Trim() == fresh.Question && f.Answer?.Trim() == previous))
+                {
+                    faq.Answer = fresh.Answer;
+                    NikooDb.Update(NikooTables.SiteFaqs, faq);
+                }
+            }
+        }
+
         /// <summary>The «چه نوع سایت‌هایی» answer names the cafe QR menu, unless the owner has rewritten it.</summary>
         internal static void ApplyMenuKindsFaq()
         {
             const string previous = "فروشگاه کالای فیزیکی (پوشاک، سوپرمارکت، دیجیتال و عمومی)، فروش محصولات دیجیتال (دوره آموزشی و کتاب الکترونیک)، سایت محتوایی (خبرگزاری، مجله و سایت شرکتی)، سایت مطب و کلینیک، سایت آرایشگاه و سالن زیبایی، سایت مشاوره، سایت آموزشگاه (دوره عمومی و دوره خصوصی) و سایت باشگاه ورزشی (کلاس ورزشی، مربی و رزرو ساعتی سالن).";
+            var kinds = DefaultFaqs().First(f => f.Question.StartsWith("چه نوع سایت"));
+            lock (ListLock)
+            {
+                foreach (var faq in GetFaqs().Where(f => f.Question != null && f.Question.TrimStart().StartsWith("چه نوع سایت") && f.Answer?.Trim() == previous))
+                {
+                    faq.Answer = kinds.Answer;
+                    NikooDb.Update(NikooTables.SiteFaqs, faq);
+                }
+            }
+        }
+
+        /// <summary>The repair-shop module answer mentions the courier and the sales invoice, unless the owner has rewritten it.</summary>
+        internal static void ApplyRepairCourierFaq()
+        {
+            const string previousStart = "دستگاه را حضوری پذیرش می‌کنید";
+            var fresh = ModuleFaqs().First(f => f.Question == "سایت تعمیرگاه چه کار می‌کند؟");
+            lock (ListLock)
+            {
+                foreach (var faq in GetFaqs().Where(f => f.Question != null && f.Question.Trim() == fresh.Question && f.Answer != null && f.Answer.TrimStart().StartsWith(previousStart)))
+                {
+                    faq.Answer = fresh.Answer;
+                    NikooDb.Update(NikooTables.SiteFaqs, faq);
+                }
+            }
+        }
+
+        /// <summary>The repair FAQ names the three templates, unless the owner has rewritten it.</summary>
+        internal static void ApplyRepairTemplateFaq()
+        {
+            const string previous = "مشتری درخواست و آدرس می‌دهد تا پیک دستگاه را بگیرد. هزینه را در سایت تأیید می‌کند و با کد پیگیری هر مرحله را می‌بیند. "
+                + "صورتحساب در فاکتور فروش می‌نشیند: اجرت در درآمد تعمیر، قطعه انبار با کسر موجودی، و دریافت روی حساب مشتری. با شارژ پیامک، تغییر وضعیت پیامک می‌شود.";
+            var fresh = ModuleFaqs().First(f => f.Question == "سایت تعمیرگاه چه کار می‌کند؟");
+            lock (ListLock)
+            {
+                foreach (var faq in GetFaqs().Where(f => f.Question != null && f.Question.Trim() == fresh.Question && f.Answer?.Trim() == previous))
+                {
+                    faq.Answer = fresh.Answer;
+                    NikooDb.Update(NikooTables.SiteFaqs, faq);
+                }
+            }
+        }
+
+        /// <summary>The «چه نوع سایت‌هایی» answer names the repair shop, unless the owner has rewritten it.</summary>
+        internal static void ApplyRepairKindsFaq()
+        {
+            const string previous = "فروشگاه کالای فیزیکی (پوشاک، سوپرمارکت، دیجیتال و عمومی)، فروش محصولات دیجیتال (دوره آموزشی و کتاب الکترونیک)، سایت محتوایی (خبرگزاری، مجله و سایت شرکتی)، سایت مطب و کلینیک، سایت آرایشگاه و سالن زیبایی، سایت مشاوره، سایت آموزشگاه (دوره عمومی و دوره خصوصی) و سایت باشگاه ورزشی (کلاس ورزشی، مربی و رزرو ساعتی سالن) و منوی دیجیتال کافه و رستوران (نمایش منو با QR و فراخوان گارسون).";
             var kinds = DefaultFaqs().First(f => f.Question.StartsWith("چه نوع سایت"));
             lock (ListLock)
             {
@@ -818,7 +907,15 @@ namespace NikooSystem.Services
             {
                 Question = "منوی دیجیتال کافه و رستوران چه کار می‌کند؟",
                 Answer = "مهمان با دوربین گوشی QR روی میز را می‌خواند و منو در مرورگر باز می‌شود: دسته‌ها، قیمت، توضیح و ناموجودی. "
-                    + "اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون پر شده است و درخواست با یادداشت در پنل دیده می‌شود. پرداخت آنلاین در این محصول نیست."
+                    + "اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون پر شده است و درخواست با یادداشت در پنل دیده می‌شود. "
+                    + "سه قالب دارد: نارون گرم، شب تیره و تخته روشن؛ عوض کردنش غذاها را جابه‌جا نمی‌کند. پرداخت آنلاین در این محصول نیست."
+            };
+            yield return new SiteFaq
+            {
+                Question = "سایت تعمیرگاه چه کار می‌کند؟",
+                Answer = "مشتری درخواست و آدرس می‌دهد تا پیک دستگاه را بگیرد. هزینه را در سایت تأیید می‌کند و با کد پیگیری هر مرحله را می‌بیند. "
+                    + "صورتحساب در فاکتور فروش می‌نشیند: اجرت در درآمد تعمیر، قطعه انبار با کسر موجودی، و دریافت روی حساب مشتری. با شارژ پیامک، تغییر وضعیت پیامک می‌شود. "
+                    + "سه قالب دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی؛ عوض کردنش برگه‌ها را جابه‌جا نمی‌کند."
             };
         }
 
@@ -869,7 +966,7 @@ namespace NikooSystem.Services
             yield return new SiteFaq
             {
                 Question = "چه نوع سایت‌هایی می‌توانم بسازم؟",
-                Answer = "فروشگاه کالای فیزیکی (پوشاک، سوپرمارکت، دیجیتال و عمومی)، فروش محصولات دیجیتال (دوره آموزشی و کتاب الکترونیک)، سایت محتوایی (خبرگزاری، مجله و سایت شرکتی)، سایت مطب و کلینیک، سایت آرایشگاه و سالن زیبایی، سایت مشاوره، سایت آموزشگاه (دوره عمومی و دوره خصوصی) و سایت باشگاه ورزشی (کلاس ورزشی، مربی و رزرو ساعتی سالن) و منوی دیجیتال کافه و رستوران (نمایش منو با QR و فراخوان گارسون)."
+                Answer = "فروشگاه کالای فیزیکی (پوشاک، سوپرمارکت، دیجیتال و عمومی)، فروش محصولات دیجیتال (دوره آموزشی و کتاب الکترونیک)، سایت محتوایی (خبرگزاری، مجله و سایت شرکتی)، سایت مطب و کلینیک، سایت آرایشگاه و سالن زیبایی، سایت مشاوره، سایت آموزشگاه (دوره عمومی و دوره خصوصی) و سایت باشگاه ورزشی (کلاس ورزشی، مربی و رزرو ساعتی سالن) و منوی دیجیتال کافه و رستوران (نمایش منو با QR و فراخوان گارسون) و سایت تعمیرگاه (پذیرش دستگاه، وضعیت کار و پیامک پیگیری)."
             };
             yield return new SiteFaq
             {

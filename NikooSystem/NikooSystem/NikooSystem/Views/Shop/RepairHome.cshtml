@@ -1,0 +1,126 @@
+@{
+    Layout = "~/Views/Shared/_StoreLayout.cshtml";
+    var settings = (StoreSettings)ViewBag.Settings;
+    var company = (string)ViewBag.CompanyCode;
+    var sample = ViewBag.Sample as RepairJob;
+    var sections = (ViewBag.Sections as IEnumerable<StoreHomeSection>) ?? new List<StoreHomeSection>();
+    var gallery = ((ViewBag.Gallery as IEnumerable<StoreGalleryItem>) ?? new List<StoreGalleryItem>())
+        .Where(g => string.IsNullOrEmpty(g.ThumbUrl) || g.ThumbUrl.IndexOf("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase) < 0)
+        .ToList();
+}
+<section class="rp-page">
+    <div class="container">
+        <div class="rp-hero">
+            <div class="rp-hero-copy">
+                @if (!string.IsNullOrWhiteSpace(settings.Tagline))
+                {
+                    <div class="rp-kicker"><i class="bi bi-wrench"></i> @settings.Tagline</div>
+                }
+                <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
+                <p class="rp-lead">@(string.IsNullOrWhiteSpace(settings.HeroSubtitle) ? "پیک دستگاه را می‌برد، کارشناس به محل می‌آید، یا خودتان آن را می‌آورید." : settings.HeroSubtitle)</p>
+                <div class="rp-actions">
+                    <a class="btn-wm" href="@Url.Action("RepairRequest","Shop", new { company })"><i class="bi bi-plus-circle"></i> درخواست تعمیر</a>
+                    <a class="btn-wm-outline" href="@Url.Action("RepairTrack","Shop", new { company })"><i class="bi bi-search"></i> پیگیری دستگاه</a>
+                </div>
+            </div>
+            <div class="rp-modes">
+                <a class="rp-mode" href="@Url.Action("RepairRequest","Shop", new { company })"><i class="bi bi-truck"></i><strong>پیک</strong><span>دستگاه را از آدرس شما می‌برد و برمی‌گرداند.</span></a>
+                <a class="rp-mode" href="@Url.Action("RepairRequest","Shop", new { company })"><i class="bi bi-person-workspace"></i><strong>کارشناس</strong><span>برای تعمیر به محل شما می‌آید.</span></a>
+                <a class="rp-mode" href="@Url.Action("RepairRequest","Shop", new { company })"><i class="bi bi-shop"></i><strong>حضوری</strong><span>دستگاه را خودتان به تعمیرگاه می‌آورید.</span></a>
+            </div>
+        </div>
+        <div class="rp-trust">
+            @if (!string.IsNullOrWhiteSpace(settings.Phone))
+            {
+                <a href="tel:@settings.Phone.Trim()"><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></a>
+            }
+            @if (!string.IsNullOrWhiteSpace(settings.OpeningHours))
+            {
+                <span><i class="bi bi-clock"></i> @settings.OpeningHours</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(settings.Address))
+            {
+                <span><i class="bi bi-geo-alt"></i> @settings.Address</span>
+            }
+        </div>
+        @if (sample != null)
+        {
+            <div class="rp-note">این سایت نمونه است. برای دیدن پیگیری، کد <strong dir="ltr">@sample.Code</strong> و موبایل <strong dir="ltr">@sample.CustomerMobile</strong> را در صفحه پیگیری وارد کنید.</div>
+        }
+    </div>
+</section>
+@foreach (var sec in sections)
+{
+    if (sec.Type == "about" && !string.IsNullOrWhiteSpace(settings.About))
+    {
+        <section class="rp-band">
+            <div class="container">
+                <div class="rp-about">
+                    <div class="rp-kicker">معرفی</div>
+                    <h2>@(sec.Title ?? ("درباره " + settings.StoreName))</h2>
+                    <p>@settings.About</p>
+                    <a class="btn-wm-outline" href="@Url.Action("Page","Shop", new { company, slug = "about" })">بیشتر درباره ما</a>
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "gallery" && gallery.Any())
+    {
+        <section class="rp-band rp-band-plain">
+            <div class="container">
+                <div class="rp-kicker">فضای کار</div>
+                <h2>@(sec.Title ?? "گالری")</h2>
+                <div class="rp-gallery">
+                    @foreach (var item in gallery.Take(6))
+                    {
+                        <a href="@Url.Action("Gallery","Shop", new { company })">
+                            <img src="@(item.ThumbUrl ?? item.LargeUrl)" alt="@item.Title" />
+                            <span>@item.Title</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (sec.Type == "contact")
+    {
+        <section class="rp-band">
+            <div class="container rp-contact">
+                <div>
+                    <div class="rp-kicker">تماس</div>
+                    <h2>@(sec.Title ?? "با تعمیرگاه حرف بزنید")</h2>
+                    <p>برای هماهنگی خاص یا پرسشی که در پیگیری دستگاه جوابش نیست، پیام بگذارید.</p>
+                    @if (!string.IsNullOrWhiteSpace(settings.Phone))
+                    {
+                        <div><i class="bi bi-telephone"></i> <span dir="ltr">@settings.Phone</span></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(settings.Email))
+                    {
+                        <div><i class="bi bi-envelope"></i> @settings.Email</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(settings.Address))
+                    {
+                        <div><i class="bi bi-geo-alt"></i> @settings.Address</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(settings.OpeningHours))
+                    {
+                        <div><i class="bi bi-clock"></i> @settings.OpeningHours</div>
+                    }
+                </div>
+                @using (Html.BeginForm("Contact", "Shop", new { company }, FormMethod.Post, new { @class = "rp-form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="cn-hp" aria-hidden="true"><label>وب‌سایت <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+                    <input class="form-control" name="FullName" placeholder="نام" maxlength="80" required />
+                    <input class="form-control" name="Mobile" placeholder="موبایل" dir="ltr" maxlength="14" />
+                    <textarea class="form-control" name="Message" rows="4" placeholder="پیام" maxlength="4000" required></textarea>
+                    <button class="btn-wm" type="submit">ارسال پیام</button>
+                }
+            </div>
+        </section>
+    }
+    else if (HomeSections.IsShared(sec.Type))
+    {
+        @Html.Partial("_HomeRich", sec)
+    }
+}

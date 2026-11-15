@@ -6,6 +6,7 @@ using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
 using NikooSystem.Models;
+using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
@@ -260,6 +261,30 @@ namespace NikooSystem.Controllers
             SiteContentStore.ChangeAdminCredentials(model.Username, model.NewPassword);
             Session["AdminUser"] = model.Username.Trim();
             TempData["Ok"] = "نام کاربری و رمز پنل عوض شد؛ از این به بعد با اطلاعات جدید وارد شوید.";
+            return RedirectToAction("Account");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SaveRecoveryMobile(string mobile)
+        {
+            mobile = (mobile ?? "").Trim();
+            if (mobile.Length == 0)
+            {
+                SiteContentStore.SaveAdminMobile(null);
+                TempData["Ok"] = "موبایل بازیابی رمز پاک شد. تا وقتی شماره نگذارید، رمز موقت فقط در بله ارسال می‌شود.";
+                return RedirectToAction("Account");
+            }
+
+            var normalized = BookingTime.NormalizeMobile(mobile);
+            if (normalized == null)
+            {
+                TempData["Error"] = "شماره موبایل معتبر نیست؛ مثلاً ۰۹۱۲۱۲۳۴۵۶۷.";
+                return RedirectToAction("Account");
+            }
+
+            SiteContentStore.SaveAdminMobile(normalized);
+            TempData["Ok"] = "موبایل بازیابی رمز ذخیره شد. فراموشی رمز، رمز موقت را به این شماره پیامک می‌کند.";
             return RedirectToAction("Account");
         }
     }

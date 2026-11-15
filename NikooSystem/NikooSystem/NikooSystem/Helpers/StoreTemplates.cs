@@ -278,6 +278,48 @@ namespace NikooSystem.Helpers
             },
             new StoreTemplateInfo
             {
+                Id = "pearl",
+                Layout = "clinic",
+                Name = "سپید (بالینی)",
+                Description = "الهام از مطب دندان و کلینیک پوست: سفید بالینی، آبی آرام، گوشه‌های تیز و خدمات در ردیف؛ مناسب دندانپزشکی، پوست و آزمایشگاه",
+                PrimaryColor = "#1d4e89",
+                SecondaryColor = "#e8f1fb",
+                PreviewGradient = "linear-gradient(180deg,#f7f9fc 0 62%,#1d4e89 62%)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "مراقبت دقیق",
+                KickerIcon = "bi-plus-square",
+                Topbar = "نوبت اینترنتی · یادآوری پیامکی · فقط ساعت‌های خالی"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "ward",
+                Layout = "clinic",
+                Name = "بخش (درمانگاه)",
+                Description = "الهام از درمانگاه و کلینیک چندتخصصی: سرمه‌ای با نوار قرمز، هدر یک‌دست و کارت‌های تخت؛ مناسب درمانگاه، کلینیک چندپزشکه و مرکز تصویربرداری",
+                PrimaryColor = "#0c4a6e",
+                SecondaryColor = "#e0f2fe",
+                PreviewGradient = "linear-gradient(135deg,#9f1239 0 12%,#0c4a6e 12% 70%,#e0f2fe 70%)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "درمانگاه و کلینیک",
+                KickerIcon = "bi-building",
+                Topbar = "پذیرش نوبت · چند پزشک · بیعانه ویزیت"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "practice",
+                Layout = "clinic",
+                Name = "مطب (خصوصی گرم)",
+                Description = "الهام از مطب خصوصی: کاغذ کرم، زرشکی گرم، هیروی وسط‌چین و عکس دایره‌ای پزشک؛ مناسب مطب متخصص و پزشک خانواده",
+                PrimaryColor = "#8f3d3d",
+                SecondaryColor = "#f3e6dc",
+                PreviewGradient = "linear-gradient(180deg,#fbf6ef 0 46%,#8f3d3d 46% 54%,#fbf6ef 54%)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "مطب خصوصی",
+                KickerIcon = "bi-house-door",
+                Topbar = "ویزیت با وقت قبلی · پیگیری با کد رهگیری"
+            },
+            new StoreTemplateInfo
+            {
                 Id = "salon",
                 Name = "سالن رز",
                 Description = "رنگ‌های گرم، هیرو تصویری، کارت‌های گرد خدمات و آرایشگرها",
@@ -301,16 +343,85 @@ namespace NikooSystem.Helpers
             new StoreTemplateInfo
             {
                 Id = "cafe",
-                Name = "منوی کافه",
-                Description = "منوی گرم و خوانا برای موبایل؛ مناسب کافه و رستوران",
+                Name = "نارون (گرم و کلاسیک)",
+                Description = "سربرگ سبز تیره، کارت‌های گرد کرم و نشان طلایی؛ مناسب کافه و کافه‌رستوران",
                 PrimaryColor = "#1c3d30",
                 SecondaryColor = "#c6a15b",
                 PreviewGradient = "linear-gradient(135deg,#1c3d30,#c6a15b 70%,#f6f1e7)",
                 Kinds = new[] { SiteKinds.Menu },
-                Layout = "minimal",
                 Kicker = "منوی دیجیتال",
                 KickerIcon = "bi-upc-scan",
                 Topbar = "اسکن کنید و منو را روی موبایل ببینید"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "night",
+                Layout = "cafe",
+                Name = "شب (منوی تیره)",
+                Description = "زمینه تیره، خطوط طلایی و ردیف نام و قیمت مثل منوی چاپی شب؛ مناسب رستوران و کافه شبانه",
+                PrimaryColor = "#e6c98a",
+                SecondaryColor = "#16130f",
+                PreviewGradient = "linear-gradient(180deg,#16130f 0 72%,#e6c98a 72% 76%,#16130f 76%)",
+                Kinds = new[] { SiteKinds.Menu },
+                Kicker = "منوی شب",
+                KickerIcon = "bi-moon-stars",
+                Topbar = "منو را در نور کم بخوانید"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "board",
+                Layout = "cafe",
+                Name = "تخته (پیشخوان روشن)",
+                Description = "نوار نارنجی، دسته‌های مربعی و ردیف‌های تخت؛ مناسب فست‌فود، صبحانه و پیشخوان",
+                PrimaryColor = "#ea580c",
+                SecondaryColor = "#fff7ed",
+                PreviewGradient = "linear-gradient(180deg,#ea580c 0 28%,#fff7ed 28%)",
+                Kinds = new[] { SiteKinds.Menu },
+                Kicker = "منوی پیشخوان",
+                KickerIcon = "bi-clipboard",
+                Topbar = "سفارش را از روی تخته بخوانید"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "bench",
+                Layout = "minimal",
+                Name = "میز کار",
+                Description = "کارت‌های گرد روی زمینه روشن و آبی آرام؛ مناسب تعمیرگاه موبایل، لپ‌تاپ و لوازم",
+                PrimaryColor = "#0f4c5c",
+                SecondaryColor = "#e0f2f1",
+                PreviewGradient = "linear-gradient(135deg,#0f4c5c,#14919b 55%,#e0f2f1)",
+                Kinds = new[] { SiteKinds.Repair },
+                Kicker = "پذیرش و پیگیری",
+                KickerIcon = "bi-wrench",
+                Topbar = "دستگاه را بسپارید و با کد پیگیری وضعیت را ببینید"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "garage",
+                Layout = "minimal",
+                Name = "گاراژ (شیفت شب)",
+                Description = "زمینه زغالی، خط کهربایی و گوشه‌های تیز؛ مناسب تعمیرگاه خودرو و شیفت شب",
+                PrimaryColor = "#e6b325",
+                SecondaryColor = "#17191e",
+                PreviewGradient = "linear-gradient(180deg,#17191e 0 70%,#e6b325 70% 76%,#17191e 76%)",
+                Kinds = new[] { SiteKinds.Repair },
+                Kicker = "شیفت شب",
+                KickerIcon = "bi-moon",
+                Topbar = "پذیرش شبانه · پیگیری با کد · تحویل با پیک"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "counter",
+                Layout = "minimal",
+                Name = "پیشخوان (روشن)",
+                Description = "نوار نارنجی ایمنی، کارت‌های تخت و کاغذ روشن؛ مناسب پیشخوان پذیرش موبایل و لوازم",
+                PrimaryColor = "#e85d04",
+                SecondaryColor = "#fff4eb",
+                PreviewGradient = "linear-gradient(180deg,#e85d04 0 22%,#fff4eb 22%)",
+                Kinds = new[] { SiteKinds.Repair },
+                Kicker = "پیشخوان پذیرش",
+                KickerIcon = "bi-shop",
+                Topbar = "نوبت پذیرش · وضعیت دستگاه · تحویل همان روز"
             }
         };
 

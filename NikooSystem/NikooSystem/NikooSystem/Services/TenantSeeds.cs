@@ -45,6 +45,7 @@ namespace NikooSystem.Services
                 case "school": School(seed, code); break;
                 case "club": Club(seed, code); break;
                 case "cafe": Cafe(seed, code); break;
+                case "repair": RepairShop(seed, code); break;
                 default: Gadgets(seed, code); break;
             }
             customize?.Invoke(seed.Settings);
@@ -518,6 +519,20 @@ namespace NikooSystem.Services
 
         // ---- Menus, pages and gallery for every kind
 
+        private static void RepairShop(TenantSeed seed, string code)
+        {
+            seed.Settings = BaseSettings(code, "تعمیرگاه همراه", "پذیرش و پیگیری تعمیر", "#0f4c5c", "#e0f2f1",
+                "دستگاه را بسپارید، وضعیت را آنلاین ببینید",
+                "موبایل، لپ‌تاپ، لوازم خانگی و خودرو؛ کد پیگیری و پیامک وضعیت",
+                "bench");
+            seed.Settings.About = "تعمیرگاه همراه از سال ۱۳۹۲ موبایل، لپ‌تاپ، لوازم خانگی و خودرو را تعمیر می‌کند. "
+                + "دستگاه را حضوری بیاورید، با پیک بفرستید، یا از کارشناس بخواهید به محل شما بیاید. "
+                + "قبل از شروع، هزینه را می‌بینید و با کد پیگیری هر مرحله را دنبال می‌کنید.";
+            seed.Settings.Address = "تهران، نارمک، خیابان گلستان، پلاک ۱۸";
+            seed.Settings.OpeningHours = "شنبه تا پنجشنبه ۹ تا ۲۰";
+            seed.Settings.EnablePayment = false;
+        }
+
         private static void Cafe(TenantSeed seed, string code)
         {
             seed.Settings = BaseSettings(code, "کافه و رستوران نارون", "قهوه تازه، غذای خانگی، سایه نارون", "#1c3d30", "#c6a15b",
@@ -621,6 +636,13 @@ namespace NikooSystem.Services
                 add("درباره ما", shop + "/Page/about");
                 add("تماس با ما", shop + "/Contact");
             }
+            else if (kind == SiteKinds.Repair)
+            {
+                add("درخواست تعمیر", shop + "/RepairRequest");
+                add("پیگیری دستگاه", shop + "/RepairTrack");
+                add("درباره ما", shop + "/Page/about");
+                add("تماس با ما", shop + "/Contact");
+            }
             else
             {
                 add(kind == SiteKinds.Digital ? (storeType == "academy" ? "دوره‌ها" : "کتاب‌ها") : "محصولات", shop + "/Catalog");
@@ -634,7 +656,7 @@ namespace NikooSystem.Services
             items.Add(new StoreMenuItem
             {
                 Id = items.Count + 1,
-                Title = kind == SiteKinds.Menu ? "شرایط استفاده" : kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : kind == SiteKinds.Campus ? (storeType == "school" ? "قوانین کلاس" : "قوانین کلاس و رزرو") : "شرایط فروش",
+                Title = kind == SiteKinds.Menu ? "شرایط استفاده" : kind == SiteKinds.Repair ? "قوانین پذیرش" : kind == SiteKinds.Content ? "حریم خصوصی" : kind == SiteKinds.Booking ? "قوانین نوبت‌دهی" : kind == SiteKinds.Campus ? (storeType == "school" ? "قوانین کلاس" : "قوانین کلاس و رزرو") : "شرایط فروش",
                 Url = shop + "/Page/terms",
                 SortOrder = 2,
                 Location = "footer"
@@ -663,6 +685,19 @@ namespace NikooSystem.Services
                     Title = "شرایط استفاده",
                     Slug = "terms",
                     BodyHtml = "<p>قیمت‌ها روی منو همان قیمت روز است. اگر آیتمی ناموجود باشد، روی کارت آن نوشته شده. فراخوان گارسون فقط برای مهمان‌های حاضر در سالن است.</p>"
+                });
+            }
+            else if (kind == SiteKinds.Repair)
+            {
+                pages.Add(new StorePage
+                {
+                    Id = 3,
+                    Title = "قوانین پذیرش",
+                    Slug = "terms",
+                    BodyHtml = "<ul><li>کد پیگیری را نگه دارید و با همان شماره موبایل، وضعیت دستگاه را در صفحه پیگیری ببینید.</li>"
+                        + "<li>برآورد اولیه تا بعد از عیب‌یابی قطعی نیست.</li>"
+                        + "<li>قطعه و اجرت موقع تحویل تسویه می‌شود، مگر اینکه بیعانه جدا توافق شده باشد.</li>"
+                        + "<li>لوازم همراه را در برگه پذیرش چک کنید.</li></ul>"
                 });
             }
             else if (kind == SiteKinds.Booking)
@@ -719,6 +754,7 @@ namespace NikooSystem.Services
         private static List<StoreGalleryItem> Gallery(string kind, string storeType)
         {
             var titles = storeType == "cafe" ? new[] { "سالن کافه", "میزها", "دسر روز" }
+                : storeType == "repair" ? new[] { "میز پذیرش", "تعمیرکار", "قطعات" }
                 : kind == SiteKinds.Content ? new[] { "پروژه اول", "پروژه دوم", "تیم ما" }
                 : kind == SiteKinds.Booking ? new[] { "فضای پذیرش", "اتاق خدمات", "تیم ما" }
                 : storeType == "school" ? new[] { "کلاس زبان", "اتاق تمرین", "مدرس‌ها" }

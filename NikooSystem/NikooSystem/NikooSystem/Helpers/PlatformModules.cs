@@ -35,8 +35,8 @@ namespace NikooSystem.Helpers
                 Icon = "bi-credit-card",
                 Name = "اتصال به درگاه بانک",
                 Summary = "پرداخت آنلاین مشتریان از طریق درگاه بانکی به حساب خودتان واریز می‌شود؛ فروش، شهریه یا بیعانه نوبت بدون واسطهٔ اضافه",
-                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking, SiteKinds.Campus },
-                Only = "فروشگاه، آموزش، نوبت‌دهی و باشگاه",
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking, SiteKinds.Campus, SiteKinds.Repair },
+                Only = "فروشگاه، آموزش، نوبت‌دهی، باشگاه و تعمیرگاه",
                 Highlight = true
             },
             new PlatformModule
@@ -45,8 +45,8 @@ namespace NikooSystem.Helpers
                 Icon = "bi-shop-window",
                 Name = "مدیریت فروش آنلاین و حضوری در یک پنل",
                 Summary = "سفارش اینترنتی با سبد و درگاه بانک کنار صندوق فروش سریع و فاکتور حضوری؛ موجودی از هر دو کانال کم می‌شود، نقد و بانک و پرداخت آنلاین در همان دفاتر می‌نشیند و گزارش فروش آنلاین و آفلاین را یکجا می‌بینید. اگر فعلاً فقط حضوری می‌فروشید هم انبار، صندوق و حسابداری بدون روشن کردن فروش آنلاین کار می‌کند",
-                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking },
-                Only = "فروشگاه، آموزش، باشگاه و نوبت‌دهی",
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking, SiteKinds.Repair },
+                Only = "فروشگاه، آموزش، باشگاه، نوبت‌دهی و تعمیرگاه",
                 Highlight = true
             },
             new PlatformModule
@@ -55,8 +55,8 @@ namespace NikooSystem.Helpers
                 Icon = "bi-journal-text",
                 Name = "حسابداری دوطرفه با گروه، کل، معین و تفصیلی",
                 Summary = "سرفصل حساب‌های استاندارد سه سطحی (گروه، کل و معین) با حساب تفصیلی شناور دو سطحی برای اشخاص و مراکز هزینه و پروژه، سند با ستون بدهکار و بستانکار و برگه سند چاپی، سال مالی شمسی با فیلتر پیش‌فرض روی سال جاری و بستن سال (انتقال درآمد و هزینه به سود و زیان انباشته)، تراز چهارستونی در سطح گروه، کل، معین و تفصیلی برای هر بازه تاریخ، دفتر کل، دفتر معین و دفتر تفصیلی با مانده ردیف به ردیف، نوع سند دلخواه، فهرست تامین‌کنندگان و مشتریان، فاکتور خرید و فروش حضوری با تخفیف و مالیات بر ارزش افزوده و برگه چاپی، فیلتر از تاریخ تا تاریخ شمسی روی اسناد و فاکتورها و دریافت و پرداخت، تعریف حساب‌های بانکی با شبا و اطلاعات درگاه پرداخت، دریافت و پرداخت صندوق و هر بانک، کنترل موجودی کالا و اموال، همه با جستجو، مرتب‌سازی و صفحه‌بندی؛ حتی بدون فروش آنلاین می‌توانید فاکتور حضوری بزنید و فروش آنلاین، شهریه کلاس و رزرو سالن هم خودکار در دفاتر ثبت می‌شود",
-                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking },
-                Only = "فروشگاه، آموزش، باشگاه و نوبت‌دهی",
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Campus, SiteKinds.Booking, SiteKinds.Repair },
+                Only = "فروشگاه، آموزش، باشگاه، نوبت‌دهی و تعمیرگاه",
                 Highlight = true
             },
             new PlatformModule
@@ -135,8 +135,8 @@ namespace NikooSystem.Helpers
                 Icon = "bi-chat-dots",
                 Name = "پیامک مشتریان",
                 Summary = "اعتبار پیامک را از پنل شارژ کنید تا بازیابی رمز، صورتحساب خرید، تأیید نوبت و یادآوری قبل از نوبت برای مشتریان ارسال شود",
-                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking, SiteKinds.Campus },
-                Only = "فروشگاه، آموزش، نوبت‌دهی و باشگاه",
+                Kinds = new[] { SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Booking, SiteKinds.Campus, SiteKinds.Repair },
+                Only = "فروشگاه، آموزش، نوبت‌دهی، باشگاه و تعمیرگاه",
                 Highlight = true
             },
             new PlatformModule
@@ -215,9 +215,19 @@ namespace NikooSystem.Helpers
                 Id = "cafe-menu",
                 Icon = "bi-upc-scan",
                 Name = "منوی QR کافه و رستوران",
-                Summary = "مشتری با اسکن QR روی میز، منو را روی موبایل می‌بیند، قیمت و ناموجودی را می‌خواند و گارسون را صدا می‌زند. کارت چاپ میزها از پنل ساخته می‌شود.",
+                Summary = "مشتری با اسکن QR روی میز، منو را روی موبایل می‌بیند، قیمت و ناموجودی را می‌خواند و گارسون را صدا می‌زند. سه قالب نارون، شب و تخته دارد و کارت چاپ میزها از پنل ساخته می‌شود.",
                 Kinds = new[] { SiteKinds.Menu },
                 Only = "منوی کافه و رستوران",
+                Highlight = true
+            },
+            new PlatformModule
+            {
+                Id = "repair-desk",
+                Icon = "bi-wrench",
+                Name = "پذیرش و پیگیری تعمیر",
+                Summary = "هر دستگاه یک برگه کار با کد پیگیری دارد. مشتری وضعیت را در سایت می‌بیند، اجرت و قطعه روی همان برگه می‌ماند و دریافت نقد یا بانک در درآمد تعمیر ثبت می‌شود. تغییر وضعیت، در صورت شارژ پیامک، برای مشتری پیامک می‌شود. سه قالب میز کار، گاراژ و پیشخوان دارد و عوض کردنش برگه‌ها را جابه‌جا نمی‌کند.",
+                Kinds = new[] { SiteKinds.Repair },
+                Only = "سایت تعمیرگاه",
                 Highlight = true
             },
             new PlatformModule

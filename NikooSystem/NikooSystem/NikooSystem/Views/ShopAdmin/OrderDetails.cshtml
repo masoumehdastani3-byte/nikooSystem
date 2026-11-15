@@ -13,7 +13,10 @@
 }
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h2 class="mb-0">سفارش <span dir="ltr">@Model.OrderNumber</span> @Html.StatusBadge(Model.Status)</h2>
-    <a class="btn-outline-store" href="@Url.Action("Orders", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> فهرست سفارش‌ها</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="orderForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("Orders", "ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> فهرست سفارش‌ها</a>
+    </div>
 </div>
 
 <div class="row g-3">
@@ -53,7 +56,7 @@
 
         <div class="panel-card">
             <h5 class="mb-3">تغییر وضعیت</h5>
-            @using (Html.BeginForm("UpdateOrder", "ShopAdmin", new { company }, FormMethod.Post))
+            @using (Html.BeginForm("UpdateOrder", "ShopAdmin", new { company }, FormMethod.Post, new { id = "orderForm" }))
             {
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
@@ -109,7 +112,6 @@
                         <span><i class="bi bi-unlock"></i> مشتری از وضعیت «پرداخت شده» به بعد به دوره‌ها و فایل‌های این سفارش دسترسی دارد.</span>
                     }
                 </p>
-                <button class="btn-store" type="submit"><i class="bi bi-check2"></i> ذخیره</button>
             }
         </div>
 

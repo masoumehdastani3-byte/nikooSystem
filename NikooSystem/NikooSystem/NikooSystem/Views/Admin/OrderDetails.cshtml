@@ -10,7 +10,10 @@
         <h1>سفارش <span dir="ltr">@Model.OrderNumber</span> @Html.StatusBadge(Model.Status)</h1>
         <p>@Model.CreatedAt.ToShamsiText() ساعت @Model.CreatedAt.ToString("HH:mm")</p>
     </div>
-    <a class="btn btn-link" href="@Url.Action("Orders","Admin")">بازگشت</a>
+    <div class="adm-head-actions">
+        <button class="btn btn-primary" type="submit" form="adminOrderForm">به‌روزرسانی</button>
+        <a class="btn btn-link" href="@Url.Action("Orders","Admin")">بازگشت</a>
+    </div>
 </div>
 <div class="row g-3">
     <div class="col-lg-7">
@@ -64,7 +67,7 @@
         }
         <div class="adm-card">
             <div class="adm-card-title">تغییر وضعیت</div>
-            @using (Html.BeginForm("UpdateOrderStatus", "Admin", FormMethod.Post))
+            @using (Html.BeginForm("UpdateOrderStatus", "Admin", FormMethod.Post, new { id = "adminOrderForm" }))
             {
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
@@ -74,7 +77,6 @@
                         <option value="@s" @(Model.Status == s ? "selected" : null)>@s.StatusText()</option>
                     }
                 </select>
-                <button type="submit" class="btn btn-primary">به‌روزرسانی</button>
             }
         </div>
     </div>

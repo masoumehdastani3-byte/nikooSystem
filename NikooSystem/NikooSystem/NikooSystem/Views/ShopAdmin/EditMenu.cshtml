@@ -8,8 +8,17 @@
     var parentTitle = Model.ParentId.HasValue ? menus.FirstOrDefault(m => m.Id == Model.ParentId.Value)?.Title : null;
     ViewBag.Title = Model.Id > 0 ? "ویرایش منو" : (parentTitle != null ? "زیرمنوی جدید" : "آیتم منوی جدید");
 }
-@Html.PageTitle()
-@using (Html.BeginForm("SaveMenu", "ShopAdmin", new { company }, FormMethod.Post))
+<div class="admin-page-head">
+    <div class="admin-page-head-title">
+        <span class="admin-page-head-accent" aria-hidden="true"></span>
+        <h2>@ViewBag.Title</h2>
+    </div>
+    <div class="admin-page-head-actions">
+        <button class="btn-store admin-page-head-action" type="submit" form="menuForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("Menus","ShopAdmin", new { company })"><i class="bi bi-arrow-right"></i> بازگشت</a>
+    </div>
+</div>
+@using (Html.BeginForm("SaveMenu", "ShopAdmin", new { company }, FormMethod.Post, new { id = "menuForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -43,6 +52,5 @@
         </div>
         <div class="col-md-2"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
         <div class="col-md-2 form-check mt-4 pt-3">@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
-        <div class="col-12">@Html.FormActions("Menus")</div>
     </div>
 }

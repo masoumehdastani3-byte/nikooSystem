@@ -25,11 +25,13 @@ namespace NikooSystem.Helpers
             "Messages", "Message", "DeleteMessage",
             "Pos", "SaleInvoices", "EditSaleInvoice", "DeleteSaleInvoice", "PrintSaleInvoice",
             "Payments", "EditPayment", "DeletePayment",
-            "Inventory", "SaveGoods", "AdjustStock", "AdjustGoods",
+            "Inventory", "SaveGoods", "AdjustStock", "AdjustGoods", "ProductBarcodes",
             "Parties", "EditParty", "DeleteParty",
             "AccountingGuide", "Books",
             "Returns", "ReturnDetails", "DecideReturn", "ShippingGuide",
             "Appointments", "AppointmentDetails", "CollectAppointmentPayment",
+            "Repairs", "RepairDetails", "NewRepair", "UpdateRepair", "CollectRepairPayment",
+            "DispatchPickup", "AdvanceRepair", "PostRepairInvoice", "PrintRepair",
             "WaiterCalls", "CloseWaiterCall", "MenuQr"
         };
 
@@ -42,6 +44,8 @@ namespace NikooSystem.Helpers
             "Enrollments", "ManualEnroll", "SetEnrollmentStatus",
             "FacilityBookings", "ManualFacilityBooking", "SetFacilityBookingStatus",
             "CampusGuide",
+            "Repairs", "RepairDetails", "NewRepair", "UpdateRepair", "CollectRepairPayment",
+            "DispatchPickup", "AdvanceRepair", "PostRepairInvoice", "PrintRepair",
             "WaiterCalls", "CloseWaiterCall", "MenuQr"
         };
 

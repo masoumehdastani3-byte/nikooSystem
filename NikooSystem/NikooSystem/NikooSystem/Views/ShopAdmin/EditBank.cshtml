@@ -12,9 +12,12 @@
 }
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="mb-0">@ViewBag.Title</h2>
-    <a class="btn-outline-store" href="@Url.Action("Banks","ShopAdmin", new { company })">بازگشت به لیست</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="bankForm"><i class="bi bi-check2"></i> ذخیره</button>
+        <a class="btn-outline-store" href="@Url.Action("Banks","ShopAdmin", new { company })">بازگشت به لیست</a>
+    </div>
 </div>
-@using (Html.BeginForm("EditBank", "ShopAdmin", new { company }, FormMethod.Post, new { autocomplete = "off" }))
+@using (Html.BeginForm("EditBank", "ShopAdmin", new { company }, FormMethod.Post, new { autocomplete = "off", id = "bankForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
@@ -116,5 +119,4 @@
             </div>
         </div>
     </div>
-    <button class="btn-store" type="submit">ذخیره</button>
 }

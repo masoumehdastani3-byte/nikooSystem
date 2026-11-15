@@ -9,7 +9,8 @@
         ? Url.Action("Login", "Signup")
         : Url.Action("Login", "ShopAdmin", new { company = lastCompany });
     var prefilledType = (ViewBag.PrefilledStoreType as bool?) ?? false;
-    var selectedKindId = StoreTypes.Get(Model.StoreType).Kind;
+    var selectedType = StoreTypes.Get(Model.StoreType);
+    var selectedKindId = selectedType.Kind;
     var selectedLanding = ProductLandings.ForType(Model.StoreType);
     var selectedLandingUrl = selectedLanding != null ? Url.RouteUrl("Solution", new { slug = selectedLanding.Slug }) : null;
 }
@@ -68,7 +69,7 @@
                                             var active = Model.StoreType == t.Id;
                                             var landing = ProductLandings.ForType(t.Id);
                                             var landingUrl = landing != null ? Url.RouteUrl("Solution", new { slug = landing.Slug }) : null;
-                                            <label class="ob-type @(active ? "active" : "")" data-kind="@kind.Id" data-landing-url="@landingUrl">
+                                            <label class="ob-type @(active ? "active" : "")" data-kind="@kind.Id" data-landing-url="@landingUrl" data-name-label="@t.NameLabel" data-name-placeholder="@t.NamePlaceholder">
                                                 <input type="radio" name="StoreType" value="@t.Id" @(active ? "checked" : null) />
                                                 <i class="bi @t.Icon"></i>
                                                 <div><strong>@t.Name</strong><span>@t.Description</span></div>
@@ -84,12 +85,12 @@
                             <span class="ob-label">۲. اطلاعات لازم را وارد کنید</span>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label" for="StoreName">نام فروشگاه</label>
-                                    @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control", placeholder = "مثلاً پوشاک آریا" })
+                                    <label class="form-label" for="StoreName" id="storeNameLabel">@selectedType.NameLabel</label>
+                                    @Html.TextBoxFor(m => m.StoreName, new { @class = "form-control", placeholder = selectedType.NamePlaceholder })
                                     @Html.ValidationMessageFor(m => m.StoreName, "", new { @class = "text-danger small" })
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label" for="StoreCode">نام فروشگاه (انگلیسی)</label>
+                                    <label class="form-label" for="StoreCode" id="storeCodeLabel">@selectedType.NameLabel (انگلیسی)</label>
                                     <div class="ob-code">
                                         @Html.TextBoxFor(m => m.StoreCode, new { @class = "form-control", placeholder = "aryashop", autocomplete = "off", spellcheck = "false" })
                                         @if (codeSuffix != null)
@@ -180,12 +181,6 @@
     });
   }
 
-  document.querySelectorAll('.ob-kind-tab').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      activateKindTab(btn.getAttribute('data-kind-target'));
-    });
-  });
-
   function syncProductInfoLink(card) {
     var link = document.getElementById('productInfoLink');
     if (!link || !card) return;
@@ -193,20 +188,60 @@
     if (landingUrl) link.setAttribute('href', landingUrl);
   }
 
+  function applyTypeLabels(card) {
+    if (!card) return;
+    var label = card.getAttribute('data-name-label') || 'نام فروشگاه';
+    var placeholder = card.getAttribute('data-name-placeholder') || 'مثلاً پوشاک آریا';
+    var nameLabel = document.getElementById('storeNameLabel');
+    var codeLabel = document.getElementById('storeCodeLabel');
+    var nameInput = document.getElementById('StoreName');
+    if (nameLabel) nameLabel.textContent = label;
+    if (codeLabel) codeLabel.textContent = label + ' (انگلیسی)';
+    if (nameInput) nameInput.setAttribute('placeholder', placeholder);
+  }
+
+  function selectTypeCard(card) {
+    if (!card) return;
+    document.querySelectorAll('.ob-type').forEach(function (c) { c.classList.remove('active'); });
+    card.classList.add('active');
+    var input = card.querySelector('input');
+    if (input) input.checked = true;
+    applyTypeLabels(card);
+    syncProductInfoLink(card);
+  }
+
+  function cardForKind(kindId) {
+    var panel = document.querySelector('.ob-kind-panel[data-kind-panel="' + kindId + '"]');
+    if (!panel) return null;
+    var checked = panel.querySelector('.ob-type input:checked');
+    if (checked) return checked.closest('.ob-type');
+    return panel.querySelector('.ob-type');
+  }
+
+  document.querySelectorAll('.ob-kind-tab').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var kindId = btn.getAttribute('data-kind-target');
+      activateKindTab(kindId);
+      var card = cardForKind(kindId);
+      if (!card) return;
+      var input = card.querySelector('input');
+      if (input && input.checked) applyTypeLabels(card);
+      else selectTypeCard(card);
+    });
+  });
+
   document.querySelectorAll('.ob-type').forEach(function (card) {
     card.addEventListener('click', function () {
-      document.querySelectorAll('.ob-type').forEach(function (c) { c.classList.remove('active'); });
-      card.classList.add('active');
-      var input = card.querySelector('input');
-      if (input) input.checked = true;
+      selectTypeCard(card);
       activateKindTab(card.getAttribute('data-kind'));
-      syncProductInfoLink(card);
     });
   });
 
   var selectedTypeCard = document.querySelector('.ob-type input:checked');
   if (selectedTypeCard) {
-    syncProductInfoLink(selectedTypeCard.closest('.ob-type'));
+    var selectedCard = selectedTypeCard.closest('.ob-type');
+    syncProductInfoLink(selectedCard);
+    applyTypeLabels(selectedCard);
   }
 
   var toggle = document.getElementById('togglePass');

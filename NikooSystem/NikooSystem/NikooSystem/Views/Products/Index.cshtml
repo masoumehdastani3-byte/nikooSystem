@@ -46,7 +46,9 @@
                                 <p class="small text-muted">@p.ShortDescription</p>
                                 @if (!string.IsNullOrEmpty(p.DemoSlug))
                                 {
-                                    <a class="lf-tpl-count" href="@Url.Action("Details","Products", new { id = p.Id })#templates"><i class="bi bi-palette"></i> @StoreTemplates.ForKind(StoreTypes.Get(p.DemoSlug).Kind).Count().ToString().ToFaDigits() قالب آماده با پیش‌نمایش زنده</a>
+                                    var page = ProductLandings.ForType(p.DemoSlug);
+                                    var tplCount = page != null ? page.Templates().Count : StoreTemplates.ForKind(StoreTypes.Get(p.DemoSlug).Kind).Count();
+                                    <a class="lf-tpl-count" href="@Url.Action("Details","Products", new { id = p.Id })#templates"><i class="bi bi-palette"></i> @tplCount.ToString().ToFaDigits() قالب آماده با پیش‌نمایش زنده</a>
                                 }
                                 <div class="d-flex justify-content-between align-items-center mt-3">
                                     <span class="price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>

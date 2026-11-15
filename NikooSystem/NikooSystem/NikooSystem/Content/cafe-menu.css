@@ -7,8 +7,8 @@
 }
 
 :root {
-  --ink: #1c3d30;
-  --gold: #c6a15b;
+  --ink: var(--store-primary, #1c3d30);
+  --gold: var(--store-accent, #c6a15b);
   --cream: #f6f1e7;
   --paper: #fffdf8;
   --line: #e6dccb;
@@ -184,4 +184,146 @@ input[type="text"], textarea {
   .grid { grid-template-columns: 1fr 1fr; }
   .sheet, .tray { align-items: center; }
   .sheet-card, .tray-card { border-radius: 20px; }
+}
+
+/* شب: منوی چاپی تیره، یک ستون، نام و قیمت روی یک خط */
+body.theme-night {
+  background: var(--store-accent);
+  color: #f6efe2;
+}
+body.theme-night .mast {
+  background: transparent;
+  color: inherit;
+  text-align: center;
+  border-bottom: 1px solid var(--store-primary);
+}
+body.theme-night .mark {
+  background: transparent;
+  color: var(--store-primary);
+  border: 1px solid var(--store-primary);
+  border-radius: 50%;
+}
+body.theme-night .tagline,
+body.theme-night .price,
+body.theme-night .group h2 { color: var(--store-primary); }
+body.theme-night .facts { justify-content: center; }
+body.theme-night .note {
+  background: transparent;
+  border: 1px solid var(--store-primary);
+  border-radius: 0;
+  color: inherit;
+}
+body.theme-night .tools { background: var(--store-accent); }
+body.theme-night .search,
+body.theme-night input[type="text"],
+body.theme-night textarea {
+  background: transparent;
+  color: inherit;
+  border-radius: 0;
+  border-color: var(--store-primary);
+}
+body.theme-night .chips { justify-content: center; }
+body.theme-night .chips button {
+  background: transparent;
+  color: #f6efe2;
+  border-color: transparent;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+}
+body.theme-night .chips button.is-on {
+  background: transparent;
+  color: var(--store-primary);
+  border-bottom-color: var(--store-primary);
+}
+body.theme-night .group h2 { text-align: center; font-size: .95rem; }
+body.theme-night .letter { display: none; }
+body.theme-night .grid { grid-template-columns: 1fr; }
+body.theme-night .dish {
+  grid-template-columns: 1fr auto;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted rgba(230, 201, 138, .45);
+  border-radius: 0;
+  padding: 10px 0;
+}
+body.theme-night .dish-desc { color: #cbbfa8; }
+body.theme-night .badges em { background: transparent; color: var(--store-primary); border: 1px solid var(--store-primary); border-radius: 0; }
+body.theme-night .sheet, body.theme-night .tray { background: rgba(0, 0, 0, .62); }
+body.theme-night .sheet-card, body.theme-night .tray-card {
+  background: #1c1814;
+  color: #f6efe2;
+  border-radius: 0;
+}
+body.theme-night .close { color: #f6efe2; }
+body.theme-night .fab,
+body.theme-night .send,
+body.theme-night .toast {
+  background: var(--store-primary);
+  color: #1a150f;
+  border-radius: 0;
+}
+body.theme-night .foot, body.theme-night .foot a { color: #cbbfa8; }
+
+/* تخته: نوار رنگی کوتاه و ردیف‌های تخت پیشخوان */
+body.theme-board {
+  background: var(--store-accent);
+  color: #1c140f;
+}
+body.theme-board .mast {
+  background: var(--store-primary);
+  color: #fff;
+  padding: 14px 16px;
+}
+body.theme-board .mast-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+body.theme-board .mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--store-primary);
+}
+body.theme-board .mast h1 { margin: 0; font-size: 1.35rem; }
+body.theme-board .tagline { width: 100%; margin: 0; color: #ffedd5; }
+body.theme-board .facts { width: 100%; margin-top: 0; }
+body.theme-board .note {
+  width: 100%;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, .16);
+  border-radius: 8px;
+}
+body.theme-board .tools { background: var(--store-accent); }
+body.theme-board .search,
+body.theme-board .chips button,
+body.theme-board .dish,
+body.theme-board .fab,
+body.theme-board .send { border-radius: 8px; }
+body.theme-board .chips button.is-on {
+  background: var(--store-primary);
+  border-color: var(--store-primary);
+  color: #fff;
+}
+body.theme-board .letter { display: none; }
+body.theme-board .dish {
+  grid-template-columns: 1fr auto;
+  border: 0;
+  border-right: 5px solid var(--store-primary);
+  box-shadow: 0 1px 0 rgba(28, 20, 15, .06);
+}
+body.theme-board .price {
+  background: #ffedd5;
+  color: var(--store-primary);
+  border-radius: 8px;
+  padding: 4px 8px;
+}
+body.theme-board .fab,
+body.theme-board .send { background: var(--store-primary); }
+
+@media (max-width: 700px) {
+  body:has(.ds-root) .fab { bottom: 86px; }
+  body:has(.ds-root) .wrap { padding-bottom: 170px; }
 }

@@ -2,7 +2,8 @@
     Layout = "~/Views/Shared/_StoreLayout.cshtml";
     var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
-    var layoutId = StoreTemplates.Get(settings.LayoutStyle).Id;
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+    var layoutId = template.Id;
     var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
     var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
     var services = (List<StoreService>)ViewBag.Services;
@@ -21,7 +22,7 @@
                     <div class="bk-hero-copy">
                         @if (!string.IsNullOrWhiteSpace(settings.Tagline))
                         {
-                            <div class="bk-kicker"><i class="bi bi-calendar-check"></i> @settings.Tagline</div>
+                            <div class="bk-kicker"><i class="bi @(template.KickerIcon ?? "bi-calendar-check")"></i> @settings.Tagline</div>
                         }
                         <h1>@(string.IsNullOrWhiteSpace(settings.HeroTitle) ? settings.StoreName : settings.HeroTitle)</h1>
                         @if (!string.IsNullOrWhiteSpace(settings.HeroSubtitle))

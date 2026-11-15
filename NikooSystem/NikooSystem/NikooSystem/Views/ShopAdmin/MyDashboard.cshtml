@@ -13,7 +13,10 @@
         <h2 class="mb-1">داشبورد من</h2>
         <p class="text-muted mb-0">منوهای پرکاربرد را برای دسترسی سریع در داشبورد بچینید. حداکثر @maxPins.ToFa() میانبر.</p>
     </div>
-    <a class="btn-outline-store" href="@Url.Action("Index","ShopAdmin", new { company })">بازگشت به داشبورد</a>
+    <div class="d-flex gap-2 flex-wrap">
+        <button class="btn-store" type="submit" form="dashPinsForm"><i class="bi bi-check2-circle"></i> ذخیره داشبورد</button>
+        <a class="btn-outline-store" href="@Url.Action("Index","ShopAdmin", new { company })">بازگشت به داشبورد</a>
+    </div>
 </div>
 
 @using (Html.BeginForm("MyDashboard", "ShopAdmin", new { company }, FormMethod.Post, new { id = "dashPinsForm", data_max = maxPins }))
@@ -24,7 +27,6 @@
             <div class="small text-muted">انتخاب‌شده: <strong id="pinCount">0</strong> از @maxPins.ToFa()</div>
             <div class="d-flex gap-2 flex-wrap">
                 <button type="button" class="btn-outline-store btn-sm" id="pinClear">پاک کردن همه</button>
-                <button type="submit" class="btn-store btn-sm"><i class="bi bi-check2-circle"></i> ذخیره داشبورد</button>
             </div>
         </div>
 
@@ -55,7 +57,6 @@
             </div>
         }
     </div>
-    <button type="submit" class="btn-store"><i class="bi bi-check2-circle"></i> ذخیره داشبورد</button>
 }
 
 <script>

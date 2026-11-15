@@ -69,6 +69,16 @@
   box-shadow: 0 1px 2px rgba(15, 23, 42, .08);
 }
 .admin-page-head-action i { font-size: 1rem; line-height: 1; }
+.admin-page-head-actions > .btn-store,
+.admin-page-head-actions > .btn-outline-store,
+.admin-main > .d-flex.justify-content-between .btn-store,
+.admin-main > .d-flex.justify-content-between .btn-outline-store,
+.acc-form-head .btn-store,
+.acc-form-head .btn-outline-store {
+  padding: .55rem 1rem;
+  border-radius: 10px;
+  white-space: nowrap;
+}
 
 /* Manual headers: accent bar before the title when there is no helper markup */
 .admin-main > .d-flex.justify-content-between:has(> h2) > h2,
@@ -736,3 +746,36 @@
 .to-found li.is-saved,
 .to-found li.is-saved .to-found-name { color: #6b7280; font-weight: 500; }
 select option[data-holiday]:not([data-holiday=""]) { color: #b91c1c; }
+
+.rp-timeline { list-style: none; margin: 0; padding: 0; }
+.rp-timeline li { position: relative; padding: .35rem 1.6rem .85rem 0; color: #9ca3af; }
+.rp-timeline li:before {
+  content: ""; position: absolute; right: .28rem; top: .7rem; bottom: -.2rem;
+  width: 2px; background: #e5e7eb;
+}
+.rp-timeline li:last-child:before { display: none; }
+.rp-timeline li span.dot {
+  position: absolute; right: 0; top: .45rem; width: .7rem; height: .7rem;
+  border-radius: 50%; background: #d1d5db;
+}
+.rp-timeline li.is-done { color: #111827; }
+.rp-timeline li.is-done span.dot { background: var(--store-primary, #0f4c5c); }
+.rp-timeline li.is-now { font-weight: 700; }
+.rp-timeline button {
+  display: block; width: 100%; text-align: inherit; background: none; border: 0;
+  padding: 0; color: inherit; font: inherit; cursor: pointer;
+}
+.rp-timeline button.is-on { font-weight: 700; }
+.rp-tabs { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .85rem; }
+.rp-tabs button {
+  border: 1px solid #e5e7eb; background: #fff; color: #6b7280;
+  border-radius: 999px; padding: .4rem .9rem;
+}
+.rp-tabs button.is-on {
+  background: var(--store-primary, #0f4c5c); border-color: var(--store-primary, #0f4c5c);
+  color: #fff; font-weight: 700;
+}
+.rp-desk .rp-pane { display: none; }
+.rp-desk .rp-pane.is-on { display: block; }
+.rp-off { display: none !important; }
+.rp-pane-lead { color: #6b7280; margin-bottom: .9rem; }

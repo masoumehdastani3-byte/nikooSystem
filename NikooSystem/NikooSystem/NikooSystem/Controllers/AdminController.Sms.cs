@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using NikooSystem.Helpers;
@@ -18,6 +20,8 @@ namespace NikooSystem.Controllers
             ViewBag.Sender = PappusSmsClient.Sender;
             ViewBag.FromConfig = string.IsNullOrWhiteSpace(SiteContentStore.Settings?.PappusApiKey)
                 && !string.IsNullOrEmpty(PappusSmsClient.ApiKey);
+            ViewBag.Markup = SmsService.MarkupPercent;
+            ViewBag.Packages = SmsService.Packages();
 
             if (PappusSmsClient.IsConfigured)
             {
@@ -73,6 +77,50 @@ namespace NikooSystem.Controllers
             });
             TempData["Ok"] = "اتصال پاپوس ذخیره شد.";
             return RedirectToAction("SmsPanel");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult SaveSmsMarkup(string markup)
+        {
+            int percent;
+            if (!TryParsePercent(markup, out percent))
+            {
+                TempData["Error"] = "درصد سود باید عددی بین ۰ و " + SmsService.MaxMarkupPercent.ToFa() + " باشد.";
+                return RedirectToAction("SmsPanel");
+            }
+
+            SiteContentStore.SaveVerification(s => s.SmsMarkupPercent = percent);
+            TempData["Ok"] = percent == 0
+                ? "سود فروش برداشته شد. بسته‌ها به اندازه اعتبارشان فروخته می‌شوند."
+                : "سود فروش پیامک روی " + percent.ToFa() + "٪ تنظیم شد. قیمت جدید در پنل پیامک هر سایت دیده می‌شود.";
+            return RedirectToAction("SmsPanel");
+        }
+
+        private static bool TryParsePercent(string raw, out int percent)
+        {
+            percent = 0;
+            var text = CleanDigits(raw);
+            if (text.Length == 0) return false;
+            int value;
+            if (!int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out value)) return false;
+            if (value < 0 || value > SmsService.MaxMarkupPercent) return false;
+            percent = value;
+            return true;
+        }
+
+        private static string CleanDigits(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "";
+            var sb = new StringBuilder(raw.Length);
+            foreach (var ch in raw.Trim())
+            {
+                if (ch >= '۰' && ch <= '۹') sb.Append((char)('0' + (ch - '۰')));
+                else if (ch >= '٠' && ch <= '٩') sb.Append((char)('0' + (ch - '٠')));
+                else if (ch == ',' || ch == '٬' || ch == '،' || ch == '%' || ch == '٪' || ch == ' ' || ch == '\u00A0') continue;
+                else sb.Append(ch);
+            }
+            return sb.ToString();
         }
 
         [HttpPost]

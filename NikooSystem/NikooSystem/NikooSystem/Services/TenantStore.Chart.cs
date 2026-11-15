@@ -81,6 +81,7 @@ namespace NikooSystem.Services
             ChartSub(AccountCodes.OnlineSales, "فروش آنلاین", true),
             ChartSub(AccountCodes.Tuition, "درآمد شهریه و رزرو", true, DetailUse.None, DetailUse.Optional),
             ChartSub(AccountCodes.Visit, "درآمد ویزیت و نوبت", true, DetailUse.None, DetailUse.Optional),
+            ChartSub(AccountCodes.Repair, "درآمد تعمیر و اجرت", true, DetailUse.None, DetailUse.Optional),
             ChartSub(AccountCodes.ShippingIncome, "درآمد حمل و ارسال", true),
             ChartSub(AccountCodes.SalesReturns, "برگشت از فروش", true),
             ChartGeneral("62", "سایر درآمدها"),

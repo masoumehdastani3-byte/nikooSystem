@@ -9,8 +9,11 @@
         <h1>تنظیمات و متن‌های سایت</h1>
         <p>هر تغییری بلافاصله بعد از ذخیره روی سایت اصلی اعمال می‌شود. <a href="@Url.Action("Index","Home")" target="_blank" rel="noopener">مشاهده سایت</a></p>
     </div>
+    <div class="adm-head-actions">
+        <button class="btn btn-primary" type="submit" form="siteSettingsForm"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
+    </div>
 </div>
-@using (Html.BeginForm("SiteSettings", "Admin", FormMethod.Post))
+@using (Html.BeginForm("SiteSettings", "Admin", FormMethod.Post, new { id = "siteSettingsForm" }))
 {
     @Html.AntiForgeryToken()
     @Html.ValidationSummary(true, "", new { @class = "text-danger mb-3" })
@@ -248,8 +251,5 @@
             </div>
         </div>
     </div>
-    <div class="adm-card mt-3 d-flex align-items-center gap-3" style="position:sticky;bottom:1rem;z-index:5">
-        <button class="btn btn-primary px-4" type="submit"><i class="bi bi-check2"></i> ذخیره تنظیمات</button>
-        <span class="text-muted small">آخرین ذخیره: @Model.UpdatedAt.ToShamsiText() ساعت @Model.UpdatedAt.ToString("HH:mm")</span>
-    </div>
+    <p class="text-muted small mt-3 mb-0">آخرین ذخیره: @Model.UpdatedAt.ToShamsiText() ساعت @Model.UpdatedAt.ToString("HH:mm")</p>
 }

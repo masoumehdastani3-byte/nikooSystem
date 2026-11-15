@@ -495,19 +495,29 @@ namespace NikooSystem.Services
             return lines;
         }
 
+        private static long Share(long part, long net, long subtotal)
+        {
+            if (part <= 0 || net <= 0 || subtotal <= 0) return 0;
+            return (long)Math.Round((decimal)part * net / subtotal, MidpointRounding.AwayFromZero);
+        }
+
         private static List<StoreJournalLine> SaleLines(string companyCode, StoreSalesInvoice invoice, DbTx tx = null)
         {
             var subtotal = invoice.Subtotal;
             var net = invoice.NetAmount;
             var kind = SiteKinds.Of(GetTenant(companyCode));
             var serviceKind = kind.ServiceBusiness;
-            var serviceIncome = kind.IsBooking ? AccountCodes.Visit : AccountCodes.Tuition;
+            var serviceIncome = kind.IsBooking ? AccountCodes.Visit
+                : kind.IsRepair ? AccountCodes.Repair
+                : AccountCodes.Tuition;
             long stockTotal = 0;
             long serviceTotal = 0;
+            long shippingTotal = 0;
             long cogs = 0;
             foreach (var line in invoice.Lines)
             {
                 if (line.ProductId > 0 || line.GoodsId > 0) stockTotal += line.Amount;
+                else if (line.IsShipping) shippingTotal += line.Amount;
                 else serviceTotal += line.Amount;
 
                 if (line.ProductId > 0)
@@ -526,24 +536,35 @@ namespace NikooSystem.Services
 
             long stockNet = 0;
             long serviceNet = 0;
+            long shippingNet = 0;
             if (subtotal > 0 && net > 0)
             {
-                stockNet = (long)Math.Round((decimal)stockTotal * net / subtotal, MidpointRounding.AwayFromZero);
+                stockNet = Share(stockTotal, net, subtotal);
+                serviceNet = Share(serviceTotal, net, subtotal);
                 if (stockNet > net) stockNet = net;
-                serviceNet = net - stockNet;
+                if (stockNet + serviceNet > net) serviceNet = net - stockNet;
+                shippingNet = net - stockNet - serviceNet;
+                if (shippingTotal <= 0)
+                {
+                    if (serviceTotal > 0) serviceNet += shippingNet;
+                    else stockNet += shippingNet;
+                    shippingNet = 0;
+                }
             }
 
             var lines = new List<StoreJournalLine>
             {
                 new StoreJournalLine { AccountId = MoneyAccountId(companyCode, invoice.PayWith, invoice.BankId, true), Debit = invoice.Total, Memo = invoice.PartyName }
             };
-            // Booking: a service line is visit income. Campus: it stays on tuition. Stocked lines stay on Sales.
+            // Booking: a service line is visit income. Campus: it stays on tuition. Repair travel is shipping income. Stocked lines stay on Sales.
             if (serviceKind)
             {
                 if (stockNet > 0)
                     lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.Sales), Credit = stockNet, Memo = invoice.PartyName });
                 if (serviceNet > 0)
                     lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, serviceIncome), Credit = serviceNet, Memo = invoice.PartyName });
+                if (shippingNet > 0)
+                    lines.Add(new StoreJournalLine { AccountId = IdOf(companyCode, AccountCodes.ShippingIncome), Credit = shippingNet, Memo = "ایاب و ذهاب" });
             }
             else if (net > 0)
             {

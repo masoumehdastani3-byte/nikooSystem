@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
 using NikooSystem.Filters;
 using NikooSystem.Helpers;
+using NikooSystem.Models;
 using NikooSystem.Models.Store;
 using NikooSystem.Services;
 
@@ -51,7 +54,10 @@ namespace NikooSystem.Controllers
                 ModelState.AddModelError("Mobile", "با این شماره یک فروشگاه آزمایشی فعال دارید؛ از «ورود فروشندگان» وارد شوید.");
 
             if (!ModelState.IsValid)
+            {
+                AlignStoreNameErrors(ModelState, model.StoreType);
                 return View(model);
+            }
 
             if (!TryRegisterAttempt(Request.UserHostAddress))
             {
@@ -104,8 +110,105 @@ namespace NikooSystem.Controllers
                 if (tenant != null)
                     return RedirectToAction("Login", "ShopAdmin", new { company = tenant.CompanyCode });
             }
-            TempData["Error"] = "برای ورود مدیر کسب‌وکار، از لینک ورود اختصاصی سایت خود استفاده کنید.";
-            return RedirectToAction("Index");
+            return View(new OwnerLoginVm());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ForgotPassword(string mobile)
+        {
+            ViewBag.Nav = "signup";
+            mobile = BookingTime.NormalizeMobile(mobile);
+            if (mobile == null)
+            {
+                ModelState.AddModelError("", "شماره موبایل معتبر نیست.");
+                return View("Login", new OwnerLoginVm());
+            }
+
+            var stores = TenantStore.GetTenants()
+                .Where(t => TenantStore.IsLive(t) && string.Equals(BookingTime.NormalizeMobile(t.OwnerMobile), mobile, StringComparison.Ordinal))
+                .ToList();
+            if (!stores.Any())
+            {
+                ModelState.AddModelError("", "با این شماره، سایت فعالی پیدا نشد. اگر دوره آزمایشی تمام شده، از لینک ورود همان سایت رمز را بازیابی کنید.");
+                return View("Login", new OwnerLoginVm { Mobile = mobile });
+            }
+
+            var temporary = PasswordHelper.GenerateTemporaryPassword();
+            var hash = PasswordHelper.Hash(temporary);
+            var previous = new Dictionary<StoreSettings, string>();
+            foreach (var store in stores)
+            {
+                var settings = TenantStore.GetSettings(store.CompanyCode);
+                if (settings == null) continue;
+                previous[settings] = settings.AdminPasswordHash;
+                settings.AdminPasswordHash = hash;
+                TenantStore.SaveSettings(settings);
+            }
+            if (previous.Count == 0)
+            {
+                ModelState.AddModelError("", "تنظیمات سایت پیدا نشد.");
+                return View("Login", new OwnerLoginVm { Mobile = mobile });
+            }
+
+            var sms = await SendOwnerResetSms(stores, mobile, temporary);
+            var baleError = sms.Success ? null : await SendOwnerResetBale(stores, mobile, temporary);
+            if (!sms.Success && baleError != null)
+            {
+                foreach (var item in previous)
+                {
+                    item.Key.AdminPasswordHash = item.Value;
+                    TenantStore.SaveSettings(item.Key);
+                }
+                ModelState.AddModelError("", "ارسال رمز ممکن نشد. پیامک: " + (sms.Error ?? "ناموفق")
+                    + (string.IsNullOrEmpty(baleError) ? "" : " — بله: " + baleError));
+                return View("Login", new OwnerLoginVm { Mobile = mobile });
+            }
+
+            TempData["Ok"] = sms.Success
+                ? (stores.Count == 1 ? "رمز موقت مدیر پیامک شد." : "رمز موقت برای همه سایت‌های این موبایل پیامک شد.")
+                : "رمز موقت در بله ارسال شد.";
+            return RedirectToAction("Login");
+        }
+
+        private static async Task<SmsSendResult> SendOwnerResetSms(IList<TenantInfo> stores, string mobile, string temporary)
+        {
+            var names = string.Join("، ", stores.Select(t => string.IsNullOrWhiteSpace(t.Name) ? t.CompanyCode : t.Name).Take(3));
+            if (stores.Count > 3) names += " و …";
+            var text = new StringBuilder()
+                .AppendLine("بازیابی رمز عبور")
+                .AppendLine((stores.Count > 1 ? "سایت‌ها: " : "سایت: ") + names)
+                .AppendLine("رمز موقت: " + temporary)
+                .Append("پس از ورود، رمز را عوض کنید.")
+                .ToString();
+
+            SmsSendResult last = SmsSendResult.Fail("ارسال پیامک ممکن نشد.");
+            foreach (var store in stores)
+            {
+                last = await SmsService.SendAsync(store.CompanyCode, mobile, text, SmsService.KindPassword, "pwd-" + store.CompanyCode);
+                if (last.Success) return last;
+                if (last.Error == null || last.Error.IndexOf("اعتبار", StringComparison.Ordinal) < 0)
+                    return last;
+            }
+            return last;
+        }
+
+        /// <summary>وقتی پیامک نرود، رمز را به اولین سایتِ این مالک که بله وصل دارد می‌فرستد. null یعنی ارسال شد.</summary>
+        private static async Task<string> SendOwnerResetBale(IList<TenantInfo> stores, string mobile, string temporary)
+        {
+            string last = "هیچ حساب بله‌ای برای این سایت‌ها وصل نشده است.";
+            foreach (var store in stores)
+            {
+                if (BaleNotifier.Recipients(store.CompanyCode).Count == 0) continue;
+                var text = "🔐 بازیابی رمز مدیر\n"
+                    + "سایت: " + (string.IsNullOrWhiteSpace(store.Name) ? store.CompanyCode : store.Name) + "\n"
+                    + "موبایل مالک: " + mobile + "\n"
+                    + "رمز موقت جدید: " + temporary + "\n"
+                    + "این رمز برای همه سایت‌های همین موبایل است. بعد از ورود عوضش کنید.";
+                last = await BaleNotifier.SendToRecipientsAsync(store.CompanyCode, text);
+                if (last == null) return null;
+            }
+            return last;
         }
 
         [HttpPost]
@@ -152,6 +255,22 @@ namespace NikooSystem.Controllers
                 if (list.Count >= MaxSignupsPerHour) return false;
                 list.Add(now);
                 return true;
+            }
+        }
+
+        private static void AlignStoreNameErrors(ModelStateDictionary state, string storeType)
+        {
+            var noun = StoreTypes.Get(storeType).NameNoun;
+            if (string.IsNullOrWhiteSpace(noun) || noun == "فروشگاه") return;
+            foreach (var key in new[] { "StoreName", "StoreCode" })
+            {
+                var entry = state[key];
+                if (entry == null || entry.Errors.Count == 0) continue;
+                var messages = entry.Errors.Select(e => (e.ErrorMessage ?? "").Replace("فروشگاه", noun)).ToList();
+                entry.Errors.Clear();
+                foreach (var message in messages)
+                    if (!string.IsNullOrEmpty(message))
+                        state.AddModelError(key, message);
             }
         }
 

@@ -34,7 +34,13 @@
 {
     var stock = (PagedList<StoreProduct>)ViewBag.Stock;
     <div class="panel-card mb-3">
-        <h5>موجودی محصولات فروشگاه</h5>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <h5 class="mb-0">موجودی محصولات فروشگاه</h5>
+            @if (kind != null && kind.IsShop)
+            {
+                <a class="btn-outline-store" href="@Url.Action("ProductBarcodes", "ShopAdmin", new { company })"><i class="bi bi-upc"></i> بارکد و چاپ</a>
+            }
+        </div>
         @Html.GridToolbar("جستجو در نام یا کد محصول…")
         <div class="table-responsive">
             <table class="table align-middle">

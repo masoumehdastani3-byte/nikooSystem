@@ -98,6 +98,7 @@ namespace NikooSystem.Models
         /// <summary>
         /// The ORDER BY expression for the requested sort key, chosen from <paramref name="sorts"/> (key → SQL written in code);
         /// an unknown key falls back to <paramref name="defaultSort"/>.
+        /// Commas inside parentheses stay inside the expression (for example COALESCE(a, b)); only top-level commas separate columns.
         /// </summary>
         public string OrderBy(IDictionary<string, string> sorts, string defaultSort, bool defaultDescending = false)
         {
@@ -112,7 +113,29 @@ namespace NikooSystem.Models
                 column = sorts[defaultSort];
                 desc = defaultDescending;
             }
-            return string.Join(", ", column.Split(',').Select(c => c.Trim() + (desc ? " DESC" : " ASC")));
+            var direction = desc ? " DESC" : " ASC";
+            return string.Join(", ", SplitOrderTerms(column).Select(c => c.Trim()).Where(c => c.Length > 0).Select(c => c + direction));
+        }
+
+        /// <summary>Splits an ORDER BY list on commas that are not inside parentheses.</summary>
+        private static IEnumerable<string> SplitOrderTerms(string expression)
+        {
+            var terms = new List<string>();
+            var depth = 0;
+            var start = 0;
+            for (var i = 0; i < expression.Length; i++)
+            {
+                var ch = expression[i];
+                if (ch == '(') depth++;
+                else if (ch == ')' && depth > 0) depth--;
+                else if (ch == ',' && depth == 0)
+                {
+                    terms.Add(expression.Substring(start, i - start));
+                    start = i + 1;
+                }
+            }
+            terms.Add(expression.Substring(start));
+            return terms;
         }
 
         /// <summary>

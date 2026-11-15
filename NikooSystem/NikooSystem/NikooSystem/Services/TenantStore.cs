@@ -156,6 +156,8 @@ namespace NikooSystem.Services
                 SeedTenantData(companyCode.ToUpperInvariant(), storeType, customize);
             }
             lock (SeededTenants) SeededTenants.Add(companyCode);
+            if (string.Equals(storeType, "repair", StringComparison.OrdinalIgnoreCase))
+                SeedSampleRepairs(companyCode);
         }
 
         public static string ResolveCompanyCode(HttpRequestBase request, string routeCompany = null)

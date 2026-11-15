@@ -27,7 +27,7 @@
     @using (Html.BeginForm("ForgotPassword", "Admin", FormMethod.Post, new { @class = "mt-3" }))
     {
         @Html.AntiForgeryToken()
-        <div class="small text-muted mb-2">رمز را فراموش کرده‌اید؟ نام کاربری مدیریت را وارد کنید تا رمز موقت دراپلیکشن بله ارسال شود.</div>
+        <div class="small text-muted mb-2">رمز را فراموش کرده‌اید؟ نام کاربری مدیریت را وارد کنید تا رمز موقت پیامک شود و در بله هم ارسال شود.</div>
         <div class="input-group">
             <input type="text" name="username" class="form-control" dir="ltr" placeholder="Admin username" />
             <button type="submit" class="btn btn-outline-secondary">ارسال رمز موقت</button>

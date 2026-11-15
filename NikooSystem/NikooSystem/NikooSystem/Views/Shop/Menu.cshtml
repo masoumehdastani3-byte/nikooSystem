@@ -11,6 +11,9 @@
         .Where(g => g.Items.Any())
         .ToList();
     var leftover = products.Where(p => grouped.All(g => g.Category.Id != p.CategoryId)).ToList();
+    var template = StoreTemplates.Get(settings.LayoutStyle);
+    var primary = string.IsNullOrWhiteSpace(settings.PrimaryColor) ? template.PrimaryColor : settings.PrimaryColor;
+    var secondary = string.IsNullOrWhiteSpace(settings.SecondaryColor) ? template.SecondaryColor : settings.SecondaryColor;
 }
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -21,8 +24,14 @@
     <meta name="description" content="@settings.Tagline" />
     <link href="~/Assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
     <link href="@Url.Asset("~/Content/cafe-menu.css")" rel="stylesheet" />
+    <style>
+        :root {
+            --store-primary: @primary;
+            --store-accent: @secondary;
+        }
+    </style>
 </head>
-<body>
+<body class="theme-@template.Id">
 <header class="mast">
     <div class="mast-inner">
         <span class="mark">@((settings.StoreName ?? "م").Trim().Substring(0, 1))</span>
@@ -234,5 +243,23 @@
     });
 })();
 </script>
+@if (NikooSystem.Services.TenantStore.IsDemo(company))
+{
+    @Html.Partial("_DemoTemplateBar")
+}
+@if (ViewBag.PreviewTemplate != null)
+{
+    <script>
+    (function () {
+      var id = '@ViewBag.PreviewTemplate';
+      document.querySelectorAll('a[href]').forEach(function (a) {
+        if (a.origin !== location.origin || a.hasAttribute('data-no-preview')) return;
+        var url = new URL(a.href);
+        url.searchParams.set('previewTemplate', id);
+        a.href = url.toString();
+      });
+    })();
+    </script>
+}
 </body>
 </html>

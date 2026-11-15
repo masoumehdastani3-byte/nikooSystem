@@ -42,6 +42,7 @@
         </p>
     </div>
     <div class="d-flex gap-2 dm-no-print">
+        <button class="btn-store btn-sm" type="submit" form="domainForm" @(isDemo ? "disabled" : null)><i class="bi bi-check2"></i> ذخیره</button>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="dmPrint"><i class="bi bi-printer"></i> چاپ یا ذخیره PDF راهنما</button>
         @if (!isDemo)
         {
@@ -109,14 +110,11 @@
     <div class="col-lg-7">
         <div class="panel-card mb-3 dm-no-print">
             <h5 class="mb-2"><i class="bi bi-globe"></i> دامنه شما</h5>
-            @using (Html.BeginForm("Domain", "ShopAdmin", new { company }, FormMethod.Post))
+            @using (Html.BeginForm("Domain", "ShopAdmin", new { company }, FormMethod.Post, new { id = "domainForm" }))
             {
                 @Html.AntiForgeryToken()
                 <label class="form-label" for="customDomain">نام دامنه</label>
-                <div class="input-group" dir="ltr">
-                    <input class="form-control" id="customDomain" name="customDomain" value="@domain" placeholder="myshop.ir" @(isDemo ? "disabled" : null) />
-                    <button class="btn-store" type="submit" @(isDemo ? "disabled" : null)><i class="bi bi-check2"></i> ذخیره</button>
-                </div>
+                <input class="form-control" id="customDomain" name="customDomain" value="@domain" placeholder="myshop.ir" dir="ltr" @(isDemo ? "disabled" : null) />
                 <div class="form-text">بدون http و www بنویسید؛ هر دو آدرس <span dir="ltr">@shownDomain</span> و <span dir="ltr">www.@shownDomain</span> به @site شما وصل می‌شوند. اگر دامنه ندارید، اول آن را از یکی از فروشندگان دامنه بخرید.</div>
                 if (domain != null && !isDemo)
                 {

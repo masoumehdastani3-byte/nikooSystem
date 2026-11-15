@@ -4,7 +4,7 @@ namespace NikooSystem.Helpers
     public static class AccountingCopy
     {
         public static bool ServiceTone(SiteKindInfo kind) =>
-            kind != null && (kind.IsBooking || kind.IsCampus);
+            kind != null && (kind.IsBooking || kind.IsCampus || kind.IsRepair);
 
         public static string SaleInvoice(SiteKindInfo kind) =>
             ServiceTone(kind) ? "فاکتور فروش و خدمت" : "فاکتور فروش";
@@ -57,6 +57,7 @@ namespace NikooSystem.Helpers
         {
             if (kind == null) return "راهنمای حسابداری";
             if (kind.IsBooking) return "حسابداری نوبت‌دهی و دریافت";
+            if (kind.IsRepair) return "حسابداری تعمیرگاه";
             if (kind.IsCampus) return "حسابداری باشگاه و آموزشگاه";
             if (kind.IsDigital) return "حسابداری فروش دوره و فایل";
             return "حسابداری فروشگاه";
