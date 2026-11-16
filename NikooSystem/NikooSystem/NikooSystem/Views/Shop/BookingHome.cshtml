@@ -3,7 +3,7 @@
     var settings = (StoreSettings)ViewBag.Settings;
     var company = (string)ViewBag.CompanyCode;
     var template = StoreTemplates.Get(settings.LayoutStyle);
-    var layoutId = template.Id;
+    var layoutId = template.Layout;
     var sections = ((IEnumerable<StoreHomeSection>)ViewBag.Sections)?.ToList() ?? new List<StoreHomeSection>();
     var gallery = ((IEnumerable<StoreGalleryItem>)ViewBag.Gallery)?.ToList() ?? new List<StoreGalleryItem>();
     var services = (List<StoreService>)ViewBag.Services;

@@ -22,6 +22,10 @@
             </summary>
             <div class="lf-module-body">
                 <p>@m.Summary</p>
+                @if (m.Id == "accounting")
+                {
+                    <p class="mb-0"><a href="@Url.RouteUrl("Accounting")">شرح کامل امکانات حسابداری</a></p>
+                }
             </div>
         </details>
     }

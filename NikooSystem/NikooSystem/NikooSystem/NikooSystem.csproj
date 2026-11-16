@@ -165,6 +165,7 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
+    <Compile Include="Controllers\AccountingController.cs" />
     <Compile Include="Controllers\AdminController.cs" />
     <Compile Include="Controllers\AdminController.Content.cs" />
     <Compile Include="Controllers\AdminController.Blog.cs" />
@@ -372,6 +373,7 @@
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="Views\Accounting\Index.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
@@ -619,6 +621,8 @@
     <Content Include="Views\Shared\_SeoFields.cshtml" />
     <Content Include="Views\Shared\_SeoAutomatic.cshtml" />
     <Content Include="Views\Shared\_ModuleGrid.cshtml" />
+    <Content Include="Views\Shared\_WorkFlow.cshtml" />
+    <Content Include="Views\Shared\_AccountingBeside.cshtml" />
     <Content Include="Views\Shared\_ProductIntroCards.cshtml" />
     <Content Include="Views\Shared\_SolutionLinks.cshtml" />
     <Content Include="Views\Solutions\Show.cshtml" />

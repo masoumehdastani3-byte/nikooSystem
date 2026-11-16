@@ -231,6 +231,18 @@ namespace NikooSystem.Helpers
             },
             new StoreTemplateInfo
             {
+                Id = "folio",
+                Layout = "magazine",
+                Name = "فولیو (مجله تصویری)",
+                Description = "الهام از مجله فرهنگ و سبک زندگی: سیاه و سفید با یک رنگ زعفرانی، تیتر درشت و عکس‌های گوشه‌تیز؛ مناسب مجله فرهنگی، شهری و هنری",
+                PrimaryColor = "#111111",
+                SecondaryColor = "#e8a317",
+                PreviewGradient = "linear-gradient(135deg,#111 0 42%,#f7f4ee 42% 78%,#e8a317 78%)",
+                Kinds = new[] { SiteKinds.Content },
+                Kicker = "شماره این هفته"
+            },
+            new StoreTemplateInfo
+            {
                 Id = "corporate",
                 Name = "شرکتی رسمی",
                 Description = "هیرو معرفی، خدمات، آخرین اخبار شرکت، نمونه‌کارها و فرم تماس",
@@ -265,6 +277,19 @@ namespace NikooSystem.Helpers
                 Kicker = "کیفیت، ایمنی، تحویل به‌موقع",
                 Topbar = "شنبه تا چهارشنبه ۸ تا ۱۷ · پنجشنبه ۸ تا ۱۳",
                 CategoryIcons = new[] { "bi-building", "bi-gear-wide-connected", "bi-tools", "bi-truck", "bi-cone-striped", "bi-bricks" }
+            },
+            new StoreTemplateInfo
+            {
+                Id = "ledger",
+                Layout = "corporate",
+                Name = "دفتر (کاغذ و مرکب)",
+                Description = "الهام از دفتر وکالت و معماری: کاغذ کرم، مرکب سرمه‌ای، یک خط طلایی و گوشه‌های تیز؛ مناسب دفتر حقوقی، معماری و مشاوره",
+                PrimaryColor = "#1e3a5f",
+                SecondaryColor = "#c4a35a",
+                PreviewGradient = "linear-gradient(180deg,#f6f1e7 0 68%,#1e3a5f 68% 74%,#c4a35a 74%)",
+                Kinds = new[] { SiteKinds.Content },
+                Kicker = "دفتر کار شما",
+                Topbar = "پاسخ‌گویی در ساعت اداری · مشاوره حضوری و آنلاین"
             },
             new StoreTemplateInfo
             {
@@ -330,6 +355,48 @@ namespace NikooSystem.Helpers
             },
             new StoreTemplateInfo
             {
+                Id = "marble",
+                Layout = "salon",
+                Name = "مرمر (اسپا)",
+                Description = "سنگ روشن و سبز مریم‌گلی، عکس دایره‌ای و فاصله زیاد؛ مناسب اسپا، ماساژ و مراقبت پوست",
+                PrimaryColor = "#3f6f64",
+                SecondaryColor = "#e7f0ec",
+                PreviewGradient = "linear-gradient(180deg,#f4f7f5 0 62%,#3f6f64 62%)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "آرامش و مراقبت",
+                KickerIcon = "bi-droplet",
+                Topbar = "نوبت اسپا · ماساژ · مراقبت پوست"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "barber",
+                Layout = "salon",
+                Name = "آرایشگر (اصلاح مردانه)",
+                Description = "مشکی و برنج، هدر تیره و گوشه‌های تیز؛ مناسب پیرایش مردانه و استایل",
+                PrimaryColor = "#d6b25e",
+                SecondaryColor = "#161616",
+                PreviewGradient = "linear-gradient(180deg,#161616 0 70%,#d6b25e 70% 76%,#161616 76%)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "اصلاح و استایل",
+                KickerIcon = "bi-scissors",
+                Topbar = "نوبت اصلاح · شیفت عصر · بدون انتظار"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "gloss",
+                Layout = "salon",
+                Name = "براق (ناخن و زیبایی)",
+                Description = "صورتی روشن، کارت‌های خیلی گرد و دکمه‌های کپسولی؛ مناسب کاشت ناخن، مژه و سالن جوان",
+                PrimaryColor = "#ff4d8d",
+                SecondaryColor = "#ffe4f1",
+                PreviewGradient = "linear-gradient(135deg,#ffe4f1,#ffb3cf 45%,#ff4d8d)",
+                Kinds = new[] { SiteKinds.Booking },
+                Kicker = "ناخن، مژه، زیبایی",
+                KickerIcon = "bi-stars",
+                Topbar = "کاشت ناخن · مژه · رنگ مو"
+            },
+            new StoreTemplateInfo
+            {
                 Id = "club",
                 Name = "کلاس و سالن",
                 Description = "هیرو با کلاس گروهی، جلسه خصوصی و رزرو فضا؛ مناسب آموزشگاه و باشگاه ورزشی",
@@ -339,6 +406,48 @@ namespace NikooSystem.Helpers
                 Kinds = new[] { SiteKinds.Campus },
                 Kicker = "کلاس، مربی، سالن",
                 Topbar = "کلاس گروهی · جلسه خصوصی آنلاین یا حضوری · رزرو ساعتی سالن"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "academy",
+                Layout = "club",
+                Name = "آکادمی (سرمه‌ای و طلایی)",
+                Description = "سرمه‌ای دانشگاهی، خط طلایی و کارت‌های گوشه‌تیز؛ مناسب آموزشگاه زبان و کنکور، و آکادمی ورزشی",
+                PrimaryColor = "#1e3a8a",
+                SecondaryColor = "#fef3c7",
+                PreviewGradient = "linear-gradient(180deg,#f8f5ee 0 18%,#1e3a8a 18% 78%,#fef3c7 78%)",
+                Kinds = new[] { SiteKinds.Campus },
+                Kicker = "کلاس، سطح، مدرس",
+                KickerIcon = "bi-mortarboard",
+                Topbar = "دوره عمومی · جلسه خصوصی · ثبت‌نام با کد پیگیری"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "pitch",
+                Layout = "club",
+                Name = "زمین (پرانرژی)",
+                Description = "مشکی و سبز فسفری، تیتر درشت و نشان مورب؛ مناسب باشگاه، مدرسه فوتبال و کلاس‌های پرتحرک",
+                PrimaryColor = "#111111",
+                SecondaryColor = "#c8f542",
+                PreviewGradient = "linear-gradient(135deg,#111 0 58%,#c8f542 58%)",
+                Kinds = new[] { SiteKinds.Campus },
+                Kicker = "تمرین، زمین، مربی",
+                KickerIcon = "bi-lightning-charge",
+                Topbar = "کلاس گروهی · مربی خصوصی · رزرو زمین"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "atelier",
+                Layout = "club",
+                Name = "کارگاه (گرم)",
+                Description = "خاک رسی و کاغذ گرم، کارت‌های نرم؛ مناسب آموزشگاه هنر و موسیقی، و باشگاه یوگا",
+                PrimaryColor = "#9a3412",
+                SecondaryColor = "#f5ebe3",
+                PreviewGradient = "linear-gradient(135deg,#f5ebe3,#e7d3c4 55%,#9a3412)",
+                Kinds = new[] { SiteKinds.Campus },
+                Kicker = "هنر، موسیقی، مهارت",
+                KickerIcon = "bi-palette",
+                Topbar = "کارگاه گروهی · جلسه خصوصی · اجاره اتاق"
             },
             new StoreTemplateInfo
             {
@@ -383,6 +492,20 @@ namespace NikooSystem.Helpers
             },
             new StoreTemplateInfo
             {
+                Id = "bistro",
+                Layout = "cafe",
+                Name = "بیسترو (رومیزی روشن)",
+                Description = "سفره سفید، خط نازک و زرشکی؛ ردیف نام و قیمت مثل منوی رومیزی. مناسب رستوران، کافه آرام و منوی ناهار",
+                PrimaryColor = "#9f1239",
+                SecondaryColor = "#faf7f2",
+                PreviewGradient = "linear-gradient(180deg,#faf7f2 0 22%,#9f1239 22% 28%,#faf7f2 28%)",
+                Kinds = new[] { SiteKinds.Menu },
+                Kicker = "منوی میز",
+                KickerIcon = "bi-cup-hot",
+                Topbar = "روی میز بخوانید و گارسون را صدا بزنید"
+            },
+            new StoreTemplateInfo
+            {
                 Id = "bench",
                 Layout = "minimal",
                 Name = "میز کار",
@@ -422,6 +545,20 @@ namespace NikooSystem.Helpers
                 Kicker = "پیشخوان پذیرش",
                 KickerIcon = "bi-shop",
                 Topbar = "نوبت پذیرش · وضعیت دستگاه · تحویل همان روز"
+            },
+            new StoreTemplateInfo
+            {
+                Id = "yard",
+                Layout = "minimal",
+                Name = "محوطه (ایمنی)",
+                Description = "بتن روشن و نوار زرد ایمنی، گوشه‌های تیز؛ مناسب تعمیرگاه خودرو، بدنه و لوازم در محوطه",
+                PrimaryColor = "#111111",
+                SecondaryColor = "#f5c518",
+                PreviewGradient = "linear-gradient(180deg,#f5c518 0 14%,#e7e5e4 14% 86%,#111 86%)",
+                Kinds = new[] { SiteKinds.Repair },
+                Kicker = "پذیرش محوطه",
+                KickerIcon = "bi-cone-striped",
+                Topbar = "پذیرش خودرو و لوازم · پیگیری با کد · تحویل در محوطه"
             }
         };
 

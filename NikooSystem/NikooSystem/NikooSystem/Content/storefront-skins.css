@@ -1945,3 +1945,88 @@ body.theme-pulse .cn-footer a:hover { color: var(--store-accent); }
 @media (max-width: 576px) {
   body.theme-brutal .grid-marketplace { gap: 1rem !important; }
 }
+
+/* =========================================================
+   LEDGER — paper office (corporate base)
+   ========================================================= */
+body.theme-ledger {
+  --store-bg: #f6f1e7;
+  --store-card: #fffdf8;
+  --store-ink: #1c2430;
+  --store-muted: #5c564c;
+  --store-border: #e4dccb;
+  --store-radius: 0px;
+  background: #f6f1e7;
+  color: #1c2430;
+}
+body.theme-ledger .cn-header { background: #fffdf8; border-bottom: 0; box-shadow: none; }
+body.theme-ledger .cn-corporate .cn-header-row { padding-bottom: .9rem; border-bottom: 3px solid var(--store-accent); }
+body.theme-ledger .cn-corporate .cn-brand strong { letter-spacing: .04em; }
+body.theme-ledger .cn-corporate .cn-nav > a { border-radius: 0; }
+body.theme-ledger .cn-corporate .cn-nav > a:hover { background: transparent; color: var(--store-primary); }
+body.theme-ledger .btn-wm { border-radius: 0; box-shadow: none; background: var(--store-primary); }
+body.theme-ledger .btn-wm:hover { filter: none; background: #152a45; box-shadow: none; }
+body.theme-ledger .cn-cta { border-radius: 0; }
+body.theme-ledger .cn-btn-ghost { border-radius: 0; color: var(--store-primary); border-color: var(--store-primary); }
+body.theme-ledger .cn-hero.is-corporate { background: #f6f1e7; color: #1c2430; padding: 4.2rem 0 3rem; }
+body.theme-ledger .cn-hero::before { display: none; }
+body.theme-ledger .cn-hero h1 { color: #1c2430; font-weight: 800; }
+body.theme-ledger .cn-hero p { color: #5c564c; opacity: 1; }
+body.theme-ledger .cn-kicker { color: var(--store-accent); letter-spacing: .12em; }
+body.theme-ledger .cn-hero + .rh-stats-wrap { margin-top: 0; padding-top: 1.5rem; }
+body.theme-ledger .cn-service,
+body.theme-ledger .cn-card,
+body.theme-ledger .gallery-item,
+body.theme-ledger .cn-box,
+body.theme-ledger .cn-contact-form,
+body.theme-ledger .cn-contact-form .form-control { border-radius: 0; background: #fffdf8; }
+body.theme-ledger .cn-service { border-top: 3px solid var(--store-accent); }
+body.theme-ledger .cn-block-title { border-inline-start-color: var(--store-accent); letter-spacing: .02em; }
+body.theme-ledger .cn-footer { background: #1c2430; border-top: 4px solid var(--store-accent); }
+body.theme-ledger .cn-footer a:hover { color: var(--store-accent); }
+
+/* =========================================================
+   FOLIO — black, white and saffron magazine (magazine base)
+   ========================================================= */
+body.theme-folio {
+  --store-bg: #f7f4ee;
+  --store-card: #fff;
+  --store-ink: #111111;
+  --store-muted: #5c584f;
+  --store-border: #111111;
+  --store-radius: 0px;
+  background: #f7f4ee;
+  color: #111;
+}
+body.theme-folio .cn-topbar { background: #111; }
+body.theme-folio .cn-header { background: #f7f4ee; border-bottom: 0; }
+body.theme-folio .cn-masthead { border-bottom: 8px solid #111; padding-bottom: 1rem; }
+body.theme-folio .cn-magazine .cn-brand strong { font-size: clamp(2.2rem, 5.5vw, 4rem); letter-spacing: .12em; font-weight: 900; }
+body.theme-folio .cn-search input { border-radius: 0; border-color: #111; background: transparent; }
+body.theme-folio .cn-sections { background: var(--store-accent); border-bottom: 0; }
+body.theme-folio .cn-sections .cn-nav > a,
+body.theme-folio .cn-sections .cn-nav .wm-drop > a,
+body.theme-folio .cn-sections .cn-burger { color: #111; font-weight: 800; }
+body.theme-folio .cn-sections .cn-nav > a:hover { background: #111; color: var(--store-accent); }
+body.theme-folio .cn-breaking { background: transparent; border-bottom: 1px solid #111; }
+body.theme-folio .cn-breaking strong { background: #111; color: var(--store-accent); border-radius: 0; }
+body.theme-folio .cn-breaking-items a { color: #111; }
+body.theme-folio .cn-card,
+body.theme-folio .cn-box,
+body.theme-folio .gallery-item,
+body.theme-folio .cn-cover img,
+body.theme-folio .cn-tabs a,
+body.theme-folio .cn-contact-form { border-radius: 0; }
+body.theme-folio .cn-card { border: 1px solid #111; box-shadow: 6px 6px 0 #111; background: #fff; }
+body.theme-folio .cn-card:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--store-accent); }
+body.theme-folio .cn-card-img img,
+body.theme-folio .cn-cover img,
+body.theme-folio .cn-topic-lead img { filter: grayscale(1); transition: filter .3s; }
+body.theme-folio .cn-card:hover img,
+body.theme-folio .cn-topic-lead:hover img { filter: none; }
+body.theme-folio .cn-card-cat { border-radius: 0; background: var(--store-accent); color: #111; }
+body.theme-folio .cn-block-title { border: 0; border-bottom: 3px solid #111; padding-inline-start: 0; }
+body.theme-folio .cn-tabs a.active { background: #111; border-color: #111; color: var(--store-accent); }
+body.theme-folio .btn-wm { border-radius: 0; background: #111; box-shadow: none; }
+body.theme-folio .cn-footer { background: #111; border-top: 8px solid var(--store-accent); }
+body.theme-folio .cn-footer a:hover { color: var(--store-accent); }

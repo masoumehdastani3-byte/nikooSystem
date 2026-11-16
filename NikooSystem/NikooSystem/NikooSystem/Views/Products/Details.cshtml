@@ -73,7 +73,13 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
+    @Html.Partial("_WorkFlow", landing)
+
+    <section class="pb-5">
+        <div class="container">
             @if (kind != null)
             {
                 @Html.Partial("_TemplateShowcase", TemplateShowcase.For(Model.DemoSlug, landing != null ? landing.TemplateLayout : null))

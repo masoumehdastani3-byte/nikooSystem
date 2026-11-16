@@ -328,7 +328,8 @@ namespace NikooSystem.Services
             product.ShortDescription = "سایت نوبت‌دهی آرایشگاه و سالن زیبایی با انتخاب آرایشگر و ساعت خالی";
             product.Description = "مشتری آرایشگر، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
                 + "کوتاهی، رنگ، ناخن و پوست هر کدام مدت و هزینه جدا دارند و ساعت کاری هر آرایشگر مستقل است. "
-                + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد.";
+                + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد. "
+                + "چهار قالب آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["beauty"];
             if (isNew) AddProduct(product);
@@ -386,7 +387,8 @@ namespace NikooSystem.Services
             product.Description = "کلاس ورزشی را با ظرفیت، شهریه و گروه سنی تعریف کنید؛ ثبت‌نام آنلاین یا تلفنی از پنل. "
                 + "جلسه با مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
                 + "سالن فوتبال، میز پینگ‌پونگ و سالن بدنسازی را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
-                + "شهریه و اجاره آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور در حسابداری ثبت می‌شود.";
+                + "شهریه و اجاره آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور در حسابداری ثبت می‌شود. "
+                + "چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["club"];
             if (isNew) AddProduct(product);
@@ -412,7 +414,8 @@ namespace NikooSystem.Services
             product.Description = "دوره عمومی زبان، هنر، موسیقی یا کنکور را با ظرفیت، شهریه، سطح و گروه سنی تعریف کنید تا چند دانشجو در یک کلاس ثبت‌نام کنند. "
                 + "دوره خصوصی را هم با مدرس، حضوری یا آنلاین، روی ساعت کاری همان مدرس بگذارید. "
                 + "ثبت‌نام آنلاین یا تلفنی از پنل انجام می‌شود و هر ثبت‌نام کد پیگیری دارد. "
-                + "شهریه هر دو نوع دوره، آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور، در حسابداری ثبت می‌شود.";
+                + "شهریه هر دو نوع دوره، آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور، در حسابداری ثبت می‌شود. "
+                + "چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["school"];
             if (isNew) AddProduct(product);
@@ -427,11 +430,11 @@ namespace NikooSystem.Services
         }
 
         private const string CafeTitle = "منوی کافه و رستوران";
-        private const string CafeShort = "منوی دیجیتال کافه و رستوران با سه قالب، QR روی میز و فراخوان گارسون";
+        private const string CafeShort = "منوی دیجیتال کافه و رستوران با چهار قالب، QR روی میز و فراخوان گارسون";
         private const string CafeDescription = "مشتری با دوربین گوشی کارت میز را اسکن می‌کند و منو همان‌جا باز می‌شود. "
             + "غذا و نوشیدنی، قیمت، توضیح و ناموجودی از پنل عوض می‌شود و برای هر میز یک کارت QR جدا ساخته می‌شود. "
             + "شماره میز داخل لینک است؛ وقتی مهمان گارسون را صدا می‌زند، میز و یادداشت سفارش همراه درخواست می‌آید. "
-            + "سه قالب آماده دارد: نارون گرم، شب تیره و تخته روشن پیشخوان. "
+            + "چهار قالب آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. "
             + "این محصول سبد خرید و پرداخت آنلاین ندارد؛ سفارش را گارسون می‌گیرد.";
 
         /// <summary>Mentions the three cafe templates, only where the earlier catalogue wording is still there.</summary>
@@ -492,14 +495,14 @@ namespace NikooSystem.Services
 
         private const string RepairTitle = "سایت تعمیرگاه";
         private const string RepairShortBeforeTemplates = "درخواست تعمیر، پیک، وضعیت کار و فاکتور فروش";
-        private const string RepairShort = "درخواست تعمیر، پیک، وضعیت کار و سه قالب پذیرش";
+        private const string RepairShort = "درخواست تعمیر، پیک، وضعیت کار و چهار قالب پذیرش";
         private const string RepairDescriptionBeforeCourier = "مشتری دستگاه را حضوری می‌آورد یا از سایت درخواست می‌دهد و با کد پیگیری وضعیت را می‌بیند. ";
         private const string RepairDescriptionBeforeTemplates = "مشتری درخواست می‌دهد و آدرس می‌گذارد؛ پیک دستگاه را می‌گیرد و بعد از تعمیر برمی‌گرداند. "
             + "برگه کار از هماهنگی پیک تا عیب‌یابی، تأیید هزینه، قطعه، تعمیر و تحویل جلو می‌رود. "
             + "با ثبت صورتحساب، اجرت به درآمد تعمیر می‌رود، قطعه انتخاب‌شده از انبار کم می‌شود و مانده روی حساب مشتری می‌ماند تا نقد یا بانک گرفته شود. "
             + "با شارژ پیامک، هر تغییر وضعیت برای مشتری پیامک می‌شود.";
         private const string RepairDescription = RepairDescriptionBeforeTemplates
-            + " سه قالب آماده دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی.";
+            + " چهار قالب آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
 
         /// <summary>Refreshes the catalogue sentence for shops that still have the first repair description.</summary>
         internal static void ApplyRepairCourierCopy()
@@ -561,8 +564,75 @@ namespace NikooSystem.Services
             else UpdateProduct(product);
         }
 
-        private const string ContentTemplatesText = "شش قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)";
-        private const string NewsTemplatesText = "و خبرگزاری در سه سبک (مجله، روزنامه کلاسیک و خبر آنلاین پالس) با تیتر یک";
+        private const string ContentTemplatesText = "هشت قالب آماده: سایت شرکتی در چهار سبک (رسمی، آژانس خلاق، صنعتی / پیمانکاری و دفتر)";
+        private const string NewsTemplatesText = "و خبرگزاری در چهار سبک (مجله، روزنامه کلاسیک، خبر آنلاین پالس و فولیو) با تیتر یک";
+
+        /// <summary>
+        /// Names the fourth template on products whose catalogue text still lists the previous count.
+        /// Leaves a description the owner has rewritten.
+        /// </summary>
+        internal static void ApplyFourTemplateCopy()
+        {
+            const string cafeShort = "منوی دیجیتال کافه و رستوران با سه قالب، QR روی میز و فراخوان گارسون";
+            const string cafeSentence = "سه قالب آماده دارد: نارون گرم، شب تیره و تخته روشن پیشخوان. ";
+            const string cafeSentenceNow = "چهار قالب آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. ";
+            const string repairShort = "درخواست تعمیر، پیک، وضعیت کار و سه قالب پذیرش";
+            const string repairSentence = " سه قالب آماده دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی.";
+            const string repairSentenceNow = " چهار قالب آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
+            const string beauty = "مشتری آرایشگر، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
+                + "کوتاهی، رنگ، ناخن و پوست هر کدام مدت و هزینه جدا دارند و ساعت کاری هر آرایشگر مستقل است. "
+                + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد.";
+            const string campus = " چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
+            const string club = "کلاس ورزشی را با ظرفیت، شهریه و گروه سنی تعریف کنید؛ ثبت‌نام آنلاین یا تلفنی از پنل. "
+                + "جلسه با مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
+                + "سالن فوتبال، میز پینگ‌پونگ و سالن بدنسازی را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
+                + "شهریه و اجاره آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور در حسابداری ثبت می‌شود.";
+            const string school = "دوره عمومی زبان، هنر، موسیقی یا کنکور را با ظرفیت، شهریه، سطح و گروه سنی تعریف کنید تا چند دانشجو در یک کلاس ثبت‌نام کنند. "
+                + "دوره خصوصی را هم با مدرس، حضوری یا آنلاین، روی ساعت کاری همان مدرس بگذارید. "
+                + "ثبت‌نام آنلاین یا تلفنی از پنل انجام می‌شود و هر ثبت‌نام کد پیگیری دارد. "
+                + "شهریه هر دو نوع دوره، آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور، در حسابداری ثبت می‌شود.";
+
+            foreach (var product in GetProducts())
+            {
+                var changed = false;
+                if (product.DemoSlug == "cafe")
+                {
+                    if (product.ShortDescription == cafeShort) { product.ShortDescription = CafeShort; changed = true; }
+                    if (product.Description != null && product.Description.Contains(cafeSentence))
+                    {
+                        product.Description = product.Description.Replace(cafeSentence, cafeSentenceNow);
+                        changed = true;
+                    }
+                }
+                else if (product.DemoSlug == "repair")
+                {
+                    if (product.ShortDescription == repairShort) { product.ShortDescription = RepairShort; changed = true; }
+                    if (product.Description != null && product.Description.Contains(repairSentence))
+                    {
+                        product.Description = product.Description.Replace(repairSentence, repairSentenceNow);
+                        changed = true;
+                    }
+                }
+                else if (product.DemoSlug == "beauty" && product.Description == beauty)
+                {
+                    product.Description = beauty + " چهار قالب آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
+                    changed = true;
+                }
+                else if (product.DemoSlug == "club" && product.Description == club)
+                {
+                    product.Description = club + campus;
+                    changed = true;
+                }
+                else if (product.DemoSlug == "school" && product.Description == school)
+                {
+                    product.Description = school + campus;
+                    changed = true;
+                }
+                if (changed) UpdateProduct(product);
+            }
+
+            ApplyContentTemplateCount();
+        }
 
         /// <summary>Updates the templates in the CMS product's description, only where an earlier unedited wording is still there.</summary>
         internal static void ApplyContentTemplateCount()
@@ -571,7 +641,9 @@ namespace NikooSystem.Services
             {
                 new[] { "دو قالب آماده: سایت شرکتی", ContentTemplatesText },
                 new[] { "چهار قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
-                new[] { "و خبرگزاری و مجله با تیتر یک", NewsTemplatesText }
+                new[] { "شش قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
+                new[] { "و خبرگزاری و مجله با تیتر یک", NewsTemplatesText },
+                new[] { "و خبرگزاری در سه سبک (مجله، روزنامه کلاسیک و خبر آنلاین پالس) با تیتر یک", NewsTemplatesText }
             };
             foreach (var product in GetProducts().Where(p => p.DemoSlug == "corporate" && p.Description != null))
             {
@@ -822,7 +894,7 @@ namespace NikooSystem.Services
                     Id = 4,
                     Title = ContentTitle,
                     ShortDescription = "سایت شرکتی و خبرگزاری با مدیریت کامل محتوا: خبر و مقاله، خدمات، نمونه‌کار، صفحات و فرم تماس",
-                    Description = "سیستم مدیریت محتوا با شش قالب آماده (سه سبک سایت شرکتی و سه سبک خبرگزاری)؛ خبر، صفحات، منوها و گالری را بدون برنامه‌نویسی مدیریت کنید.",
+                    Description = "سیستم مدیریت محتوا با هشت قالب آماده (چهار سبک سایت شرکتی و چهار سبک خبرگزاری)؛ خبر، صفحات، منوها و گالری را بدون برنامه‌نویسی مدیریت کنید.",
                     Price = 20000,
                     ImageUrl = StoreDemoImages["corporate"],
                     Category = "نرم‌افزار سازمانی",

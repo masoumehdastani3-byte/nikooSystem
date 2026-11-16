@@ -480,6 +480,32 @@ namespace NikooSystem.Services
             }
         }
 
+        /// <summary>The cafe and repair answers name four templates, unless the owner has rewritten them.</summary>
+        internal static void ApplyFourTemplateFaqs()
+        {
+            const string cafe = "مهمان با دوربین گوشی QR روی میز را می‌خواند و منو در مرورگر باز می‌شود: دسته‌ها، قیمت، توضیح و ناموجودی. "
+                + "اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون پر شده است و درخواست با یادداشت در پنل دیده می‌شود. "
+                + "سه قالب دارد: نارون گرم، شب تیره و تخته روشن؛ عوض کردنش غذاها را جابه‌جا نمی‌کند. پرداخت آنلاین در این محصول نیست.";
+            const string repair = "مشتری درخواست و آدرس می‌دهد تا پیک دستگاه را بگیرد. هزینه را در سایت تأیید می‌کند و با کد پیگیری هر مرحله را می‌بیند. "
+                + "صورتحساب در فاکتور فروش می‌نشیند: اجرت در درآمد تعمیر، قطعه انبار با کسر موجودی، و دریافت روی حساب مشتری. با شارژ پیامک، تغییر وضعیت پیامک می‌شود. "
+                + "سه قالب دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی؛ عوض کردنش برگه‌ها را جابه‌جا نمی‌کند.";
+            var freshCafe = ModuleFaqs().First(f => f.Question.StartsWith("منوی دیجیتال کافه"));
+            var freshRepair = ModuleFaqs().First(f => f.Question == "سایت تعمیرگاه چه کار می‌کند؟");
+            lock (ListLock)
+            {
+                foreach (var faq in GetFaqs())
+                {
+                    if (faq.Question != null && faq.Question.Trim() == freshCafe.Question && faq.Answer?.Trim() == cafe)
+                        faq.Answer = freshCafe.Answer;
+                    else if (faq.Question != null && faq.Question.Trim() == freshRepair.Question && faq.Answer?.Trim() == repair)
+                        faq.Answer = freshRepair.Answer;
+                    else
+                        continue;
+                    NikooDb.Update(NikooTables.SiteFaqs, faq);
+                }
+            }
+        }
+
         /// <summary>The «چه نوع سایت‌هایی» answer names the repair shop, unless the owner has rewritten it.</summary>
         internal static void ApplyRepairKindsFaq()
         {
@@ -908,14 +934,14 @@ namespace NikooSystem.Services
                 Question = "منوی دیجیتال کافه و رستوران چه کار می‌کند؟",
                 Answer = "مهمان با دوربین گوشی QR روی میز را می‌خواند و منو در مرورگر باز می‌شود: دسته‌ها، قیمت، توضیح و ناموجودی. "
                     + "اگر شماره میز روی کارت باشد، همان شماره در فراخوان گارسون پر شده است و درخواست با یادداشت در پنل دیده می‌شود. "
-                    + "سه قالب دارد: نارون گرم، شب تیره و تخته روشن؛ عوض کردنش غذاها را جابه‌جا نمی‌کند. پرداخت آنلاین در این محصول نیست."
+                    + "چهار قالب دارد: نارون گرم، شب تیره، تخته روشن و بیسترو؛ عوض کردنش غذاها را جابه‌جا نمی‌کند. پرداخت آنلاین در این محصول نیست."
             };
             yield return new SiteFaq
             {
                 Question = "سایت تعمیرگاه چه کار می‌کند؟",
                 Answer = "مشتری درخواست و آدرس می‌دهد تا پیک دستگاه را بگیرد. هزینه را در سایت تأیید می‌کند و با کد پیگیری هر مرحله را می‌بیند. "
                     + "صورتحساب در فاکتور فروش می‌نشیند: اجرت در درآمد تعمیر، قطعه انبار با کسر موجودی، و دریافت روی حساب مشتری. با شارژ پیامک، تغییر وضعیت پیامک می‌شود. "
-                    + "سه قالب دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی؛ عوض کردنش برگه‌ها را جابه‌جا نمی‌کند."
+                    + "چهار قالب دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه؛ عوض کردنش برگه‌ها را جابه‌جا نمی‌کند."
             };
         }
 

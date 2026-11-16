@@ -20,6 +20,7 @@
             </header>
             <div class="mb-5">
                 @Html.Partial("_ProductIntroCards", ProductLandings.All)
+                @Html.Partial("_AccountingBeside")
             </div>
             @if (Model.Any() || !string.IsNullOrEmpty(ViewBag.Category as string))
             {

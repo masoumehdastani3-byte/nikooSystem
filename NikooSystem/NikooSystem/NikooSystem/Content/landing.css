@@ -536,6 +536,133 @@
   line-height: 1.55;
 }
 
+/* ---------- Work process diagram ---------- */
+.lf-flow-section {
+  padding: 3.5rem 0 3rem;
+  background:
+    radial-gradient(ellipse 42% 70% at 100% 0%, rgba(29, 78, 216, .07), transparent 60%),
+    #f8fafc;
+}
+.lf-flow {
+  --node: 52px;
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+}
+.lf-flow > li {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--node) minmax(0, 1fr);
+  column-gap: .9rem;
+  row-gap: .1rem;
+  align-items: start;
+  padding: 0 0 1.35rem;
+  text-align: right;
+}
+.lf-flow-node {
+  grid-row: 1 / span 2;
+  position: relative;
+  z-index: 1;
+  width: var(--node);
+  height: var(--node);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--lf-blue);
+  color: #fff;
+  font-size: 1.2rem;
+  box-shadow: 0 8px 18px rgba(11, 61, 145, .18);
+}
+.lf-flow > li:nth-child(even) .lf-flow-node {
+  background: var(--lf-warm-dark);
+  box-shadow: 0 8px 18px rgba(234, 88, 12, .2);
+}
+.lf-flow-node b {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--lf-blue);
+  border: 2px solid var(--lf-blue-soft);
+  font-size: .68rem;
+  line-height: 1;
+}
+.lf-flow > li:nth-child(even) .lf-flow-node b {
+  color: var(--lf-warm-dark);
+  border-color: var(--lf-warm-soft);
+}
+.lf-flow strong {
+  display: block;
+  color: var(--lf-ink);
+  font-size: .98rem;
+  line-height: 1.5;
+  padding-top: .35rem;
+}
+.lf-flow p {
+  margin: 0;
+  color: var(--lf-muted);
+  font-size: .84rem;
+  line-height: 1.75;
+}
+.lf-flow > li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: var(--node);
+  bottom: 0;
+  right: calc(var(--node) / 2 - 1px);
+  width: 2px;
+  background: #c5d4f5;
+}
+@media (min-width: 1200px) {
+  .lf-flow {
+    max-width: none;
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .lf-flow > li {
+    flex: 1 1 0;
+    min-width: 0;
+    display: block;
+    text-align: center;
+    padding: 0 .3rem;
+  }
+  .lf-flow-node {
+    margin: 0 auto .75rem;
+  }
+  .lf-flow strong { padding-top: 0; font-size: .9rem; }
+  .lf-flow p { font-size: .75rem; line-height: 1.65; }
+  .lf-flow > li:not(:last-child)::before {
+    top: calc(var(--node) / 2);
+    bottom: auto;
+    right: 50%;
+    left: -50%;
+    width: auto;
+    height: 2px;
+  }
+  .lf-flow > li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    top: calc(var(--node) / 2);
+    left: 0;
+    width: 8px;
+    height: 8px;
+    border-top: 2px solid var(--lf-blue-mid);
+    border-left: 2px solid var(--lf-blue-mid);
+    transform: translate(-50%, -50%) rotate(-45deg);
+    background: #f8fafc;
+  }
+}
+
 /* ---------- Stats ---------- */
 .lf-stats {
   padding: 0 0 4rem;
@@ -1602,3 +1729,75 @@ body.lf-home .navbar .dropdown ul li:hover > a { color: var(--lf-warm) !importan
   .lf-land-crumbs { justify-content: center; }
   .lf-land-pricing { grid-template-columns: 1fr; padding: 1.4rem; }
 }
+
+/* ---------- Accounting page (/accounting) and the strip beside products ---------- */
+.lf-acc-board {
+  background: #fff;
+  color: var(--lf-ink);
+  border-radius: 20px;
+  padding: 1.25rem 1.35rem 1rem;
+  box-shadow: 0 24px 50px rgba(2, 12, 40, 0.28);
+  max-width: 460px;
+  margin-inline: auto;
+}
+.lf-acc-board > header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: .9rem;
+  color: var(--lf-muted);
+  font-size: .82rem;
+}
+.lf-acc-board > header strong { color: var(--lf-blue); font-size: .95rem; }
+.lf-acc-levels { display: grid; gap: .4rem; margin-bottom: 1rem; }
+.lf-acc-level {
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .5rem .75rem;
+  border-radius: 10px;
+  background: var(--lf-blue-soft);
+  font-size: .92rem;
+}
+.lf-acc-level span { color: var(--lf-muted); }
+.lf-acc-level.is-sub { margin-right: 1rem; background: #f8fafc; border: 1px solid var(--lf-line); }
+.lf-acc-level.is-detail { margin-right: 2rem; background: var(--lf-warm-soft); }
+.lf-acc-rows { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.lf-acc-rows th {
+  text-align: right;
+  color: var(--lf-muted);
+  font-weight: 700;
+  padding: .35rem .15rem;
+  border-bottom: 1px solid var(--lf-line);
+}
+.lf-acc-rows td { padding: .45rem .15rem; border-bottom: 1px solid var(--lf-line); }
+.lf-acc-rows td:nth-child(n+2),
+.lf-acc-rows th:nth-child(n+2) { text-align: left; font-variant-numeric: tabular-nums; }
+.lf-acc-board > p { margin: .75rem 0 0; color: var(--lf-muted); font-size: .8rem; }
+
+.lf-acc-beside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.25rem;
+  margin-top: 1.5rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: var(--lf-radius);
+  background: var(--lf-warm-soft);
+  border: 1px solid #fed7aa;
+}
+.lf-acc-beside > i {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--lf-warm);
+  font-size: 1.3rem;
+}
+.lf-acc-beside > div { flex: 1 1 16rem; }
+.lf-acc-beside strong { display: block; color: var(--lf-ink); margin-bottom: .2rem; }
+.lf-acc-beside span { display: block; color: var(--lf-muted); font-size: .92rem; line-height: 1.8; }
+.lf-land-section > .container > .lf-acc-beside { margin-top: 0; }

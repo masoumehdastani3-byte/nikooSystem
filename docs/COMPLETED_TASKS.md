@@ -265,3 +265,13 @@
 - فایل‌های کلیدی:
   - `Helpers/StoreTemplates.cs`, `Helpers/HomeSections.cs`, `Content/storefront-repair.css`
   - `Services/SiteStore.cs`, `Services/SiteContentStore.cs`, `Helpers/ProductLandings.cs`
+
+## DONE-023 — چهار قالب برای هر محصول
+- وضعیت: تکمیل‌شده
+- خلاصه پیاده‌سازی:
+  - شرکتی: دفتر. خبری: فولیو. آرایشگاه: مرمر، آرایشگر، براق. آموزشگاه و باشگاه: آکادمی، زمین، کارگاه. منو: بیسترو. تعمیرگاه: محوطه.
+  - هر پوسته روی چیدمان قبلی است. فروشگاه، دوره، مطب و مشاوره از قبل چهار قالب یا بیشتر داشتند.
+  - صفحه محصول، نوع سایت، ماژول و کاتالوگ تعداد تازه را می‌گویند. کاتالوگ و پرسش فقط اگر متن قبلی دست‌نخورده باشد به‌روز می‌شود.
+- فایل‌های کلیدی:
+  - `Helpers/StoreTemplates.cs`, `Helpers/ProductLandings.cs`
+  - `Content/storefront-skins.css`, `Content/storefront-booking.css`, `Content/cafe-menu.css`, `Content/storefront-repair.css`

@@ -323,6 +323,43 @@ body.theme-board .price {
 body.theme-board .fab,
 body.theme-board .send { background: var(--store-primary); }
 
+body.theme-bistro {
+  --ink: #1c1917;
+  --cream: #faf7f2;
+  --paper: #fff;
+  --line: #e7e0d6;
+  --muted: #6b625c;
+  background: #faf7f2;
+  color: #1c1917;
+}
+body.theme-bistro .mast { background: #fff; color: #1c1917; border-bottom: 3px solid var(--store-primary); text-align: center; }
+body.theme-bistro .mast-inner { display: flex; flex-direction: column; align-items: center; }
+body.theme-bistro .mark { background: transparent; color: var(--store-primary); border: 1px solid var(--store-primary); border-radius: 0; }
+body.theme-bistro .mast h1 { letter-spacing: .18em; font-weight: 500; }
+body.theme-bistro .tagline, body.theme-bistro .facts { color: #6b625c; }
+body.theme-bistro .note { background: transparent; border: 1px solid var(--line); border-radius: 0; color: #1c1917; }
+body.theme-bistro .tools { background: #faf7f2; }
+body.theme-bistro .search, body.theme-bistro input[type="text"], body.theme-bistro textarea { border-radius: 0; border-color: #1c1917; background: #fff; }
+body.theme-bistro .chips { justify-content: center; }
+body.theme-bistro .chips button { border-radius: 0; }
+body.theme-bistro .chips button.is-on { background: var(--store-primary); border-color: var(--store-primary); color: #fff; }
+body.theme-bistro .group h2 { text-align: center; letter-spacing: .16em; font-weight: 500; font-size: .95rem; }
+body.theme-bistro .letter { display: none; }
+body.theme-bistro .grid { grid-template-columns: 1fr; }
+body.theme-bistro .dish {
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px dotted #c4b8aa;
+  border-radius: 0;
+  padding: 12px 0;
+}
+body.theme-bistro .price { color: var(--store-primary); font-weight: 800; }
+body.theme-bistro .badges em { background: transparent; color: var(--store-primary); border: 1px solid var(--store-primary); border-radius: 0; }
+body.theme-bistro .fab, body.theme-bistro .send, body.theme-bistro .toast { background: var(--store-primary); border-radius: 0; }
+body.theme-bistro .foot, body.theme-bistro .foot a { color: #6b625c; }
+
 @media (max-width: 700px) {
   body:has(.ds-root) .fab { bottom: 86px; }
   body:has(.ds-root) .wrap { padding-bottom: 170px; }

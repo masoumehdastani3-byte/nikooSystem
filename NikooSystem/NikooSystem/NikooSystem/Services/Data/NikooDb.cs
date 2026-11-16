@@ -167,6 +167,11 @@ namespace NikooSystem.Services.Data
                         SiteStore.ApplyRepairTemplateCopy();
                         SiteContentStore.ApplyRepairTemplateFaq();
                     });
+                    NikooSchema.RunOnce("site-four-templates", () =>
+                    {
+                        SiteStore.ApplyFourTemplateCopy();
+                        SiteContentStore.ApplyFourTemplateFaqs();
+                    });
                     NikooSchema.RunOnce("site-matched-product-images", SiteStore.ApplyMatchedProductImages);
                     TutorialService.ApplySeed();
                     _initialized = true;

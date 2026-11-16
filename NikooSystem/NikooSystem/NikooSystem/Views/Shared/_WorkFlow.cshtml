@@ -1,0 +1,26 @@
+@model ProductLanding
+@if (Model != null && Model.Flow != null && Model.Flow.Length > 0)
+{
+    <section class="lf-flow-section" aria-labelledby="work-flow-title">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2 id="work-flow-title">روند کار</h2>
+                <p>کار با @Model.Name، از اول تا آخر</p>
+            </header>
+            <ol class="lf-flow">
+                @for (var i = 0; i < Model.Flow.Length; i++)
+                {
+                    var step = Model.Flow[i];
+                    <li>
+                        <span class="lf-flow-node" aria-hidden="true">
+                            <i class="bi @step.Icon"></i>
+                            <b>@((i + 1).ToFa())</b>
+                        </span>
+                        <strong>@step.Title</strong>
+                        <p>@step.Text</p>
+                    </li>
+                }
+            </ol>
+        </div>
+    </section>
+}

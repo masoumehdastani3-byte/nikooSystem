@@ -1,0 +1,199 @@
+@using NikooSystem.Helpers
+@using NikooSystem.Models
+@using NikooSystem.Services
+@{
+    ViewBag.Title = "حسابداری دوطرفه";
+    ViewBag.DarkHeader = true;
+    var site = SiteContentStore.Settings;
+    var trialDays = TenantProvisioningService.TrialDays.ToFa();
+    var faqs = ViewBag.Faqs as List<SiteFaq> ?? new List<SiteFaq>();
+    var products = ViewBag.Products as List<ProductLanding> ?? new List<ProductLanding>();
+}
+<section class="lf-hero lf-land-hero">
+    <div class="lf-hero-wave" aria-hidden="true"></div>
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb lf-land-crumbs">
+                <li class="breadcrumb-item"><a href="@Url.Action("Index","Home")">خانه</a></li>
+                <li class="breadcrumb-item"><a href="@Url.Action("Index","Products")">محصولات</a></li>
+                <li class="breadcrumb-item active" aria-current="page">حسابداری</li>
+            </ol>
+        </nav>
+        <div class="row align-items-center g-4 lf-hero-row">
+            <div class="col-lg-6 lf-hero-copy">
+                <p class="lf-eyebrow"><i class="bi bi-journal-text"></i> حسابداری داخل پنل</p>
+                <h1>دفاتر دوطرفه، کنار فروش آنلاین و صندوق حضوری</h1>
+                <p class="lf-hero-lead">گروه، کل، معین و تفصیلی؛ فاکتور خرید و فروش، صندوق، بانک، انبار و تراز چهارستونی. فروش اینترنتی، شهریه، نوبت و تعمیر خودش سند می‌خورد و @trialDays روز اول رایگان است.</p>
+                <div class="lf-hero-cta">
+                    <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@trialDays روز)</a>
+                    <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Products")"><i class="bi bi-grid"></i> محصولات</a>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="lf-acc-board" aria-hidden="true">
+                    <header>
+                        <strong>نمونه دفتر</strong>
+                        <span>سال مالی جاری</span>
+                    </header>
+                    <div class="lf-acc-levels">
+                        <div class="lf-acc-level"><b>گروه ۱</b><span>دارایی‌ها</span></div>
+                        <div class="lf-acc-level is-sub"><b>کل ۱۱</b><span>موجودی نقد</span></div>
+                        <div class="lf-acc-level is-detail"><b>معین ۱۱۰۱</b><span>صندوق</span></div>
+                    </div>
+                    <table class="lf-acc-rows">
+                        <thead>
+                            <tr><th>شرح</th><th>بدهکار</th><th>بستانکار</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>صندوق</td><td>۱۲٬۴۰۰٬۰۰۰</td><td></td></tr>
+                            <tr><td>فروش</td><td></td><td>۱۲٬۴۰۰٬۰۰۰</td></tr>
+                        </tbody>
+                    </table>
+                    <p>سند فروش حضوری؛ اعداد این کارت نمونه‌اند.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="lf-land-section">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <h2 class="lf-land-title">حسابداری @site.SiteName چیست؟</h2>
+                <p class="lf-land-text">دفتر جدا از فروش نیست. همان پنلی که کالا، دوره، نوبت، کلاس یا برگه تعمیر را ثبت می‌کنید، سند بدهکار و بستانکار را هم می‌زند. فروش آنلاین و فروش پشت صندوق از یک موجودی و یک دفتر رد می‌شوند.</p>
+                <p class="lf-land-text">سرفصل‌های پایه مثل صندوق، بانک، موجودی کالا، اموال، فروش و هزینه از اول آماده‌اند. نوع سند تازه، حساب بانکی با شماره و شبا، و نرخ مالیات ارزش افزوده را خودتان تنظیم می‌کنید. راهنمای قدم‌به‌قدم داخل پنل با واژه‌های همان کسب‌وکار نوشته شده: فروشگاه، دوره، نوبت، باشگاه یا تعمیرگاه.</p>
+                <p class="lf-land-text">جدول اسناد، فاکتورها، دریافت و پرداخت، انبار و دفتر معین جستجو، مرتب‌سازی و صفحه‌بندی دارند و فیلتر «از تاریخ تا تاریخ» با تقویم شمسی است.</p>
+            </div>
+            <div class="col-lg-5">
+                <aside class="lf-land-audience">
+                    <h3><i class="bi bi-person-check"></i> مناسب چه کسانی است؟</h3>
+                    <ul>
+                        <li><i class="bi bi-check2-circle"></i> فروشگاهی که آنلاین و پشت صندوق می‌فروشد</li>
+                        <li><i class="bi bi-check2-circle"></i> آموزش و فروش دوره‌ای که شهریه نقد یا آنلاین می‌گیرد</li>
+                        <li><i class="bi bi-check2-circle"></i> مطب، سالن و مشاوره‌ای که بیعانه و مانده نوبت را تسویه می‌کند</li>
+                        <li><i class="bi bi-check2-circle"></i> باشگاهی که شهریه کلاس و اجاره سالن دارد</li>
+                        <li><i class="bi bi-check2-circle"></i> تعمیرگاهی که اجرت، قطعه و خرید لوازم را فاکتور می‌کند</li>
+                    </ul>
+                </aside>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="lf-land-section is-soft">
+    <div class="container">
+        <header class="lf-section-head">
+            <h2>امکانات دفتر</h2>
+            <p>آنچه در منوی حسابداری پنل هست</p>
+        </header>
+        <div class="lf-land-highlights">
+            <article class="lf-land-card">
+                <i class="bi bi-diagram-3" aria-hidden="true"></i>
+                <h3>گروه، کل، معین و تفصیلی</h3>
+                <p>سرفصل استاندارد سه سطحی، به‌علاوه دو سطح تفصیلی شناور برای شخص و مرکز هزینه یا پروژه. مانده کل و گروه از روی معین جمع می‌شود.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-journal-text" aria-hidden="true"></i>
+                <h3>سند با بدهکار و بستانکار</h3>
+                <p>سند دستی با ستون بدهکار و بستانکار، نوع سند دلخواه مثل هزینه اجاره، و برگه چاپی سند. انواع خرید، فروش و دریافت از اول آماده‌اند.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-file-earmark-bar-graph" aria-hidden="true"></i>
+                <h3>تراز چهارستونی و دفاتر</h3>
+                <p>تراز در سطح گروه، کل، معین و تفصیلی برای هر بازه تاریخ. از هر ردیف به دفتر کل، دفتر معین یا دفتر تفصیلی با مانده از قبل و مانده ردیف به ردیف می‌روید.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-calendar3-range" aria-hidden="true"></i>
+                <h3>سال مالی شمسی</h3>
+                <p>فیلتر پیش‌فرض روی سال جاری. بستن سال، درآمد و هزینه را به سود و زیان انباشته منتقل می‌کند و در صورت قفل تاریخ، سند آن سال بسته می‌ماند.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-shop-window" aria-hidden="true"></i>
+                <h3>صندوق و فاکتور</h3>
+                <p>صندوق فروش سریع برای کالا یا خدمت، و فاکتور خرید و فروش با تخفیف و مالیات ارزش افزوده. خرید موجودی را زیاد می‌کند و فروش بیشتر از موجودی ثبت نمی‌شود.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-bank" aria-hidden="true"></i>
+                <h3>بانک، درگاه و دریافت و پرداخت</h3>
+                <p>چند حساب بانکی با شماره، کارت و شبا. حساب متصل به درگاه، فروش آنلاین و شهریه را در دفتر همان بانک می‌نشاند. دریافت و پرداخت صندوق یا هر بانک سند خودکار دارد.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-box-seam" aria-hidden="true"></i>
+                <h3>انبار، اموال و طرف‌حساب</h3>
+                <p>موجودی کالا یا لوازم مصرفی، ثبت اموال، و فهرست تامین‌کننده و مشتری. اعضای سایت در همان فهرست‌اند و در فاکتور از روی نام انتخاب می‌شوند.</p>
+            </article>
+            <article class="lf-land-card">
+                <i class="bi bi-lightning" aria-hidden="true"></i>
+                <h3>سند خودکار کسب‌وکار</h3>
+                <p>سفارش پرداخت‌شده، شهریه کلاس، رزرو سالن، بیعانه و تسویه نوبت، صورتحساب تعمیر، درآمد ارسال و برگشت از فروش خودشان در دفاتر ثبت می‌شوند.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+@if (products.Any())
+{
+    <section class="lf-land-section">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>کنار کدام محصولات</h2>
+                <p>همین دفتر، داخل پنل این سایت‌هاست</p>
+            </header>
+            @Html.Partial("_SolutionLinks", products)
+            <p class="lf-land-text text-center mt-4 mb-0">سایت شرکتی، سایت خبری و منوی کافه دفتر حسابداری ندارند؛ برای معرفی، خبر و نمایش منو ساخته شده‌اند.</p>
+        </div>
+    </section>
+}
+
+<section class="lf-steps">
+    <div class="container">
+        <header class="lf-section-head">
+            <h2>از فروش تا تراز</h2>
+            <p>چهار قدم داخل همان پنل</p>
+        </header>
+        <div class="lf-steps-grid lf-land-steps">
+            <div class="lf-step"><span>۱</span><div><strong>سرفصل آماده</strong><em>صندوق، بانک، موجودی، فروش و هزینه از روز اول هست؛ حساب و نوع سند تازه را خودتان اضافه می‌کنید.</em></div></div>
+            <div class="lf-step"><span>۲</span><div><strong>فروش یا دریافت</strong><em>صندوق، فاکتور حضوری، سفارش آنلاین، شهریه، نوبت یا برگه تعمیر را ثبت می‌کنید.</em></div></div>
+            <div class="lf-step"><span>۳</span><div><strong>سند خودکار</strong><em>بدهکار و بستانکار در دفاتر می‌نشیند؛ موجودی کالا یا قطعه همان لحظه کم یا زیاد می‌شود.</em></div></div>
+            <div class="lf-step"><span>۴</span><div><strong>تراز و بستن سال</strong><em>تراز چهارستونی و دفتر معین را برای بازه شمسی می‌بینید و سال تمام‌شده را به سود و زیان انباشته می‌بندید.</em></div></div>
+        </div>
+    </div>
+</section>
+
+@if (faqs.Any())
+{
+    <section id="faq" class="lf-faq">
+        <div class="container">
+            <header class="lf-section-head">
+                <h2>سوالات متداول</h2>
+                <p>درباره حسابداری پنل</p>
+            </header>
+            <div class="lf-faq-list">
+                @foreach (var f in faqs)
+                {
+                    <details class="lf-faq-item">
+                        <summary>@f.Question <i class="bi bi-chevron-down"></i></summary>
+                        <div class="lf-faq-answer">@Html.TextBlocks(f.Answer)</div>
+                    </details>
+                }
+            </div>
+            <p class="text-center mt-4 mb-0">
+                جواب سوالتان را پیدا نکردید؟ <a href="@Url.Action("Contact","Home")">با ما تماس بگیرید</a>
+            </p>
+        </div>
+    </section>
+}
+
+<section class="lf-land-section">
+    <div class="container">
+        <aside class="lf-acc-beside">
+            <i class="bi bi-rocket-takeoff" aria-hidden="true"></i>
+            <div>
+                <strong>دفتر، همراه ساخت سایت می‌آید</strong>
+                <span>نوع سایت را انتخاب کنید. سرفصل، صندوق و تراز از همان روز اول داخل پنل است و @trialDays روز اول رایگان است.</span>
+            </div>
+            <a class="lf-btn lf-btn-warm" href="@Url.Action("Index","Signup")">ساخت سایت رایگان</a>
+        </aside>
+    </div>
+</section>

@@ -101,6 +101,7 @@ namespace NikooSystem.Controllers
             {
                 UrlEntry(site + "/"),
                 UrlEntry(site + Url.Action("Index", "Products")),
+                UrlEntry(site + Url.RouteUrl("Accounting")),
                 UrlEntry(site + Url.Action("Index", "Signup")),
                 UrlEntry(site + Url.Action("About", "Home")),
                 UrlEntry(site + Url.Action("Contact", "Home")),
