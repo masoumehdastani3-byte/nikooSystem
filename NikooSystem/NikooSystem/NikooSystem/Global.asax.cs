@@ -50,6 +50,7 @@ namespace NikooSystem
         protected void Application_BeginRequest()
         {
             if (RedirectToSiteUrl()) return;
+            if (RedirectWwwToBare()) return;
 
             var path = Request.Path ?? "";
             if (path.StartsWith("/Assets", StringComparison.OrdinalIgnoreCase) ||
@@ -115,6 +116,30 @@ namespace NikooSystem
             if (host == site.Host && scheme == site.Scheme) return false;
 
             Response.RedirectPermanent(site.GetLeftPart(UriPartial.Authority) + Request.RawUrl, false);
+            Context.ApplicationInstance.CompleteRequest();
+            return true;
+        }
+
+        /// <summary>
+        /// When Seo.RedirectWww is true, www.example.com (and a store's www host) permanently redirects to the bare host.
+        /// The domain-check probe stays on www so a proxy in front of the site can still be recognized.
+        /// </summary>
+        private bool RedirectWwwToBare()
+        {
+            if (!string.Equals(ConfigurationManager.AppSettings["Seo.RedirectWww"], "true", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (Request.HttpMethod != "GET" && Request.HttpMethod != "HEAD") return false;
+            if (string.Equals(Request.Path, CustomDomains.ProbePath, StringComparison.OrdinalIgnoreCase)) return false;
+
+            var host = Request.Url.Host;
+            if (host.Length <= 4 || !host.StartsWith("www.", StringComparison.OrdinalIgnoreCase)) return false;
+            var bare = host.Substring(4);
+            if (bare.Length == 0 || bare.IndexOf('.') < 0) return false;
+
+            var forwarded = Request.Headers["X-Forwarded-Proto"];
+            var scheme = string.IsNullOrEmpty(forwarded) ? Request.Url.Scheme : forwarded.Split(',')[0].Trim().ToLowerInvariant();
+            var port = string.IsNullOrEmpty(forwarded) && !Request.Url.IsDefaultPort ? ":" + Request.Url.Port : "";
+            Response.RedirectPermanent(scheme + "://" + bare + port + Request.RawUrl, false);
             Context.ApplicationInstance.CompleteRequest();
             return true;
         }

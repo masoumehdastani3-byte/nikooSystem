@@ -19,13 +19,19 @@
     var lineCol = AccountingCopy.LineColumn(kind);
 }
 <link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
-<div class="acc-form-head">
-    <div>
-        <h2>@ViewBag.Title</h2>
-        <p class="lead">طرف‌حساب و نحوه دریافت را بالا بنویسید؛ کالا را جستجو کنید یا از ردیف‌ها انتخاب کنید.</p>
-    </div>
-    <div class="d-flex gap-2 flex-wrap">
+<div class="acc-form-head acc-sheet-head">
+    <h2>@ViewBag.Title</h2>
+    <div class="acc-sheet-actions">
         <button class="btn-store" type="submit" form="saleForm"><i class="bi bi-check2"></i> ثبت فاکتور</button>
+        <button class="btn-outline-store" type="button" id="saleAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
+        @if (kind.Sells)
+        {
+            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("EditProduct","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> محصول جدید</a>
+        }
+        else
+        {
+            <a class="btn-outline-store" target="_blank" rel="noopener" href="@Url.Action("Inventory","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> ثبت در @invLabel</a>
+        }
         @if (Model.Id > 0)
         {
             <a class="btn-outline-store" href="@Url.Action("PrintSaleInvoice","ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-printer"></i> چاپ</a>
@@ -33,13 +39,13 @@
         <a class="btn-outline-store" href="@Url.Action("SaleInvoices","ShopAdmin", new { company })">بازگشت به لیست</a>
     </div>
 </div>
-@using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post, new { id = "saleForm" }))
+@using (Html.BeginForm("EditSaleInvoice", "ShopAdmin", new { company }, FormMethod.Post, new { id = "saleForm", @class = "acc-sheet" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
-    <div class="panel-card acc-meta mb-3">
+    <div class="panel-card acc-meta">
         <div>
-            <label class="form-label" for="party">مشتری / طرف‌حساب</label>
+            <label class="form-label" for="party">مشتری</label>
             <select class="form-select" name="party" id="party">
                 <option value="">— از فهرست انتخاب کنید —</option>
                 <optgroup label="طرف‌حساب‌های ثبت‌شده">
@@ -58,11 +64,6 @@
                     </optgroup>
                 }
             </select>
-            <div class="form-text">
-                <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })">تعریف طرف‌حساب</a>
-                یا نام تازه را پایین بنویسید.
-            </div>
-            <input class="form-control form-control-sm mt-1" name="newParty" maxlength="150" placeholder="نام مشتری تازه" />
         </div>
         <div>
             <label class="form-label" for="invoiceDate">تاریخ</label>
@@ -77,26 +78,29 @@
                 }
             </select>
         </div>
-        <div class="acc-span-2">
+        <div>
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
+        </div>
+        <div class="acc-party-extra">
+            <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Customer })">تعریف طرف‌حساب</a>
+            <input class="form-control" name="newParty" maxlength="150" placeholder="یا نام مشتری تازه" />
         </div>
     </div>
     <div class="acc-lines">
         <div class="acc-stock-search">
-            <label class="form-label" for="saleItemSearch">جستجوی کالا</label>
+            <label class="form-label" for="saleItemSearch">جستجو</label>
             <input type="search" id="saleItemSearch" class="form-control" placeholder="@AccountingCopy.PosSearch(kind)" autocomplete="off" />
             <div id="saleItemResults" class="acc-stock-results" hidden></div>
-            <div class="form-text">با انتخاب نتیجه، به ردیف خالی اضافه می‌شود (یا ردیف تازه ساخته می‌شود).</div>
         </div>
         <div class="table-responsive">
             <table class="table align-middle" id="saleLines">
                 <thead>
                     <tr>
                         <th>@lineCol</th>
-                        <th>شرح</th>
-                        <th style="width:6rem">تعداد</th>
+                        <th style="width:5.5rem">تعداد</th>
                         <th style="width:8rem">مبلغ واحد</th>
+                        <th>شرح</th>
                         <th style="width:2.5rem"></th>
                     </tr>
                 </thead>
@@ -131,23 +135,19 @@
                                     }
                                 </select>
                             </td>
-                            <td>
-                                <input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" placeholder="مثلاً کوتاهی مو / شهریه ماه" />
-                                <input type="hidden" name="lineShipping" value="@(line.IsShipping ? "1" : "0")" />
-                            </td>
                             <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="@(line.Qty > 0 ? line.Qty.ToString(invariant) : "")" /></td>
                             <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="@(line.UnitPrice > 0 ? line.UnitPrice.ToString(invariant) : "")" /></td>
+                            <td>
+                                <input class="form-control" name="lineTitle" maxlength="150" value="@line.Title" />
+                                <input type="hidden" name="lineShipping" value="@(line.IsShipping ? "1" : "0")" />
+                            </td>
                             <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
                         </tr>
                     }
                 </tbody>
             </table>
         </div>
-        <div class="acc-lines-toolbar">
-            <button type="button" class="btn-outline-store" id="saleAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
-        </div>
         <div class="acc-totals">
-            <div class="acc-totals-row"><span>جمع ردیف‌ها</span> <strong id="saleSubtotal">۰ تومان</strong></div>
             <div class="acc-totals-fields">
                 <div>
                     <label class="form-label" for="DiscountAmount">تخفیف (تومان)</label>
@@ -156,12 +156,14 @@
                 <div>
                     <label class="form-label" for="VatPercent">مالیات ارزش افزوده (٪)</label>
                     <input class="form-control" type="number" min="0" max="100" step="1" dir="ltr" name="VatPercent" id="VatPercent" value="@Model.VatPercent.ToString(invariant)" />
-                    <div class="form-text">صفر یعنی بدون مالیات. پیش‌فرض را از «سال مالی» تنظیم کنید.</div>
                 </div>
             </div>
-            <div class="acc-totals-row"><span>پس از تخفیف</span> <strong id="saleNet">۰ تومان</strong></div>
-            <div class="acc-totals-row"><span>مالیات</span> <strong id="saleVat">۰ تومان</strong></div>
-            <div class="acc-totals-row is-grand"><span>مبلغ قابل دریافت</span> <strong id="saleTotal">۰ تومان</strong></div>
+            <div class="acc-totals-summary">
+                <div class="acc-totals-row"><span>جمع ردیف‌ها</span> <strong id="saleSubtotal">۰ تومان</strong></div>
+                <div class="acc-totals-row"><span>پس از تخفیف</span> <strong id="saleNet">۰ تومان</strong></div>
+                <div class="acc-totals-row"><span>مالیات</span> <strong id="saleVat">۰ تومان</strong></div>
+                <div class="acc-totals-row is-grand"><span>مبلغ قابل دریافت</span> <strong id="saleTotal">۰ تومان</strong></div>
+            </div>
         </div>
     </div>
     <p class="acc-hint">@AccountingCopy.LineHint(kind)</p>
@@ -191,12 +193,12 @@
             }
         </select>
     </td>
-    <td>
-        <input class="form-control" name="lineTitle" maxlength="150" value="" placeholder="مثلاً کوتاهی مو / شهریه ماه" />
-        <input type="hidden" name="lineShipping" value="0" />
-    </td>
     <td><input class="form-control" type="number" min="0" step="1" dir="ltr" name="lineQty" value="" /></td>
     <td><input class="form-control" inputmode="numeric" data-money dir="ltr" name="linePrice" value="" /></td>
+    <td>
+        <input class="form-control" name="lineTitle" maxlength="150" value="" />
+        <input type="hidden" name="lineShipping" value="0" />
+    </td>
     <td><button type="button" class="acc-line-remove" data-acc-remove title="حذف ردیف">&times;</button></td>
 </tr>
 </script>

@@ -15,9 +15,9 @@
     var invLabel = AccountingCopy.Inventory(kind);
 }
 <link href="@Url.Asset("~/Content/accounting.css")" rel="stylesheet" />
-<div class="acc-form-head acc-purchase-head">
+<div class="acc-form-head acc-sheet-head">
     <h2>@ViewBag.Title</h2>
-    <div class="acc-purchase-actions">
+    <div class="acc-sheet-actions">
         <button class="btn-store" type="submit" form="purchaseForm"><i class="bi bi-check2"></i> ثبت فاکتور</button>
         <button class="btn-outline-store" type="button" id="purchaseAddRow"><i class="bi bi-plus-lg"></i> افزودن ردیف</button>
         @if (kind.Sells)
@@ -35,7 +35,7 @@
         <a class="btn-outline-store" href="@Url.Action("Purchases","ShopAdmin", new { company })">بازگشت به لیست</a>
     </div>
 </div>
-@using (Html.BeginForm("EditPurchase", "ShopAdmin", new { company }, FormMethod.Post, new { id = "purchaseForm", @class = "acc-purchase" }))
+@using (Html.BeginForm("EditPurchase", "ShopAdmin", new { company }, FormMethod.Post, new { id = "purchaseForm", @class = "acc-sheet" }))
 {
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)

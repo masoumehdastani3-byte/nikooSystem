@@ -363,8 +363,8 @@
   .inv-print-head { border-bottom-color: #000; }
 }
 
-/* Purchase invoice: one compact screen, actions in the title bar */
-.acc-purchase-head {
+/* Compact invoice (purchase and sale): one screen, actions in the title bar */
+.acc-sheet-head {
   align-items: center;
   margin-bottom: .65rem;
   padding: .5rem .8rem;
@@ -372,59 +372,59 @@
   top: .65rem;
   z-index: 20;
 }
-.acc-purchase-actions {
+.acc-sheet-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: .4rem;
 }
-.acc-purchase-head .btn-store,
-.acc-purchase-head .btn-outline-store {
+.acc-sheet-head .btn-store,
+.acc-sheet-head .btn-outline-store {
   padding: .38rem .7rem;
   border-radius: 9px;
   box-shadow: none;
   font-size: .86rem;
   line-height: 1.2;
 }
-.acc-purchase .acc-meta {
+.acc-sheet .acc-meta {
   grid-template-columns: minmax(11rem, 1.35fr) minmax(8.5rem, .85fr) minmax(8.5rem, .9fr) minmax(11rem, 1.25fr);
   gap: .35rem .65rem;
   margin-bottom: .65rem;
   padding: .65rem .8rem;
 }
-.acc-purchase .form-label {
+.acc-sheet .form-label {
   margin-bottom: .15rem;
   font-size: .78rem;
 }
-.acc-purchase .form-control,
-.acc-purchase .form-select,
-.acc-purchase .shamsi-dt-date {
+.acc-sheet .form-control,
+.acc-sheet .form-select,
+.acc-sheet .shamsi-dt-date {
   padding-top: .28rem;
   padding-bottom: .28rem;
   font-size: .88rem;
   min-height: 2rem;
   border-radius: 8px;
 }
-.acc-purchase .acc-party-extra {
+.acc-sheet .acc-party-extra {
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
   gap: .55rem;
 }
-.acc-purchase .acc-party-extra a {
+.acc-sheet .acc-party-extra a {
   flex: none;
   font-size: .8rem;
   white-space: nowrap;
 }
-.acc-purchase .acc-party-extra .form-control { max-width: 18rem; }
-.acc-purchase .acc-lines {
+.acc-sheet .acc-party-extra .form-control { max-width: 18rem; }
+.acc-sheet .acc-lines {
   margin-bottom: .5rem;
   border-radius: 12px;
 }
-.acc-purchase .acc-lines thead th { padding: .32rem .45rem; font-size: .76rem; }
-.acc-purchase .acc-lines tbody td { padding: .25rem .35rem; }
-.acc-purchase .acc-line-remove { font-size: 1.05rem; padding: .05rem .25rem; }
-.acc-purchase .acc-totals {
+.acc-sheet .acc-lines thead th { padding: .32rem .45rem; font-size: .76rem; }
+.acc-sheet .acc-lines tbody td { padding: .25rem .35rem; }
+.acc-sheet .acc-line-remove { font-size: 1.05rem; padding: .05rem .25rem; }
+.acc-sheet .acc-totals {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -432,30 +432,52 @@
   flex-wrap: wrap;
   padding: .5rem .75rem;
 }
-.acc-purchase .acc-totals-fields {
+.acc-sheet .acc-totals-fields {
   display: flex;
   gap: .55rem;
   margin: 0;
   flex: 1 1 18rem;
 }
-.acc-purchase .acc-totals-fields > div { flex: 1 1 8rem; min-width: 0; }
-.acc-purchase .acc-totals-summary {
+.acc-sheet .acc-totals-fields > div { flex: 1 1 8rem; min-width: 0; }
+.acc-sheet .acc-totals-summary {
   flex: 1 1 18rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: .1rem 1rem;
 }
-.acc-purchase .acc-totals-row { font-size: .82rem; }
-.acc-purchase .acc-totals-row.is-grand {
+.acc-sheet .acc-totals-row { font-size: .82rem; }
+.acc-sheet .acc-totals-row.is-grand {
   grid-column: 1 / -1;
   margin-top: .1rem;
   padding-top: .28rem;
   font-size: .92rem;
 }
-.acc-purchase .acc-totals-row.is-grand strong { font-size: 1.02rem; }
-.acc-purchase .acc-hint { margin: 0; font-size: .78rem; }
+.acc-sheet .acc-totals-row.is-grand strong { font-size: 1.02rem; }
+.acc-sheet .acc-hint { margin: 0; font-size: .78rem; }
+.acc-sheet .acc-stock-search {
+  display: flex;
+  align-items: center;
+  gap: .45rem .6rem;
+  padding: .4rem .65rem;
+}
+.acc-sheet .acc-stock-search .form-label {
+  margin: 0;
+  flex: none;
+  white-space: nowrap;
+}
+.acc-sheet .acc-stock-search .form-control {
+  flex: 1 1 12rem;
+  max-width: 22rem;
+}
+.acc-sheet .acc-stock-results {
+  top: calc(100% - .15rem);
+  left: .65rem;
+  right: .65rem;
+}
 @media (max-width: 900px) {
-  .acc-purchase .acc-meta { grid-template-columns: 1fr 1fr; }
-  .acc-purchase .acc-party-extra { flex-wrap: wrap; }
-  .acc-purchase .acc-party-extra .form-control { max-width: none; flex: 1 1 12rem; }
+  .acc-sheet .acc-meta { grid-template-columns: 1fr 1fr; }
+  .acc-sheet .acc-party-extra { flex-wrap: wrap; }
+  .acc-sheet .acc-party-extra .form-control { max-width: none; flex: 1 1 12rem; }
+  .acc-sheet .acc-stock-search { flex-wrap: wrap; }
+  .acc-sheet .acc-stock-search .form-control { max-width: none; }
 }

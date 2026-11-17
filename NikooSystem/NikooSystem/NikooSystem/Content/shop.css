@@ -50,6 +50,44 @@ html, body, button, input, textarea, select {
   box-shadow: 0 8px 28px rgba(1, 41, 112, 0.06);
   border: 1px solid #eef2f8;
 }
+.product-detail-img {
+  display: block;
+  width: 100%;
+  max-height: 420px;
+  object-fit: cover;
+  border-radius: 16px;
+  box-shadow: 0 .125rem .25rem rgba(0, 0, 0, .075);
+}
+.product-story {
+  margin-top: 1.5rem;
+  overflow-wrap: anywhere;
+  line-height: 2;
+}
+.product-story-title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  color: #012970;
+}
+.product-story p { margin: 0 0 .9rem; }
+.product-story p:last-child { margin-bottom: 0; }
+.product-story h2:not(.product-story-title) {
+  font-size: 1.05rem;
+  color: #012970;
+  margin: 1.5rem 0 .6rem;
+}
+.product-story ul {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: .45rem;
+}
+.product-story li {
+  padding: .65rem .9rem;
+  border: 1px solid #eef2f8;
+  border-radius: 12px;
+  background: #f8fafc;
+}
 /* قوانین، حریم خصوصی و راهنمای خرید */
 .legal-text { line-height: 2; }
 .legal-text h2 {
