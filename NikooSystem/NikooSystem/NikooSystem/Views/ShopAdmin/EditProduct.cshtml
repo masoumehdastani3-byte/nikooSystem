@@ -139,14 +139,20 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">کد کالا</label>
-                            @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً BALL-01" })
                             @if (kind.IsShop && Model.Id > 0 && !string.IsNullOrWhiteSpace(Model.Sku))
                             {
-                                <div class="form-text"><a href="@Url.Action("ProductBarcodes", "ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-upc"></i> ساخت و چاپ بارکد این کالا</a></div>
+                                <div class="field-join">
+                                    <a href="@Url.Action("ProductBarcodes", "ShopAdmin", new { company, id = Model.Id })"><i class="bi bi-upc"></i> چاپ بارکد</a>
+                                    @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً BALL-01" })
+                                </div>
                             }
-                            else if (kind.IsShop)
+                            else
                             {
-                                <div class="form-text">با حروف انگلیسی یا عدد بنویسید. بعد از ذخیره، از همین کد بارکد قابل چاپ ساخته می‌شود.</div>
+                                @Html.TextBoxFor(m => m.Sku, new { @class = "form-control", dir = "ltr", maxlength = "40", placeholder = "مثلاً BALL-01" })
+                                if (kind.IsShop)
+                                {
+                                    <div class="form-text">با حروف انگلیسی یا عدد بنویسید. بعد از ذخیره، از همین کد بارکد قابل چاپ ساخته می‌شود.</div>
+                                }
                             }
                         </div>
                         <div class="col-md-6">

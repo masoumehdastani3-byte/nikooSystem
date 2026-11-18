@@ -2,7 +2,7 @@
 
 .grid-toolbar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: .5rem;
   align-items: center;
   margin-bottom: 1rem;
@@ -16,7 +16,7 @@
   border: 1px solid #d1d5db;
   background: #fff;
   color: #166534;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: .45rem .85rem;
   font-size: .88rem;
   line-height: 1.3;
@@ -31,8 +31,9 @@
 
 .grid-search {
   position: relative;
-  flex: 1 1 260px;
-  max-width: 420px;
+  flex: 1 1 12rem;
+  min-width: 8rem;
+  max-width: 22rem;
 }
 
 .grid-search i {
@@ -67,23 +68,31 @@
 
 .grid-dates {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: .4rem .55rem;
+  gap: .35rem .45rem;
+  flex: 0 0 auto;
 }
 .grid-dates > label {
   margin: 0;
-  font-size: .8rem;
-  color: #6b7280;
+  font-size: .78rem;
+  font-weight: 700;
+  color: #334155;
   white-space: nowrap;
 }
 .grid-dates .shamsi-dt {
-  min-width: 9.5rem;
+  width: 10.75rem;
+  flex: 0 0 10.75rem;
 }
-.grid-dates .shamsi-dt-date {
-  padding-top: .4rem;
-  padding-bottom: .4rem;
-  font-size: .88rem;
+.grid-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: .4rem;
+}
+@media (max-width: 1100px) {
+  .grid-toolbar,
+  .grid-dates { flex-wrap: wrap; }
 }
 
 .grid-clear {
@@ -104,39 +113,67 @@
   --tbl-hover: color-mix(in srgb, var(--tbl-accent) 10%, #fff);
   --tbl-foot: color-mix(in srgb, var(--tbl-accent) 8%, #f8fafc);
   --tbl-line: color-mix(in srgb, var(--tbl-accent) 14%, #e5e7eb);
+  --tbl-grid: color-mix(in srgb, var(--tbl-accent) 26%, #d5dde6);
   --bs-table-hover-bg: var(--tbl-hover);
   margin-bottom: 0;
   color: #1f2937;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--tbl-grid);
+  border-radius: 8px;
 }
+.table-responsive { border-radius: 8px; }
 .table > :not(:first-child) { border-top: 0; }
 .table:not(:last-child),
 .table-responsive:not(:last-child) { margin-bottom: 1rem; }
 
+.table > :not(caption) > * > * {
+  border-style: solid;
+  border-color: var(--tbl-grid);
+  border-width: 0 0 1px 0;
+  border-inline-end-width: 1px;
+}
+.table > :not(caption) > * > *:last-child { border-inline-end-width: 0; }
+.table > :last-child > tr:last-child > * { border-bottom-width: 0; }
+.table > :not(:last-child) > :last-child > * { border-bottom-color: var(--tbl-grid); }
+.table > thead > tr:first-child > :first-child { border-start-start-radius: 7px; }
+.table > thead > tr:first-child > :last-child { border-start-end-radius: 7px; }
+.table > :last-child > tr:last-child > :first-child { border-end-start-radius: 7px; }
+.table > :last-child > tr:last-child > :last-child { border-end-end-radius: 7px; }
 .table > thead > tr > th {
   background: linear-gradient(180deg, var(--tbl-head-bg), color-mix(in srgb, var(--tbl-accent) 7%, #fff));
   color: var(--tbl-head-fg);
   font-weight: 700;
-  font-size: .85rem;
+  font-size: .8rem;
   white-space: nowrap;
-  border-bottom: 2px solid color-mix(in srgb, var(--tbl-accent) 28%, #e5e7eb);
 }
-.table > thead > tr > th:first-child { border-start-start-radius: 10px; }
-.table > thead > tr > th:last-child { border-start-end-radius: 10px; }
+.table > tbody > tr > *,
+.table > tfoot > tr > * {
+  font-size: .86rem;
+}
+.table .col-rownum {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  text-align: center;
+  color: #64748b;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.table > thead .col-rownum { color: inherit; }
 
 .table:not(.table-sm) > thead > tr > th,
 .table:not(.table-sm) > tbody > tr > *,
-.table:not(.table-sm) > tfoot > tr > * { padding: .7rem .75rem; }
+.table:not(.table-sm) > tfoot > tr > * {
+  padding: .42rem .7rem;
+  line-height: 1.35;
+}
 
 .table > tbody > tr:nth-child(even) > * { background-color: var(--tbl-stripe); }
-.table > tbody > tr > * { border-bottom-color: var(--tbl-line); }
-.table > tbody > tr:last-child > * { border-bottom-width: 0; }
 .table > tbody > tr:hover > * { background-color: var(--tbl-hover); }
 .table > tfoot > tr > * {
   background: var(--tbl-foot);
   color: var(--tbl-head-fg);
   font-weight: 700;
-  border-top: 2px solid color-mix(in srgb, var(--tbl-accent) 22%, #e5e7eb);
-  border-bottom-width: 0;
 }
 .table.table-bordered > tbody > tr > * { border: 1px solid var(--tbl-line); }
 
@@ -145,6 +182,7 @@
 @media (max-width: 767.98px) {
   .table-responsive:has(> .table.is-stack) { overflow: visible; }
 
+  .table.is-stack { border: 0; border-radius: 0; }
   .table.is-stack,
   .table.is-stack > tbody,
   .table.is-stack > tfoot,
@@ -300,7 +338,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: 8px;
   border: 1px solid transparent;
   background: var(--tone-bg);
   color: var(--tone);
@@ -431,6 +469,52 @@
 .qm-field.is-block { align-items: flex-start; }
 .qm-field.is-block > [data-qm] { flex: 1 1 auto; min-width: 0; }
 .qm-btn { flex: none; }
+
+/* Short action link glued to its own field (define supplier, new type, …). */
+.field-join {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+.field-join > a {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  flex: none;
+  margin: 0;
+  padding: 0 .7rem;
+  font-size: .78rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  color: var(--store-primary, var(--adm-accent, #1b4332));
+  background: color-mix(in srgb, var(--store-primary, var(--adm-accent, #1b4332)) 9%, #fff);
+  border: 1px solid #ced4da;
+  border-inline-end: 0;
+  border-start-start-radius: 8px;
+  border-end-start-radius: 8px;
+  border-start-end-radius: 0;
+  border-end-end-radius: 0;
+}
+.field-join > a:hover {
+  background: var(--store-primary, var(--adm-accent, #1b4332));
+  color: #fff;
+}
+.field-join > .form-control,
+.field-join > .form-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
+}
+.field-join:has(textarea) { align-items: flex-start; }
+.field-join:has(textarea) > a { min-height: 2.4rem; }
+.field-join:has(textarea) > textarea { border-end-start-radius: 10px; }
 
 .qm-add { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .5rem; }
 .qm-add [name=title] { flex: 2 1 200px; }

@@ -66,11 +66,12 @@
             <label class="form-label" for="Sheba">شماره شبا</label>
             @Html.TextBoxFor(m => m.Sheba, new { @class = "form-control", maxlength = "40", dir = "ltr", placeholder = "IR000000000000000000000000" })
         </div>
-        <div class="col-md-6">
+        <div class="col-md-8">
             <label class="form-label" for="Owner">صاحب حساب</label>
             @Html.TextBoxFor(m => m.Owner, new { @class = "form-control", maxlength = "120" })
         </div>
-        <div class="col-md-6 d-flex align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">وضعیت</label>
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
         <div class="col-12">

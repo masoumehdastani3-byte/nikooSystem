@@ -37,7 +37,8 @@
             <label class="form-label" for="Location">محل نگهداری</label>
             @Html.TextBoxFor(m => m.Location, new { @class = "form-control", maxlength = "120" })
         </div>
-        <div class="col-md-4 d-flex align-items-end">
+        <div class="col-md-4">
+            <label class="form-label">وضعیت</label>
             @Html.BoolField("IsActive", Model.IsActive, "در حال استفاده")
         </div>
         <div class="col-12">

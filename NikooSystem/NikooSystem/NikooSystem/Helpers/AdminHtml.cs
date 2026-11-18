@@ -71,12 +71,19 @@ namespace NikooSystem.Helpers
         public static MvcHtmlString BoolField(this HtmlHelper html, string name, bool value, string label)
         {
             var box = new TagBuilder("input");
+            box.AddCssClass("form-check-input");
             box.MergeAttribute("type", "checkbox");
             box.MergeAttribute("name", name);
             box.MergeAttribute("value", "true");
             if (value) box.MergeAttribute("checked", "checked");
 
-            var wrapper = new TagBuilder("label") { InnerHtml = box.ToString(TagRenderMode.SelfClosing) + " " + html.Encode(label) };
+            var text = new TagBuilder("span");
+            text.AddCssClass("form-check-label");
+            text.SetInnerText(label);
+
+            var wrapper = new TagBuilder("label");
+            wrapper.AddCssClass("form-check");
+            wrapper.InnerHtml = box.ToString(TagRenderMode.SelfClosing) + text.ToString();
 
             var fallback = new TagBuilder("input");
             fallback.MergeAttribute("type", "hidden");

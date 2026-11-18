@@ -35,13 +35,15 @@
         </div>
         <div>
             <label class="form-label" for="DocumentTypeId">نوع سند</label>
-            <select class="form-select" name="DocumentTypeId" id="DocumentTypeId">
-                @foreach (var type in types)
-                {
-                    <option value="@type.Id.ToString(invariant)" @(Model.DocumentTypeId == type.Id ? "selected" : null)>@type.Title</option>
-                }
-            </select>
-            <div class="form-text"><a href="@Url.Action("EditDocumentType","ShopAdmin", new { company })">نوع تازه</a></div>
+            <div class="field-join">
+                <a target="_blank" rel="noopener" href="@Url.Action("EditDocumentType","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> نوع تازه</a>
+                <select class="form-select" name="DocumentTypeId" id="DocumentTypeId">
+                    @foreach (var type in types)
+                    {
+                        <option value="@type.Id.ToString(invariant)" @(Model.DocumentTypeId == type.Id ? "selected" : null)>@type.Title</option>
+                    }
+                </select>
+            </div>
         </div>
         <div class="acc-span-2">
             <label class="form-label" for="Description">شرح سند</label>

@@ -159,6 +159,10 @@ namespace NikooSystem.Controllers
                     urls.Add(UrlEntry(ShopUrl("Facilities")));
                 }
             }
+            else if (kind.IsMenu)
+            {
+                urls.AddRange(categories.Select(c => UrlEntry(ShopUrl("Index") + "?categoryId=" + c.Id)));
+            }
             else
             {
                 urls.Add(UrlEntry(ShopUrl("Catalog")));

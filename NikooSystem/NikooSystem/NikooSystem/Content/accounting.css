@@ -393,30 +393,30 @@
   padding: .65rem .8rem;
 }
 .acc-sheet .form-label {
-  margin-bottom: .15rem;
-  font-size: .78rem;
+  margin-bottom: .3rem;
+  font-size: .82rem;
+  font-weight: 700;
 }
 .acc-sheet .form-control,
 .acc-sheet .form-select,
+.acc-sheet .form-control-sm,
 .acc-sheet .shamsi-dt-date {
-  padding-top: .28rem;
-  padding-bottom: .28rem;
-  font-size: .88rem;
-  min-height: 2rem;
-  border-radius: 8px;
+  min-height: 2.55rem;
+  padding-block: .45rem;
+  font-size: .92rem;
+  border-radius: 10px;
 }
 .acc-sheet .acc-party-extra {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: .55rem;
+  max-width: 32rem;
 }
-.acc-sheet .acc-party-extra a {
-  flex: none;
-  font-size: .8rem;
-  white-space: nowrap;
+.acc-sheet .field-join > .form-control,
+.acc-sheet .field-join > .form-select {
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+  border-start-end-radius: 10px;
+  border-end-end-radius: 10px;
 }
-.acc-sheet .acc-party-extra .form-control { max-width: 18rem; }
 .acc-sheet .acc-lines {
   margin-bottom: .5rem;
   border-radius: 12px;
@@ -476,8 +476,7 @@
 }
 @media (max-width: 900px) {
   .acc-sheet .acc-meta { grid-template-columns: 1fr 1fr; }
-  .acc-sheet .acc-party-extra { flex-wrap: wrap; }
-  .acc-sheet .acc-party-extra .form-control { max-width: none; flex: 1 1 12rem; }
+  .acc-sheet .acc-party-extra { max-width: none; }
   .acc-sheet .acc-stock-search { flex-wrap: wrap; }
   .acc-sheet .acc-stock-search .form-control { max-width: none; }
 }

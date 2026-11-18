@@ -40,11 +40,12 @@
             <label class="form-label" for="Code">کد</label>
             @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "10", dir = "ltr", inputmode = "numeric", placeholder = "خودکار" })
         </div>
-        <div class="col-md-10">
+        <div class="col-md-9">
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "300" })
         </div>
-        <div class="col-md-2 d-flex align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">وضعیت</label>
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
         <div class="col-12 small text-muted">سطح ۱ معمولاً برای اشخاص و سطح ۲ برای مرکز هزینه و پروژه است. کد خودکار سطح ۱ با ۱ و سطح ۲ با ۲ شروع می‌شود.</div>

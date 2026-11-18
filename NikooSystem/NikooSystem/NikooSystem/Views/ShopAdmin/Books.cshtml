@@ -54,49 +54,6 @@
     </ul>
 }
 
-<form class="panel-card mb-3 d-flex flex-wrap align-items-end gap-2 d-print-none" method="get" action="@Url.Action("Books","ShopAdmin", new { company })">
-    @if (isTrial)
-    {
-        <input type="hidden" name="level" value="@Model.Level" />
-        if (Model.Parent != null)
-        {
-            <input type="hidden" name="parent" value="@Model.Parent.Id.ToString(invariant)" />
-        }
-    }
-    @if (Model.Account != null)
-    {
-        <input type="hidden" name="accountId" value="@Model.Account.Id.ToString(invariant)" />
-    }
-    @if (Model.Detail != null)
-    {
-        <input type="hidden" name="detailId" value="@Model.Detail.Id.ToString(invariant)" />
-    }
-    <div>
-        <label class="form-label small mb-1" for="from">از تاریخ</label>
-        @Html.ShamsiDate("from", Model.From, "from", "از ابتدا")
-    </div>
-    <div>
-        <label class="form-label small mb-1" for="to">تا تاریخ</label>
-        @Html.ShamsiDate("to", Model.To, "to", "تا امروز")
-    </div>
-    <button class="btn-store-sm" type="submit"><i class="bi bi-calendar-range"></i> اعمال بازه</button>
-    @if (from != null || to != null || ViewBag.FiscalDefaulted == true)
-    {
-        <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["from"] = null, ["to"] = null, ["page"] = null, ["scope"] = "all" })"><i class="bi bi-x-circle"></i> همه تاریخ‌ها</a>
-    }
-    <span class="small text-muted ms-auto">
-        @{
-            var fiscal = ViewBag.FiscalPeriod as FiscalPeriod;
-            if (ViewBag.FiscalAll == true) { @:همه سندها
-            }
-            else if (ViewBag.FiscalDefaulted == true && fiscal != null) { @fiscal.Label <text>(</text>@fiscal.RangeText<text>)</text>
-            }
-            else { @(from == null && to == null ? "همه سندها" : "از " + (Model.From.HasValue ? Model.From.Value.ToShamsi() : "ابتدا") + " تا " + (Model.To.HasValue ? Model.To.Value.ToShamsi() : "امروز"))
-            }
-        }
-    </span>
-</form>
-
 @if (isTrial)
 {
     <div class="panel-card">
@@ -107,7 +64,7 @@
                 <a class="grid-clear" href="@Html.QueryUrl(new Dictionary<string, object> { ["parent"] = null, ["page"] = null })"><i class="bi bi-x-circle"></i> همه حساب‌ها</a>
             </div>
         }
-        @Html.GridToolbar(Model.Level == "detail" ? "جستجو در کد یا عنوان تفصیلی…" : "جستجو در کد یا عنوان حساب…")
+        @Html.GridToolbar(Model.Level == "detail" ? "جستجو در کد یا عنوان تفصیلی…" : "جستجو در کد یا عنوان حساب…", true)
         <div class="table-responsive">
             <table class="table align-middle">
                 <thead>
@@ -207,12 +164,12 @@ else
     <div class="panel-card">
         @if (showDetails && Model.DetailChoices.Count > 0)
         {
-            @Html.GridToolbar("جستجو در شماره سند، شرح یا تفصیلی…",
+            @Html.GridToolbar("جستجو در شماره سند، شرح یا تفصیلی…", true,
                 new GridSelect("detailId", "همه تفصیلی‌ها", Model.DetailChoices.Select(d => new KeyValuePair<string, string>(d.Id.ToString(invariant), d.Code + " — " + d.Title + " (" + AccountingText.DetailLevel(d.Level) + ")"))))
         }
         else
         {
-            @Html.GridToolbar("جستجو در شماره سند، شرح یا حساب…")
+            @Html.GridToolbar("جستجو در شماره سند، شرح یا حساب…", true)
         }
         <div class="table-responsive">
             <table class="table align-middle">

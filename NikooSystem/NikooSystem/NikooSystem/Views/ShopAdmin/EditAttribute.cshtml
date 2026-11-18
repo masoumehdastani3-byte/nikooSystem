@@ -32,7 +32,7 @@
         </div>
         <div class="col-md-8"><label class="form-label">گزینه‌ها (با کاما برای نوع انتخابی)</label>@Html.TextBoxFor(m => m.Options, new { @class = "form-control", placeholder = "S,M,L" })</div>
         <div class="col-md-4"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
-        <div class="col-12 form-check">@Html.BoolField("IsFilterable", Model.IsFilterable, "قابل فیلتر در فروشگاه")</div>
+        <div class="col-12">@Html.BoolField("IsFilterable", Model.IsFilterable, "قابل فیلتر در فروشگاه")</div>
         <div class="col-12">
             <label class="form-label">اتصال به گروه‌های کالا</label>
             <div class="text-muted small mb-2">اگر هیچ گروهی انتخاب نشود، خصوصیت برای همه گروه‌ها نمایش داده می‌شود.</div>

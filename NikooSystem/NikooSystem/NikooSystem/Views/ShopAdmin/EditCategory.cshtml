@@ -87,10 +87,8 @@
                             @Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number", id = "SortOrder" })
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label d-block">&nbsp;</label>
-                            <div class="product-flags">
-                                @Html.BoolField("IsActive", Model.IsActive, "فعال")
-                            </div>
+                            <span class="form-label">وضعیت</span>
+                            @Html.BoolField("IsActive", Model.IsActive, "فعال")
                         </div>
                         <div class="col-12">
                             <label class="form-label" for="Description">توضیحات</label>

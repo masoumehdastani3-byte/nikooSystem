@@ -55,23 +55,23 @@
             </select>
             <div class="form-text">بیشتر کسب‌وکارها از فروردین شروع می‌کنند.</div>
         </div>
-        <div class="col-md-8 d-flex align-items-end">
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" name="fiscalLockDates" value="true" id="fiscalLockDates" @(Model.FiscalLockDates ? "checked" : null) />
-                <label class="form-check-label" for="fiscalLockDates">قفل تاریخ: سند و فاکتور فقط در سال‌های باز ثبت شود</label>
-            </div>
-        </div>
-        <div class="col-12"><hr class="my-1" /></div>
-        <div class="col-md-6">
-            <div class="form-check mb-2">
-                <input class="form-check-input" type="checkbox" name="enableVat" value="true" id="enableVat" @(Model.EnableVat ? "checked" : null) />
-                <label class="form-check-label" for="enableVat">مالیات بر ارزش افزوده روی فاکتور فروش و خرید پیش‌فرض باشد</label>
-            </div>
-            <div class="form-text">سرفصل «مالیات و عوارض ارزش افزوده» در سند خودکار بستانکار (فروش) یا بدهکار (خرید) می‌شود.</div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label" for="vatPercent">نرخ پیش‌فرض مالیات (٪)</label>
             <input class="form-control" type="number" min="0" max="100" step="1" dir="ltr" name="vatPercent" id="vatPercent" value="@Model.VatPercent.ToString(invariant)" />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label" for="fiscalLockDates">قفل تاریخ</label>
+            <label class="form-check">
+                <input class="form-check-input" type="checkbox" name="fiscalLockDates" value="true" id="fiscalLockDates" @(Model.FiscalLockDates ? "checked" : null) />
+                <span class="form-check-label">فقط در سال‌های باز</span>
+            </label>
+        </div>
+        <div class="col-12">
+            <label class="form-check">
+                <input class="form-check-input" type="checkbox" name="enableVat" value="true" id="enableVat" @(Model.EnableVat ? "checked" : null) />
+                <span class="form-check-label">مالیات بر ارزش افزوده روی فاکتور فروش و خرید پیش‌فرض باشد</span>
+            </label>
+            <div class="form-text">سرفصل «مالیات و عوارض ارزش افزوده» در سند خودکار بستانکار (فروش) یا بدهکار (خرید) می‌شود.</div>
         </div>
     }
 </div>

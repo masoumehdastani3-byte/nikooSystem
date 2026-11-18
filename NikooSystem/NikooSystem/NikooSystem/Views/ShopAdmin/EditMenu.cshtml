@@ -28,8 +28,8 @@
             <div class="col-12"><div class="alert alert-light border mb-0 py-2">زیرمجموعهٔ «@parentTitle»</div></div>
         }
         <div class="col-md-6"><label class="form-label">عنوان</label>@Html.TextBoxFor(m => m.Title, new { @class = "form-control" })</div>
-        <div class="col-md-6"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Url, new { @class = "form-control", placeholder = "/Shop/" + company + "/Catalog" })</div>
-        <div class="col-md-4">
+        <div class="col-md-6"><label class="form-label">آدرس</label>@Html.TextBoxFor(m => m.Url, new { @class = "form-control", dir = "ltr", placeholder = "/Shop/" + company + "/Catalog" })</div>
+        <div class="col-md-3">
             <label class="form-label">محل</label>
             <select class="form-select" name="Location" id="Location">
                 <option value="main" @(Model.Location=="main"?"selected":"")>منوی اصلی</option>
@@ -51,6 +51,6 @@
             </div>
         </div>
         <div class="col-md-2"><label class="form-label">ترتیب</label>@Html.TextBoxFor(m => m.SortOrder, new { @class = "form-control", type = "number" })</div>
-        <div class="col-md-2 form-check mt-4 pt-3">@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
+        <div class="col-md-3"><label class="form-label">وضعیت</label>@Html.BoolField("IsActive", Model.IsActive, "فعال")</div>
     </div>
 }

@@ -23,8 +23,8 @@
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
     @Html.HiddenFor(m => m.IsSystem)
-    <div class="panel-card row g-3 m-0">
-        <div class="col-md-3">
+    <div class="panel-card acc-account m-0">
+        <div>
             <label class="form-label" for="Level">سطح</label>
             @if (locked)
             {
@@ -41,7 +41,7 @@
                 </select>
             }
         </div>
-        <div class="col-md-5" id="parentBox">
+        <div id="parentBox">
             <label class="form-label" for="ParentId">زیر حساب</label>
             @if (locked)
             {
@@ -63,16 +63,16 @@
                 <div class="form-text">حساب کل زیر یک گروه و معین زیر یک حساب کل می‌نشیند.</div>
             }
         </div>
-        <div class="col-md-4">
+        <div>
             <label class="form-label" for="Code">کد</label>
             @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "4", dir = "ltr", inputmode = "numeric", @readonly = locked ? "readonly" : null, placeholder = "خالی بگذارید تا خودکار ساخته شود" })
             <div class="form-text" id="codeHint">گروه یک رقم، کل دو رقم (رقم گروه + یک رقم) و معین چهار رقم (کد کل + دو رقم).</div>
         </div>
-        <div class="col-md-6">
+        <div>
             <label class="form-label" for="Title">عنوان</label>
             @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "120", required = "required" })
         </div>
-        <div class="col-md-6" id="kindBox">
+        <div id="kindBox">
             <label class="form-label" for="Kind">نوع</label>
             @if (Model.IsSystem || Model.Level != AccountLevel.Group && locked)
             {
@@ -90,7 +90,7 @@
                 <div class="form-text" id="kindHint">نوع را روی گروه انتخاب کنید؛ حساب‌های کل و معین نوع گروهشان را می‌گیرند.</div>
             }
         </div>
-        <div class="col-md-6" data-subsidiary>
+        <div data-subsidiary>
             <label class="form-label" for="Detail1">تفصیلی سطح ۱ (شخص)</label>
             <select class="form-select" name="Detail1" id="Detail1">
                 @foreach (var use in uses)
@@ -100,7 +100,7 @@
             </select>
             <div class="form-text">برای حساب‌های دریافتنی و پرداختنی «اجباری» است؛ فاکتور و دریافت و پرداخت تفصیلی طرف حساب را خودشان می‌زنند.</div>
         </div>
-        <div class="col-md-6" data-subsidiary>
+        <div data-subsidiary>
             <label class="form-label" for="Detail2">تفصیلی سطح ۲ (مرکز هزینه یا پروژه)</label>
             <select class="form-select" name="Detail2" id="Detail2">
                 @foreach (var use in uses)
@@ -110,12 +110,13 @@
             </select>
             <div class="form-text">مثلاً هزینه‌ها را به تفکیک «شعبه مرکزی» یا «سالن فوتبال» ببینید.</div>
         </div>
-        <div class="col-md-6 d-flex align-items-end">
+        <div id="accountStatus">
+            <label class="form-label">وضعیت</label>
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
         @if (locked)
         {
-            <div class="col-12 small text-muted">
+            <div class="acc-account-note small text-muted">
                 @(Model.IsSystem ? "این حساب پیش‌فرض است و سندهای خودکار به آن می‌خورند؛ کد، سطح و جایش ثابت است و فقط عنوان، تفصیلی‌ها و وضعیتش عوض می‌شود." : "این حساب زیرمجموعه دارد؛ کد، سطح و جایش ثابت می‌ماند.")
             </div>
         }
@@ -135,12 +136,12 @@
         function refresh(value) {
             var isGroup = value === 'Group';
             var parentBox = document.getElementById('parentBox');
-            if (parentBox) parentBox.style.display = isGroup ? 'none' : '';
+            if (parentBox) parentBox.hidden = isGroup;
             var kindHint = document.getElementById('kindHint');
             var kind = document.getElementById('Kind');
             if (kind && kind.tagName === 'SELECT') kind.disabled = !isGroup;
             if (kindHint) kindHint.style.display = isGroup ? 'none' : '';
-            document.querySelectorAll('[data-subsidiary]').forEach(function (el) { el.style.display = value === 'Subsidiary' ? '' : 'none'; });
+            document.querySelectorAll('[data-subsidiary]').forEach(function (el) { el.hidden = value !== 'Subsidiary'; });
             if (!parent) return;
             var current = parent.options[parent.selectedIndex];
             Array.prototype.forEach.call(parent.options, function (option) {

@@ -130,6 +130,7 @@ namespace NikooSystem.Helpers
                 sb.Append("</select>");
             }
 
+            sb.Append("<div class=\"grid-actions\">");
             sb.Append("<button class=\"btn-store-sm\" type=\"submit\"><i class=\"bi bi-search\"></i> جستجو</button>");
             var fiscalDefaulted = html.ViewBag.FiscalDefaulted as bool? == true;
             var hasFilter = !string.IsNullOrEmpty(query["q"]) || selects.Any(s => !string.IsNullOrEmpty(query[s.Name]))
@@ -144,7 +145,7 @@ namespace NikooSystem.Helpers
             }
             // type=button so it does not submit the search form; excel-export.js wires the download
             sb.Append("<button class=\"js-excel-export\" type=\"button\" title=\"خروجی اکسل از همین جدول\"><i class=\"bi bi-file-earmark-excel\"></i> خروجی اکسل</button>");
-            sb.Append("</form>");
+            sb.Append("</div></form>");
             return MvcHtmlString.Create(sb.ToString());
         }
 

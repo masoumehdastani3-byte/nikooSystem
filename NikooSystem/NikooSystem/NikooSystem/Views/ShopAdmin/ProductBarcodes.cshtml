@@ -23,9 +23,45 @@
     }
 }
 <style>
-    .bc-tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
-    .bc-tools label { display: block; margin-bottom: 4px; }
-    .bc-check { display: flex; align-items: center; gap: 6px; margin-bottom: 0; min-height: 38px; }
+    .bc-tools { display: flex; flex-wrap: wrap; gap: .85rem 1rem; align-items: end; }
+    .bc-field { min-width: 0; }
+    .bc-field-size { width: 13rem; }
+    .bc-inline { display: flex; align-items: stretch; gap: .4rem; }
+    .bc-inline .form-control { width: 5.25rem; text-align: center; }
+    .bc-tools .btn-store,
+    .bc-tools .btn-outline-store {
+        min-height: 2.55rem;
+        padding: 0 .95rem;
+        border-radius: 10px;
+        box-shadow: none;
+        white-space: nowrap;
+    }
+    .bc-check {
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
+        min-height: 2.55rem;
+        margin: 0;
+        padding: 0 .75rem;
+        border: 1px solid #d5dde6;
+        border-radius: 10px;
+        background: #f8fafc;
+        font-size: .85rem;
+        font-weight: 700;
+        color: #1f2937;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .bc-check input { margin: 0; accent-color: var(--store-primary, #1b4332); }
+    .bc-check:has(input:checked) {
+        border-color: color-mix(in srgb, var(--store-primary, #1b4332) 42%, #e2e8f0);
+        background: color-mix(in srgb, var(--store-primary, #1b4332) 8%, #fff);
+    }
+    .bc-pick-col { width: 2.6rem; text-align: center; }
+    .bc-code-col { width: 9rem; white-space: nowrap; }
+    .bc-price-col { width: 9rem; white-space: nowrap; }
+    .bc-qty-col { width: 8rem; text-align: center; }
+    .bc-table .bc-copies { width: 5.25rem; max-width: 100%; margin-inline: auto; text-align: center; }
     .bc-sheet {
         display: flex;
         flex-wrap: wrap;
@@ -104,24 +140,29 @@
     {
         <div class="panel-card mb-3">
             <div class="bc-tools">
-                <div>
-                    <label for="bcSize">اندازه برچسب</label>
+                <div class="bc-field bc-field-size">
+                    <label class="form-label" for="bcSize">اندازه برچسب</label>
                     <select class="form-select" id="bcSize">
                         <option value="sm">۳۸ × ۲۵ میلی‌متر</option>
                         <option value="md" selected>۵۰ × ۳۰ میلی‌متر</option>
                         <option value="lg">۷۰ × ۳۸ میلی‌متر</option>
                     </select>
                 </div>
-                <div>
-                    <label for="bulkCopies">تعداد برای انتخاب‌شده‌ها</label>
-                    <div class="d-flex gap-2">
-                        <input class="form-control" id="bulkCopies" type="number" min="1" max="50" value="1" style="width:5.5rem" dir="ltr" />
+                <div class="bc-field">
+                    <label class="form-label" for="bulkCopies">تعداد برای انتخاب‌شده‌ها</label>
+                    <div class="bc-inline">
+                        <input class="form-control" id="bulkCopies" type="number" min="1" max="50" value="1" dir="ltr" />
                         <button class="btn-outline-store" type="button" id="applyCopies">اعمال</button>
                     </div>
                 </div>
-                <label class="bc-check"><input type="checkbox" id="showPrice" checked /> قیمت</label>
-                <label class="bc-check"><input type="checkbox" id="showStore" /> نام فروشگاه</label>
-                <label class="bc-check"><input type="checkbox" id="cutLines" checked /> خط برش</label>
+                <div class="bc-field">
+                    <span class="form-label">روی برچسب</span>
+                    <div class="bc-inline">
+                        <label class="bc-check"><input type="checkbox" id="showPrice" checked /> قیمت</label>
+                        <label class="bc-check"><input type="checkbox" id="showStore" /> نام فروشگاه</label>
+                        <label class="bc-check"><input type="checkbox" id="cutLines" checked /> خط برش</label>
+                    </div>
+                </div>
                 <button class="btn-store" type="button" id="bcPrint"><i class="bi bi-printer"></i> چاپ</button>
             </div>
             <p class="small text-danger mb-0 mt-2" id="bcWarn" hidden>حداقل یک کالا را انتخاب کنید.</p>
@@ -130,14 +171,14 @@
 
         <div class="panel-card mb-3">
             <div class="table-responsive">
-                <table class="table align-middle mb-0">
+                <table class="table align-middle mb-0 bc-table">
                     <thead>
                         <tr>
-                            <th style="width:2.5rem"><input type="checkbox" id="pickAll" title="انتخاب همه" aria-label="انتخاب همه" /></th>
+                            <th class="bc-pick-col"><input type="checkbox" id="pickAll" title="انتخاب همه" aria-label="انتخاب همه" /></th>
                             <th>کالا</th>
-                            <th>کد کالا</th>
-                            <th>قیمت</th>
-                            <th style="width:7rem">تعداد برچسب</th>
+                            <th class="bc-code-col">کد کالا</th>
+                            <th class="bc-price-col">قیمت</th>
+                            <th class="bc-qty-col">تعداد برچسب</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -146,7 +187,7 @@
                             var sku = product.Sku.Trim();
                             var focused = focusId == product.Id;
                             <tr class="bc-row@(focused ? " table-primary" : "")" id="@(focused ? "bc-focus" : null)" data-sku="@sku" data-title="@product.Title" data-price="@product.Price.ToToman()">
-                                <td><input class="bc-pick" type="checkbox" @(focused ? "checked" : null) aria-label="انتخاب @product.Title" /></td>
+                                <td class="bc-pick-col"><input class="bc-pick" type="checkbox" @(focused ? "checked" : null) aria-label="انتخاب @product.Title" /></td>
                                 <td>
                                     <strong>@product.Title</strong>
                                     @if (!product.IsActive)
@@ -158,9 +199,9 @@
                                         <div class="small text-muted">کد بلند است؛ برچسب ۷۰ میلی‌متری خواناتر است.</div>
                                     }
                                 </td>
-                                <td dir="ltr">@sku</td>
-                                <td>@product.Price.ToToman()</td>
-                                <td><input class="form-control form-control-sm bc-copies" type="number" min="1" max="50" value="1" dir="ltr" aria-label="تعداد برچسب @product.Title" /></td>
+                                <td class="bc-code-col"><span dir="ltr">@sku</span></td>
+                                <td class="bc-price-col">@product.Price.ToToman()</td>
+                                <td class="bc-qty-col"><input class="form-control form-control-sm bc-copies" type="number" min="1" max="50" value="1" dir="ltr" aria-label="تعداد برچسب @product.Title" /></td>
                             </tr>
                         }
                     </tbody>

@@ -16,7 +16,7 @@
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
     <div class="panel-card row g-3 m-0">
-        <div class="col-md-5">
+        <div class="col-md-6">
             <label class="form-label" for="Name">نام</label>
             @Html.TextBoxFor(m => m.Name, new { @class = "form-control", maxlength = "150", required = "required", placeholder = "مثلاً پخش ورزشی آریا" })
         </div>
@@ -29,12 +29,9 @@
                 }
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-md-3">
             <label class="form-label" for="Code">کد</label>
             @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "40", dir = "ltr", placeholder = "خودکار" })
-        </div>
-        <div class="col-md-2 d-flex align-items-end">
-            @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
         <div class="col-md-3">
             <label class="form-label" for="Mobile">موبایل</label>
@@ -44,7 +41,11 @@
             <label class="form-label" for="Phone">تلفن</label>
             @Html.TextBoxFor(m => m.Phone, new { @class = "form-control", maxlength = "30", dir = "ltr", inputmode = "tel" })
         </div>
-        <div class="col-md-6">
+        <div class="col-md-3">
+            <label class="form-label">وضعیت</label>
+            @Html.BoolField("IsActive", Model.IsActive, "فعال")
+        </div>
+        <div class="col-md-3">
             <label class="form-label" for="Address">نشانی</label>
             @Html.TextBoxFor(m => m.Address, new { @class = "form-control", maxlength = "300" })
         </div>

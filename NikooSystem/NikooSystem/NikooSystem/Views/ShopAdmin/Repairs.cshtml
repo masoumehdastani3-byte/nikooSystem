@@ -13,11 +13,11 @@
     </div>
     <a class="btn-store" href="@Url.Action("NewRepair","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> پذیرش جدید</a>
 </div>
-<div class="d-flex flex-wrap gap-2 mb-3">
-    <a class="btn btn-sm @(filter == null ? "btn-store" : "btn-outline-secondary")" href="@Url.Action("Repairs","ShopAdmin", new { company })">همه</a>
+<div class="rp-status">
+    <a class="@(filter == null ? "is-on" : null)" href="@Url.Action("Repairs","ShopAdmin", new { company })">همه</a>
     @foreach (var status in statuses)
     {
-        <a class="btn btn-sm @(filter == status ? "btn-store" : "btn-outline-secondary")" href="@Url.Action("Repairs","ShopAdmin", new { company, status })">@status.Title()</a>
+        <a class="@(filter == status ? "is-on" : null)" href="@Url.Action("Repairs","ShopAdmin", new { company, status })">@status.Title()</a>
     }
 </div>
 <div class="panel-card">

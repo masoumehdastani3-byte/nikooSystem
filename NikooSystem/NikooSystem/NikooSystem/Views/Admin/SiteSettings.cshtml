@@ -203,13 +203,17 @@
                 <div class="adm-section-title"><i class="bi bi-file-earmark-text"></i> صفحات قانونی</div>
                 <div class="mb-3">
                     @Html.LabelFor(m => m.TermsText, new { @class = "form-label" })
-                    @Html.TextAreaFor(m => m.TermsText, 12, 1, new { @class = "form-control" })
-                    <div class="form-text"><a href="@Url.Action("Terms","Home")" target="_blank" rel="noopener">مشاهده صفحه</a></div>
+                    <div class="field-join">
+                        <a href="@Url.Action("Terms","Home")" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده صفحه</a>
+                        @Html.TextAreaFor(m => m.TermsText, 12, 1, new { @class = "form-control" })
+                    </div>
                 </div>
                 <div class="mb-2">
                     @Html.LabelFor(m => m.PrivacyText, new { @class = "form-label" })
-                    @Html.TextAreaFor(m => m.PrivacyText, 8, 1, new { @class = "form-control" })
-                    <div class="form-text"><a href="@Url.Action("Privacy","Home")" target="_blank" rel="noopener">مشاهده صفحه</a></div>
+                    <div class="field-join">
+                        <a href="@Url.Action("Privacy","Home")" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده صفحه</a>
+                        @Html.TextAreaFor(m => m.PrivacyText, 8, 1, new { @class = "form-control" })
+                    </div>
                 </div>
                 <div class="form-text">
                     هر خط یک پاراگراف است؛ خط‌هایی که با <code>-</code> شروع شوند فهرست و خط‌هایی که با <code>##</code> شروع شوند عنوان بخش می‌شوند (عنوان‌ها در فهرست کنار صفحه قوانین می‌آیند).

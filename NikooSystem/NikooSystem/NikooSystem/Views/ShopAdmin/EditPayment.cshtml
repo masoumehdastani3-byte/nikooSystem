@@ -23,32 +23,34 @@
     @Html.AntiForgeryToken()
     @Html.HiddenFor(m => m.Id)
     <div class="panel-card row g-3 m-0">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label" for="Direction">جهت</label>
             <select class="form-select" name="Direction" id="Direction">
                 <option value="In" @(Model.Direction == CashDirection.In ? "selected" : null)>دریافت</option>
                 <option value="Out" @(Model.Direction == CashDirection.Out ? "selected" : null)>پرداخت</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label" for="txDate">تاریخ</label>
             @Html.ShamsiDate("txDate", Model.TxDate, "txDate")
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <label class="form-label" for="Amount">مبلغ (تومان)</label>
             @Html.TextBoxFor(m => m.Amount, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr", required = "required" })
         </div>
-        <div class="col-md-3">
+        <div class="col-md-6">
             <label class="form-label" for="payFrom">صندوق یا بانک</label>
-            <select class="form-select" name="payFrom" id="payFrom">
-                @foreach (var option in AccountingText.PayOptions(banks, false, payToken))
-                {
-                    <option value="@option.Key" @(option.Key == payToken ? "selected" : null)>@option.Value</option>
-                }
-            </select>
-            <div class="form-text"><a target="_blank" rel="noopener" href="@Url.Action("Banks","ShopAdmin", new { company })">تعریف حساب بانکی</a></div>
+            <div class="field-join">
+                <a target="_blank" rel="noopener" href="@Url.Action("Banks","ShopAdmin", new { company })"><i class="bi bi-plus-lg"></i> تعریف حساب</a>
+                <select class="form-select" name="payFrom" id="payFrom">
+                    @foreach (var option in AccountingText.PayOptions(banks, false, payToken))
+                    {
+                        <option value="@option.Key" @(option.Key == payToken ? "selected" : null)>@option.Value</option>
+                    }
+                </select>
+            </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
             <label class="form-label" for="PartyId">طرف حساب</label>
             <select class="form-select" name="PartyId" id="PartyId">
                 <option value="0">— از فهرست تامین‌کنندگان و مشتریان —</option>
@@ -57,9 +59,12 @@
                     <option value="@party.Id.ToString(invariant)" @(Model.PartyId == party.Id ? "selected" : null)>@(party.Name + " (" + AccountingText.Party(party.Kind) + ")")</option>
                 }
             </select>
-            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control form-control-sm mt-1", maxlength = "120", placeholder = "یا نام طرف حساب، مثلاً صاحبخانه" })
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6">
+            <label class="form-label" for="PartyName">نام، اگر در فهرست نیست</label>
+            @Html.TextBoxFor(m => m.PartyName, new { @class = "form-control", maxlength = "120", placeholder = "مثلاً صاحبخانه" })
+        </div>
+        <div class="col-md-6">
             <label class="form-label" for="DocumentTypeId">نوع سند</label>
             <select class="form-select" name="DocumentTypeId" id="DocumentTypeId">
                 <option value="0">پیش‌فرض دریافت یا پرداخت</option>
@@ -69,7 +74,7 @@
                 }
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-12">
             <label class="form-label" for="AccountId">حساب معین مقابل</label>
             <select class="form-select" name="AccountId" id="AccountId" required="required">
                 <option value="">انتخاب کنید</option>
@@ -78,10 +83,10 @@
                     <option value="@account.Id.ToString(invariant)" data-d1="@account.Detail1" data-d2="@account.Detail2" @(Model.AccountId == account.Id ? "selected" : null)>@(account.Code + " — " + account.Title)</option>
                 }
             </select>
-            <div class="form-text">پرداخت معمولاً هزینه یا بدهی است؛ دریافت معمولاً درآمد، سرمایه یا طلب. اگر معین تفصیلی شخص بخواهد، طرف حساب تفصیلی آن می‌شود.</div>
+            <div class="form-text">پرداخت معمولاً هزینه یا بدهی است و دریافت معمولاً درآمد، سرمایه یا طلب.</div>
         </div>
-        <div class="col-md-4" id="costCenterBox">
-            <label class="form-label" for="Detail2Id">مرکز هزینه یا پروژه (تفصیلی سطح ۲)</label>
+        <div class="col-12" id="costCenterBox">
+            <label class="form-label" for="Detail2Id">مرکز هزینه یا پروژه</label>
             <select class="form-select" name="Detail2Id" id="Detail2Id">
                 <option value="0">—</option>
                 @foreach (var center in costCenters)
@@ -91,7 +96,7 @@
             </select>
             <div class="form-text"><a target="_blank" rel="noopener" href="@Url.Action("EditDetail","ShopAdmin", new { company, level = 2 })">تعریف مرکز هزینه</a></div>
         </div>
-        <div class="col-md-8">
+        <div class="col-12">
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "300" })
         </div>

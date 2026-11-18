@@ -33,7 +33,7 @@
                         <td>@(c.IsActive ? "فعال" : "غیرفعال")</td>
                         <td class="row-actions">
                             @Html.IconLink(Url.Action("EditCategory", "ShopAdmin", new { company, parent = c.Id }), "bi-plus-square", "افزودن زیرگروه", "is-ok")
-                            @Html.IconLink(Url.Action(kind.IsContent ? "Blog" : "Catalog", "Shop", new { company, categoryId = c.Id }), "bi-eye", "مشاهده در سایت", "is-view", true)
+                            @Html.IconLink(Url.Action(kind.IsContent ? "Blog" : kind.IsMenu ? "Index" : "Catalog", "Shop", new { company, categoryId = c.Id }), "bi-eye", "مشاهده در سایت", "is-view", true)
                             @Html.EditLink("EditCategory", c.Id)
                             @Html.DeleteButton("DeleteCategory", c.Id, "«" + c.Title + "» و زیرمجموعه‌هایش حذف شوند؟")
                         </td>

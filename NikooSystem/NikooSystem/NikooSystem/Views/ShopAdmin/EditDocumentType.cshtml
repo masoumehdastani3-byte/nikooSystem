@@ -21,11 +21,12 @@
             <label class="form-label" for="Code">کد</label>
             @Html.TextBoxFor(m => m.Code, new { @class = "form-control", maxlength = "20", dir = "ltr", placeholder = "خودکار", @readonly = Model.IsSystem ? "readonly" : null })
         </div>
-        <div class="col-md-5">
+        <div class="col-md-6">
             <label class="form-label" for="Title">عنوان</label>
             @Html.TextBoxFor(m => m.Title, new { @class = "form-control", maxlength = "80", required = "required", placeholder = "مثلاً هزینه اجاره" })
         </div>
-        <div class="col-md-4 d-flex align-items-end">
+        <div class="col-md-3">
+            <label class="form-label">وضعیت</label>
             @Html.BoolField("IsActive", Model.IsActive, "فعال")
         </div>
     </div>

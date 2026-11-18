@@ -67,8 +67,8 @@
             <label class="form-label" for="Note">یادداشت</label>
             @Html.TextBoxFor(m => m.Note, new { @class = "form-control", maxlength = "500" })
         </div>
-        <div class="acc-party-extra">
-            <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Supplier })">تعریف تامین‌کننده</a>
+        <div class="acc-party-extra field-join">
+            <a target="_blank" rel="noopener" href="@Url.Action("EditParty","ShopAdmin", new { company, kind = PartyKind.Supplier })"><i class="bi bi-plus-lg"></i> تعریف تامین‌کننده</a>
             <input class="form-control" name="newParty" maxlength="150" placeholder="یا نام تامین‌کننده تازه" />
         </div>
     </div>

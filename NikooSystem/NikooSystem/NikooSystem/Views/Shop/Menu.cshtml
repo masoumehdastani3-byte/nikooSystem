@@ -192,6 +192,7 @@
         none.hidden = shown > 0;
     }
     q.addEventListener('input', apply);
+    var presetCat = '@(new string((Request["categoryId"] ?? "").Where(char.IsDigit).ToArray()))';
     for (var c = 0; c < chips.length; c++) {
         chips[c].addEventListener('click', function () {
             for (var k = 0; k < chips.length; k++) chips[k].classList.remove('is-on');
@@ -199,6 +200,7 @@
             active = this.getAttribute('data-chip') || '';
             apply();
         });
+        if (presetCat && chips[c].getAttribute('data-chip') === presetCat) chips[c].click();
     }
 
     var sheet = document.getElementById('sheet');

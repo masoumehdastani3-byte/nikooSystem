@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web.Mvc;
+using System.Web.Routing;
 using System.Xml.Linq;
 using NikooSystem.Filters;
 using NikooSystem.Helpers;
@@ -98,9 +99,17 @@ namespace NikooSystem.Controllers
         // ---- Catalogue (physical and digital stores)
 
         [HttpGet]
-        [ForKinds(SiteKinds.Shop, SiteKinds.Digital)]
+        [ForKinds(SiteKinds.Shop, SiteKinds.Digital, SiteKinds.Menu)]
         public ActionResult Catalog(CatalogQuery query)
         {
+            if (Kind.IsMenu)
+            {
+                var back = new RouteValueDictionary { ["company"] = CompanyCode };
+                if (query.CategoryId.HasValue) back["categoryId"] = query.CategoryId.Value;
+                if (!string.IsNullOrEmpty(Request["table"])) back["table"] = Request["table"];
+                if (!string.IsNullOrEmpty(Request["previewTemplate"])) back["previewTemplate"] = Request["previewTemplate"];
+                return RedirectToAction("Index", back);
+            }
             var collection = query.CollectionId.HasValue ? TenantStore.GetCollection(CompanyCode, query.CollectionId.Value) : null;
             if (collection != null && !collection.IsActive) collection = null;
             var page = TenantStore.CatalogPage(CompanyCode, query, collection);
