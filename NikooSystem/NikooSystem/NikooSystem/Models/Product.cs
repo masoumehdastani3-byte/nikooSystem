@@ -44,7 +44,7 @@ namespace NikooSystem.Models
         [Display(Name = "دسته‌بندی")]
         public string Category { get; set; }
 
-        [Display(Name = "اسلاگ دمو")]
+        [Display(Name = "اسلاگ نمونه سایت")]
         public string DemoSlug { get; set; }
 
         [Display(Name = "فعال")]

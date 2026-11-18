@@ -45,6 +45,7 @@ button, input, textarea { font-family: inherit; }
 .tagline { margin: 0; color: #e7d7b4; }
 .facts { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; font-size: .92rem; }
 .facts span { display: inline-flex; gap: 6px; align-items: center; }
+.facts a { color: inherit; text-decoration: none; }
 .note {
   margin: 14px 0 0;
   padding: 10px 12px;

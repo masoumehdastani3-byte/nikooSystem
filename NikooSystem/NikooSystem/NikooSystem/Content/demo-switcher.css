@@ -15,6 +15,45 @@
 .ds-root[hidden],
 .ds-panel[hidden] { display: none; }
 
+body:has(.ds-sample) {
+  --ds-sample-h: 4.25rem;
+  padding-top: var(--ds-sample-h);
+}
+.ds-sample {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1035;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .55rem;
+  height: var(--ds-sample-h, 4.25rem);
+  margin: 0;
+  padding: 0 1.25rem;
+  background: linear-gradient(120deg, #4f46e5, #7c3aed);
+  color: #fff;
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  box-shadow: 0 10px 24px -14px rgba(79, 70, 229, .85);
+}
+.ds-sample i { font-size: 1.5rem; color: #fff; }
+body:has(.ds-sample) .bk-header,
+body:has(.ds-sample) .wm-header,
+body:has(.ds-sample) .minimal-header,
+body:has(.ds-sample) .cn-header,
+body:has(.ds-sample) .marketplace-header,
+body:has(.ds-sample) .wm-nav {
+  top: var(--ds-sample-h);
+}
+body.theme-marketplace:has(.ds-sample) .wm-nav,
+body.theme-marketplace:has(.ds-sample) .marketplace-nav {
+  top: calc(72px + var(--ds-sample-h));
+}
+
 .ds-quick-build {
   display: inline-flex;
   align-items: center;
@@ -56,7 +95,7 @@
   font-size: 1.05rem;
 }
 .ds-label { display: flex; flex-direction: column; text-align: right; line-height: 1.35; }
-.ds-label small { font-size: .7rem; opacity: .8; }
+.ds-label small { font-size: .72rem; opacity: .9; white-space: nowrap; }
 .ds-label strong { font-size: .88rem; }
 .ds-caret { font-size: .8rem; transition: transform .2s ease; }
 .ds-root.is-open .ds-caret { transform: rotate(180deg); }

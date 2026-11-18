@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -329,7 +329,7 @@ namespace NikooSystem.Services
             product.Description = "مشتری آرایشگر، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
                 + "کوتاهی، رنگ، ناخن و پوست هر کدام مدت و هزینه جدا دارند و ساعت کاری هر آرایشگر مستقل است. "
                 + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد. "
-                + "چهار قالب آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
+                + "چهار قالب ظاهری آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["beauty"];
             if (isNew) AddProduct(product);
@@ -388,7 +388,7 @@ namespace NikooSystem.Services
                 + "جلسه با مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
                 + "سالن فوتبال، میز پینگ‌پونگ و سالن بدنسازی را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
                 + "شهریه و اجاره آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور در حسابداری ثبت می‌شود. "
-                + "چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
+                + "چهار قالب ظاهری آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["club"];
             if (isNew) AddProduct(product);
@@ -415,7 +415,7 @@ namespace NikooSystem.Services
                 + "دوره خصوصی را هم با مدرس، حضوری یا آنلاین، روی ساعت کاری همان مدرس بگذارید. "
                 + "ثبت‌نام آنلاین یا تلفنی از پنل انجام می‌شود و هر ثبت‌نام کد پیگیری دارد. "
                 + "شهریه هر دو نوع دوره، آنلاین با درگاه بانک یا حضوری با دریافت نقدی و فاکتور، در حسابداری ثبت می‌شود. "
-                + "چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
+                + "چهار قالب ظاهری آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
             if (string.IsNullOrEmpty(product.ImageUrl) || product.ImageUrl.StartsWith("/Assets/img/portfolio/", StringComparison.OrdinalIgnoreCase))
                 product.ImageUrl = StoreDemoImages["school"];
             if (isNew) AddProduct(product);
@@ -430,11 +430,11 @@ namespace NikooSystem.Services
         }
 
         private const string CafeTitle = "منوی کافه و رستوران";
-        private const string CafeShort = "منوی دیجیتال کافه و رستوران با چهار قالب، QR روی میز و فراخوان گارسون";
+        private const string CafeShort = "منوی دیجیتال کافه و رستوران با چهار قالب ظاهری، QR روی میز و فراخوان گارسون";
         private const string CafeDescription = "مشتری با دوربین گوشی کارت میز را اسکن می‌کند و منو همان‌جا باز می‌شود. "
             + "غذا و نوشیدنی، قیمت، توضیح و ناموجودی از پنل عوض می‌شود و برای هر میز یک کارت QR جدا ساخته می‌شود. "
             + "شماره میز داخل لینک است؛ وقتی مهمان گارسون را صدا می‌زند، میز و یادداشت سفارش همراه درخواست می‌آید. "
-            + "چهار قالب آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. "
+            + "چهار قالب ظاهری آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. "
             + "این محصول سبد خرید و پرداخت آنلاین ندارد؛ سفارش را گارسون می‌گیرد.";
 
         /// <summary>Mentions the three cafe templates, only where the earlier catalogue wording is still there.</summary>
@@ -495,14 +495,14 @@ namespace NikooSystem.Services
 
         private const string RepairTitle = "سایت تعمیرگاه";
         private const string RepairShortBeforeTemplates = "درخواست تعمیر، پیک، وضعیت کار و فاکتور فروش";
-        private const string RepairShort = "درخواست تعمیر، پیک، وضعیت کار و چهار قالب پذیرش";
+        private const string RepairShort = "درخواست تعمیر، پیک، وضعیت کار و چهار قالب ظاهری پذیرش";
         private const string RepairDescriptionBeforeCourier = "مشتری دستگاه را حضوری می‌آورد یا از سایت درخواست می‌دهد و با کد پیگیری وضعیت را می‌بیند. ";
         private const string RepairDescriptionBeforeTemplates = "مشتری درخواست می‌دهد و آدرس می‌گذارد؛ پیک دستگاه را می‌گیرد و بعد از تعمیر برمی‌گرداند. "
             + "برگه کار از هماهنگی پیک تا عیب‌یابی، تأیید هزینه، قطعه، تعمیر و تحویل جلو می‌رود. "
             + "با ثبت صورتحساب، اجرت به درآمد تعمیر می‌رود، قطعه انتخاب‌شده از انبار کم می‌شود و مانده روی حساب مشتری می‌ماند تا نقد یا بانک گرفته شود. "
             + "با شارژ پیامک، هر تغییر وضعیت برای مشتری پیامک می‌شود.";
         private const string RepairDescription = RepairDescriptionBeforeTemplates
-            + " چهار قالب آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
+            + " چهار قالب ظاهری آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
 
         /// <summary>Refreshes the catalogue sentence for shops that still have the first repair description.</summary>
         internal static void ApplyRepairCourierCopy()
@@ -564,7 +564,7 @@ namespace NikooSystem.Services
             else UpdateProduct(product);
         }
 
-        private const string ContentTemplatesText = "هشت قالب آماده: سایت شرکتی در چهار سبک (رسمی، آژانس خلاق، صنعتی / پیمانکاری و دفتر)";
+        private const string ContentTemplatesText = "هشت قالب ظاهری آماده: سایت شرکتی در چهار سبک (رسمی، آژانس خلاق، صنعتی / پیمانکاری و دفتر)";
         private const string NewsTemplatesText = "و خبرگزاری در چهار سبک (مجله، روزنامه کلاسیک، خبر آنلاین پالس و فولیو) با تیتر یک";
 
         /// <summary>
@@ -573,16 +573,16 @@ namespace NikooSystem.Services
         /// </summary>
         internal static void ApplyFourTemplateCopy()
         {
-            const string cafeShort = "منوی دیجیتال کافه و رستوران با سه قالب، QR روی میز و فراخوان گارسون";
-            const string cafeSentence = "سه قالب آماده دارد: نارون گرم، شب تیره و تخته روشن پیشخوان. ";
-            const string cafeSentenceNow = "چهار قالب آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. ";
-            const string repairShort = "درخواست تعمیر، پیک، وضعیت کار و سه قالب پذیرش";
-            const string repairSentence = " سه قالب آماده دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی.";
-            const string repairSentenceNow = " چهار قالب آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
+            const string cafeShort = "منوی دیجیتال کافه و رستوران با سه قالب ظاهری، QR روی میز و فراخوان گارسون";
+            const string cafeSentence = "سه قالب ظاهری آماده دارد: نارون گرم، شب تیره و تخته روشن پیشخوان. ";
+            const string cafeSentenceNow = "چهار قالب ظاهری آماده دارد: نارون گرم، شب تیره، تخته روشن پیشخوان و بیسترو. ";
+            const string repairShort = "درخواست تعمیر، پیک، وضعیت کار و سه قالب ظاهری پذیرش";
+            const string repairSentence = " سه قالب ظاهری آماده دارد: میز کار آبی، گاراژ تیره و پیشخوان نارنجی.";
+            const string repairSentenceNow = " چهار قالب ظاهری آماده دارد: میز کار آبی، گاراژ تیره، پیشخوان نارنجی و محوطه.";
             const string beauty = "مشتری آرایشگر، خدمت، روز و ساعت خالی را خودش انتخاب می‌کند. "
                 + "کوتاهی، رنگ، ناخن و پوست هر کدام مدت و هزینه جدا دارند و ساعت کاری هر آرایشگر مستقل است. "
                 + "نوبت تلفنی در همان تقویم ثبت می‌شود، بیعانه و پیامک یادآوری اختیاری است و هر نوبت کد پیگیری دارد.";
-            const string campus = " چهار قالب آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
+            const string campus = " چهار قالب ظاهری آماده دارد: کلاس و سالن، آکادمی، زمین و کارگاه.";
             const string club = "کلاس ورزشی را با ظرفیت، شهریه و گروه سنی تعریف کنید؛ ثبت‌نام آنلاین یا تلفنی از پنل. "
                 + "جلسه با مربی خصوصی، حضوری یا آنلاین، روی ساعت کاری خودش رزرو می‌شود. "
                 + "سالن فوتبال، میز پینگ‌پونگ و سالن بدنسازی را ساعتی اجاره دهید؛ فقط ساعت‌های خالی نشان داده می‌شود. "
@@ -615,7 +615,7 @@ namespace NikooSystem.Services
                 }
                 else if (product.DemoSlug == "beauty" && product.Description == beauty)
                 {
-                    product.Description = beauty + " چهار قالب آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
+                    product.Description = beauty + " چهار قالب ظاهری آماده دارد: سالن رز، مرمر، آرایشگر و براق.";
                     changed = true;
                 }
                 else if (product.DemoSlug == "club" && product.Description == club)
@@ -639,9 +639,9 @@ namespace NikooSystem.Services
         {
             var replacements = new[]
             {
-                new[] { "دو قالب آماده: سایت شرکتی", ContentTemplatesText },
-                new[] { "چهار قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
-                new[] { "شش قالب آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
+                new[] { "دو قالب ظاهری آماده: سایت شرکتی", ContentTemplatesText },
+                new[] { "چهار قالب ظاهری آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
+                new[] { "شش قالب ظاهری آماده: سایت شرکتی در سه سبک (رسمی، آژانس خلاق و صنعتی / پیمانکاری)", ContentTemplatesText },
                 new[] { "و خبرگزاری و مجله با تیتر یک", NewsTemplatesText },
                 new[] { "و خبرگزاری در سه سبک (مجله، روزنامه کلاسیک و خبر آنلاین پالس) با تیتر یک", NewsTemplatesText }
             };
@@ -798,7 +798,7 @@ namespace NikooSystem.Services
             }
         }
 
-        /// <summary>فایل‌های قدیمی بدون DemoSlug را بر اساس عنوان به دموی فروشگاه مربوط وصل می‌کند</summary>
+        /// <summary>فایل‌های قدیمی بدون DemoSlug را بر اساس عنوان به نمونه سایت فروشگاه مربوط وصل می‌کند</summary>
         private static void AssignDemoSlugs(List<Product> products)
         {
             if (products == null || products.Count == 0) return;
@@ -894,7 +894,7 @@ namespace NikooSystem.Services
                     Id = 4,
                     Title = ContentTitle,
                     ShortDescription = "سایت شرکتی و خبرگزاری با مدیریت کامل محتوا: خبر و مقاله، خدمات، نمونه‌کار، صفحات و فرم تماس",
-                    Description = "سیستم مدیریت محتوا با هشت قالب آماده (چهار سبک سایت شرکتی و چهار سبک خبرگزاری)؛ خبر، صفحات، منوها و گالری را بدون برنامه‌نویسی مدیریت کنید.",
+                    Description = "سیستم مدیریت محتوا با هشت قالب ظاهری آماده (چهار سبک سایت شرکتی و چهار سبک خبرگزاری)؛ خبر، صفحات، منوها و گالری را بدون برنامه‌نویسی مدیریت کنید.",
                     Price = 20000,
                     ImageUrl = StoreDemoImages["corporate"],
                     Category = "نرم‌افزار سازمانی",

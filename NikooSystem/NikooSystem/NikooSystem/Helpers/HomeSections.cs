@@ -17,7 +17,7 @@ namespace NikooSystem.Helpers
         public bool IsCustom { get; set; }
         /// <summary>نوع سایت‌هایی که این بخش را دارند (<see cref="SiteKinds"/>)</summary>
         public string[] Kinds { get; set; } = Selling;
-        /// <summary>راهنمای قالب ردیف‌ها (<see cref="StoreHomeSection.Items"/>)؛ خالی یعنی این بخش ردیف ندارد</summary>
+        /// <summary>راهنمای قالب ظاهری ردیف‌ها (<see cref="StoreHomeSection.Items"/>)؛ خالی یعنی این بخش ردیف ندارد</summary>
         public string ItemsHint { get; set; }
         public string ItemsSample { get; set; }
         /// <summary>دکمه و لینک بخش قابل تغییر است</summary>
@@ -164,7 +164,7 @@ namespace NikooSystem.Helpers
             return settings?.PageLayout ?? new StorePageLayout();
         }
 
-        /// <summary>بخش‌های صفحه اول برای قالب فعلی به ترتیب نمایش (شامل بخش‌های مخفی)</summary>
+        /// <summary>بخش‌های صفحه اول برای قالب ظاهری فعلی به ترتیب نمایش (شامل بخش‌های مخفی)</summary>
         public static List<StoreHomeSection> Resolve(StoreSettings settings)
         {
             var builtIns = BuiltInsFor(settings?.LayoutStyle);
@@ -199,8 +199,8 @@ namespace NikooSystem.Helpers
         }
 
         /// <summary>
-        /// بخش‌های ارسال‌شده از فرم را پاک‌سازی می‌کند؛ بخش‌های مخصوص قالب‌های دیگر حفظ می‌شوند
-        /// تا با برگشت به آن قالب تنظیماتشان از بین نرود. با <paramref name="kind"/> بخش‌های دلخواهی که برای آن نوع سایت نیست کنار گذاشته می‌شوند.
+        /// بخش‌های ارسال‌شده از فرم را پاک‌سازی می‌کند؛ بخش‌های مخصوص قالب‌های ظاهری دیگر حفظ می‌شوند
+        /// تا با برگشت به آن قالب ظاهری تنظیماتشان از بین نرود. با <paramref name="kind"/> بخش‌های دلخواهی که برای آن نوع سایت نیست کنار گذاشته می‌شوند.
         /// </summary>
         public static List<StoreHomeSection> Sanitize(IEnumerable<StoreHomeSection> posted, StoreSettings existing, string kind = null)
         {

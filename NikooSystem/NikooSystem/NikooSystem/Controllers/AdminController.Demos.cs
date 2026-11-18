@@ -8,7 +8,7 @@ using NikooSystem.Services;
 
 namespace NikooSystem.Controllers
 {
-    /// <summary>«قالب دموها»: the template each product's demo site opens with.</summary>
+    /// <summary>«قالب ظاهری نمونه‌سایت‌ها»: the template each product's demo site opens with.</summary>
     public partial class AdminController
     {
         [HttpGet]
@@ -63,7 +63,7 @@ namespace NikooSystem.Controllers
             var settings = TenantStore.GetSettings(company);
             if (template == null || settings == null)
             {
-                TempData["Error"] = "این قالب برای دموی «" + type.Name + "» نیست.";
+                TempData["Error"] = "این قالب ظاهری برای نمونه سایت «" + type.Name + "» نیست.";
                 return RedirectToAction("DemoTemplate", new { slug });
             }
 
@@ -71,7 +71,7 @@ namespace NikooSystem.Controllers
             settings.PrimaryColor = template.PrimaryColor;
             settings.SecondaryColor = template.SecondaryColor;
             TenantStore.SaveSettings(settings);
-            TempData["Ok"] = "دموی «" + type.Name + "» از این به بعد با قالب «" + template.Name + "» باز می‌شود.";
+            TempData["Ok"] = "نمونه سایت «" + type.Name + "» از این به بعد با قالب ظاهری «" + template.Name + "» باز می‌شود.";
             return RedirectToAction("DemoTemplates");
         }
     }
@@ -79,7 +79,7 @@ namespace NikooSystem.Controllers
 
 namespace NikooSystem.Models
 {
-    /// <summary>A demo site on «قالب دموها».</summary>
+    /// <summary>A demo site on «قالب ظاهری نمونه‌سایت‌ها».</summary>
     public sealed class DemoTemplateRow
     {
         public string Slug { get; set; }
@@ -87,7 +87,7 @@ namespace NikooSystem.Models
         public StoreTypeInfo Type { get; set; }
         public StoreTemplateInfo Template { get; set; }
         public int TemplateCount { get; set; }
-        /// <summary>The main site's products whose «مشاهده دمو» opens this demo.</summary>
+        /// <summary>The main site's products whose «مشاهده نمونه سایت آماده» opens this demo.</summary>
         public List<Product> Products { get; set; }
     }
 }

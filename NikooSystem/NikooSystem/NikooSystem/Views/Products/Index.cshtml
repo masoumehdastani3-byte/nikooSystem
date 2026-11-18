@@ -19,7 +19,7 @@
                 <p>تصویر، کاربرد و مسیر شروع هر سایت</p>
             </header>
             <div class="mb-5">
-                @Html.Partial("_ProductIntroCards", ProductLandings.All)
+                @Html.Partial("_ProductIntroCards", ProductLandings.All, new ViewDataDictionary { { "DetailsLink", true } })
                 @Html.Partial("_AccountingBeside")
             </div>
             @if (Model.Any() || !string.IsNullOrEmpty(ViewBag.Category as string))
@@ -39,28 +39,26 @@
                         <div class="product-card">
                             <div class="product-img-wrap">
                                 @if (p.IsFeatured) { <span class="badge-feat">ویژه</span> }
-                                <img src="@p.ImageUrl" alt="@p.Title">
+                                <a href="@Url.Action("Details","Products", new { id = p.Id })"><img src="@p.ImageUrl" alt="@p.Title"></a>
                             </div>
                             <div class="body">
                                 <small class="text-muted">@p.Category</small>
-                                <h4>@p.Title</h4>
+                                <h4><a href="@Url.Action("Details","Products", new { id = p.Id })">@p.Title</a></h4>
                                 <p class="small text-muted">@p.ShortDescription</p>
                                 @if (!string.IsNullOrEmpty(p.DemoSlug))
                                 {
                                     var page = ProductLandings.ForType(p.DemoSlug);
                                     var tplCount = page != null ? page.Templates().Count : StoreTemplates.ForKind(StoreTypes.Get(p.DemoSlug).Kind).Count();
-                                    <a class="lf-tpl-count" href="@Url.Action("Details","Products", new { id = p.Id })#templates"><i class="bi bi-palette"></i> @tplCount.ToString().ToFaDigits() قالب آماده با پیش‌نمایش زنده</a>
+                                    <a class="lf-tpl-count" href="@Url.Action("Details","Products", new { id = p.Id })#templates"><i class="bi bi-palette"></i> @tplCount.ToString().ToFaDigits() قالب ظاهری آماده با پیش‌نمایش زنده</a>
                                 }
                                 <div class="d-flex justify-content-between align-items-center mt-3">
                                     <span class="price">@p.Price.ToToman()@if (!string.IsNullOrEmpty(p.DemoSlug)) {<small class="text-muted fw-normal"> / سه ماه</small>}</span>
-                                    <div>
-                                        @if (!string.IsNullOrEmpty(p.DemoSlug))
-                                        {
-                                            <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })" target="_blank" rel="noopener">مشاهده دمو</a>
-                                        }
-                                        <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات و قیمت</a>
-                                    </div>
+                                    @if (!string.IsNullOrEmpty(p.DemoSlug))
+                                    {
+                                        <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = p.DemoSlug })" target="_blank" rel="noopener">مشاهده نمونه سایت آماده</a>
+                                    }
                                 </div>
+                                <a class="btn btn-primary-shop product-details-btn" href="@Url.Action("Details","Products", new { id = p.Id })">جزئیات و قیمت</a>
                             </div>
                         </div>
                     </div>

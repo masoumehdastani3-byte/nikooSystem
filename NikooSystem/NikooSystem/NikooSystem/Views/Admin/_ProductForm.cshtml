@@ -35,7 +35,7 @@
                 <div class="col-md-6">
                     @Html.LabelFor(m => m.PriceYearly, new { @class = "form-label" })
                     @Html.TextBoxFor(m => m.PriceYearly, new { @class = "form-control", inputmode = "numeric", data_money = "true", dir = "ltr" })
-                    <div class="form-text">۰ یعنی خودکار: چهار برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.YearlyDiscount.ToFa()٪ تخفیف. این دو قیمت فقط برای محصولاتی است که دمو دارند (اشتراک سایت).</div>
+                    <div class="form-text">۰ یعنی خودکار: چهار برابر قیمت سه‌ماهه با @NikooSystem.Services.Subscriptions.YearlyDiscount.ToFa()٪ تخفیف. این دو قیمت فقط برای محصولاتی است که نمونه سایت دارند (اشتراک سایت).</div>
                 </div>
                 <div class="col-md-6">
                     @Html.LabelFor(m => m.Category, new { @class = "form-label" })
@@ -51,14 +51,14 @@
                 <div class="col-md-6">
                     @Html.LabelFor(m => m.DemoSlug, new { @class = "form-label" })
                     <select class="form-select" id="DemoSlug" name="DemoSlug">
-                        <option value="">بدون دمو</option>
+                        <option value="">بدون نمونه سایت</option>
                         @foreach (var t in demoTypes)
                         {
                             <option value="@t.Id" @(string.Equals(Model.DemoSlug, t.Id, StringComparison.OrdinalIgnoreCase) ? "selected" : null)>@t.Name</option>
                         }
                     </select>
                     @Html.ValidationMessageFor(m => m.DemoSlug, "", new { @class = "text-danger small" })
-                    <div class="form-text">دکمه «مشاهده دمو» به سایت نمونه همین نوع و «مثل این بساز» به ثبت‌نام همین نوع می‌رود.</div>
+                    <div class="form-text">دکمه «مشاهده نمونه سایت آماده» به سایت نمونه همین نوع و «مثل این بساز» به ثبت‌نام همین نوع می‌رود.</div>
                 </div>
                 <div class="col-12">
                     @Html.LabelFor(m => m.ShortDescription, new { @class = "form-label" })
@@ -109,14 +109,14 @@
         @if (demoCode != null)
         {
             <div class="adm-card">
-                <div class="adm-card-title">قالب دمو</div>
+                <div class="adm-card-title">قالب ظاهری نمونه سایت</div>
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <span class="rounded-circle border" style="width:14px;height:14px;background:@demoTemplate.PrimaryColor"></span>
                     <span class="rounded-circle border" style="width:14px;height:14px;background:@demoTemplate.SecondaryColor"></span>
                     <strong>@demoTemplate.Name</strong>
                 </div>
-                <div class="form-text mb-2">دموی «@StoreTypes.Get(Model.DemoSlug).Name» با این قالب باز می‌شود؛ بازدیدکننده داخل دمو بقیه قالب‌ها را هم امتحان می‌کند.</div>
-                <a class="btn btn-sm btn-outline-primary" href="@Url.Action("DemoTemplate","Admin", new { slug = Model.DemoSlug })"><i class="bi bi-palette"></i> تغییر قالب دمو</a>
+                <div class="form-text mb-2">نمونه سایت «@StoreTypes.Get(Model.DemoSlug).Name» با این قالب ظاهری باز می‌شود؛ بازدیدکننده داخل نمونه سایت بقیه قالب‌های ظاهری را هم امتحان می‌کند.</div>
+                <a class="btn btn-sm btn-outline-primary" href="@Url.Action("DemoTemplate","Admin", new { slug = Model.DemoSlug })"><i class="bi bi-palette"></i> تغییر قالب ظاهری نمونه سایت</a>
             </div>
         }
     </div>

@@ -19,14 +19,15 @@
 @if (slug != null)
 {
     <link href="@Url.Asset("~/Content/demo-switcher.css")" rel="stylesheet" />
+    <div class="ds-sample" role="status"><i class="bi bi-info-circle"></i> این سایت نمونه نمایشی است</div>
     <div class="ds-root" id="demoSwitcher">
         @if (templates.Count > 1)
         {
-            <div class="ds-panel" id="dsPanel" role="dialog" aria-label="قالب‌های این دمو" hidden>
+            <div class="ds-panel" id="dsPanel" role="dialog" aria-label="قالب‌های ظاهری این نمونه سایت" hidden>
                 <div class="ds-head">
                     <div>
-                        <strong>@templates.Count.ToString().ToFaDigits() قالب برای این دمو</strong>
-                        <small>روی هر قالب بزنید تا همین صفحه با آن باز شود.</small>
+                        <strong>@templates.Count.ToString().ToFaDigits() قالب ظاهری برای این نمونه سایت</strong>
+                        <small>روی هر قالب ظاهری بزنید تا همین صفحه با آن باز شود.</small>
                     </div>
                     <button type="button" class="ds-close" aria-label="بستن"><i class="bi bi-x-lg"></i></button>
                 </div>
@@ -48,7 +49,7 @@
                 </div>
                 <div class="ds-foot">
                     <a class="ds-btn ds-btn-primary" href="@Url.Action("Index","Signup", new { type = slug, template = current.Id })" data-no-preview>
-                        <i class="bi bi-lightning-charge"></i> ساخت سایت با قالب «@current.Name»
+                        <i class="bi bi-lightning-charge"></i> ساخت سایت با قالب ظاهری «@current.Name»
                     </a>
                     <a class="ds-btn" href="@Url.Action("Index","Products")" data-no-preview>همه محصولات</a>
                 </div>
@@ -56,14 +57,14 @@
             <button type="button" class="ds-toggle" aria-expanded="false" aria-controls="dsPanel">
                 <i class="bi bi-palette ds-icon"></i>
                 <span class="ds-label">
-                    <small>قالب دمو</small>
+                    <small>انتخاب قالب ظاهری سایت</small>
                     <strong>@current.Name</strong>
                 </span>
                 <i class="bi bi-chevron-up ds-caret"></i>
             </button>
         }
         <a class="ds-quick-build" href="@Url.Action("Index","Signup", new { type = slug, template = current.Id })" data-no-preview>
-            <i class="bi bi-rocket-takeoff"></i> ساخت سایت با همین دمو
+            <i class="bi bi-rocket-takeoff"></i> ساخت سایت با همین نمونه سایت
         </a>
     </div>
     if (templates.Count > 1)

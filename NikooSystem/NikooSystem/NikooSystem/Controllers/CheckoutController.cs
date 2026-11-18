@@ -58,7 +58,7 @@ namespace NikooSystem.Controllers
 
             var payment = await _zarinPal.RequestPaymentAsync(
                 order.Amount,
-                "درخواست دمو " + order.ProductTitle + " - سفارش " + order.OrderNumber,
+                "درخواست نمونه سایت " + order.ProductTitle + " - سفارش " + order.OrderNumber,
                 order.CustomerEmail,
                 order.CustomerMobile,
                 order.Id.ToString());

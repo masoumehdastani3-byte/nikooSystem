@@ -67,7 +67,7 @@
                                 <td>
                                     <a href="@Url.Action("Store","Admin", new { id = s.CompanyCode })"><strong>@s.Name</strong></a>
                                     <span class="small text-muted">@s.CompanyCode</span>
-                                    @if (s.IsDemo) { <span class="adm-chip">دمو</span> }
+                                    @if (s.IsDemo) { <span class="adm-chip">نمونه سایت</span> }
                                 </td>
                                 <td>@s.TodayViews.ToFa()</td>
                                 <td class="fw-bold">@s.MonthViews.ToFa()</td>

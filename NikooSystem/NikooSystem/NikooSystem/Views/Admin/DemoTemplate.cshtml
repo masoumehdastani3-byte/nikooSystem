@@ -2,18 +2,18 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     var type = (StoreTypeInfo)ViewBag.Type;
-    ViewBag.Title = "قالب دموی " + type.Name;
-    ViewBag.PickerSite = "دموی " + type.Name;
+    ViewBag.Title = "قالب ظاهری نمونه سایت " + type.Name;
+    ViewBag.PickerSite = "نمونه سایت " + type.Name;
 }
 <div class="adm-head">
     <div>
-        <h1>قالب دموی «@type.Name»</h1>
-        <p>قالبی را انتخاب کنید که این دمو برای همه بازدیدکننده‌ها با آن باز شود. رنگ‌های دمو هم رنگ‌های پیش‌فرض همان قالب می‌شوند.</p>
+        <h1>قالب ظاهری نمونه سایت «@type.Name»</h1>
+        <p>قالب ظاهری‌ای را انتخاب کنید که این نمونه سایت برای همه بازدیدکننده‌ها با آن باز شود. رنگ‌های نمونه سایت هم رنگ‌های پیش‌فرض همان قالب ظاهری می‌شوند.</p>
     </div>
     <div class="adm-head-actions">
-        <button class="btn btn-primary" type="submit" form="demoTemplateForm"><i class="bi bi-check2"></i> ذخیره و اعمال روی دمو</button>
-        <a class="btn btn-outline-secondary" href="@Url.Action("DemoTemplates","Admin")"><i class="bi bi-arrow-right"></i> همه دموها</a>
-        <a class="btn btn-outline-primary" href="@Url.Action("Index","Shop", new { company = ViewBag.CompanyCode })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده دمو</a>
+        <button class="btn btn-primary" type="submit" form="demoTemplateForm"><i class="bi bi-check2"></i> ذخیره و اعمال روی نمونه سایت</button>
+        <a class="btn btn-outline-secondary" href="@Url.Action("DemoTemplates","Admin")"><i class="bi bi-arrow-right"></i> همه نمونه‌سایت‌ها</a>
+        <a class="btn btn-outline-primary" href="@Url.Action("Index","Shop", new { company = ViewBag.CompanyCode })" target="_blank" rel="noopener"><i class="bi bi-box-arrow-up-left"></i> مشاهده نمونه سایت</a>
     </div>
 </div>
 @using (Html.BeginForm("DemoTemplate", "Admin", FormMethod.Post, new { id = "demoTemplateForm" }))

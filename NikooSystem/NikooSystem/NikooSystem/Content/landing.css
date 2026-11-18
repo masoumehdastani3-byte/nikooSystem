@@ -153,6 +153,15 @@
   background: rgba(255, 255, 255, 0.1);
   color: #fff !important;
 }
+.lf-btn-light {
+  background: #fff;
+  color: var(--lf-blue) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+.lf-btn-light:hover {
+  background: #e8f0ff;
+  color: var(--lf-blue) !important;
+}
 
 /* ---------- Trust strip ---------- */
 .lf-trust {
@@ -1566,7 +1575,22 @@ body.lf-home .navbar .dropdown ul li:hover > a { color: var(--lf-warm) !importan
 .lf-land-card p { color: var(--lf-muted); line-height: 1.85; margin: 0; flex: 1 1 auto; }
 .lf-land-type-actions { display: flex; gap: .5rem; margin-top: 1rem; }
 .lf-land-type-actions .btn { flex: 1 1 0; }
-.lf-land-type-more { margin-top: .75rem; font-size: .88rem; text-decoration: none; }
+.lf-land-type-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+  margin-top: .9rem;
+  padding: .75rem 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 2px solid #4154f1;
+  color: #4154f1 !important;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.lf-land-type-more:hover { background: #4154f1; color: #fff !important; }
 
 .lf-land-chips { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
 .lf-land-chips a {
@@ -1717,6 +1741,20 @@ body.lf-home .navbar .dropdown ul li:hover > a { color: var(--lf-warm) !importan
   font-weight: 700;
 }
 .lf-intro-card:hover .lf-intro-more { color: var(--lf-warm-dark); }
+.lf-intro-more.is-btn {
+  align-self: flex-start;
+  margin-top: 1.15rem;
+  padding: .7rem 1.15rem;
+  border-radius: 999px;
+  background: #4154f1;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.lf-intro-card:hover .lf-intro-more.is-btn {
+  background: #012970;
+  color: #fff;
+}
 @media (max-width: 992px) {
   .lf-intro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

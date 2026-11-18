@@ -57,16 +57,16 @@
                         {
                             <p class="mb-0"><a href="@Url.RouteUrl("Solution", new { slug = landing.Slug })"><i class="bi @landing.Icon"></i> همه چیز درباره @landing.Name <i class="bi bi-arrow-left"></i></a></p>
                         }
-                        <div class="d-flex flex-wrap gap-2 mt-4">
+                        <div class="product-actions @(string.IsNullOrEmpty(Model.DemoSlug) ? "is-single" : "")">
                             @if (!string.IsNullOrEmpty(Model.DemoSlug))
                             {
                                 <a class="btn-primary-shop" href="@Url.Action("Index","Signup", new { type = Model.DemoSlug })"><i class="bi bi-rocket-takeoff"></i> شروع آزمایشی رایگان (@NikooSystem.Services.TenantProvisioningService.TrialDays روز)</a>
-                                <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> اول دمو را ببینید</a>
-                                <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @templates.Count.ToString().ToFaDigits() قالب آماده</a>
+                                <a class="btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = Model.DemoSlug })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> اول نمونه سایت را ببینید</a>
+                                <a class="btn-outline-shop" href="#templates"><i class="bi bi-palette"></i> @templates.Count.ToString().ToFaDigits() قالب ظاهری آماده</a>
                             }
                             else
                             {
-                                <a class="btn-primary-shop" href="@Url.Action("Buy","Checkout", new { productId = Model.Id })"><i class="bi bi-cart-check"></i> درخواست دمو</a>
+                                <a class="btn-primary-shop" href="@Url.Action("Buy","Checkout", new { productId = Model.Id })"><i class="bi bi-cart-check"></i> درخواست نمونه سایت</a>
                             }
                         </div>
                     </div>

@@ -16,10 +16,10 @@
 <section id="@Model.SectionId" class="lf-templates mt-5">
     <div class="d-flex flex-wrap align-items-end justify-content-between gap-2 mb-3">
         <div>
-            <h2 class="h4 mb-1"><i class="bi bi-palette text-warning"></i> @(Model.Heading ?? Model.Templates.Count.ToString().ToFaDigits() + " قالب آماده برای این محصول")</h2>
+            <h2 class="h4 mb-1"><i class="bi bi-palette text-warning"></i> @(Model.Heading ?? Model.Templates.Count.ToString().ToFaDigits() + " قالب ظاهری آماده برای این محصول")</h2>
             <p class="text-muted small mb-0">
-                هر قالب، @subject دمو را با همان اطلاعات واقعی نشان می‌دهد. با «پیش‌نمایش زنده» در صفحات بگردید و نمای موبایل را ببینید؛
-                داخل خود دمو هم با دکمه «قالب دمو» هر وقت خواستید قالب را عوض کنید. بعد از ساخت هم قالب و رنگ‌ها از پنل قابل تغییرند.
+                هر قالب ظاهری، @subject نمونه سایت را با همان اطلاعات واقعی نشان می‌دهد. با «پیش‌نمایش زنده» در صفحات بگردید و نمای موبایل را ببینید؛
+                داخل خود نمونه سایت هم با دکمه «انتخاب قالب ظاهری سایت» هر وقت خواستید قالب ظاهری را عوض کنید. بعد از ساخت هم قالب ظاهری و رنگ‌ها از پنل قابل تغییرند.
             </p>
         </div>
     </div>
@@ -38,7 +38,7 @@
                     }
                     @if (t.Id == type.DefaultTemplate)
                     {
-                        <span class="lf-tpl-badge is-default"><i class="bi bi-star-fill"></i> قالب پیش‌فرض</span>
+                        <span class="lf-tpl-badge is-default"><i class="bi bi-star-fill"></i> قالب ظاهری پیش‌فرض</span>
                     }
                     else if (t.IsSkin)
                     {
@@ -57,7 +57,7 @@
                         {
                             <button type="button" class="btn btn-sm btn-outline-shop flex-fill tpl-zoom"><i class="bi bi-eye"></i> پیش‌نمایش زنده</button>
                         }
-                        <a class="btn btn-sm btn-primary-shop flex-fill" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت با این قالب</a>
+                        <a class="btn btn-sm btn-primary-shop flex-fill" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت با این قالب ظاهری</a>
                     </div>
                 </div>
             </div>
@@ -82,7 +82,7 @@
             </div>
         </div>
         <div class="tpl-modal-body">
-            <iframe id="tplModalFrame" title="پیش‌نمایش قالب"></iframe>
+            <iframe id="tplModalFrame" title="پیش‌نمایش قالب ظاهری"></iframe>
         </div>
     </div>
 </div>
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('tplModalName').textContent = card.getAttribute('data-name');
     document.getElementById('tplModalTab').href = url;
     document.getElementById('tplModalSignup').href = card.getAttribute('data-signup');
-    document.getElementById('tplModalSignupText').textContent = 'ساخت ' + card.getAttribute('data-subject') + ' با این قالب';
+    document.getElementById('tplModalSignupText').textContent = 'ساخت ' + card.getAttribute('data-subject') + ' با این قالب ظاهری';
     setDevice('desktop');
     frame.src = url;
     modal.hidden = false;

@@ -169,7 +169,7 @@ namespace NikooSystem.Models.Store
         /// <summary>لینک «ساخته شده با نیکو سیستم» در فوتر نمایش داده نشود</summary>
         public bool HidePoweredBy { get; set; }
         public string LayoutStyle { get; set; } = "organic"; // organic | fashion | minimal | marketplace | boutique
-        /// <summary>چیدمان بخش‌های صفحه اول و گزینه‌های صفحه محصول؛ null = پیش‌فرض قالب</summary>
+        /// <summary>چیدمان بخش‌های صفحه اول و گزینه‌های صفحه محصول؛ null = پیش‌فرض قالب ظاهری</summary>
         public StorePageLayout PageLayout { get; set; }
         public string AdminUsername { get; set; } = "admin";
         public string AdminPasswordHash { get; set; }
@@ -279,7 +279,7 @@ namespace NikooSystem.Models.Store
 
     public class StorePageLayout
     {
-        /// <summary>به ترتیب نمایش؛ null یعنی بخش‌های پیش‌فرض قالب</summary>
+        /// <summary>به ترتیب نمایش؛ null یعنی بخش‌های پیش‌فرض قالب ظاهری</summary>
         public List<StoreHomeSection> HomeSections { get; set; }
 
         public bool ShowRelatedProducts { get; set; } = true;
@@ -291,7 +291,7 @@ namespace NikooSystem.Models.Store
 
     public class StoreHomeSection
     {
-        /// <summary>برای بخش‌های قالب برابر Type است؛ برای بخش‌های ساخته‌شده توسط فروشنده یک شناسه تصادفی</summary>
+        /// <summary>برای بخش‌های قالب ظاهری برابر Type است؛ برای بخش‌های ساخته‌شده توسط فروشنده یک شناسه تصادفی</summary>
         public string Id { get; set; }
         /// <summary>hero | features | categories | featured | promo | gallery | about | products | banner</summary>
         public string Type { get; set; }
@@ -783,7 +783,7 @@ namespace NikooSystem.Models.Store
 
         public string StoreType { get; set; } = "general";
 
-        /// <summary>قالب انتخاب‌شده در صفحه محصول؛ اگر برای نوع سایت نباشد قالب پیش‌فرض آن نوع استفاده می‌شود</summary>
+        /// <summary>قالب ظاهری انتخاب‌شده در صفحه محصول؛ اگر برای نوع سایت نباشد قالب ظاهری پیش‌فرض آن نوع استفاده می‌شود</summary>
         public string Template { get; set; }
 
         [Required(ErrorMessage = "رمز عبور الزامی است")]

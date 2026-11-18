@@ -129,7 +129,7 @@ namespace NikooSystem.Models
             [TicketCategory.Billing] = "مالی و اشتراک",
             [TicketCategory.Payment] = "درگاه پرداخت",
             [TicketCategory.Domain] = "دامنه و آدرس سایت",
-            [TicketCategory.Design] = "قالب و طراحی",
+            [TicketCategory.Design] = "قالب ظاهری و طراحی",
             [TicketCategory.Training] = "آموزش و راهنمایی",
             [TicketCategory.Other] = "سایر"
         };

@@ -55,7 +55,7 @@ namespace NikooSystem.Models
         [Range(0, 100, ErrorMessage = "عددی بین ۰ تا ۱۰۰ وارد کنید")]
         public int StatSatisfaction { get; set; }
 
-        [Display(Name = "تعداد دموی فروشگاه")]
+        [Display(Name = "تعداد نمونه سایت فروشگاه")]
         [Range(0, int.MaxValue, ErrorMessage = "عدد معتبر نیست")]
         public int StatDemos { get; set; }
 

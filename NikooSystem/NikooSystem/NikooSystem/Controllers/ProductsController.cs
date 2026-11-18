@@ -29,7 +29,7 @@ namespace NikooSystem.Controllers
 
             var seo = Seo.Of(HttpContext);
             seo.Description = "محصولات " + SiteContentStore.Settings.SiteName + ": " + string.Join("، ", list.Take(6).Select(p => p.Title))
-                + " — با دموی آنلاین، پشتیبانی و راه‌اندازی سریع.";
+                + " — با نمونه سایت آنلاین، پشتیبانی و راه‌اندازی سریع.";
             seo.Canonical = seo.Url(Url.Action("Index", "Products")
                 + (string.IsNullOrWhiteSpace(category) ? "" : "?category=" + Uri.EscapeDataString(category)));
             return View(list);

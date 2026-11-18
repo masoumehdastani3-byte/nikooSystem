@@ -11,12 +11,25 @@ namespace NikooSystem.Controllers
     public class ApiPaymentsController : Controller
     {
         [AcceptVerbs(HttpVerbs.Post | HttpVerbs.Options)]
+        [ValidateInput(false)]
         public ActionResult Create()
         {
             AddCorsHeaders();
             if (string.Equals(Request.HttpMethod, "OPTIONS", StringComparison.OrdinalIgnoreCase))
                 return new HttpStatusCodeResult(204);
 
+            try
+            {
+                return CreateCore();
+            }
+            catch (Exception ex)
+            {
+                return JsonError(500, "ساخت پرداخت ناموفق بود: " + ex.Message);
+            }
+        }
+
+        private ActionResult CreateCore()
+        {
             var appId = Request.Headers["X-App-Id"] ?? Request["appId"];
             var apiKey = Request.Headers["X-Api-Key"] ?? Request["apiKey"];
             var client = PaymentHubService.Authenticate(appId, apiKey);

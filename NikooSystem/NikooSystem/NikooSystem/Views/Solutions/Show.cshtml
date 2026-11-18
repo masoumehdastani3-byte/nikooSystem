@@ -15,6 +15,8 @@
     var demoType = types.FirstOrDefault(t => TenantStore.DemoBySlug.ContainsKey(t.Id));
     var trialDays = TenantProvisioningService.TrialDays.ToFa();
     var signupUrl = Url.Action("Index", "Signup", new { type = Model.MainType });
+    var detailProduct = products.FirstOrDefault(p => p.DemoSlug == Model.MainType) ?? plan ?? products.FirstOrDefault();
+    var detailUrl = detailProduct == null ? null : Url.Action("Details", "Products", new { id = detailProduct.Id });
     var showcases = new List<TemplateShowcase>();
     if (kind != null && demoType != null)
     {
@@ -22,15 +24,15 @@
     }
     else if (kind == null)
     {
-        showcases.Add(TemplateShowcase.For("fashion", null, "قالب‌های فروشگاه اینترنتی و سایت آموزشی", "templates-shop"));
-        showcases.Add(TemplateShowcase.For("corporate", "corporate", "قالب‌های سایت شرکتی", "templates-corporate"));
-        showcases.Add(TemplateShowcase.For("news", "magazine", "قالب‌های سایت خبری", "templates-news"));
-        showcases.Add(TemplateShowcase.For("clinic", "clinic", "قالب مطب و کلینیک", "templates-clinic"));
-        showcases.Add(TemplateShowcase.For("beauty", "salon", "قالب آرایشگاه", "templates-salon"));
-        showcases.Add(TemplateShowcase.For("consulting", "clinic", "قالب مشاوره", "templates-consulting"));
-        showcases.Add(TemplateShowcase.For("school", null, "قالب آموزشگاه", "templates-school"));
-        showcases.Add(TemplateShowcase.For("club", null, "قالب باشگاه ورزشی", "templates-club"));
-        showcases.Add(TemplateShowcase.For("repair", null, "قالب سایت تعمیرگاه", "templates-repair"));
+        showcases.Add(TemplateShowcase.For("fashion", null, "قالب‌های ظاهری فروشگاه اینترنتی و سایت آموزشی", "templates-shop"));
+        showcases.Add(TemplateShowcase.For("corporate", "corporate", "قالب‌های ظاهری سایت شرکتی", "templates-corporate"));
+        showcases.Add(TemplateShowcase.For("news", "magazine", "قالب‌های ظاهری سایت خبری", "templates-news"));
+        showcases.Add(TemplateShowcase.For("clinic", "clinic", "قالب ظاهری مطب و کلینیک", "templates-clinic"));
+        showcases.Add(TemplateShowcase.For("beauty", "salon", "قالب ظاهری آرایشگاه", "templates-salon"));
+        showcases.Add(TemplateShowcase.For("consulting", "clinic", "قالب ظاهری مشاوره", "templates-consulting"));
+        showcases.Add(TemplateShowcase.For("school", null, "قالب ظاهری آموزشگاه", "templates-school"));
+        showcases.Add(TemplateShowcase.For("club", null, "قالب ظاهری باشگاه ورزشی", "templates-club"));
+        showcases.Add(TemplateShowcase.For("repair", null, "قالب ظاهری سایت تعمیرگاه", "templates-repair"));
         foreach (var s in showcases) { s.Heading = s.Templates.Count.ToString().ToFaDigits() + " " + s.Heading; }
     }
 }
@@ -56,12 +58,16 @@
                         <a class="lf-btn lf-btn-warm" href="@signupUrl"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان (@trialDays روز)</a>
                         if (demoType != null)
                         {
-                            <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Demo", new { slug = demoType.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده دمو</a>
+                            <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Demo", new { slug = demoType.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> مشاهده نمونه سایت آماده</a>
+                        }
+                        if (detailUrl != null)
+                        {
+                            <a class="lf-btn lf-btn-light" href="@detailUrl"><i class="bi bi-tag"></i> جزئیات و قیمت</a>
                         }
                     }
                     else
                     {
-                        <a class="lf-btn lf-btn-warm" href="#templates-shop"><i class="bi bi-palette"></i> دیدن قالب‌ها</a>
+                        <a class="lf-btn lf-btn-warm" href="#templates-shop"><i class="bi bi-palette"></i> دیدن قالب‌های ظاهری</a>
                         <a class="lf-btn lf-btn-ghost" href="@Url.Action("Index","Signup")"><i class="bi bi-rocket-takeoff"></i> ساخت سایت رایگان</a>
                     }
                 </div>
@@ -115,7 +121,7 @@
         <div class="container">
             <header class="lf-section-head">
                 <h2>انواع @Model.Name</h2>
-                <p>نوع کسب‌وکارتان را انتخاب کنید و دموی آماده‌اش را ببینید</p>
+                <p>نوع کسب‌وکارتان را انتخاب کنید و نمونه سایت آماده‌اش را ببینید</p>
             </header>
             <div class="lf-land-types">
                 @foreach (var type in types)
@@ -128,7 +134,7 @@
                         <div class="lf-land-type-actions">
                             @if (TenantStore.DemoBySlug.ContainsKey(type.Id))
                             {
-                                <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = type.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> دمو</a>
+                                <a class="btn btn-sm btn-outline-shop" href="@Url.Action("Index","Demo", new { slug = type.Id })" target="_blank" rel="noopener"><i class="bi bi-eye"></i> نمونه سایت</a>
                             }
                             <a class="btn btn-sm btn-primary-shop" href="@Url.Action("Index","Signup", new { type = type.Id })"><i class="bi bi-rocket-takeoff"></i> ساخت رایگان</a>
                         </div>
@@ -181,7 +187,7 @@
         <div class="container">
             @if (kind == null)
             {
-                <nav class="lf-land-chips mt-5" aria-label="گروه‌های قالب">
+                <nav class="lf-land-chips mt-5" aria-label="گروه‌های قالب ظاهری">
                     @foreach (var s in showcases)
                     {
                         <a href="#@s.SectionId">@s.Heading</a>
@@ -202,7 +208,7 @@
         <div class="container">
             <header class="lf-section-head">
                 <h2>نرم‌افزارهای آماده</h2>
-                <p>هر قالب روی یکی از این نرم‌افزارها اجرا می‌شود</p>
+                <p>هر قالب ظاهری روی یکی از این نرم‌افزارها اجرا می‌شود</p>
             </header>
             <div class="lf-store-grid">
                 @foreach (var p in products)

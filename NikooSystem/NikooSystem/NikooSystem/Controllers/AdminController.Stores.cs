@@ -126,7 +126,7 @@ namespace NikooSystem.Controllers
             if (store == null) return HttpNotFound();
             if (TenantStore.IsDemo(store.CompanyCode))
             {
-                TempData["Error"] = "سایت‌های دمو اشتراک ندارند.";
+                TempData["Error"] = "نمونه‌سایت‌ها اشتراک ندارند.";
                 return RedirectToAction("Store", new { id });
             }
             var order = Subscriptions.Grant(store, months, note);
@@ -184,7 +184,7 @@ namespace NikooSystem.Controllers
             if (store == null) return HttpNotFound();
             if (TenantStore.IsDemo(store.CompanyCode))
             {
-                TempData["Error"] = "سایت‌های دمو حذف نمی‌شوند.";
+                TempData["Error"] = "نمونه‌سایت‌ها حذف نمی‌شوند.";
                 return RedirectToAction("Store", new { id });
             }
             if (!string.Equals((confirmCode ?? "").Trim(), store.CompanyCode, StringComparison.OrdinalIgnoreCase))

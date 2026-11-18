@@ -1,13 +1,24 @@
 @model IEnumerable<NikooSystem.Helpers.ProductLanding>
 @{
     var siteName = NikooSystem.Services.SiteContentStore.Settings.SiteName;
+    var linkToDetails = ViewData["DetailsLink"] as bool? == true;
+    var catalog = linkToDetails
+        ? NikooSystem.Services.SiteStore.GetProducts().Where(item => item.IsActive && !string.IsNullOrEmpty(item.DemoSlug)).ToList()
+        : null;
 }
 <div class="lf-intro-grid">
     @foreach (var p in Model)
     {
         var image = p.Image ?? "";
         if (image.StartsWith("/")) { image = "~" + image; }
-        <a class="lf-intro-card" href="@Url.RouteUrl("Solution", new { slug = p.Slug })">
+        var product = catalog == null || p.Types == null
+            ? null
+            : catalog.Where(item => p.Types.Contains(item.DemoSlug)).OrderByDescending(item => item.IsFeatured).ThenBy(item => item.Id).FirstOrDefault();
+        var href = product != null
+            ? Url.Action("Details", "Products", new { id = product.Id })
+            : Url.RouteUrl("Solution", new { slug = p.Slug });
+        var more = product != null ? "جزئیات و قیمت " + p.Name : "جزئیات، نمونه سایت و شروع رایگان";
+        <a class="lf-intro-card" href="@href">
             <div class="lf-intro-media">
                 <img src="@Url.Content(image)" alt="@p.Name" loading="lazy" decoding="async" />
             </div>
@@ -15,7 +26,7 @@
                 <span class="lf-intro-kicker"><i class="bi @p.Icon" aria-hidden="true"></i> @p.Summary</span>
                 <h3>@p.Name</h3>
                 <p>@NikooSystem.Helpers.ProductLandings.Fill(p.Lead, siteName)</p>
-                <span class="lf-intro-more">جزئیات، دمو و شروع رایگان <i class="bi bi-arrow-left" aria-hidden="true"></i></span>
+                <span class="lf-intro-more @(product != null ? "is-btn" : "")">@more <i class="bi bi-arrow-left" aria-hidden="true"></i></span>
             </div>
         </a>
     }

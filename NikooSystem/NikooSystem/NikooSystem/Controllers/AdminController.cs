@@ -267,7 +267,7 @@ namespace NikooSystem.Controllers
             model.SeoDescription = string.IsNullOrWhiteSpace(model.SeoDescription) ? null : model.SeoDescription.Trim();
             model.DemoSlug = string.IsNullOrWhiteSpace(model.DemoSlug) ? null : model.DemoSlug.Trim().ToLowerInvariant();
             if (model.DemoSlug != null && !TenantStore.DemoBySlug.ContainsKey(model.DemoSlug))
-                ModelState.AddModelError("DemoSlug", "برای این نوع، سایت دمو وجود ندارد.");
+                ModelState.AddModelError("DemoSlug", "برای این نوع، نمونه سایت وجود ندارد.");
         }
 
         // ---- Orders of the main site (purchases of products and store subscriptions)
